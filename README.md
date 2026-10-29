@@ -21,6 +21,13 @@ Everything saves on the device that's playing it (browser storage).
 ## Play it
 Open `index.html` in a browser, or visit the GitHub Pages link for this repository.
 
+## Put it on an iPhone like an app (works offline)
+1. On her iPhone, open the game in Safari while it can reach the internet (if Screen Time limits websites, add `dressup.datasolutions365.com` to the allowed websites just for this).
+2. Tap Share, then **Add to Home Screen**.
+3. Open it once from the new home screen icon while still online, so it saves itself.
+
+After that it opens from the icon and plays with no internet. Her looks, photos, and songs stay on the phone.
+
 ## Ideas for later
 - Cloud saving with Firebase so looks follow her across devices
 - More events and outfits
