@@ -28,6 +28,8 @@ header.top{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:
 main{flex:1;display:flex;min-height:0}
 .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;background:#fff}
 .stage{transition:background .4s}
+.stage.painting{outline:4px dashed var(--pink);outline-offset:-6px}
+.pill[disabled]{opacity:.45}
 .stage>svg{height:calc(100% - 20px);width:auto;max-width:calc(100% - 20px);aspect-ratio:380/680;display:block;border-radius:20px;box-shadow:0 6px 24px rgba(59,35,87,.18)}
 .panel{width:min(470px,46vw);display:flex;flex-direction:column;background:#fff;border-left:3px solid var(--pink2);min-height:0}
 .tabs{display:flex;gap:4px;overflow-x:auto;padding:8px;scrollbar-width:none;border-bottom:2px solid var(--pink2);flex:0 0 auto}
@@ -138,6 +140,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="tracks" id="trackList"></div>
   <div class="mrow"><span>🔈</span><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span>🔊</span></div>
   <div class="mrow"><button class="pill soft" id="sfxBtn"></button></div>
+  <p class="hint">🎤 Brynny's Song plays at the birthday party. <a href="https://suno.com/s/gJZRXIPoHCDMpTkO" target="_blank" rel="noopener">Listen on Suno ↗</a></p>
   <h3>My songs</h3>
   <p class="hint">Add songs saved on this phone, tablet, or computer (MP3 and other music files). They stay on this device.</p>
   <div class="songs" id="songList"></div>
@@ -205,6 +208,7 @@ const DEFS=`<defs>
 <linearGradient id="gBeach" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#e3f7ff"/></linearGradient>
 <linearGradient id="gWed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff9fb"/><stop offset="1" stop-color="#ffe1ec"/></linearGradient>
 <linearGradient id="gBday" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c9"/><stop offset="1" stop-color="#ffd6ec"/></linearGradient>
+<clipPath id="faceClip"><ellipse cx="150" cy="88" rx="40" ry="46"/></clipPath>
 <radialGradient id="gSpot" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
 </defs>`;
 
@@ -251,6 +255,7 @@ function face(L){
   if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
   else s+=`<path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/>`;
   s+=facePaint(m.paint);
+  s+=`<g clip-path="url(#faceClip)" class="paintLayer">${(m.strokes||[]).map(strokeSVG).join('')}</g>`;
   return s;
 }
 function facePaint(p){
@@ -502,12 +507,76 @@ const me=()=>DB.chars.find(c=>c.id===DB.cur)||DB.chars[0];
 const L=()=>me().look;
 let tab='me',lastExtra=null;
 
+/* ---------- finger-paint makeup ---------- */
+const BRUSHES=[
+ {id:'lips',e:'💄',name:'Lipstick',w:3.4,op:.85,colors:LIPS},
+ {id:'blush',e:'🌸',name:'Blush',w:11,op:.22,colors:BLUSH.concat(['#ffb347','#b388ff'])},
+ {id:'shadow',e:'👁️',name:'Eyeshadow',w:6,op:.4,colors:SHADOW},
+ {id:'liner',e:'✏️',name:'Eyeliner',w:1.6,op:1,colors:['#2b1a2e','#5b3a7a','#2f6fb5','#3c8d5a','#c2185b']},
+ {id:'paint',e:'🎨',name:'Face paint',w:3,op:.95,colors:['#ff5a5a','#ffb347','#ffd23f','#7ee081','#4fb6ff','#b388ff','#ff6fae','#ffffff','#2d2d3a']},
+ {id:'glitter',e:'✨',name:'Glitter',w:2.4,op:1,dash:'0 5',colors:['#ffd23f','#ffffff','#ff8fc8','#b388ff','#4fb6ff','#7ee081']},
+];
+const brushState={id:null,c:{}};
+function strokeSVG(st){
+  if(!st.p||!st.p.length)return '';
+  const d='M'+st.p.map(q=>q[0]+' '+q[1]).join(' L')+(st.p.length===1?' l0.01 0':'');
+  return `<path d="${d}" fill="none" stroke="${st.c}" stroke-width="${st.w}" stroke-linecap="round" stroke-linejoin="round" opacity="${st.op}"${st.dash?` stroke-dasharray="${st.dash}"`:''}/>`;
+}
+const curBrush=()=>BRUSHES.find(b=>b.id===brushState.id);
+const brushColor=b=>brushState.c[b.id]||b.colors[0];
+function faceZoomVB(l){const cart=l.style==='cartoon',cy=cart?74:88,r=cart?62:48;const w=r*2.4,h=w*680/380;return `${150-w/2} ${cy-h*.36} ${w} ${h}`;}
+function applyZoom(){
+  const sv=$('#stage svg');if(!sv)return;
+  const on=tab==='makeup'&&brushState.id;
+  sv.setAttribute('viewBox',on?faceZoomVB(L()):VIEW);
+  sv.style.touchAction=on?'none':'';sv.style.cursor=on?'crosshair':'';
+  $('#stage').classList.toggle('painting',!!on);
+}
+function toFace(ev){
+  const sv=$('#stage svg');const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
+  const q=pt.matrixTransform(sv.getScreenCTM().inverse());
+  let x=q.x,y=q.y;if(L().style==='cartoon'){x=150+(x-150)/1.3;y=135+(y-135)/1.3;}
+  return [Math.round(x*2)/2,Math.round(y*2)/2];
+}
+let drawing=null;
+$('#stage').addEventListener('pointerdown',ev=>{
+  const b=curBrush();if(tab!=='makeup'||!b)return;
+  const layer=$('#stage .paintLayer');if(!layer)return;
+  ev.preventDefault();try{$('#stage svg').setPointerCapture(ev.pointerId);}catch(e){}
+  const st={c:brushColor(b),w:b.w,op:b.op,dash:b.dash||'',p:[toFace(ev)]};
+  layer.insertAdjacentHTML('beforeend',strokeSVG(st));
+  drawing={st,el:layer.lastElementChild,id:ev.pointerId};
+});
+$('#stage').addEventListener('pointermove',ev=>{
+  if(!drawing||ev.pointerId!==drawing.id)return;ev.preventDefault();
+  const q=toFace(ev),last=drawing.st.p[drawing.st.p.length-1];
+  if(Math.hypot(q[0]-last[0],q[1]-last[1])<.8)return;
+  drawing.st.p.push(q);drawing.el.outerHTML=strokeSVG(drawing.st);drawing.el=$('#stage .paintLayer').lastElementChild;
+});
+const endStroke=ev=>{
+  if(!drawing||(ev&&ev.pointerId!==drawing.id))return;
+  const st=drawing.st;drawing=null;
+  const m=L().makeup;m.strokes=(m.strokes||[]).concat([st]).slice(-150);persist();
+  if(DB.music&&DB.music.sfx)Music.sfx();
+};
+$('#stage').addEventListener('pointerup',endStroke);
+$('#stage').addEventListener('pointercancel',endStroke);
+function paintPanel(){
+  const b=curBrush();
+  let h=`<h3>🖌️ Paint with your finger</h3><p class="hint">${b?'Paint right on the face! Pick another brush or color anytime.':'Pick a brush, then draw on the face with your finger or mouse.'}</p><div class="grid">`;
+  h+=BRUSHES.map(x=>`<button class="item ${brushState.id===x.id?'on':''}" data-act="brush" data-id="${x.id}"><span class="big">${x.e}</span><span class="nm">${x.name}</span></button>`).join('')+'</div>';
+  if(b)h+=`<h3>${b.name} color</h3>`+swatches('brushColor',b.colors,brushColor(b));
+  const n=(L().makeup.strokes||[]).length;
+  h+=`<div class="addrow">${b?`<button class="pill" data-act="brushDone">✋ Done painting</button>`:''}<button class="pill soft" data-act="undoStroke" ${n?'':'disabled'}>↩️ Undo</button><button class="pill soft" data-act="washFace" ${n?'':'disabled'}>🧼 Wash face</button></div>`;
+  return h;
+}
+
 /* ---------- UI ---------- */
 const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'Hair'},{id:'makeup',ico:'💄',name:'Makeup'},{id:'tops',ico:'👚',name:'Tops'},{id:'bottoms',ico:'👖',name:'Bottoms'},
   {id:'dresses',ico:'👗',name:'Dresses'},{id:'shoes',ico:'👠',name:'Shoes'},{id:'hats',ico:'👑',name:'Hats'},{id:'extras',ico:'👜',name:'Extras'},{id:'scenes',ico:'🎃',name:'Places'}];
 
 const STAGEBG={studio:'#f6e6fb',bedroom:'#ecd9f7',birthday:'#ffeaf0',halloween:'#2a1440',christmas:'#1d3a63',wedding:'#fff0f5',beach:'#c9eeff',runway:'#1a1028'};
-function renderStage(){$('#stage').innerHTML=fullSVG(L(),me().name);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;}
+function renderStage(){$('#stage').innerHTML=fullSVG(L(),me().name);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();}
 function renderTabs(){$('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
 function swatches(act,list,sel,{none=false,arg=''}={}){
   let h='<div class="swatches">';if(none)h+=`<button class="sw none ${!sel?'on':''}" data-act="${act}" data-arg="${arg}" data-c="" aria-label="none"></button>`;
@@ -530,6 +599,7 @@ function renderPanel(){
     h+='</div>';
   }else if(tab==='makeup'){
     const m=l.makeup;
+    h+=paintPanel()+`<h3 style="margin-top:22px">⚡ Quick makeup</h3>`;
     h+=`<h3>Eyeshadow</h3>`+swatches('mk',SHADOW,m.shadow,{none:true,arg:'shadow'})+`<h3>Lipstick</h3>`+swatches('mk',LIPS,m.lips,{none:true,arg:'lips'})+`<h3>Blush</h3>`+swatches('mk',BLUSH,m.blush,{none:true,arg:'blush'});
     h+=`<h3>Lashes</h3><div class="grid">`+LASHES.map(x=>tile(m.lashes===x.id,'mkItem','lashes',x.id,faceOnly({makeup:{...m,lashes:x.id,paint:null}}),x.name)).join('')+'</div>';
     h+=`<h3>Face paint</h3><div class="grid">`+noneTile(!m.paint,'mkItem','paint')+PAINT.map(x=>tile(m.paint===x.id,'mkItem','paint',x.id,faceOnly({makeup:{...m,paint:x.id}}),x.name)).join('')+'</div>';
@@ -556,7 +626,7 @@ function update(fn,{panel=true}={}){fn(L());persist();renderStage();if(typeof Mu
 function sparkle(){const st=$('#stage');for(let i=0;i<4;i++){const s=document.createElement('span');s.className='spark';s.textContent=rnd(['✨','💖','⭐','✨']);s.style.left=(20+Math.random()*60)+'%';s.style.top=(10+Math.random()*70)+'%';st.appendChild(s);setTimeout(()=>s.remove(),900);}}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1800);}
 
-$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;renderTabs();renderPanel();$('#content').scrollTop=0;});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;renderTabs();renderPanel();applyZoom();$('#content').scrollTop=0;});
 $('#content').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const {act,arg,id,c}=b.dataset;
   update(l=>{
@@ -569,6 +639,11 @@ $('#content').addEventListener('click',e=>{
       case 'mk':l.makeup[arg]=c||null;break;
       case 'mkItem':l.makeup[arg]=id||null;break;
       case 'scene':l.scene=id;break;
+      case 'brush':brushState.id=brushState.id===id?null:id;break;
+      case 'brushColor':brushState.c[brushState.id]=c;break;
+      case 'brushDone':brushState.id=null;break;
+      case 'undoStroke':l.makeup.strokes=(l.makeup.strokes||[]).slice(0,-1);break;
+      case 'washFace':l.makeup.strokes=[];break;
       case 'extra':if(id in l.extras){delete l.extras[id];}else{l.extras[id]=find(EXTRAS,id).c;lastExtra=id;}break;
       case 'wear':{const k=KEY[arg];if(!id){l[k]=null;}else{const it=find(CATS[arg],id);l[k]={id,c:l[k]&&l[k].id===id?l[k].c:it.c};}
         if(id&&(arg==='tops'||arg==='bottoms'))l.dress=null;break;}
@@ -653,7 +728,10 @@ const TRACKS=[
   mel:'C5 r C5 D#5 r F5 D#5 C5 | A#4 r A#4 C5 r D#5 C5 A#4 | G#4 r G#4 C5 r D#5 F5 G5 | G5/2 F5/2 D#5/2 D5/2',
   bass:'C2/1*8 A#1/1*8 G#1/1*8 G1/1*8',drums:'xhsxhxsh'},
 ];
-const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'bday',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
+const SUNO={id:'suno',e:'🎤',name:"Brynny's Song",page:'https://suno.com/s/gJZRXIPoHCDMpTkO',
+  urls:['https://cdn1.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3','https://cdn2.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3']};
+let sunoFailed=false,sunoGen=0;
+const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'suno',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
 const Music=(()=>{
   let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
@@ -724,24 +802,33 @@ const SongDB={
 };
 let songs=[],songUrl=null;
 async function loadSongs(){try{songs=await SongDB.all();}catch(e){songs=[];}}
+function playSuno(){
+  Music.stopSynth();const a=$('#songPlayer'),gen=++sunoGen;let i=0;
+  a.loop=true;a.volume=DB.music.vol/100;
+  const tryNext=()=>{if(gen!==sunoGen)return;
+    if(i>=SUNO.urls.length){sunoFailed=true;a.onerror=null;toast("🎂 Couldn't load Brynny's Song, playing Happy Birthday");Music.playTrack('bday');musicPlayingTrack='bday';return;}
+    a.src=SUNO.urls[i++];a.play().catch(err=>{if(err&&err.name==='NotSupportedError')tryNext();});};
+  a.onerror=tryNext;tryNext();
+}
 function playSong(id){
-  const sg=songs.find(x=>x.id===id);if(!sg)return;Music.stopSynth();
-  const a=$('#songPlayer');if(songUrl)URL.revokeObjectURL(songUrl);songUrl=URL.createObjectURL(sg.blob);a.src=songUrl;a.volume=DB.music.vol/100;a.play().catch(()=>{});
+  const sg=songs.find(x=>x.id===id);if(!sg)return;Music.stopSynth();sunoGen++;
+  const a=$('#songPlayer');a.onerror=null;a.loop=false;if(songUrl)URL.revokeObjectURL(songUrl);songUrl=URL.createObjectURL(sg.blob);a.src=songUrl;a.volume=DB.music.vol/100;a.play().catch(()=>{});
 }
 $('#songPlayer').addEventListener('ended',()=>{const i=songs.findIndex(x=>'song:'+x.id===DB.music.track);const nx=songs[(i+1)%songs.length];if(nx){DB.music.track='song:'+nx.id;persist();playSong(nx.id);renderMusic();}});
-function wantedTrack(){const t=DB.music.track;return t==='auto'?SCENE_TRACK[L().scene]:t;}
+function wantedTrack(){let t=DB.music.track;if(t==='auto')t=SCENE_TRACK[L().scene];return t==='suno'&&sunoFailed?'bday':t;}
 function applyMusic(){
   const t=wantedTrack();
   if(!t||t==='off'){Music.stopAll();}
   else if(t.startsWith('song:'))playSong(t.slice(5));
-  else Music.playTrack(t);
+  else if(t==='suno')playSuno();
+  else{sunoGen++;Music.playTrack(t);}
   musicPlayingTrack=t;
   $('#musicBtn').classList.toggle('playing',!!t&&t!=='off');
 }
 let musicPlayingTrack=null;
 function renderMusic(){
   const m=DB.music;
-  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},...TRACKS];
+  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...TRACKS];
   $('#trackList').innerHTML=opts.map(o=>`<button class="track ${m.track===o.id?'on':''}" data-track="${o.id}"><span class="e">${o.e}</span>${o.name}</button>`).join('');
   $('#vol').value=m.vol;
   $('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';
