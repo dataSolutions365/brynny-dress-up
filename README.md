@@ -5,12 +5,12 @@ A birthday dress-up game that runs in any web browser (phone, tablet, or compute
 ## What's in it
 - Cartoon or fashion-doll look, skin tones, eye colors
 - 10 hair styles in 12 colors (including rainbow)
-- Makeup: eyeshadow, lipstick, blush, lashes, and face paint
+- Makeup: paint it on with a finger or mouse (lipstick, blush, eyeshadow, eyeliner, face paint, glitter), plus quick-pick makeup and lashes
 - Tops, bottoms, dresses, shoes, hats, and extras, each in any color
 - Places: Sparkle studio, My room, Birthday party, Halloween, Christmas, Wedding, Beach, Runway
 - Add friends and family by name and dress them up too
 - Save looks to a gallery and download them as pictures
-- Music: 7 built-in songs (Sparkle Pop, Dreamy Studio, Happy Birthday, Spooky Night, Jingle Bells, Here Comes the Bride, Runway Beat), a "Match the place" mode, tap sounds, and her own songs added from the device
+- Music: "Brynny's Song" (made on Suno, plays at the birthday party), 7 built-in songs (Sparkle Pop, Dreamy Studio, Happy Birthday, Spooky Night, Jingle Bells, Here Comes the Bride, Runway Beat), a "Match the place" mode, tap sounds, and her own songs added from the device
 
 Everything saves on the device that's playing it (browser storage).
 
