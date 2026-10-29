@@ -28,6 +28,10 @@ header.top{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:
 main{flex:1;display:flex;min-height:0}
 .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;background:#fff}
 .stage{transition:background .4s}
+.stage.painting{outline:4px dashed var(--pink);outline-offset:-6px}
+.pill[disabled]{opacity:.45}
+details.quick{margin-top:22px;border:3px solid #f6e3ef;border-radius:16px;padding:6px 12px 12px}
+details.quick summary{font-weight:600;font-size:16px;cursor:pointer;padding:6px 0}
 .stage>svg{height:calc(100% - 20px);width:auto;max-width:calc(100% - 20px);aspect-ratio:380/680;display:block;border-radius:20px;box-shadow:0 6px 24px rgba(59,35,87,.18)}
 .panel{width:min(470px,46vw);display:flex;flex-direction:column;background:#fff;border-left:3px solid var(--pink2);min-height:0}
 .tabs{display:flex;gap:4px;overflow-x:auto;padding:8px;scrollbar-width:none;border-bottom:2px solid var(--pink2);flex:0 0 auto}
@@ -78,7 +82,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .small{font-size:12px;color:var(--muted)}
 .addrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .addrow input{flex:1;min-width:150px;font-size:17px;border:2px solid #eadcf0;border-radius:12px;padding:10px 12px;color:var(--ink)}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;opacity:0;transition:.3s;z-index:40;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;opacity:0;transition:.3s;z-index:40;pointer-events:none;max-width:90vw;width:max-content;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .spark{position:absolute;font-size:26px;pointer-events:none;animation:pop .9s ease-out forwards}
 @keyframes pop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.8) translateY(-30px)}}
@@ -132,12 +136,27 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   </div>
 </div></div>
 
+<div class="modal" id="cropModal"><div class="sheet" style="max-width:380px;text-align:center">
+  <button class="close" data-close>×</button>
+  <h2>🤳 Fit your face</h2>
+  <p class="hint">Drag the picture so your face fills the oval.</p>
+  <canvas id="cropCanvas" width="600" height="600" style="width:min(300px,100%);aspect-ratio:1;border-radius:20px;touch-action:none;cursor:grab;background:#f6e3ef"></canvas>
+  <div class="mrow"><span>➖</span><input type="range" id="cropZoom" min="0" max="100" value="30" aria-label="Zoom"><span>➕</span></div>
+  <button class="big-btn" id="cropUse">Put it on! ✨</button>
+</div></div>
+<div class="modal" id="artModal"><div class="sheet" style="max-width:420px;text-align:center">
+  <button class="close" data-close>×</button>
+  <h2>🖍️ What did you draw?</h2>
+  <div id="artPreview" style="height:200px;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#f6e3ef 0 25%,#fff 0 50%) 0 0/20px 20px;border-radius:16px;margin-bottom:12px"></div>
+  <div class="tracks" id="artKinds"></div>
+</div></div>
 <div class="modal" id="musicModal"><div class="sheet">
   <button class="close" data-close>×</button>
   <h2>🎵 Music</h2>
   <div class="tracks" id="trackList"></div>
   <div class="mrow"><span>🔈</span><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span>🔊</span></div>
   <div class="mrow"><button class="pill soft" id="sfxBtn"></button></div>
+  <p class="hint">🎤 Brynny's Song plays at the birthday party. <a href="https://suno.com/s/gJZRXIPoHCDMpTkO" target="_blank" rel="noopener">Listen on Suno ↗</a></p>
   <h3>My songs</h3>
   <p class="hint">Add songs saved on this phone, tablet, or computer (MP3 and other music files). They stay on this device.</p>
   <div class="songs" id="songList"></div>
@@ -205,6 +224,7 @@ const DEFS=`<defs>
 <linearGradient id="gBeach" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#e3f7ff"/></linearGradient>
 <linearGradient id="gWed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff9fb"/><stop offset="1" stop-color="#ffe1ec"/></linearGradient>
 <linearGradient id="gBday" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c9"/><stop offset="1" stop-color="#ffd6ec"/></linearGradient>
+<clipPath id="faceClip"><ellipse cx="150" cy="88" rx="40" ry="46"/></clipPath>
 <radialGradient id="gSpot" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
 </defs>`;
 
@@ -231,6 +251,13 @@ function face(L){
   const m=L.makeup||{};
   let s=sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
   s+=`<ellipse cx="150" cy="88" rx="40" ry="46" fill="${sk}"/>`;
+  if(L.photo&&L.photoOn){
+    s+=`<image href="${L.photoMode==='toon'&&L.photoToon?L.photoToon:L.photo}" x="110" y="42" width="80" height="92" preserveAspectRatio="xMidYMid slice" clip-path="url(#faceClip)"/>`;
+    if(m.blush)s+=sym(`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".3"/>`);
+    s+=facePaint(m.paint);
+    s+=`<g clip-path="url(#faceClip)" class="paintLayer">${(m.strokes||[]).map(strokeSVG).join('')}</g>`;
+    return s;
+  }
   let one='';
   if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
   const iy=ey+(toon?1:0);
@@ -251,6 +278,7 @@ function face(L){
   if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
   else s+=`<path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/>`;
   s+=facePaint(m.paint);
+  s+=`<g clip-path="url(#faceClip)" class="paintLayer">${(m.strokes||[]).map(strokeSVG).join('')}</g>`;
   return s;
 }
 function facePaint(p){
@@ -293,6 +321,53 @@ const HAIR=[
  {id:'pixie',name:'Short',d:(c,d)=>({back:`<path d="M106 80 Q102 30 150 30 Q198 30 194 80 L192 104 L108 104 Z" fill="${c}"/>`,
    front:`<path d="M108 94 Q104 32 150 32 Q196 32 192 94 L186 64 L174 72 L166 58 L152 70 L142 56 L130 70 L120 60 L112 74 Z" fill="${c}"/>`})},
 ];
+
+/* ---------- hair salon (build-your-own hair) ---------- */
+const SALON_DEFAULT=()=>({len:230,left:'loose',right:'loose',bangs:'side',streaks:[],clips:[]});
+let hcId=0;
+function salonShapes(S){
+  const back=[],front=[],len=Math.max(100,Math.min(300,S.len));
+  back.push(`<path d="M104 84 Q100 27 150 27 Q200 27 196 84 L196 104 L104 104 Z"/>`);
+  for(const side of ['left','right']){
+    const X=x=>side==='left'?x:300-x,st=S[side];
+    if(st==='braid'){
+      const bl=Math.max(len,170);let y=110,i=0;
+      while(y<bl-6){front.push(`<ellipse cx="${X(111+i*.25).toFixed(1)}" cy="${y}" rx="${Math.max(7,11-i*.3).toFixed(1)}" ry="10.5" data-braid="1"/>`);y+=16;i++;}
+      front.push(`<path d="M${X(105)} ${y} L${X(100)} ${y+18} L${X(110)} ${y+10} L${X(120)} ${y+18} L${X(115)} ${y} Z"/>`);
+      front.push(`<rect x="${Math.min(X(103),X(119))}" y="${y-6}" width="16" height="8" rx="4" data-tie="1"/>`);
+    }else if(st==='curly'){
+      let d=`M${X(150)} 27 Q${X(102)} 27 ${X(104)} 80`;let y=80,k=0;
+      while(y<len-14){const ny=Math.min(len-14,y+24);d+=` Q${X(k%2?92:84)} ${(y+ny)/2} ${X(98)} ${ny}`;y=ny;k++;}
+      d+=` Q${X(92)} ${len+8} ${X(110)} ${len} Q${X(122)} ${len+12} ${X(134)} ${len} Q${X(144)} ${len+10} ${X(150)} ${len} Z`;
+      back.push(`<path d="${d}"/>`);
+      if(len>130){let fd=`M${X(110)} 90`,fy=90;while(fy<Math.min(len,190)-10){const ny=fy+20;fd+=` Q${X(98)} ${fy+10} ${X(106)} ${ny}`;fy=ny;}fd+=` L${X(117)} ${fy-4}`;fy-=4;while(fy>96){const ny=fy-20;fd+=` Q${X(110)} ${fy-10} ${X(116)} ${ny}`;fy=ny;}front.push(`<path d="${fd} Z"/>`);}
+    }else{
+      back.push(`<path d="M${X(150)} 27 Q${X(102)} 27 ${X(104)} 80 L${X(97)} ${len-10} Q${X(100)} ${len+4} ${X(124)} ${len+2} L${X(150)} ${len} Z"/>`);
+      if(len>130){const sl=Math.min(len,200);front.push(`<path d="M${X(109)} 88 Q${X(101)} 140 ${X(103)} ${sl} L${X(116)} ${sl-6} Q${X(112)} 140 ${X(115)} 96 Z"/>`);}
+    }
+  }
+  const BANGS={side:'M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z',
+    straight:'M108 96 Q102 32 150 32 Q198 32 192 96 Q192 76 186 70 Q150 64 114 70 Q108 76 108 96 Z',part:PART,
+    sweep:'M108 102 Q101 32 150 31 Q199 32 192 102 Q191 82 183 70 Q150 74 128 57 Q111 70 108 102 Z'};
+  front.unshift(`<path d="${BANGS[S.bangs]||BANGS.side}"/>`);
+  return {back,front};
+}
+function clipSVG(k,x,y,c){
+  if(k==='star')return star(x,y,7,c,'stroke="#fff" stroke-width="1"');
+  if(k==='heart')return heart(x,y,6,c,'stroke="#fff" stroke-width="1"');
+  if(k==='flower')return flower(x,y,5,c,'#ffd23f');
+  return `<path d="M${x} ${y} L${x-11} ${y-7} L${x-11} ${y+7} Z M${x} ${y} L${x+11} ${y-7} L${x+11} ${y+7} Z" fill="${c}"/><circle cx="${x}" cy="${y}" r="3.5" fill="${shade(c,-.25)}"/>`;
+}
+function salonHair(L,c,d){
+  const S=L.salon,sh=salonShapes(S),id=++hcId;
+  const paint=arr=>arr.map(x=>x.includes('data-braid')?x.replace('/>',` fill="${c}" stroke="${d}" stroke-width="1.5"/>`):x.includes('data-tie')?x.replace('/>',` fill="#ff6fae"/>`):x.replace('/>',` fill="${c}"/>`)).join('');
+  const streaks=(S.streaks||[]).map(strokeSVG).join('');
+  let back=paint(sh.back),front=paint(sh.front);
+  if(streaks){back+=`<clipPath id="hcb${id}">${sh.back.join('')}</clipPath><g clip-path="url(#hcb${id})">${streaks}</g>`;
+    front+=`<clipPath id="hcf${id}">${sh.front.join('')}</clipPath><g clip-path="url(#hcf${id})">${streaks}</g>`;}
+  front+=(S.clips||[]).map(k=>clipSVG(k.k,k.x,k.y,k.c)).join('');
+  return {back,front};
+}
 
 /* ---------- clothes ---------- */
 const TORSO=(b=268,n=168)=>`M112 156 Q150 ${n} 188 156 Q199 161 199 178 Q191 222 186 ${b} L114 ${b} Q109 222 101 178 Q101 161 112 156 Z`;
@@ -461,19 +536,20 @@ function sceneSVG(id,name){
 
 /* ---------- character ---------- */
 function charInner(L){
-  const T=headT(L),H=(find(HAIR,L.hairStyle)||HAIR[0]).d(hf(L.hairColor),hs(L.hairColor));
+  const T=headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):(find(HAIR,L.hairStyle)||HAIR[0]).d(hf(L.hairColor),hs(L.hairColor));
   const hat=L.hat&&find(HATS,L.hat.id)?parts(find(HATS,L.hat.id).d(L.hat.c)):{};
   const ex={back:'',front:'',hand:'',head:''};
   for(const [id,c] of Object.entries(L.extras||{})){const it=find(EXTRAS,id);if(!it)continue;const p=parts(it.d(c));for(const k in ex)ex[k]+=p[k]||'';}
   const wear=(list,v)=>v&&find(list,v.id)?allParts(parts(find(list,v.id).d(v.c))):'';
+  const A=artLayers(L);
   let s=ex.back+`<g transform="${T}">${H.back||''}${hat.back||''}</g>`+body(L);
   if(L.dress)s+=wear(DRESSES,L.dress);else s+=wear(BOTTOMS,L.bottom)+wear(TOPS,L.top);
-  s+=wear(SHOES,L.shoes)+ex.front+hands(L)+ex.hand;
-  s+=`<g transform="${T}">${face(L)}${ex.head}${H.front||''}${hat.front||''}</g>`;
+  s+=A.body+wear(SHOES,L.shoes)+A.feet+ex.front+hands(L)+ex.hand+A.hand;
+  s+=`<g transform="${T}">${face(L)}${ex.head}${H.front||''}${hat.front||''}${A.head}</g>`;
   return s;
 }
 const VIEW='-40 -75 380 680';
-function fullSVG(L,name,attrs=''){return `<svg viewBox="${VIEW}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" ${attrs}>${DEFS}${sceneSVG(L.scene,name)}${charInner(L)}</svg>`;}
+function fullSVG(L,name,attrs=''){return `<svg viewBox="${VIEW}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" ${attrs}>${DEFS}${bgSVG(L,name)}${charInner(L)}</svg>`;}
 const mini=(vb,inner)=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 
 /* ---------- state ---------- */
@@ -497,17 +573,289 @@ function load(){
   const id=uid();return {chars:[{id,name:'Brynny',look:defaultLook()}],cur:id,gallery:[],welcomed:false};
 }
 let DB=load();
-function persist(){try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}}
+let warnedFull=false;
+function persist(){try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){if(!warnedFull&&typeof toast==='function'){warnedFull=true;toast('😕 Storage is full. Delete some gallery photos.');}}}
 const me=()=>DB.chars.find(c=>c.id===DB.cur)||DB.chars[0];
 const L=()=>me().look;
-let tab='me',lastExtra=null;
+let tab='me',lastExtra=null,quickOpen=false;
+
+/* ---------- finger-paint makeup ---------- */
+const BRUSHES=[
+ {id:'lips',e:'💄',name:'Lipstick',w:3.4,op:.85,colors:LIPS},
+ {id:'blush',e:'🌸',name:'Blush',w:11,op:.22,colors:BLUSH.concat(['#ffb347','#b388ff'])},
+ {id:'shadow',e:'👁️',name:'Eyeshadow',w:6,op:.4,colors:SHADOW},
+ {id:'liner',e:'✏️',name:'Eyeliner',w:1.6,op:1,colors:['#2b1a2e','#5b3a7a','#2f6fb5','#3c8d5a','#c2185b']},
+ {id:'paint',e:'🎨',name:'Face paint',w:3,op:.95,colors:['#ff5a5a','#ffb347','#ffd23f','#7ee081','#4fb6ff','#b388ff','#ff6fae','#ffffff','#2d2d3a']},
+ {id:'glitter',e:'✨',name:'Glitter',w:2.4,op:1,dash:'0 5',colors:['#ffd23f','#ffffff','#ff8fc8','#b388ff','#4fb6ff','#7ee081']},
+];
+const brushState={id:null,c:{}};
+function strokeSVG(st){
+  if(!st.p||!st.p.length)return '';
+  const d='M'+st.p.map(q=>q[0]+' '+q[1]).join(' L')+(st.p.length===1?' l0.01 0':'');
+  return `<path d="${d}" fill="none" stroke="${st.c}" stroke-width="${st.w}" stroke-linecap="round" stroke-linejoin="round" opacity="${st.op}"${st.dash?` stroke-dasharray="${st.dash}"`:''}/>`;
+}
+const curBrush=()=>BRUSHES.find(b=>b.id===brushState.id);
+const brushColor=b=>brushState.c[b.id]||b.colors[0];
+function faceZoomVB(l){const cart=l.style==='cartoon',cy=cart?74:88,r=cart?62:48;const w=r*2.4,h=w*680/380;return `${150-w/2} ${cy-h*.36} ${w} ${h}`;}
+function hairZoomVB(l){const top=l.style==='cartoon'?-75:-40,w=250;return `${150-w/2} ${top} ${w} ${w*680/380}`;}
+const zoomMode=()=>tab==='makeup'&&brushState.id?'face':tab==='hair'&&salonTool?'hair':tab==='art'&&artSel?'art':null;
+function applyZoom(){
+  const sv=$('#stage svg');if(!sv)return;
+  const mode=zoomMode();
+  sv.setAttribute('viewBox',mode==='face'?faceZoomVB(L()):mode==='hair'?hairZoomVB(L()):VIEW);
+  $('#stage').classList.toggle('arting',tab==='art');
+  $('#stage').style.touchAction=mode?'none':'';sv.style.cursor=mode?'crosshair':'';
+  $('#stage').classList.toggle('painting',!!mode);
+}
+function toFace(ev){
+  const sv=$('#stage svg');const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
+  const q=pt.matrixTransform(sv.getScreenCTM().inverse());
+  let x=q.x,y=q.y;if(L().style==='cartoon'){x=150+(x-150)/1.3;y=135+(y-135)/1.3;}
+  return [Math.round(x*2)/2,Math.round(y*2)/2];
+}
+let drawing=null;
+$('#stage').addEventListener('pointerdown',ev=>{
+  if(tab==='hair'&&salonTool){salonDown(ev);return;}
+  if(tab==='art'){artDown(ev);return;}
+  const b=curBrush();if(tab!=='makeup'||!b)return;
+  const layer=$('#stage .paintLayer');if(!layer)return;
+  ev.preventDefault();try{$('#stage').setPointerCapture(ev.pointerId);}catch(e){}
+  const st={c:brushColor(b),w:b.w,op:b.op,dash:b.dash||'',p:[toFace(ev)]};
+  layer.insertAdjacentHTML('beforeend',strokeSVG(st));
+  drawing={st,el:layer.lastElementChild,id:ev.pointerId};
+});
+$('#stage').addEventListener('pointermove',ev=>{
+  if(salonDrag){salonMove(ev);return;}
+  if(artDrag){artMove(ev);return;}
+  if(!drawing||ev.pointerId!==drawing.id)return;ev.preventDefault();
+  const q=toFace(ev),last=drawing.st.p[drawing.st.p.length-1];
+  if(Math.hypot(q[0]-last[0],q[1]-last[1])<.8)return;
+  drawing.st.p.push(q);drawing.el.outerHTML=strokeSVG(drawing.st);drawing.el=$('#stage .paintLayer').lastElementChild;
+});
+const endStroke=ev=>{
+  if(salonDrag){salonDrag=null;persist();if(tab==='hair')renderPanel();return;}
+  if(artDrag){artDrag=null;persist();return;}
+  if(!drawing||(ev&&ev.pointerId!==drawing.id))return;
+  const st=drawing.st;drawing=null;
+  const m=L().makeup;m.strokes=(m.strokes||[]).concat([st]).slice(-150);persist();
+  if(DB.music&&DB.music.sfx)Music.sfx();
+};
+$('#stage').addEventListener('pointerup',endStroke);
+$('#stage').addEventListener('pointercancel',endStroke);
+function paintPanel(){
+  const b=curBrush();
+  let h=`<h3>🖌️ Paint with your finger</h3><p class="hint">${b?'Paint right on the face! Pick another brush or color anytime.':'Pick a brush, then draw on the face with your finger or mouse.'}</p><div class="grid">`;
+  h+=BRUSHES.map(x=>`<button class="item ${brushState.id===x.id?'on':''}" data-act="brush" data-id="${x.id}"><span class="big">${x.e}</span><span class="nm">${x.name}</span></button>`).join('')+'</div>';
+  if(b)h+=`<h3>${b.name} color</h3>`+swatches('brushColor',b.colors,brushColor(b));
+  const n=(L().makeup.strokes||[]).length;
+  h+=`<div class="addrow">${b?`<button class="pill" data-act="brushDone">✋ Done painting</button>`:''}<button class="pill soft" data-act="undoStroke" ${n?'':'disabled'}>↩️ Undo</button><button class="pill soft" data-act="washFace" ${n?'':'disabled'}>🧼 Wash face</button></div>`;
+  return h;
+}
+
+/* ---------- selfie face ---------- */
+const crop={img:null,s:1,min:1,ox:0,oy:0};
+const OV={cx:300,cy:300,rx:200,ry:230};
+function drawCrop(){
+  const cv=$('#cropCanvas'),x=cv.getContext('2d'),im=crop.img;if(!im)return;
+  x.clearRect(0,0,600,600);x.drawImage(im,crop.ox,crop.oy,im.width*crop.s,im.height*crop.s);
+  x.save();x.fillStyle='rgba(59,35,87,.55)';x.beginPath();x.rect(0,0,600,600);x.ellipse(OV.cx,OV.cy,OV.rx,OV.ry,0,0,Math.PI*2);x.fill('evenodd');
+  x.strokeStyle='#ff6fae';x.lineWidth=6;x.setLineDash([16,12]);x.beginPath();x.ellipse(OV.cx,OV.cy,OV.rx,OV.ry,0,0,Math.PI*2);x.stroke();x.restore();
+}
+function setZoom(v){
+  const im=crop.img,cx=300,cy=300,old=crop.s;
+  crop.s=crop.min*(1+v/100*2.5);
+  crop.ox=cx-(cx-crop.ox)*crop.s/old;crop.oy=cy-(cy-crop.oy)*crop.s/old;drawCrop();
+}
+function openCrop(file){
+  const url=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{crop.img=im;crop.min=Math.max(2*OV.rx/im.width,2*OV.ry/im.height);crop.s=crop.min;
+    crop.ox=300-im.width*crop.s/2;crop.oy=300-im.height*crop.s/2;$('#cropZoom').value=0;setZoom(30);$('#cropZoom').value=30;
+    $('#cropModal').classList.add('show');};
+  im.onerror=()=>toast('😕 Could not open that picture');
+  im.src=url;
+}
+$('#content').addEventListener('change',e=>{const i=e.target.closest('[data-selfie]');if(!i||!i.files[0])return;openCrop(i.files[0]);i.value='';});
+$('#cropZoom').addEventListener('input',e=>setZoom(+e.target.value));
+(()=>{let drag=null;const cv=$('#cropCanvas');
+  const sc=()=>600/cv.getBoundingClientRect().width;
+  cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,ox:crop.ox,oy:crop.oy};try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',e=>{if(!drag)return;const k=sc();crop.ox=drag.ox+(e.clientX-drag.x)*k;crop.oy=drag.oy+(e.clientY-drag.y)*k;drawCrop();});
+  const up=()=>drag=null;cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',e=>{e.preventDefault();const z=$('#cropZoom');z.value=Math.max(0,Math.min(100,+z.value-Math.sign(e.deltaY)*5));setZoom(+z.value);},{passive:false});
+})();
+function cartoonize(src){
+  const W=src.width,H=src.height,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.drawImage(src,0,0);
+  const id=x.getImageData(0,0,W,H),d=id.data,N=W*H;let a=new Float32Array(N*3);
+  for(let i=0;i<N;i++){a[i*3]=d[i*4];a[i*3+1]=d[i*4+1];a[i*3+2]=d[i*4+2];}
+  for(let pass=0;pass<3;pass++){const b=new Float32Array(N*3);
+    for(let y=0;y<H;y++)for(let X=0;X<W;X++){let r=0,g=0,bb=0,n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const yy=y+dy,xx=X+dx;if(yy<0||yy>=H||xx<0||xx>=W)continue;const o=(yy*W+xx)*3;r+=a[o];g+=a[o+1];bb+=a[o+2];n++;}const o=(y*W+X)*3;b[o]=r/n;b[o+1]=g/n;b[o+2]=bb/n;}
+    a=b;}
+  const gray=new Float32Array(N);for(let i=0;i<N;i++)gray[i]=.3*a[i*3]+.59*a[i*3+1]+.11*a[i*3+2];
+  const q=v=>Math.round(v/255*6)*255/6;
+  for(let y=0;y<H;y++)for(let X=0;X<W;X++){const i=y*W+X,o=i*3;
+    let r=a[o],g=a[o+1],b=a[o+2];const m=(r+g+b)/3;r=m+(r-m)*1.35;g=m+(g-m)*1.35;b=m+(b-m)*1.35;
+    let e=0;if(y>0&&y<H-1&&X>0&&X<W-1){const G=(dx,dy)=>gray[(y+dy)*W+X+dx];const gx=-G(-1,-1)-2*G(-1,0)-G(-1,1)+G(1,-1)+2*G(1,0)+G(1,1),gy=-G(-1,-1)-2*G(0,-1)-G(1,-1)+G(-1,1)+2*G(0,1)+G(1,1);e=Math.hypot(gx,gy);}
+    const k=e>70?.3:e>45?.65:1;
+    d[i*4]=Math.max(0,Math.min(255,q(r)*k));d[i*4+1]=Math.max(0,Math.min(255,q(g)*k));d[i*4+2]=Math.max(0,Math.min(255,q(b)*k));}
+  x.putImageData(id,0,0);return c.toDataURL('image/jpeg',.85);
+}
+function nearestSkin(r,g,b){let best=SKIN[0],bd=1e9;for(const h of SKIN){const n=parseInt(h.slice(1),16),d=(r-(n>>16))**2+(g-(n>>8&255))**2+(b-(n&255))**2;if(d<bd){bd=d;best=h;}}return best;}
+$('#cropUse').onclick=()=>{
+  const W=160,H=184,out=document.createElement('canvas');out.width=W;out.height=H;const x=out.getContext('2d');
+  const k=W/(2*OV.rx),im=crop.img;
+  x.drawImage(im,(crop.ox-(OV.cx-OV.rx))*k,(crop.oy-(OV.cy-OV.ry))*k,im.width*crop.s*k,im.height*crop.s*k);
+  let skin=null;try{const d=x.getImageData(W*.22,H*.55,W*.18,H*.12).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}skin=nearestSkin(r/n,g/n,b/n);}catch(e){}
+  const data=out.toDataURL('image/jpeg',.82),toon=cartoonize(out);
+  $('#cropModal').classList.remove('show');
+  update(l=>{l.photo=data;l.photoToon=toon;l.photoOn=true;l.photoMode=l.photoMode||'photo';if(skin)l.skin=skin;});
+  toast('🤳 Looking great!');
+};
+
+/* salon tools */
+const SALON_TOOLS=[
+ {id:'cut',e:'✂️',name:'Cut',hint:'Drag across the hair where you want to cut it.'},
+ {id:'grow',e:'🧴',name:'Grow',hint:'Drag down to make the hair grow longer.'},
+ {id:'braid',e:'🪢',name:'Braid',hint:'Tap the left or right side to braid it. Tap again to take it out.'},
+ {id:'curl',e:'🌀',name:'Curl',hint:'Tap a side to curl it. Tap again to straighten it.'},
+ {id:'brush',e:'🪮',name:'Brush out',hint:'Tap a side to brush it straight and loose.'},
+ {id:'bangs',e:'💇‍♀️',name:'Bangs',hint:'Tap the head to try different bangs.'},
+ {id:'spray',e:'🎨',name:'Color spray',hint:'Paint colorful streaks right on the hair.'},
+ {id:'clips',e:'🎀',name:'Clips',hint:'Tap the hair to put clips in it.'},
+];
+const CLIP_KINDS=[{id:'bow',e:'🎀'},{id:'star',e:'⭐'},{id:'flower',e:'🌼'},{id:'heart',e:'💖'}];
+const SPRAY=['#ff6fae','#b388ff','#4fb6ff','#2ec4b6','#7ee081','#ffd23f','#ff8a3d','#ff5a5a','#ffffff'];
+let salonTool=null,salonDrag=null,salonRAF=0,salonOpt={spray:'#ff6fae',clip:'bow',clipC:'#ff4d8d'};
+function ensureSalon(l){if(!l.salon)l.salon=SALON_DEFAULT();if(l.hairStyle!=='salon'){l.hairStyle='salon';}}
+function salonRender(){if(salonRAF)return;salonRAF=requestAnimationFrame(()=>{salonRAF=0;renderStage();});}
+function salonDown(ev){
+  ev.preventDefault();try{$('#stage').setPointerCapture(ev.pointerId);}catch(e){}
+  const l=L();ensureSalon(l);const S=l.salon,q=toFace(ev),side=q[0]<150?'left':'right';
+  const fx=()=>{persist();renderStage();if(DB.music&&DB.music.sfx)Music.sfx();sparkle();};
+  switch(salonTool){
+    case 'cut':case 'grow':salonDrag={id:ev.pointerId};salonMove(ev);break;
+    case 'braid':S[side]=S[side]==='braid'?'loose':'braid';fx();break;
+    case 'curl':S[side]=S[side]==='curly'?'loose':'curly';fx();break;
+    case 'brush':S[side]='loose';fx();break;
+    case 'bangs':{const o=['side','straight','sweep','part'];S.bangs=o[(o.indexOf(S.bangs)+1)%o.length];fx();break;}
+    case 'clips':S.clips=(S.clips||[]).concat([{k:salonOpt.clip,x:q[0],y:q[1],c:salonOpt.clipC}]).slice(-30);fx();break;
+    case 'spray':S.streaks=(S.streaks||[]).concat([{c:salonOpt.spray,w:7,op:.75,p:[q]}]).slice(-80);salonDrag={id:ev.pointerId,spray:true};salonRender();break;
+  }
+}
+function salonMove(ev){
+  if(!salonDrag||ev.pointerId!==salonDrag.id)return;ev.preventDefault();
+  const S=L().salon,q=toFace(ev);
+  if(salonDrag.spray){const st=S.streaks[S.streaks.length-1],last=st.p[st.p.length-1];if(Math.hypot(q[0]-last[0],q[1]-last[1])<1)return;st.p.push(q);}
+  else if(salonTool==='cut'){if(q[1]>70&&q[1]<S.len)S.len=Math.max(100,Math.round(q[1]));else return;}
+  else if(salonTool==='grow'){if(q[1]>S.len)S.len=Math.min(300,Math.round(q[1]));else return;}
+  salonRender();
+}
+function salonPanel(l){
+  const t=SALON_TOOLS.find(x=>x.id===salonTool);
+  let h=`<h3>💇 Hair salon</h3><p class="hint">${t?t.hint:'Pick a tool, then style the hair right on the picture!'}</p><div class="grid">`;
+  h+=SALON_TOOLS.map(x=>`<button class="item ${salonTool===x.id?'on':''}" data-act="salonTool" data-id="${x.id}"><span class="big">${x.e}</span><span class="nm">${x.name}</span></button>`).join('')+'</div>';
+  if(salonTool==='spray')h+=`<h3>Spray color</h3>`+swatches('sprayColor',SPRAY,salonOpt.spray);
+  if(salonTool==='clips')h+=`<h3>Clip</h3><div class="grid">`+CLIP_KINDS.map(k=>`<button class="item ${salonOpt.clip===k.id?'on':''}" data-act="clipKind" data-id="${k.id}"><span class="big">${k.e}</span></button>`).join('')+`</div><h3>Clip color</h3>`+swatches('clipColor',CLOTHC,salonOpt.clipC);
+  const S=l.salon||{};
+  h+=`<div class="addrow">${salonTool?`<button class="pill" data-act="salonDone">✋ Done styling</button>`:''}${(S.streaks||[]).length?`<button class="pill soft" data-act="washColor">🚿 Wash out color</button>`:''}${(S.clips||[]).length?`<button class="pill soft" data-act="takeClips">🎀 Take out clips</button>`:''}${l.hairStyle==='salon'?`<button class="pill soft" data-act="salonReset">🔄 Start over</button>`:''}</div>`;
+  return h;
+}
+
+/* ---------- her own drawings ---------- */
+const ART={};
+const ART_KINDS=[
+ {id:'clothes',e:'👚',name:'Clothes',box:[92,150,116,140],layer:'body'},
+ {id:'dress',e:'👗',name:'Dress',box:[66,150,168,310],layer:'body'},
+ {id:'hat',e:'👑',name:'Hat',box:[95,-10,110,70],layer:'head'},
+ {id:'shoes',e:'👟',name:'Shoes',box:[108,536,84,50],layer:'feet'},
+ {id:'thing',e:'👜',name:'Thing to hold',box:[184,290,64,74],layer:'hand'},
+ {id:'bg',e:'🏞️',name:'Background',box:[-40,-75,380,680],layer:'bg'},
+];
+let artSel=null,artHighlight=false;
+function artLayers(L){
+  const out={body:'',feet:'',hand:'',head:''};
+  for(const w of L.art||[]){const a=ART[w.id];if(!a)continue;const k=ART_KINDS.find(x=>x.id===a.kind);if(!k||k.layer==='bg')continue;
+    let img=`<image href="${a.data}" x="${w.x}" y="${w.y}" width="${w.w}" height="${w.h}" preserveAspectRatio="xMidYMid meet"/>`;
+    if(artHighlight&&w.u===artSel)img+=`<rect x="${w.x}" y="${w.y}" width="${w.w}" height="${w.h}" fill="none" stroke="#ff6fae" stroke-width="2.5" stroke-dasharray="7 5" rx="6"/>`;
+    out[k.layer]+=img;}
+  return out;
+}
+function bgSVG(L,name){const a=L.artBg&&ART[L.artBg];return a?`<rect x="-40" y="-75" width="380" height="680" fill="#fff"/><image href="${a.data}" x="-40" y="-75" width="380" height="680" preserveAspectRatio="xMidYMid slice"/>`:sceneSVG(L.scene,name);}
+const ArtDB={
+  db:null,
+  open(){return new Promise((res,rej)=>{if(this.db)return res(this.db);try{const r=indexedDB.open('brynny-art',1);r.onupgradeneeded=()=>r.result.createObjectStore('art',{keyPath:'id'});r.onsuccess=()=>{this.db=r.result;res(this.db);};r.onerror=()=>rej(r.error);}catch(e){rej(e);}});},
+  async all(){const db=await this.open();return new Promise(res=>{const q=db.transaction('art').objectStore('art').getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>res([]);});},
+  async put(rec){const db=await this.open();return new Promise((res,rej)=>{const tx=db.transaction('art','readwrite');tx.objectStore('art').put(rec);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});},
+  async del(id){const db=await this.open();return new Promise(res=>{const tx=db.transaction('art','readwrite');tx.objectStore('art').delete(id);tx.oncomplete=res;tx.onerror=res;});},
+};
+async function loadArt(){try{for(const a of await ArtDB.all())ART[a.id]=a;}catch(e){}}
+function cutOutPaper(file){
+  return new Promise((res,rej)=>{const url=URL.createObjectURL(file),im=new Image();
+    im.onload=()=>{
+      const M=640,k=Math.min(1,M/Math.max(im.width,im.height)),W=Math.round(im.width*k),H=Math.round(im.height*k);
+      const cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');x.drawImage(im,0,0,W,H);
+      const id=x.getImageData(0,0,W,H),d=id.data;
+      // already transparent? keep as is
+      let clear=0,edge=0;const lum=[];
+      for(let i=0;i<W;i++)for(const j of [0,H-1]){const o=(j*W+i)*4;edge++;if(d[o+3]<20)clear++;else lum.push((d[o]+d[o+1]+d[o+2])/3);}
+      for(let j=0;j<H;j++)for(const i of [0,W-1]){const o=(j*W+i)*4;edge++;if(d[o+3]<20)clear++;else lum.push((d[o]+d[o+1]+d[o+2])/3);}
+      if(clear<edge*.5){
+        lum.sort((a,b)=>a-b);const paper=lum[Math.floor(lum.length*.5)]||240,hi=paper-18,lo=paper-60;
+        for(let o=0;o<d.length;o+=4){const r=d[o],g=d[o+1],b=d[o+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),L=(r+g+b)/3;
+          if(mx-mn<45){if(L>=hi)d[o+3]=0;else if(L>lo)d[o+3]=Math.round(255*(hi-L)/(hi-lo));}}
+        x.putImageData(id,0,0);
+      }
+      // trim
+      let x0=W,y0=H,x1=-1,y1=-1;
+      for(let j=0;j<H;j++)for(let i=0;i<W;i++)if(d[(j*W+i)*4+3]>30){if(i<x0)x0=i;if(i>x1)x1=i;if(j<y0)y0=j;if(j>y1)y1=j;}
+      if(x1<0){rej(new Error('empty'));return;}
+      const pad=4;x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(W-1,x1+pad);y1=Math.min(H-1,y1+pad);
+      const out=document.createElement('canvas');out.width=x1-x0+1;out.height=y1-y0+1;out.getContext('2d').drawImage(cv,x0,y0,out.width,out.height,0,0,out.width,out.height);
+      res({data:out.toDataURL('image/png'),bgData:(()=>{const c2=document.createElement('canvas');c2.width=W;c2.height=H;c2.getContext('2d').drawImage(im,0,0,W,H);return c2.toDataURL('image/jpeg',.85);})()});
+    };
+    im.onerror=()=>rej(new Error('bad image'));im.src=url;});
+}
+let pendingArt=null;
+function wearArt(l,a){
+  const k=ART_KINDS.find(x=>x.id===a.kind);
+  if(k.layer==='bg'){l.artBg=l.artBg===a.id?null:a.id;artSel=null;return;}
+  l.art=l.art||[];const i=l.art.findIndex(w=>w.id===a.id);
+  if(i>=0){l.art.splice(i,1);artSel=null;return;}
+  const [bx,by,bw,bh]=k.box,u=uid();l.art.push({u,id:a.id,x:bx,y:by,w:bw,h:bh});artSel=u;
+}
+function artPanel(l){
+  let h=`<h3>🖍️ My drawings</h3><p class="hint">Draw something on white paper, then take a picture. The white paper disappears and your drawing goes on the doll!</p>
+   <div class="addrow" style="margin-top:0"><label class="pill" style="cursor:pointer;font-size:16px;padding:12px 16px">📸 Add a drawing<input type="file" accept="image/*" capture="environment" hidden data-artfile></label></div>`;
+  const list=Object.values(ART).sort((a,b)=>b.at-a.at);
+  if(list.length){
+    h+=`<div class="grid" style="margin-top:12px">`+list.map(a=>{const k=ART_KINDS.find(x=>x.id===a.kind),on=k.layer==='bg'?l.artBg===a.id:(l.art||[]).some(w=>w.id===a.id);
+      return `<button class="item ${on?'on':''}" data-act="artWear" data-id="${a.id}"><img src="${a.kind==='bg'?a.bg:a.data}" alt="" style="width:100%;flex:1;min-height:0;object-fit:contain"><span class="nm">${k.e} ${k.name}</span></button>`;}).join('')+'</div>';
+  }else h+=`<div class="empty">No drawings yet. Grab some paper and crayons! 🖍️</div>`;
+  const w=(l.art||[]).find(x=>x.u===artSel);
+  if(w){const a=ART[w.id],k=ART_KINDS.find(x=>x.id===a.kind),pct=Math.round(w.w/k.box[2]*100);
+    h+=`<h3>Move and size it</h3><p class="hint">Drag it on the picture to move it.</p>
+      <div class="mrow"><span>🔹</span><input type="range" id="artSize" min="30" max="250" value="${pct}" aria-label="Size"><span>🔷</span></div>
+      <div class="addrow"><button class="pill" data-act="artDone">✋ Done</button><button class="pill soft" data-act="artOff">Take it off</button><button class="pill soft" data-act="artDel" data-id="${a.id}">🗑️ Delete drawing</button></div>`;}
+  else if(list.length)h+=`<p class="hint">Tap a drawing to put it on or take it off. Tap one she's wearing on the picture to move it.</p>`;
+  return h;
+}
+function toSvgPt(ev){const sv=$('#stage svg');const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(sv.getScreenCTM().inverse());return [q.x,q.y];}
+function artPt(ev,w){const a=ART[w.id],k=ART_KINDS.find(x=>x.id===a.kind);let [x,y]=toSvgPt(ev);if(k.layer==='head'&&L().style==='cartoon'){x=150+(x-150)/1.3;y=135+(y-135)/1.3;}return [x,y];}
+let artDrag=null;
+function artDown(ev){
+  const l=L();let w=(l.art||[]).find(x=>x.u===artSel);
+  if(!w){for(const c of [...(l.art||[])].reverse()){const [x,y]=artPt(ev,c);if(x>=c.x&&x<=c.x+c.w&&y>=c.y&&y<=c.y+c.h){w=c;artSel=c.u;renderPanel();break;}}}
+  if(!w)return false;
+  ev.preventDefault();try{$('#stage').setPointerCapture(ev.pointerId);}catch(e){}
+  const [x,y]=artPt(ev,w);artDrag={id:ev.pointerId,w,sx:x,sy:y,ox:w.x,oy:w.y};return true;
+}
+function artMove(ev){if(!artDrag||ev.pointerId!==artDrag.id)return;ev.preventDefault();const [x,y]=artPt(ev,artDrag.w);artDrag.w.x=Math.round(artDrag.ox+x-artDrag.sx);artDrag.w.y=Math.round(artDrag.oy+y-artDrag.sy);salonRender();}
 
 /* ---------- UI ---------- */
 const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'Hair'},{id:'makeup',ico:'💄',name:'Makeup'},{id:'tops',ico:'👚',name:'Tops'},{id:'bottoms',ico:'👖',name:'Bottoms'},
-  {id:'dresses',ico:'👗',name:'Dresses'},{id:'shoes',ico:'👠',name:'Shoes'},{id:'hats',ico:'👑',name:'Hats'},{id:'extras',ico:'👜',name:'Extras'},{id:'scenes',ico:'🎃',name:'Places'}];
+  {id:'dresses',ico:'👗',name:'Dresses'},{id:'shoes',ico:'👠',name:'Shoes'},{id:'hats',ico:'👑',name:'Hats'},{id:'extras',ico:'👜',name:'Extras'},{id:'art',ico:'🖍️',name:'My Art'},{id:'scenes',ico:'🎃',name:'Places'}];
 
 const STAGEBG={studio:'#f6e6fb',bedroom:'#ecd9f7',birthday:'#ffeaf0',halloween:'#2a1440',christmas:'#1d3a63',wedding:'#fff0f5',beach:'#c9eeff',runway:'#1a1028'};
-function renderStage(){$('#stage').innerHTML=fullSVG(L(),me().name);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;}
+function renderStage(){artHighlight=tab==='art';$('#stage').innerHTML=fullSVG(L(),me().name);artHighlight=false;$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();}
 function renderTabs(){$('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
 function swatches(act,list,sel,{none=false,arg=''}={}){
   let h='<div class="swatches">';if(none)h+=`<button class="sw none ${!sel?'on':''}" data-act="${act}" data-arg="${arg}" data-c="" aria-label="none"></button>`;
@@ -523,16 +871,28 @@ function renderPanel(){
   if(tab==='me'){
     h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button></div>`;
     h+=`<h3>Skin</h3>`+swatches('skin',SKIN,l.skin)+`<h3>Eyes</h3>`+swatches('eyes',EYES,l.eyes);
+    h+=`<h3>📷 My face</h3>`;
+    if(l.photo){
+      h+=`<div class="addrow" style="margin-top:0;align-items:center"><img src="${l.photo}" alt="" style="width:64px;height:74px;object-fit:cover;border-radius:50%;border:3px solid var(--pink2)">
+        <div class="seg" style="flex:1"><button class="${l.photoOn&&l.photoMode!=='toon'?'on':''}" data-act="photoOn" data-c="photo">📷 Photo</button>${l.photoToon?`<button class="${l.photoOn&&l.photoMode==='toon'?'on':''}" data-act="photoOn" data-c="toon">🖍️ Cartoon me</button>`:''}<button class="${l.photoOn?'':'on'}" data-act="photoOn" data-c="">🎨 Drawn</button></div></div>
+        <div class="addrow"><label class="pill soft" style="cursor:pointer">🔄 New picture<input type="file" accept="image/*" capture="user" hidden data-selfie></label><button class="pill soft" data-act="photoDel">🗑️ Remove picture</button></div>`;
+    }else{
+      h+=`<div class="addrow" style="margin-top:0"><label class="pill" style="cursor:pointer;font-size:16px;padding:12px 16px">🤳 Take a selfie<input type="file" accept="image/*" capture="user" hidden data-selfie></label></div>`;
+    }
+    h+=`<p class="hint">Put your real face on the doll! The picture stays on this device.</p>`;
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
-    h+=`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Hair style</h3><div class="grid">`;
+    h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
     for(const it of HAIR){const p=it.d(hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle===it.id,'hair','',it.id,mini('56 -6 188 280',`${p.back||''}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front||''}`),it.name);}
     h+='</div>';
   }else if(tab==='makeup'){
     const m=l.makeup;
+    h+=paintPanel()+`<details class="quick" ${quickOpen?'open':''}><summary>⚡ Quick makeup buttons</summary>`;
     h+=`<h3>Eyeshadow</h3>`+swatches('mk',SHADOW,m.shadow,{none:true,arg:'shadow'})+`<h3>Lipstick</h3>`+swatches('mk',LIPS,m.lips,{none:true,arg:'lips'})+`<h3>Blush</h3>`+swatches('mk',BLUSH,m.blush,{none:true,arg:'blush'});
     h+=`<h3>Lashes</h3><div class="grid">`+LASHES.map(x=>tile(m.lashes===x.id,'mkItem','lashes',x.id,faceOnly({makeup:{...m,lashes:x.id,paint:null}}),x.name)).join('')+'</div>';
-    h+=`<h3>Face paint</h3><div class="grid">`+noneTile(!m.paint,'mkItem','paint')+PAINT.map(x=>tile(m.paint===x.id,'mkItem','paint',x.id,faceOnly({makeup:{...m,paint:x.id}}),x.name)).join('')+'</div>';
+    h+=`<h3>Face stickers</h3><div class="grid">`+noneTile(!m.paint,'mkItem','paint')+PAINT.map(x=>tile(m.paint===x.id,'mkItem','paint',x.id,faceOnly({makeup:{...m,paint:x.id}}),x.name)).join('')+'</div></details>';
+  }else if(tab==='art'){
+    h+=artPanel(l);
   }else if(tab==='scenes'){
     h+=`<h3>Where are you going?</h3><div class="grid">`+SCENES.map(s=>tile(l.scene===s.id,'scene','',s.id,mini(VIEW,DEFS+sceneSVG(s.id,'')),s.name)).join('')+'</div>';
   }else if(tab==='extras'){
@@ -556,19 +916,40 @@ function update(fn,{panel=true}={}){fn(L());persist();renderStage();if(typeof Mu
 function sparkle(){const st=$('#stage');for(let i=0;i<4;i++){const s=document.createElement('span');s.className='spark';s.textContent=rnd(['✨','💖','⭐','✨']);s.style.left=(20+Math.random()*60)+'%';s.style.top=(10+Math.random()*70)+'%';st.appendChild(s);setTimeout(()=>s.remove(),900);}}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1800);}
 
-$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;renderTabs();renderPanel();$('#content').scrollTop=0;});
+$('#content').addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('details.quick'))quickOpen=e.target.open;},true);
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;if(tab==='makeup'&&!brushState.id)brushState.id='lips';renderTabs();renderPanel();renderStage();$('#content').scrollTop=0;});
 $('#content').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const {act,arg,id,c}=b.dataset;
+  if(act==='artDel'&&!b.dataset.sure){b.dataset.sure=1;b.textContent='Sure?';b.classList.add('warn');return;}
   update(l=>{
     switch(act){
       case 'style':l.style=c;break;
       case 'skin':l.skin=c;break;
       case 'eyes':l.eyes=c;break;
       case 'hairColor':l.hairColor=c;break;
-      case 'hair':l.hairStyle=id;break;
+      case 'hair':l.hairStyle=id;salonTool=null;break;
+      case 'salonTool':salonTool=salonTool===id?null:id;if(salonTool)ensureSalon(l);break;
+      case 'salonDone':salonTool=null;break;
+      case 'sprayColor':salonOpt.spray=c;break;
+      case 'clipKind':salonOpt.clip=id;break;
+      case 'clipColor':salonOpt.clipC=c;break;
+      case 'washColor':l.salon.streaks=[];break;
+      case 'takeClips':l.salon.clips=[];break;
+      case 'salonReset':l.salon=SALON_DEFAULT();break;
+      case 'artWear':wearArt(l,ART[id]);break;
+      case 'artDone':artSel=null;break;
+      case 'artOff':l.art=(l.art||[]).filter(w=>w.u!==artSel);artSel=null;break;
+      case 'artDel':l.art=(l.art||[]).filter(w=>w.id!==id);if(l.artBg===id)l.artBg=null;artSel=null;delete ART[id];ArtDB.del(id);break;
       case 'mk':l.makeup[arg]=c||null;break;
       case 'mkItem':l.makeup[arg]=id||null;break;
-      case 'scene':l.scene=id;break;
+      case 'scene':l.scene=id;l.artBg=null;break;
+      case 'brush':brushState.id=brushState.id===id?null:id;break;
+      case 'brushColor':brushState.c[brushState.id]=c;break;
+      case 'brushDone':brushState.id=null;break;
+      case 'undoStroke':l.makeup.strokes=(l.makeup.strokes||[]).slice(0,-1);break;
+      case 'washFace':l.makeup.strokes=[];break;
+      case 'photoOn':l.photoOn=!!c;if(c)l.photoMode=c;break;
+      case 'photoDel':delete l.photo;delete l.photoToon;l.photoOn=false;break;
       case 'extra':if(id in l.extras){delete l.extras[id];}else{l.extras[id]=find(EXTRAS,id).c;lastExtra=id;}break;
       case 'wear':{const k=KEY[arg];if(!id){l[k]=null;}else{const it=find(CATS[arg],id);l[k]={id,c:l[k]&&l[k].id===id?l[k].c:it.c};}
         if(id&&(arg==='tops'||arg==='bottoms'))l.dress=null;break;}
@@ -611,7 +992,7 @@ $('#galCards').addEventListener('click',e=>{
   if(d){if(d.dataset.sure){DB.gallery=DB.gallery.filter(x=>x.id!==d.dataset.gdel);persist();renderGallery();}else{d.dataset.sure=1;d.textContent='Sure?';d.classList.add('warn');}}
 });
 function exportPNG(look,name){
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1360" viewBox="${VIEW}">${DEFS}${sceneSVG(look.scene,name)}${charInner(look)}</svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1360" viewBox="${VIEW}">${DEFS}${bgSVG(look,name)}${charInner(look)}</svg>`;
   const img=new Image();
   img.onload=()=>{const cv=document.createElement('canvas');cv.width=760;cv.height=1360;cv.getContext('2d').drawImage(img,0,0);
     cv.toBlob(async b=>{const fn=`${(name||'my').replace(/[^\w-]+/g,'_')}-look.png`;
@@ -653,7 +1034,10 @@ const TRACKS=[
   mel:'C5 r C5 D#5 r F5 D#5 C5 | A#4 r A#4 C5 r D#5 C5 A#4 | G#4 r G#4 C5 r D#5 F5 G5 | G5/2 F5/2 D#5/2 D5/2',
   bass:'C2/1*8 A#1/1*8 G#1/1*8 G1/1*8',drums:'xhsxhxsh'},
 ];
-const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'bday',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
+const SUNO={id:'suno',e:'🎤',name:"Brynny's Song",page:'https://suno.com/s/gJZRXIPoHCDMpTkO',
+  urls:['https://cdn1.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3','https://cdn2.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3']};
+let sunoFailed=false,sunoGen=0;
+const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'suno',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
 const Music=(()=>{
   let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
@@ -724,24 +1108,33 @@ const SongDB={
 };
 let songs=[],songUrl=null;
 async function loadSongs(){try{songs=await SongDB.all();}catch(e){songs=[];}}
+function playSuno(){
+  Music.stopSynth();const a=$('#songPlayer'),gen=++sunoGen;let i=0;
+  a.loop=true;a.volume=DB.music.vol/100;
+  const tryNext=()=>{if(gen!==sunoGen)return;
+    if(i>=SUNO.urls.length){sunoFailed=true;a.onerror=null;toast("🎂 Brynny's Song didn't load, so here's Happy Birthday!");Music.playTrack('bday');musicPlayingTrack='bday';return;}
+    a.src=SUNO.urls[i++];a.play().catch(err=>{if(err&&err.name==='NotSupportedError')tryNext();});};
+  a.onerror=tryNext;tryNext();
+}
 function playSong(id){
-  const sg=songs.find(x=>x.id===id);if(!sg)return;Music.stopSynth();
-  const a=$('#songPlayer');if(songUrl)URL.revokeObjectURL(songUrl);songUrl=URL.createObjectURL(sg.blob);a.src=songUrl;a.volume=DB.music.vol/100;a.play().catch(()=>{});
+  const sg=songs.find(x=>x.id===id);if(!sg)return;Music.stopSynth();sunoGen++;
+  const a=$('#songPlayer');a.onerror=null;a.loop=false;if(songUrl)URL.revokeObjectURL(songUrl);songUrl=URL.createObjectURL(sg.blob);a.src=songUrl;a.volume=DB.music.vol/100;a.play().catch(()=>{});
 }
 $('#songPlayer').addEventListener('ended',()=>{const i=songs.findIndex(x=>'song:'+x.id===DB.music.track);const nx=songs[(i+1)%songs.length];if(nx){DB.music.track='song:'+nx.id;persist();playSong(nx.id);renderMusic();}});
-function wantedTrack(){const t=DB.music.track;return t==='auto'?SCENE_TRACK[L().scene]:t;}
+function wantedTrack(){let t=DB.music.track;if(t==='auto')t=SCENE_TRACK[L().scene];return t==='suno'&&sunoFailed?'bday':t;}
 function applyMusic(){
   const t=wantedTrack();
   if(!t||t==='off'){Music.stopAll();}
   else if(t.startsWith('song:'))playSong(t.slice(5));
-  else Music.playTrack(t);
+  else if(t==='suno')playSuno();
+  else{sunoGen++;Music.playTrack(t);}
   musicPlayingTrack=t;
   $('#musicBtn').classList.toggle('playing',!!t&&t!=='off');
 }
 let musicPlayingTrack=null;
 function renderMusic(){
   const m=DB.music;
-  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},...TRACKS];
+  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...TRACKS];
   $('#trackList').innerHTML=opts.map(o=>`<button class="track ${m.track===o.id?'on':''}" data-track="${o.id}"><span class="e">${o.e}</span>${o.name}</button>`).join('');
   $('#vol').value=m.vol;
   $('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';
@@ -766,7 +1159,28 @@ DB.music=Object.assign({track:'auto',vol:60,sfx:true},DB.music||{});
 let musicStarted=false;
 document.addEventListener('pointerdown',()=>{if(musicStarted)return;musicStarted=true;Music.ensure();loadSongs().then(applyMusic);},{capture:true});
 
+$('#content').addEventListener('change',async e=>{
+  const i=e.target.closest('[data-artfile]');if(!i||!i.files[0])return;const f=i.files[0];i.value='';
+  toast('✂️ Cutting out your drawing...');
+  try{pendingArt=await cutOutPaper(f);}catch(err){toast('😕 Could not use that picture');return;}
+  $('#artPreview').innerHTML=`<img src="${pendingArt.data}" alt="" style="max-width:100%;max-height:100%">`;
+  $('#artKinds').innerHTML=ART_KINDS.map(k=>`<button class="track" data-kind="${k.id}"><span class="e">${k.e}</span>${k.name}</button>`).join('');
+  $('#artModal').classList.add('show');
+});
+$('#artKinds').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-kind]');if(!b||!pendingArt)return;
+  const a={id:uid(),kind:b.dataset.kind,data:pendingArt.data,bg:pendingArt.bgData,at:Date.now()};
+  if(a.kind==='bg')a.data=pendingArt.bgData;
+  pendingArt=null;$('#artModal').classList.remove('show');
+  try{await ArtDB.put(a);}catch(err){toast('😕 Could not save the drawing');}
+  ART[a.id]=a;update(l=>wearArt(l,a));toast('🎨 Your drawing is on!');
+});
+document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=(L().art||[]).find(x=>x.u===artSel);if(!w)return;
+  const k=ART_KINDS.find(x=>x.id===ART[w.id].kind),f=+e.target.value/100,cx=w.x+w.w/2,cy=w.y+w.h/2;
+  w.w=Math.round(k.box[2]*f);w.h=Math.round(k.box[3]*f);w.x=Math.round(cx-w.w/2);w.y=Math.round(cy-w.h/2);persist();salonRender();});
+
 renderTabs();renderStage();renderPanel();
+loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
 if(!DB.welcomed)showWelcome();
 </script>
 </body>
