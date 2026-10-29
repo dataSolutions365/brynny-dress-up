@@ -3,6 +3,7 @@
 A birthday dress-up game that runs in any web browser (phone, tablet, or computer). No install, no game engine, and free to host on GitHub Pages.
 
 ## What's in it
+- Selfie face: take a picture, fit it in the oval, and put your real face on the doll (stays on the device)
 - Cartoon or fashion-doll look, skin tones, eye colors
 - 10 hair styles in 12 colors (including rainbow)
 - Makeup: paint it on with a finger or mouse (lipstick, blush, eyeshadow, eyeliner, face paint, glitter), plus quick-pick makeup and lashes

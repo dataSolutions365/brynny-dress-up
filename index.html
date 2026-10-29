@@ -80,7 +80,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .small{font-size:12px;color:var(--muted)}
 .addrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .addrow input{flex:1;min-width:150px;font-size:17px;border:2px solid #eadcf0;border-radius:12px;padding:10px 12px;color:var(--ink)}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;opacity:0;transition:.3s;z-index:40;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;opacity:0;transition:.3s;z-index:40;pointer-events:none;max-width:90vw;width:max-content;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .spark{position:absolute;font-size:26px;pointer-events:none;animation:pop .9s ease-out forwards}
 @keyframes pop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.8) translateY(-30px)}}
@@ -134,6 +134,14 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   </div>
 </div></div>
 
+<div class="modal" id="cropModal"><div class="sheet" style="max-width:380px;text-align:center">
+  <button class="close" data-close>×</button>
+  <h2>🤳 Fit your face</h2>
+  <p class="hint">Drag the picture so your face fills the oval.</p>
+  <canvas id="cropCanvas" width="600" height="600" style="width:min(300px,100%);aspect-ratio:1;border-radius:20px;touch-action:none;cursor:grab;background:#f6e3ef"></canvas>
+  <div class="mrow"><span>➖</span><input type="range" id="cropZoom" min="0" max="100" value="30" aria-label="Zoom"><span>➕</span></div>
+  <button class="big-btn" id="cropUse">Put it on! ✨</button>
+</div></div>
 <div class="modal" id="musicModal"><div class="sheet">
   <button class="close" data-close>×</button>
   <h2>🎵 Music</h2>
@@ -235,6 +243,13 @@ function face(L){
   const m=L.makeup||{};
   let s=sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
   s+=`<ellipse cx="150" cy="88" rx="40" ry="46" fill="${sk}"/>`;
+  if(L.photo&&L.photoOn){
+    s+=`<image href="${L.photo}" x="110" y="42" width="80" height="92" preserveAspectRatio="xMidYMid slice" clip-path="url(#faceClip)"/>`;
+    if(m.blush)s+=sym(`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".3"/>`);
+    s+=facePaint(m.paint);
+    s+=`<g clip-path="url(#faceClip)" class="paintLayer">${(m.strokes||[]).map(strokeSVG).join('')}</g>`;
+    return s;
+  }
   let one='';
   if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
   const iy=ey+(toon?1:0);
@@ -502,7 +517,8 @@ function load(){
   const id=uid();return {chars:[{id,name:'Brynny',look:defaultLook()}],cur:id,gallery:[],welcomed:false};
 }
 let DB=load();
-function persist(){try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}}
+let warnedFull=false;
+function persist(){try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){if(!warnedFull&&typeof toast==='function'){warnedFull=true;toast('😕 Storage is full. Delete some gallery photos.');}}}
 const me=()=>DB.chars.find(c=>c.id===DB.cur)||DB.chars[0];
 const L=()=>me().look;
 let tab='me',lastExtra=null;
@@ -571,6 +587,49 @@ function paintPanel(){
   return h;
 }
 
+/* ---------- selfie face ---------- */
+const crop={img:null,s:1,min:1,ox:0,oy:0};
+const OV={cx:300,cy:300,rx:200,ry:230};
+function drawCrop(){
+  const cv=$('#cropCanvas'),x=cv.getContext('2d'),im=crop.img;if(!im)return;
+  x.clearRect(0,0,600,600);x.drawImage(im,crop.ox,crop.oy,im.width*crop.s,im.height*crop.s);
+  x.save();x.fillStyle='rgba(59,35,87,.55)';x.beginPath();x.rect(0,0,600,600);x.ellipse(OV.cx,OV.cy,OV.rx,OV.ry,0,0,Math.PI*2);x.fill('evenodd');
+  x.strokeStyle='#ff6fae';x.lineWidth=6;x.setLineDash([16,12]);x.beginPath();x.ellipse(OV.cx,OV.cy,OV.rx,OV.ry,0,0,Math.PI*2);x.stroke();x.restore();
+}
+function setZoom(v){
+  const im=crop.img,cx=300,cy=300,old=crop.s;
+  crop.s=crop.min*(1+v/100*2.5);
+  crop.ox=cx-(cx-crop.ox)*crop.s/old;crop.oy=cy-(cy-crop.oy)*crop.s/old;drawCrop();
+}
+function openCrop(file){
+  const url=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{crop.img=im;crop.min=Math.max(2*OV.rx/im.width,2*OV.ry/im.height);crop.s=crop.min;
+    crop.ox=300-im.width*crop.s/2;crop.oy=300-im.height*crop.s/2;$('#cropZoom').value=0;setZoom(30);$('#cropZoom').value=30;
+    $('#cropModal').classList.add('show');};
+  im.onerror=()=>toast('😕 Could not open that picture');
+  im.src=url;
+}
+$('#content').addEventListener('change',e=>{const i=e.target.closest('[data-selfie]');if(!i||!i.files[0])return;openCrop(i.files[0]);i.value='';});
+$('#cropZoom').addEventListener('input',e=>setZoom(+e.target.value));
+(()=>{let drag=null;const cv=$('#cropCanvas');
+  const sc=()=>600/cv.getBoundingClientRect().width;
+  cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,ox:crop.ox,oy:crop.oy};try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',e=>{if(!drag)return;const k=sc();crop.ox=drag.ox+(e.clientX-drag.x)*k;crop.oy=drag.oy+(e.clientY-drag.y)*k;drawCrop();});
+  const up=()=>drag=null;cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',e=>{e.preventDefault();const z=$('#cropZoom');z.value=Math.max(0,Math.min(100,+z.value-Math.sign(e.deltaY)*5));setZoom(+z.value);},{passive:false});
+})();
+function nearestSkin(r,g,b){let best=SKIN[0],bd=1e9;for(const h of SKIN){const n=parseInt(h.slice(1),16),d=(r-(n>>16))**2+(g-(n>>8&255))**2+(b-(n&255))**2;if(d<bd){bd=d;best=h;}}return best;}
+$('#cropUse').onclick=()=>{
+  const W=160,H=184,out=document.createElement('canvas');out.width=W;out.height=H;const x=out.getContext('2d');
+  const k=W/(2*OV.rx),im=crop.img;
+  x.drawImage(im,(crop.ox-(OV.cx-OV.rx))*k,(crop.oy-(OV.cy-OV.ry))*k,im.width*crop.s*k,im.height*crop.s*k);
+  let skin=null;try{const d=x.getImageData(W*.22,H*.55,W*.18,H*.12).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}skin=nearestSkin(r/n,g/n,b/n);}catch(e){}
+  const data=out.toDataURL('image/jpeg',.82);
+  $('#cropModal').classList.remove('show');
+  update(l=>{l.photo=data;l.photoOn=true;if(skin)l.skin=skin;});
+  toast('🤳 Looking great!');
+};
+
 /* ---------- UI ---------- */
 const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'Hair'},{id:'makeup',ico:'💄',name:'Makeup'},{id:'tops',ico:'👚',name:'Tops'},{id:'bottoms',ico:'👖',name:'Bottoms'},
   {id:'dresses',ico:'👗',name:'Dresses'},{id:'shoes',ico:'👠',name:'Shoes'},{id:'hats',ico:'👑',name:'Hats'},{id:'extras',ico:'👜',name:'Extras'},{id:'scenes',ico:'🎃',name:'Places'}];
@@ -592,6 +651,15 @@ function renderPanel(){
   if(tab==='me'){
     h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button></div>`;
     h+=`<h3>Skin</h3>`+swatches('skin',SKIN,l.skin)+`<h3>Eyes</h3>`+swatches('eyes',EYES,l.eyes);
+    h+=`<h3>📷 My face</h3>`;
+    if(l.photo){
+      h+=`<div class="addrow" style="margin-top:0;align-items:center"><img src="${l.photo}" alt="" style="width:64px;height:74px;object-fit:cover;border-radius:50%;border:3px solid var(--pink2)">
+        <div class="seg" style="flex:1"><button class="${l.photoOn?'on':''}" data-act="photoOn" data-c="1">📷 Photo face</button><button class="${l.photoOn?'':'on'}" data-act="photoOn" data-c="">🎨 Drawn face</button></div></div>
+        <div class="addrow"><label class="pill soft" style="cursor:pointer">🔄 New picture<input type="file" accept="image/*" capture="user" hidden data-selfie></label><button class="pill soft" data-act="photoDel">🗑️ Remove picture</button></div>`;
+    }else{
+      h+=`<div class="addrow" style="margin-top:0"><label class="pill" style="cursor:pointer;font-size:16px;padding:12px 16px">🤳 Take a selfie<input type="file" accept="image/*" capture="user" hidden data-selfie></label></div>`;
+    }
+    h+=`<p class="hint">Put your real face on the doll! The picture stays on this device.</p>`;
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
     h+=`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Hair style</h3><div class="grid">`;
@@ -644,6 +712,8 @@ $('#content').addEventListener('click',e=>{
       case 'brushDone':brushState.id=null;break;
       case 'undoStroke':l.makeup.strokes=(l.makeup.strokes||[]).slice(0,-1);break;
       case 'washFace':l.makeup.strokes=[];break;
+      case 'photoOn':l.photoOn=!!c;break;
+      case 'photoDel':delete l.photo;l.photoOn=false;break;
       case 'extra':if(id in l.extras){delete l.extras[id];}else{l.extras[id]=find(EXTRAS,id).c;lastExtra=id;}break;
       case 'wear':{const k=KEY[arg];if(!id){l[k]=null;}else{const it=find(CATS[arg],id);l[k]={id,c:l[k]&&l[k].id===id?l[k].c:it.c};}
         if(id&&(arg==='tops'||arg==='bottoms'))l.dress=null;break;}
@@ -806,7 +876,7 @@ function playSuno(){
   Music.stopSynth();const a=$('#songPlayer'),gen=++sunoGen;let i=0;
   a.loop=true;a.volume=DB.music.vol/100;
   const tryNext=()=>{if(gen!==sunoGen)return;
-    if(i>=SUNO.urls.length){sunoFailed=true;a.onerror=null;toast("🎂 Couldn't load Brynny's Song, playing Happy Birthday");Music.playTrack('bday');musicPlayingTrack='bday';return;}
+    if(i>=SUNO.urls.length){sunoFailed=true;a.onerror=null;toast("🎂 Brynny's Song didn't load, so here's Happy Birthday!");Music.playTrack('bday');musicPlayingTrack='bday';return;}
     a.src=SUNO.urls[i++];a.play().catch(err=>{if(err&&err.name==='NotSupportedError')tryNext();});};
   a.onerror=tryNext;tryNext();
 }
