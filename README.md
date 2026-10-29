@@ -3,6 +3,7 @@
 A birthday dress-up game that runs in any web browser (phone, tablet, or computer). No install, no game engine, and free to host on GitHub Pages.
 
 ## What's in it
+- Live camera: snap a selfie, record short videos (saved in the Gallery), and record your voice into My songs
 - Selfie face: take a picture, fit it in the oval, and put your real face on the doll, as a photo or a cartoon (stays on the device)
 - Cartoon or fashion-doll look, skin tones, eye colors
 - Hair salon: cut, grow, braid, curl, bangs, color spray, and clips, done right on the picture; plus 10 quick styles in 12 colors (including rainbow)
@@ -12,7 +13,7 @@ A birthday dress-up game that runs in any web browser (phone, tablet, or compute
 - Places: Sparkle studio, My room, Birthday party, Halloween, Christmas, Wedding, Beach, Runway
 - Add friends and family by name and dress them up too
 - Save looks to a gallery and download them as pictures
-- Music: "Brynny's Song" (made on Suno, plays at the birthday party), 7 built-in songs (Sparkle Pop, Dreamy Studio, Happy Birthday, Spooky Night, Jingle Bells, Here Comes the Bride, Runway Beat), a "Match the place" mode, tap sounds, and her own songs added from the device
+- Music: 7 built-in songs (Sparkle Pop, Dreamy Studio, Happy Birthday, Spooky Night, Jingle Bells, Here Comes the Bride, Runway Beat), a "Match the place" mode, tap sounds, and her own songs added from the device
 
 Everything saves on the device that's playing it (browser storage).
 
