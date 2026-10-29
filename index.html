@@ -29,6 +29,11 @@ main{flex:1;display:flex;min-height:0}
 .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;background:#fff}
 .stage{transition:background .4s}
 .stage.painting{outline:4px dashed var(--pink);outline-offset:-6px}
+.stage.painting .doll,.stage.arting .doll{animation:none}
+@keyframes sway{0%,100%{transform:rotate(-.5deg) scaleY(1)}50%{transform:rotate(.5deg) scaleY(1.006)}}
+.stage .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.5s infinite}
+@keyframes blink{0%,95%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+@media (prefers-reduced-motion:reduce){.stage .doll,.stage .eye{animation:none}}
 .pill[disabled]{opacity:.45}
 details.quick{margin-top:22px;border:3px solid #f6e3ef;border-radius:16px;padding:6px 12px 12px}
 details.quick summary{font-weight:600;font-size:16px;cursor:pointer;padding:6px 0}
@@ -165,13 +170,21 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   </div>
   <p class="hint">Videos can be up to 30 seconds and are saved in 🖼️ Gallery.</p>
 </div></div>
+<div class="modal" id="braidModal"><div class="sheet" style="max-width:420px;text-align:center">
+  <button class="close" data-close>×</button>
+  <h2>🪢 Braid it!</h2>
+  <p class="hint" id="braidHint"></p>
+  <svg id="braidSvg" viewBox="0 0 300 420" style="width:min(300px,100%);touch-action:none;border-radius:20px;background:linear-gradient(#fff4fa,#f3e6ff)"></svg>
+  <div style="height:10px;background:#f6e3ef;border-radius:999px;margin:10px 0;overflow:hidden"><div id="braidBar" style="height:100%;width:0;background:linear-gradient(90deg,#ff6fae,#8e6cff);transition:width .3s"></div></div>
+  <button class="big-btn" id="braidTie" style="display:none">🎀 Tie it off!</button>
+</div></div>
 <div class="modal" id="musicModal"><div class="sheet">
   <button class="close" data-close>×</button>
   <h2>🎵 Music</h2>
   <div class="tracks" id="trackList"></div>
   <div class="mrow"><span>🔈</span><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span>🔊</span></div>
   <div class="mrow"><button class="pill soft" id="sfxBtn"></button></div>
-  <p class="hint">🎤 <a href="https://suno.com/s/gJZRXIPoHCDMpTkO" target="_blank" rel="noopener">Listen to Brynny's Song on Suno ↗</a></p>
+  <p class="hint">🎤 Brynny's Song plays at the birthday party.</p>
   <h3>My songs</h3>
   <p class="hint">Add songs saved on this phone, tablet, or computer (MP3 and other music files). They stay on this device.</p>
   <div class="songs" id="songList"></div>
@@ -242,6 +255,19 @@ const DEFS=`<defs>
 <linearGradient id="gWed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff9fb"/><stop offset="1" stop-color="#ffe1ec"/></linearGradient>
 <linearGradient id="gBday" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c9"/><stop offset="1" stop-color="#ffd6ec"/></linearGradient>
 <clipPath id="faceClip"><ellipse cx="150" cy="88" rx="40" ry="46"/></clipPath>
+<filter id="vol" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+ <feGaussianBlur in="SourceAlpha" stdDeviation="3.2" result="b"/>
+ <feSpecularLighting in="b" surfaceScale="3.5" specularConstant=".55" specularExponent="16" lighting-color="#ffffff" result="sp"><fePointLight x="-60" y="-160" z="220"/></feSpecularLighting>
+ <feComposite in="sp" in2="SourceAlpha" operator="in" result="spi"/>
+ <feDiffuseLighting in="b" surfaceScale="3.5" diffuseConstant="1" lighting-color="#ffffff" result="df"><feDistantLight azimuth="235" elevation="55"/></feDiffuseLighting>
+ <feComponentTransfer in="df" result="dfs"><feFuncR type="linear" slope=".5" intercept=".55"/><feFuncG type="linear" slope=".5" intercept=".55"/><feFuncB type="linear" slope=".5" intercept=".55"/></feComponentTransfer>
+ <feComposite in="dfs" in2="SourceAlpha" operator="in" result="dfi"/>
+ <feBlend in="SourceGraphic" in2="dfi" mode="multiply" result="shaded"/>
+ <feComposite in="shaded" in2="SourceAlpha" operator="in" result="sh2"/>
+ <feComposite in="sh2" in2="spi" operator="arithmetic" k1="0" k2="1" k3=".55" k4="0"/>
+</filter>
+<radialGradient id="sheen" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<radialGradient id="floorShadow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
 <radialGradient id="gSpot" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
 </defs>`;
 
@@ -266,8 +292,8 @@ function face(L){
   const toon=L.style==='cartoon',rx=9,ry=toon?10:5.6,ir=toon?7:4.6,ey=92;
   const sk=L.skin,d=shade(sk,-.18),bc=L.hairColor==='rainbow'?'#6b4a8a':shade(L.hairColor,-.35);
   const m=L.makeup||{};
-  let s=sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
-  s+=`<ellipse cx="150" cy="88" rx="40" ry="46" fill="${sk}"/>`;
+  let s='<g filter="url(#vol)">'+sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
+  s+=`<ellipse cx="150" cy="88" rx="40" ry="46" fill="${sk}"/></g><path d="M111 96 Q116 128 150 134 Q184 128 189 96 Q186 122 150 128 Q114 122 111 96 Z" fill="${d}" opacity=".35"/><ellipse cx="136" cy="66" rx="20" ry="14" fill="url(#sheen)" opacity=".55"/>`;
   if(L.photo&&L.photoOn){
     s+=`<image href="${L.photoMode==='toon'&&L.photoToon?L.photoToon:L.photo}" x="110" y="42" width="80" height="92" preserveAspectRatio="xMidYMid slice" clip-path="url(#faceClip)"/>`;
     if(m.blush)s+=sym(`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".3"/>`);
@@ -278,7 +304,7 @@ function face(L){
   let one='';
   if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
   const iy=ey+(toon?1:0);
-  one+=`<ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="#fff"/><circle cx="134" cy="${iy}" r="${ir}" fill="${L.eyes}"/><circle cx="134" cy="${iy}" r="${ir*.5}" fill="#1e1424"/><circle cx="${134+ir*.38}" cy="${iy-ir*.38}" r="${ir*.3}" fill="#fff"/>`;
+  one+=`<g class="eye"><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="#fff"/><circle cx="134" cy="${iy}" r="${ir}" fill="${L.eyes}"/><circle cx="134" cy="${iy}" r="${ir*.5}" fill="#1e1424"/><circle cx="${134+ir*.38}" cy="${iy-ir*.38}" r="${ir*.3}" fill="#fff"/>`;
   if(toon) one+=`<circle cx="${134-ir*.4}" cy="${iy+ir*.4}" r="${ir*.15}" fill="#fff"/>`;
   const lash=m.lashes||'natural',lw=lash==='bold'?3.4:lash==='long'?2.5:1.9;
   const P0=[134-rx-1,ey],P1=[134,ey-ry*1.65],P2=[134+rx+1,ey];
@@ -288,6 +314,7 @@ function face(L){
     for(let i=0;i<n;i++){const t=.06+i*.12,x=(1-t)**2*P0[0]+2*t*(1-t)*P1[0]+t*t*P2[0],y=(1-t)**2*P0[1]+2*t*(1-t)*P1[1]+t*t*P2[1];
       one+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x-len*.8).toFixed(1)}" y2="${(y-len*.75).toFixed(1)}" stroke="#2b1a2e" stroke-width="${lw*.7}" stroke-linecap="round"/>`;}
   }
+  one+='</g>';
   one+=`<path d="M123 ${ey-ry-8} Q134 ${ey-ry-14} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="2.8" stroke-linecap="round"/>`;
   if(m.blush) one+=`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".5"/>`;
   s+=sym(one);
@@ -559,14 +586,15 @@ function charInner(L){
   for(const [id,c] of Object.entries(L.extras||{})){const it=find(EXTRAS,id);if(!it)continue;const p=parts(it.d(c));for(const k in ex)ex[k]+=p[k]||'';}
   const wear=(list,v)=>v&&find(list,v.id)?allParts(parts(find(list,v.id).d(v.c))):'';
   const A=artLayers(L);
-  let s=ex.back+`<g transform="${T}">${H.back||''}${hat.back||''}</g>`+body(L);
-  if(L.dress)s+=wear(DRESSES,L.dress);else s+=wear(BOTTOMS,L.bottom)+wear(TOPS,L.top);
-  s+=A.body+wear(SHOES,L.shoes)+A.feet+ex.front+hands(L)+ex.hand+A.hand;
-  s+=`<g transform="${T}">${face(L)}${ex.head}${H.front||''}${hat.front||''}${A.head}</g>`;
+  const v=x=>x?`<g filter="url(#vol)">${x}</g>`:'';
+  let s=ex.back+`<g transform="${T}">${v(H.back)}${hat.back||''}</g>`+v(body(L));
+  if(L.dress)s+=v(wear(DRESSES,L.dress));else s+=v(wear(BOTTOMS,L.bottom))+v(wear(TOPS,L.top));
+  s+=A.body+v(wear(SHOES,L.shoes))+A.feet+v(ex.front)+v(hands(L))+v(ex.hand)+A.hand;
+  s+=`<g transform="${T}">${face(L)}${ex.head}${v(H.front)}<path d="M122 52 Q150 38 180 52" stroke="#fff" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round"/>${v(hat.front)}${A.head}</g>`;
   return s;
 }
 const VIEW='-40 -75 380 680';
-function fullSVG(L,name,attrs=''){return `<svg viewBox="${VIEW}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" ${attrs}>${DEFS}${bgSVG(L,name)}${charInner(L)}</svg>`;}
+function fullSVG(L,name,attrs=''){return `<svg viewBox="${VIEW}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" ${attrs}>${DEFS}${bgSVG(L,name)}<ellipse cx="150" cy="580" rx="80" ry="12" fill="url(#floorShadow)"/><g class="doll">${charInner(L)}</g></svg>`;}
 const mini=(vb,inner)=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 
 /* ---------- state ---------- */
@@ -650,7 +678,7 @@ $('#stage').addEventListener('pointermove',ev=>{
   drawing.st.p.push(q);drawing.el.outerHTML=strokeSVG(drawing.st);drawing.el=$('#stage .paintLayer').lastElementChild;
 });
 const endStroke=ev=>{
-  if(salonDrag){salonDrag=null;persist();if(tab==='hair')renderPanel();return;}
+  if(salonDrag){const D=salonDrag;salonDrag=null;if(D.twirl&&Math.abs(D.sum)<Math.PI)toast('🌀 Twirl your finger in little circles!');if(D.comb&&D.n===0)toast('🪮 Stroke down the hair!');persist();if(tab==='hair')renderPanel();return;}
   if(artDrag){artDrag=null;persist();return;}
   if(!drawing||(ev&&ev.pointerId!==drawing.id))return;
   const st=drawing.st;drawing=null;
@@ -732,9 +760,9 @@ $('#cropUse').onclick=()=>{
 const SALON_TOOLS=[
  {id:'cut',e:'✂️',name:'Cut',hint:'Drag across the hair where you want to cut it.'},
  {id:'grow',e:'🧴',name:'Grow',hint:'Drag down to make the hair grow longer.'},
- {id:'braid',e:'🪢',name:'Braid',hint:'Tap the left or right side to braid it. Tap again to take it out.'},
- {id:'curl',e:'🌀',name:'Curl',hint:'Tap a side to curl it. Tap again to straighten it.'},
- {id:'brush',e:'🪮',name:'Brush out',hint:'Tap a side to brush it straight and loose.'},
+ {id:'braid',e:'🪢',name:'Braid',hint:'Tap the left or right side of the hair, then braid it yourself!'},
+ {id:'curl',e:'🌀',name:'Curl',hint:'Twirl your finger in little circles on one side to curl it.'},
+ {id:'brush',e:'🪮',name:'Comb',hint:'Stroke down the hair a few times to comb it straight. This also takes out braids.'},
  {id:'bangs',e:'💇‍♀️',name:'Bangs',hint:'Tap the head to try different bangs.'},
  {id:'spray',e:'🎨',name:'Color spray',hint:'Paint colorful streaks right on the hair.'},
  {id:'clips',e:'🎀',name:'Clips',hint:'Tap the hair to put clips in it.'},
@@ -750,9 +778,9 @@ function salonDown(ev){
   const fx=()=>{persist();renderStage();if(DB.music&&DB.music.sfx)Music.sfx();sparkle();};
   switch(salonTool){
     case 'cut':case 'grow':salonDrag={id:ev.pointerId};salonMove(ev);break;
-    case 'braid':S[side]=S[side]==='braid'?'loose':'braid';fx();break;
-    case 'curl':S[side]=S[side]==='curly'?'loose':'curly';fx();break;
-    case 'brush':S[side]='loose';fx();break;
+    case 'braid':if(S[side]==='braid'){toast('🪮 Use the Comb to take the braid out');}else openBraid(side);break;
+    case 'curl':salonDrag={id:ev.pointerId,twirl:true,side,last:q,ang:null,sum:0};break;
+    case 'brush':salonDrag={id:ev.pointerId,comb:true,side,y0:q[1],n:0};break;
     case 'bangs':{const o=['side','straight','sweep','part'];S.bangs=o[(o.indexOf(S.bangs)+1)%o.length];fx();break;}
     case 'clips':S.clips=(S.clips||[]).concat([{k:salonOpt.clip,x:q[0],y:q[1],c:salonOpt.clipC}]).slice(-30);fx();break;
     case 'spray':S.streaks=(S.streaks||[]).concat([{c:salonOpt.spray,w:7,op:.75,p:[q]}]).slice(-80);salonDrag={id:ev.pointerId,spray:true};salonRender();break;
@@ -761,6 +789,10 @@ function salonDown(ev){
 function salonMove(ev){
   if(!salonDrag||ev.pointerId!==salonDrag.id)return;ev.preventDefault();
   const S=L().salon,q=toFace(ev);
+  if(salonDrag.twirl){const D=salonDrag,dx=q[0]-D.last[0],dy=q[1]-D.last[1];if(Math.hypot(dx,dy)<2)return;const a=Math.atan2(dy,dx);
+    if(D.ang!==null){let da=a-D.ang;while(da>Math.PI)da-=2*Math.PI;while(da<-Math.PI)da+=2*Math.PI;D.sum+=da;}D.ang=a;D.last=q;
+    if(Math.abs(D.sum)>Math.PI*3){S[D.side]='curly';salonDrag=null;persist();renderStage();Music.sfx();sparkle();toast('🌀 Curly!');}return;}
+  if(salonDrag.comb){const D=salonDrag;if(q[1]-D.y0>45){D.n++;D.y0=q[1];sparkle();Music.sfx();if(D.n>=2&&S[D.side]!=='loose'){S[D.side]='loose';persist();renderStage();toast('🪮 All combed out!');}}else if(q[1]<D.y0)D.y0=q[1];return;}
   if(salonDrag.spray){const st=S.streaks[S.streaks.length-1],last=st.p[st.p.length-1];if(Math.hypot(q[0]-last[0],q[1]-last[1])<1)return;st.p.push(q);}
   else if(salonTool==='cut'){if(q[1]>70&&q[1]<S.len)S.len=Math.max(100,Math.round(q[1]));else return;}
   else if(salonTool==='grow'){if(q[1]>S.len)S.len=Math.min(300,Math.round(q[1]));else return;}
@@ -935,6 +967,57 @@ $('#voiceBtn').onclick=async()=>{
     try{await SongDB.add({id:uid(),name:`My recording ${n}`,blob,at:Date.now()});await loadSongs();renderMusic();toast('🎙️ Saved to My songs!');}catch(e){toast('😕 Could not save the recording');}};
   rec.start(500);voiceRec=rec;$('#voiceBtn').textContent='⏹ Stop recording';
 };
+
+/* ---------- braiding mini-game ---------- */
+const BR={side:null,k:0,order:[0,1,2],need:8,drag:null,cols:[]};
+const BX=[112,150,188];
+function openBraid(side){
+  const l=L(),c=l.hairColor;
+  BR.side=side;BR.k=0;BR.order=[0,1,2];BR.drag=null;
+  BR.cols=c==='rainbow'?['#ff6fae','#ffd23f','#4fb6ff']:[shade(c,.18),c,shade(c,-.22)];
+  $('#braidTie').style.display='none';$('#braidModal').classList.add('show');drawBraid();
+}
+function drawBraid(px,py){
+  const y0=46+BR.k*28,expect=BR.k%2?2:0;let s='';
+  s+=`<path d="M70 0 L230 0 L230 30 Q150 56 70 30 Z" fill="${BR.cols[1]}"/>`;
+  for(let i=0;i<BR.k;i++){const y=48+i*28,lean=i%2?1:-1;
+    s+=`<ellipse cx="${150+lean*7}" cy="${y}" rx="24" ry="15" fill="${BR.cols[i%3]}" stroke="rgba(0,0,0,.25)" stroke-width="2" transform="rotate(${lean*-28} ${150+lean*7} ${y})"/><path d="M${138+lean*7} ${y-6} Q${150+lean*7} ${y-12} ${162+lean*7} ${y-6}" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/>`;}
+  if(BR.k<BR.need){
+    for(let slot=0;slot<3;slot++){
+      const ci=BR.order[slot],top=[150+(BX[slot]-150)*.35,y0],drag=BR.drag&&BR.drag.slot===slot;
+      const ex=drag?px:BX[slot],ey=drag?py:400;
+      const d=`M${top[0]} ${top[1]} Q${(top[0]+ex)/2+(drag?0:(BX[slot]-150)*.3)} ${(top[1]+ey)/2} ${ex} ${ey}`;
+      if(slot===expect&&!BR.drag)s+=`<path d="${d}" stroke="#ffd23f" stroke-width="30" stroke-linecap="round" fill="none" opacity=".55"><animate attributeName="opacity" values=".2;.7;.2" dur="1.2s" repeatCount="indefinite"/></path>`;
+      s+=`<path d="${d}" stroke="${BR.cols[ci]}" stroke-width="20" stroke-linecap="round" fill="none"/><path d="${d}" stroke="#fff" stroke-opacity=".25" stroke-width="4" stroke-linecap="round" fill="none" transform="translate(-4 0)"/>`;
+    }
+    const hx=expect===0?60:240;
+    s+=`<text x="${hx}" y="330" font-size="34" text-anchor="middle">${expect===0?'👉':'👈'}</text>`;
+  }else{
+    s+=`<path d="M138 ${y0-4} L128 ${y0+40} L150 ${y0+24} L172 ${y0+40} L162 ${y0-4} Z" fill="${BR.cols[1]}"/>`;
+  }
+  $('#braidSvg').innerHTML=s;
+  $('#braidBar').style.width=Math.round(BR.k/BR.need*100)+'%';
+  $('#braidHint').textContent=BR.k>=BR.need?'Beautiful braid! Now tie it off.':`Drag the glowing ${BR.k%2?'right':'left'} strand over the middle one. (${BR.k}/${BR.need})`;
+}
+function braidPt(ev){const sv=$('#braidSvg'),pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(sv.getScreenCTM().inverse());return [q.x,q.y];}
+$('#braidSvg').addEventListener('pointerdown',ev=>{
+  if(BR.k>=BR.need)return;const [x,y]=braidPt(ev),y0=46+BR.k*28;if(y<y0)return;
+  let best=0,bd=1e9;for(let i=0;i<3;i++){const t=(y-y0)/(400-y0),sx=(150+(BX[i]-150)*.35)*(1-t)+BX[i]*t,d=Math.abs(x-sx);if(d<bd){bd=d;best=i;}}
+  if(bd>32)return;
+  if(best===1){toast('✋ Grab an outside strand');return;}
+  const expect=BR.k%2?2:0;if(best!==expect){toast(`✨ Try the glowing ${expect?'right':'left'} strand`);return;}
+  ev.preventDefault();try{$('#braidSvg').setPointerCapture(ev.pointerId);}catch(e){}
+  BR.drag={slot:best,id:ev.pointerId};drawBraid(x,y);
+});
+$('#braidSvg').addEventListener('pointermove',ev=>{if(!BR.drag||ev.pointerId!==BR.drag.id)return;ev.preventDefault();const [x,y]=braidPt(ev);drawBraid(x,y);});
+const braidUp=ev=>{
+  if(!BR.drag||ev.pointerId!==BR.drag.id)return;const [x]=braidPt(ev),slot=BR.drag.slot;BR.drag=null;
+  const crossed=slot===0?x>140:x<160;
+  if(crossed){[BR.order[slot],BR.order[1]]=[BR.order[1],BR.order[slot]];BR.k++;Music.sfx();if(BR.k>=BR.need){$('#braidTie').style.display='block';Music.sfx('snap');}}
+  drawBraid();
+};
+$('#braidSvg').addEventListener('pointerup',braidUp);$('#braidSvg').addEventListener('pointercancel',braidUp);
+$('#braidTie').onclick=()=>{const l=L();ensureSalon(l);l.salon[BR.side]='braid';persist();$('#braidModal').classList.remove('show');renderStage();renderPanel();sparkle();Music.sfx();toast('🪢 You braided it!');};
 
 /* ---------- UI ---------- */
 const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'Hair'},{id:'makeup',ico:'💄',name:'Makeup'},{id:'tops',ico:'👚',name:'Tops'},{id:'bottoms',ico:'👖',name:'Bottoms'},
@@ -1122,9 +1205,9 @@ const TRACKS=[
   bass:'C2/1*8 A#1/1*8 G#1/1*8 G1/1*8',drums:'xhsxhxsh'},
 ];
 const SUNO={id:'suno',e:'🎤',name:"Brynny's Song",page:'https://suno.com/s/gJZRXIPoHCDMpTkO',
-  urls:['https://cdn1.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3','https://cdn2.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3']};
+  urls:['brynny-song.mp3']};
 let sunoFailed=false,sunoGen=0;
-const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'bday',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
+const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'suno',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
 const Music=(()=>{
   let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
@@ -1221,7 +1304,7 @@ function applyMusic(){
 let musicPlayingTrack=null;
 function renderMusic(){
   const m=DB.music;
-  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},...TRACKS];
+  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...TRACKS];
   $('#trackList').innerHTML=opts.map(o=>`<button class="track ${m.track===o.id?'on':''}" data-track="${o.id}"><span class="e">${o.e}</span>${o.name}</button>`).join('');
   $('#vol').value=m.vol;
   $('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';
@@ -1244,7 +1327,7 @@ $('#songFile').addEventListener('change',async e=>{
   for(const f of files){try{await SongDB.add({id:uid(),name:f.name.replace(/\.[^.]+$/,''),blob:f,at:Date.now()});added++;}catch(err){toast('😕 Could not save that song');}}
   await loadSongs();renderMusic();if(added)toast(`🎶 Added ${added} song${added>1?'s':''}!`);
 });
-DB.music=Object.assign({track:'auto',vol:60,sfx:true},DB.music||{});if(DB.music.track==='suno')DB.music.track='auto';
+DB.music=Object.assign({track:'auto',vol:60,sfx:true},DB.music||{});
 let musicStarted=false;
 document.addEventListener('pointerdown',()=>{if(musicStarted)return;musicStarted=true;Music.ensure();loadSongs().then(applyMusic);},{capture:true});
 
