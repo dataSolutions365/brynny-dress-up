@@ -1177,7 +1177,7 @@ function showWelcome(){
   $('#welcomeArt').innerHTML=`<svg viewBox="40 -40 220 640" xmlns="http://www.w3.org/2000/svg">${DEFS}${charInner(party)}</svg>`;
   $('#welcome').classList.add('show');
 }
-$('#welcomeGo').onclick=()=>{const n=$('#welcomeName').value.trim()||'Brynny';DB.chars[0].name=n;DB.chars[0].look.scene='birthday';DB.welcomed=true;persist();$('#welcome').classList.remove('show');renderStage();renderPanel();sparkle();};
+$('#welcomeGo').onclick=()=>{const n=$('#welcomeName').value.trim()||'Brynny';DB.chars[0].name=n;DB.chars[0].look.scene='birthday';DB.welcomed=true;persist();$('#welcome').classList.remove('show');renderStage();renderPanel();sparkle();if(musicStarted)applyMusic();};
 $('#welcomeName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#welcomeGo').click();});
 
 /* ---------- music ---------- */
@@ -1223,10 +1223,20 @@ const Music=(()=>{
     }
     return {map,total:t};
   }
+  let iosEl=null;
+  const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   function ensure(){
-    if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;ctx=new AC();master=ctx.createGain();master.connect(ctx.destination);
+    // iPhones mute Web Audio when the ring/silent switch is on silent; ask for "playback" audio instead
+    try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+    if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;ctx=new AC();master=ctx.createGain();
+      if(isIOS&&!navigator.audioSession&&ctx.createMediaStreamDestination){
+        // older iOS: send the synth through an <audio> element, which plays even on silent
+        const dest=ctx.createMediaStreamDestination();master.connect(dest);iosEl=document.createElement('audio');iosEl.setAttribute('playsinline','');iosEl.srcObject=dest.stream;
+      }else master.connect(ctx.destination);
       noise=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;setVol();}
-    if(ctx.state==='suspended')ctx.resume();return true;
+    if(ctx.state!=='running')ctx.resume().catch(()=>{});
+    if(iosEl&&iosEl.paused)iosEl.play().catch(()=>{});
+    return true;
   }
   function setVol(){if(master)master.gain.value=(DB.music.vol/100)*.6;}
   function tone(f,t,dur,type,g,out=master){
@@ -1329,7 +1339,15 @@ $('#songFile').addEventListener('change',async e=>{
 });
 DB.music=Object.assign({track:'auto',vol:60,sfx:true},DB.music||{});
 let musicStarted=false;
-document.addEventListener('pointerdown',()=>{if(musicStarted)return;musicStarted=true;Music.ensure();loadSongs().then(applyMusic);},{capture:true});
+document.addEventListener('pointerdown',()=>{
+  // every tap keeps audio unlocked (phones pause it after calls, app switches, or locking)
+  Music.ensure();const a=$('#songPlayer');if(musicStarted&&musicPlayingTrack&&(musicPlayingTrack==='suno'||musicPlayingTrack.startsWith('song:'))&&a.paused&&a.src)a.play().catch(()=>{});
+  if(musicStarted)return;musicStarted=true;
+  // start inside the tap itself; phones block sound started later
+  if(!String(wantedTrack()).startsWith('song:'))applyMusic();
+  loadSongs().then(()=>{if(String(wantedTrack()).startsWith('song:'))applyMusic();});
+},{capture:true});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&musicStarted)Music.ensure();});
 
 $('#content').addEventListener('change',async e=>{
   const i=e.target.closest('[data-artfile]');if(!i||!i.files[0])return;const f=i.files[0];i.value='';
