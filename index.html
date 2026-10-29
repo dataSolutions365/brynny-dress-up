@@ -171,7 +171,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="tracks" id="trackList"></div>
   <div class="mrow"><span>🔈</span><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span>🔊</span></div>
   <div class="mrow"><button class="pill soft" id="sfxBtn"></button></div>
-  <p class="hint">🎤 <a href="https://suno.com/s/gJZRXIPoHCDMpTkO" target="_blank" rel="noopener">Listen to Brynny's Song on Suno ↗</a></p>
+  <p class="hint">🎤 Brynny's Song plays at the birthday party.</p>
   <h3>My songs</h3>
   <p class="hint">Add songs saved on this phone, tablet, or computer (MP3 and other music files). They stay on this device.</p>
   <div class="songs" id="songList"></div>
@@ -1122,9 +1122,9 @@ const TRACKS=[
   bass:'C2/1*8 A#1/1*8 G#1/1*8 G1/1*8',drums:'xhsxhxsh'},
 ];
 const SUNO={id:'suno',e:'🎤',name:"Brynny's Song",page:'https://suno.com/s/gJZRXIPoHCDMpTkO',
-  urls:['https://cdn1.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3','https://cdn2.suno.ai/86cd82b2-10e7-48d7-a141-185db2a70db0.mp3']};
+  urls:['brynny-song.mp3']};
 let sunoFailed=false,sunoGen=0;
-const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'bday',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
+const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'suno',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
 const Music=(()=>{
   let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
@@ -1221,7 +1221,7 @@ function applyMusic(){
 let musicPlayingTrack=null;
 function renderMusic(){
   const m=DB.music;
-  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},...TRACKS];
+  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...TRACKS];
   $('#trackList').innerHTML=opts.map(o=>`<button class="track ${m.track===o.id?'on':''}" data-track="${o.id}"><span class="e">${o.e}</span>${o.name}</button>`).join('');
   $('#vol').value=m.vol;
   $('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';
@@ -1244,7 +1244,7 @@ $('#songFile').addEventListener('change',async e=>{
   for(const f of files){try{await SongDB.add({id:uid(),name:f.name.replace(/\.[^.]+$/,''),blob:f,at:Date.now()});added++;}catch(err){toast('😕 Could not save that song');}}
   await loadSongs();renderMusic();if(added)toast(`🎶 Added ${added} song${added>1?'s':''}!`);
 });
-DB.music=Object.assign({track:'auto',vol:60,sfx:true},DB.music||{});if(DB.music.track==='suno')DB.music.track='auto';
+DB.music=Object.assign({track:'auto',vol:60,sfx:true},DB.music||{});
 let musicStarted=false;
 document.addEventListener('pointerdown',()=>{if(musicStarted)return;musicStarted=true;Music.ensure();loadSongs().then(applyMusic);},{capture:true});
 

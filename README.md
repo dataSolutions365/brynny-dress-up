@@ -13,7 +13,7 @@ A birthday dress-up game that runs in any web browser (phone, tablet, or compute
 - Places: Sparkle studio, My room, Birthday party, Halloween, Christmas, Wedding, Beach, Runway
 - Add friends and family by name and dress them up too
 - Save looks to a gallery and download them as pictures
-- Music: 7 built-in songs (Sparkle Pop, Dreamy Studio, Happy Birthday, Spooky Night, Jingle Bells, Here Comes the Bride, Runway Beat), a "Match the place" mode, tap sounds, and her own songs added from the device
+- Music: Brynny's Song (plays at the birthday party), 7 built-in songs (Sparkle Pop, Dreamy Studio, Happy Birthday, Spooky Night, Jingle Bells, Here Comes the Bride, Runway Beat), a "Match the place" mode, tap sounds, and her own songs added from the device
 
 Everything saves on the device that's playing it (browser storage).
 
