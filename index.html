@@ -91,6 +91,18 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .wbox input{width:100%;font-size:22px;text-align:center;border:3px solid #eadcf0;border-radius:16px;padding:12px;color:var(--ink);font-weight:600}
 .big-btn{margin-top:14px;width:100%;background:linear-gradient(90deg,#ff6fae,#8e6cff);color:#fff;font-size:22px;font-weight:700;padding:14px;border-radius:18px;box-shadow:0 4px 0 rgba(0,0,0,.15)}
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
+.tracks{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.track{border:3px solid #f6e3ef;background:#fff7fb;border-radius:16px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:600;font-size:14px}
+.track .e{font-size:30px;line-height:1}
+.track.on{border-color:var(--pink);background:#ffe6f2}
+.mrow{display:flex;align-items:center;gap:10px;margin:12px 0}
+.mrow input[type=range]{flex:1;accent-color:var(--pink);height:28px}
+.songs{display:flex;flex-direction:column;gap:8px}
+.song{display:flex;align-items:center;gap:8px;border:3px solid #f6e3ef;border-radius:14px;padding:8px 10px;background:#fff7fb}
+.song.on{border-color:var(--pink)}
+.song .t{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbtn.playing{animation:bob 1s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-2px) rotate(-4deg)}}
 </style>
 </head>
 <body>
@@ -99,6 +111,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="spacer"></div>
   <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
   <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
+  <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span></button>
   <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
 </header>
 <main>
@@ -118,6 +131,19 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
     <button class="pill" id="addWho">➕ Add</button>
   </div>
 </div></div>
+
+<div class="modal" id="musicModal"><div class="sheet">
+  <button class="close" data-close>×</button>
+  <h2>🎵 Music</h2>
+  <div class="tracks" id="trackList"></div>
+  <div class="mrow"><span>🔈</span><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span>🔊</span></div>
+  <div class="mrow"><button class="pill soft" id="sfxBtn"></button></div>
+  <h3>My songs</h3>
+  <p class="hint">Add songs saved on this phone, tablet, or computer (MP3 and other music files). They stay on this device.</p>
+  <div class="songs" id="songList"></div>
+  <div class="mrow"><label class="pill" style="cursor:pointer">➕ Add songs<input type="file" id="songFile" accept="audio/*" multiple hidden></label></div>
+</div></div>
+<audio id="songPlayer" preload="none"></audio>
 
 <div class="modal" id="galModal"><div class="sheet">
   <button class="close" data-close>×</button>
@@ -526,7 +552,7 @@ function renderPanel(){
   $('#content').innerHTML=h;
   const ne=$('#nameEdit');if(ne)ne.addEventListener('input',()=>{me().name=ne.value.trim()||'Me';persist();renderStage();});
 }
-function update(fn,{panel=true}={}){fn(L());persist();renderStage();if(panel){const sc=$('#content').scrollTop;renderPanel();$('#content').scrollTop=sc;}sparkle();}
+function update(fn,{panel=true}={}){fn(L());persist();renderStage();if(typeof Music!=='undefined'){Music.sfx();if(DB.music.track==='auto'&&musicStarted&&musicPlayingTrack!==wantedTrack())applyMusic();}if(panel){const sc=$('#content').scrollTop;renderPanel();$('#content').scrollTop=sc;}sparkle();}
 function sparkle(){const st=$('#stage');for(let i=0;i<4;i++){const s=document.createElement('span');s.className='spark';s.textContent=rnd(['✨','💖','⭐','✨']);s.style.left=(20+Math.random()*60)+'%';s.style.top=(10+Math.random()*70)+'%';st.appendChild(s);setTimeout(()=>s.remove(),900);}}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1800);}
 
@@ -553,7 +579,7 @@ $('#content').addEventListener('click',e=>{
 
 /* header buttons */
 $('#randBtn').onclick=()=>{const keep=L();me().look=randomLook(keep);persist();renderStage();renderPanel();sparkle();};
-$('#saveBtn').onclick=()=>{DB.gallery.unshift({id:uid(),name:me().name,look:JSON.parse(JSON.stringify(L())),at:Date.now()});DB.gallery=DB.gallery.slice(0,80);persist();toast('📸 Saved to your Gallery!');sparkle();};
+$('#saveBtn').onclick=()=>{DB.gallery.unshift({id:uid(),name:me().name,look:JSON.parse(JSON.stringify(L())),at:Date.now()});DB.gallery=DB.gallery.slice(0,80);persist();toast('📸 Saved to your Gallery!');sparkle();Music.sfx('snap');};
 $('#galBtn').onclick=()=>{renderGallery();$('#galModal').classList.add('show');};
 $('#whoBtn').onclick=()=>{renderWho();$('#whoModal').classList.add('show');};
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m||e.target.hasAttribute('data-close'))m.classList.remove('show');}));
@@ -602,6 +628,143 @@ function showWelcome(){
 }
 $('#welcomeGo').onclick=()=>{const n=$('#welcomeName').value.trim()||'Brynny';DB.chars[0].name=n;DB.chars[0].look.scene='birthday';DB.welcomed=true;persist();$('#welcome').classList.remove('show');renderStage();renderPanel();sparkle();};
 $('#welcomeName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#welcomeGo').click();});
+
+/* ---------- music ---------- */
+const TRACKS=[
+ {id:'pop',e:'✨',name:'Sparkle Pop',bpm:118,lead:'square',
+  mel:'E5 G5 E5 C5 D5/2 E5/2 | D5 B4 D5 G5 G5/2 r/2 | C5 E5 A5 G5 E5/2 C5/2 | A4 C5 F5 E5 D5/4 | E5/2 E5 G5 C6/2 B5/2 | B5/2 A5 G5 D5/4 | C5 E5 A5/2 G5/2 E5/2 | F5/2 E5/2 D5/2 C5/2',
+  bass:'C3/2*4 G2/2*4 A2/2*4 F2/2*4 C3/2*4 G2/2*4 A2/2*4 F2/2*4',drums:'xhshxxsh'},
+ {id:'dreamy',e:'🌙',name:'Dreamy Studio',bpm:88,lead:'sine',
+  mel:'F4 A4 C5 E5 C5 A4 F4 A4 | E4 G4 B4 D5 B4 G4 E4 G4 | D4 F4 A4 C5 A4 F4 D4 F4 | C4 E4 G4 B4 G4 E4 C4 E4',
+  bass:'F2/8 E2/8 D2/8 C2/8',drums:'k.h.s.h.'},
+ {id:'bday',e:'🎂',name:'Happy Birthday',bpm:100,lead:'triangle',off:2,
+  mel:'G4 G4 | A4/2 G4/2 C5/2 | B4/4 G4 G4 | A4/2 G4/2 D5/2 | C5/4 G4 G4 | G5/2 E5/2 C5/2 | B4/2 A4/2 F5 F5 | E5/2 C5/2 D5/2 | C5/6',
+  bass:'r/2 C3/6 G2/6 G2/6 C3/6 F2/6 C3/6 G2/6 C3/6',drums:'k.h.h.'},
+ {id:'spooky',e:'🎃',name:'Spooky Night',bpm:104,lead:'square',
+  mel:'A4 C5 E5 A5 G#5/2 E5/2 | F5 E5 D5 C5 B4/4 | A4 C5 E5 A5 B5/2 G#5/2 | A5/6 r/2 | E5/2 D#5/2 D5/2 C#5/2 | C5/2 B4/2 A#4/2 A4/2 | F5 E5 D5 C5 B4/2 G#4/2 | A4/8',
+  bass:'A2/2*4 F2/2*4 A2/2*4 E2/2*4 A2/2*4 F2/2*4 E2/2*4 A2/2*4',drums:'k.h.s.hh'},
+ {id:'jingle',e:'🎄',name:'Jingle Bells',bpm:120,lead:'bell',
+  mel:'E5/2 E5/2 E5/4 | E5/2 E5/2 E5/4 | E5/2 G5/2 C5/3 D5 | E5/8 | F5/2 F5/2 F5/3 F5 | F5/2 E5/2 E5/2 E5 E5 | E5/2 D5/2 D5/2 E5/2 | D5/4 G5/4 | E5/2 E5/2 E5/4 | E5/2 E5/2 E5/4 | E5/2 G5/2 C5/3 D5 | E5/8 | F5/2 F5/2 F5/2 F5/2 | F5/2 E5/2 E5/2 E5 E5 | G5/2 G5/2 F5/2 D5/2 | C5/8',
+  bass:'C3/2 G2/2 C3/2 G2/2 *4 F2/2 C3/2 F2/2 C3/2 C3/2 G2/2 C3/2 G2/2 D3/2 A2/2 D3/2 A2/2 G2/2 D3/2 G2/2 B2/2 C3/2 G2/2 C3/2 G2/2 *4 F2/2 C3/2 F2/2 C3/2 C3/2 G2/2 C3/2 G2/2 G2/2 D3/2 G2/2 B2/2 C3/8',drums:'khshkhsh'},
+ {id:'wedding',e:'💍',name:'Here Comes the Bride',bpm:76,lead:'organ',
+  mel:'G4/2 C5/3 C5 C5/6 | G4/2 D5/3 B4 C5/6 | G4/2 C5/3 F5 F5/4 E5/2 D5/2 | C5/2 B4/2 C5/2 D5/2 C5/6 r/12',
+  bass:'C3/8 C3/8 G2/8 G2/8 F2/8 C3/8 G2/8 C3/8',drums:''},
+ {id:'runway',e:'💃',name:'Runway Beat',bpm:124,lead:'square',
+  mel:'C5 r C5 D#5 r F5 D#5 C5 | A#4 r A#4 C5 r D#5 C5 A#4 | G#4 r G#4 C5 r D#5 F5 G5 | G5/2 F5/2 D#5/2 D5/2',
+  bass:'C2/1*8 A#1/1*8 G#1/1*8 G1/1*8',drums:'xhsxhxsh'},
+];
+const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'bday',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway'};
+const Music=(()=>{
+  let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
+  const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+  const freq=n=>{const m=n.match(/^([A-G]#?)(\d)$/);return 440*Math.pow(2,(12*(+m[2]+1)+NOTE[m[1]]-69)/12);};
+  function parse(str){
+    const map={};let t=0;const toks=str.trim().split(/\s+/).filter(x=>x!=='|');let group=[];
+    const put=(n,len)=>{if(n!=='r')(map[t]=map[t]||[]).push({f:freq(n),len});t+=len;};
+    for(const tok of toks){
+      if(tok.startsWith('*')){const k=+tok.slice(1);for(let i=1;i<k;i++)group.forEach(([n,l])=>put(n,l));group=[];continue;}
+      const [n,r='1']=tok.split('/');const [len,rep='1']=r.split('*');
+      for(let i=0;i<+rep;i++)put(n,+len);
+      group.push([n,+len]);if(group.length>4)group.shift();
+    }
+    return {map,total:t};
+  }
+  function ensure(){
+    if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;ctx=new AC();master=ctx.createGain();master.connect(ctx.destination);
+      noise=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;setVol();}
+    if(ctx.state==='suspended')ctx.resume();return true;
+  }
+  function setVol(){if(master)master.gain.value=(DB.music.vol/100)*.6;}
+  function tone(f,t,dur,type,g,out=master){
+    const o=ctx.createOscillator(),v=ctx.createGain();o.type=type;o.frequency.value=f;
+    v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g,t+.015);v.gain.setValueAtTime(g,t+Math.max(.02,dur*.6));v.gain.exponentialRampToValueAtTime(.0005,t+dur);
+    o.connect(v);v.connect(out);o.start(t);o.stop(t+dur+.05);
+  }
+  function lead(kind,f,t,dur){
+    if(kind==='bell'){tone(f,t,Math.max(dur,.5),'sine',.28);tone(f*2.76,t,.25,'sine',.06);}
+    else if(kind==='organ'){tone(f,t,dur*.95,'sine',.22);tone(f*2,t,dur*.95,'sine',.08);tone(f*3,t,dur*.95,'triangle',.04);}
+    else tone(f,t,dur*.9,kind,kind==='square'?.07:kind==='sine'?.22:.2);
+  }
+  function drum(ch,t){
+    if(ch==='k'||ch==='x'){const o=ctx.createOscillator(),v=ctx.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);v.gain.setValueAtTime(.5,t);v.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(v);v.connect(master);o.start(t);o.stop(t+.2);}
+    const hit=(hp,g,dur)=>{const s=ctx.createBufferSource(),fl=ctx.createBiquadFilter(),v=ctx.createGain();s.buffer=noise;fl.type='highpass';fl.frequency.value=hp;v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(fl);fl.connect(v);v.connect(master);s.start(t);s.stop(t+dur+.02);};
+    if(ch==='s')hit(1200,.18,.14);
+    if(ch==='h'||ch==='x')hit(7000,.05,.04);
+  }
+  function tick(){
+    const e=60/cur.bpm/2;
+    while(nextTime<ctx.currentTime+.15){
+      (cur.m.map[step]||[]).forEach(n=>lead(cur.lead,n.f,nextTime,n.len*e));
+      (cur.b.map[step]||[]).forEach(n=>tone(n.f,nextTime,n.len*e*.9,'triangle',.18));
+      if(cur.drums){const k=step-(cur.off||0);if(k>=0){const ch=cur.drums[k%cur.drums.length];if(ch!=='.')drum(ch,nextTime);}}
+      nextTime+=e;step=(step+1)%cur.m.total;
+    }
+  }
+  function playTrack(id){
+    stopAll();const tr=TRACKS.find(t=>t.id===id);if(!tr||!ensure())return;
+    cur={...tr,m:parse(tr.mel),b:parse(tr.bass)};step=0;nextTime=ctx.currentTime+.1;tick();timer=setInterval(tick,40);
+  }
+  function stopSynth(){if(timer)clearInterval(timer);timer=null;cur=null;}
+  function stopAll(){stopSynth();const a=$('#songPlayer');a.pause();}
+  function sfx(kind){
+    if(!DB.music.sfx||!ensure())return;const t=ctx.currentTime+.01;
+    if(kind==='snap'){const s=ctx.createBufferSource(),v=ctx.createGain();s.buffer=noise;v.gain.setValueAtTime(.25,t);v.gain.exponentialRampToValueAtTime(.001,t+.12);s.connect(v);v.connect(master);s.start(t);s.stop(t+.15);tone(1568,t+.05,.25,'sine',.15);return;}
+    const sc=[1047,1175,1319,1568,1760,2093];const a=rnd(sc);tone(a,t,.12,'sine',.12);tone(a*1.5,t+.07,.18,'sine',.09);
+  }
+  return {parse,playTrack,stopAll,stopSynth,setVol,sfx,ensure,get playing(){return !!cur;}};
+})();
+
+/* songs stored in IndexedDB */
+const SongDB={
+  db:null,
+  open(){return new Promise((res,rej)=>{if(this.db)return res(this.db);try{const r=indexedDB.open('brynny-songs',1);r.onupgradeneeded=()=>r.result.createObjectStore('songs',{keyPath:'id'});r.onsuccess=()=>{this.db=r.result;res(this.db);};r.onerror=()=>rej(r.error);}catch(e){rej(e);}});},
+  async all(){const db=await this.open();return new Promise(res=>{const q=db.transaction('songs').objectStore('songs').getAll();q.onsuccess=()=>res(q.result.sort((a,b)=>a.at-b.at));q.onerror=()=>res([]);});},
+  async add(rec){const db=await this.open();return new Promise((res,rej)=>{const tx=db.transaction('songs','readwrite');tx.objectStore('songs').put(rec);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});},
+  async del(id){const db=await this.open();return new Promise(res=>{const tx=db.transaction('songs','readwrite');tx.objectStore('songs').delete(id);tx.oncomplete=res;tx.onerror=res;});},
+};
+let songs=[],songUrl=null;
+async function loadSongs(){try{songs=await SongDB.all();}catch(e){songs=[];}}
+function playSong(id){
+  const sg=songs.find(x=>x.id===id);if(!sg)return;Music.stopSynth();
+  const a=$('#songPlayer');if(songUrl)URL.revokeObjectURL(songUrl);songUrl=URL.createObjectURL(sg.blob);a.src=songUrl;a.volume=DB.music.vol/100;a.play().catch(()=>{});
+}
+$('#songPlayer').addEventListener('ended',()=>{const i=songs.findIndex(x=>'song:'+x.id===DB.music.track);const nx=songs[(i+1)%songs.length];if(nx){DB.music.track='song:'+nx.id;persist();playSong(nx.id);renderMusic();}});
+function wantedTrack(){const t=DB.music.track;return t==='auto'?SCENE_TRACK[L().scene]:t;}
+function applyMusic(){
+  const t=wantedTrack();
+  if(!t||t==='off'){Music.stopAll();}
+  else if(t.startsWith('song:'))playSong(t.slice(5));
+  else Music.playTrack(t);
+  musicPlayingTrack=t;
+  $('#musicBtn').classList.toggle('playing',!!t&&t!=='off');
+}
+let musicPlayingTrack=null;
+function renderMusic(){
+  const m=DB.music;
+  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},...TRACKS];
+  $('#trackList').innerHTML=opts.map(o=>`<button class="track ${m.track===o.id?'on':''}" data-track="${o.id}"><span class="e">${o.e}</span>${o.name}</button>`).join('');
+  $('#vol').value=m.vol;
+  $('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';
+  $('#songList').innerHTML=songs.length?songs.map(sg=>`<div class="song ${m.track==='song:'+sg.id?'on':''}"><button class="pill" data-song="${sg.id}">${m.track==='song:'+sg.id?'⏸':'▶'}</button><span class="t">${esc(sg.name)}</span><button class="pill soft" data-songdel="${sg.id}">🗑️</button></div>`).join(''):`<div class="small">No songs added yet.</div>`;
+}
+$('#musicBtn').onclick=async()=>{Music.ensure();await loadSongs();renderMusic();$('#musicModal').classList.add('show');};
+$('#trackList').addEventListener('click',e=>{const b=e.target.closest('[data-track]');if(!b)return;DB.music.track=b.dataset.track;persist();applyMusic();renderMusic();});
+$('#vol').addEventListener('input',e=>{DB.music.vol=+e.target.value;Music.setVol();$('#songPlayer').volume=DB.music.vol/100;persist();});
+$('#sfxBtn').onclick=()=>{DB.music.sfx=!DB.music.sfx;persist();renderMusic();Music.sfx();};
+$('#songList').addEventListener('click',async e=>{
+  const p=e.target.closest('[data-song]'),d=e.target.closest('[data-songdel]');
+  if(p){const id='song:'+p.dataset.song;DB.music.track=DB.music.track===id?'off':id;persist();applyMusic();renderMusic();}
+  if(d){if(!d.dataset.sure){d.dataset.sure=1;d.textContent='Sure?';d.classList.add('warn');return;}
+    const id=d.dataset.songdel;if(DB.music.track==='song:'+id){DB.music.track='off';applyMusic();}await SongDB.del(id);await loadSongs();persist();renderMusic();}
+});
+$('#songFile').addEventListener('change',async e=>{
+  const files=[...e.target.files];e.target.value='';let added=0;
+  for(const f of files){try{await SongDB.add({id:uid(),name:f.name.replace(/\.[^.]+$/,''),blob:f,at:Date.now()});added++;}catch(err){toast('😕 Could not save that song');}}
+  await loadSongs();renderMusic();if(added)toast(`🎶 Added ${added} song${added>1?'s':''}!`);
+});
+DB.music=Object.assign({track:'auto',vol:60,sfx:true},DB.music||{});
+let musicStarted=false;
+document.addEventListener('pointerdown',()=>{if(musicStarted)return;musicStarted=true;Music.ensure();loadSongs().then(applyMusic);},{capture:true});
 
 renderTabs();renderStage();renderPanel();
 if(!DB.welcomed)showWelcome();
