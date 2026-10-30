@@ -542,6 +542,21 @@ const HAIR=[
  {id:'highbun',name:'Ballerina bun',d:(c,d)=>({back:`<circle cx="150" cy="24" r="24" fill="${c}"/><path d="M134 24 Q150 6 166 24 Q150 38 140 26" stroke="${d}" stroke-width="2" fill="none"/>`,front:`<path d="${CAP}" fill="${c}"/>`})},
  {id:'pixie',name:'Short',d:(c,d)=>({back:`<path d="M106 80 Q102 30 150 30 Q198 30 194 80 L192 104 L108 104 Z" fill="${c}"/>`,
    front:`<path d="M108 94 Q104 32 150 32 Q196 32 192 94 L186 64 L174 72 L166 58 L152 70 L142 56 L130 70 L120 60 L112 74 Z" fill="${c}"/>`})},
+ {id:'superlong',name:'Extra long',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L206 396 Q150 410 94 396 Z" fill="${c}"/><path d="M124 120 L118 380 M176 120 L182 380 M150 130 L150 396" stroke="${d}" stroke-width="2" opacity=".35"/>`,
+   front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/>`+sym(`<path d="M109 88 Q101 160 104 300 L117 292 Q112 160 115 96 Z" fill="${c}"/>`)})},
+ {id:'hime',name:'Blunt bangs',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L200 300 L100 300 Z" fill="${c}"/>`,
+   front:`<path d="M106 100 Q102 30 150 30 Q198 30 194 100 L192 75 L108 75 Z" fill="${c}"/><path d="M114 75 L186 75" stroke="${d}" stroke-width="1.5" opacity=".4"/>`+sym(`<path d="M107 74 L104 156 L119 156 L117 78 Z" fill="${c}"/>`)})},
+ {id:'streaks',name:'Pink streaks',d:(c,d)=>{const k=['#ff7eb6','#ff8fc8','#ff6fae'].includes(c)?'#b388ff':'#ff8fc8';
+   return {back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L204 270 Q150 284 96 270 Z" fill="${c}"/><path d="M110 90 L104 266 L118 270 L120 96 Z M180 96 L182 270 L196 266 L190 90 Z" fill="${k}"/>`,
+   front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/><path d="M118 70 Q130 40 152 33 Q138 50 132 72 Z" fill="${k}"/>`+sym(`<path d="M109 88 Q101 160 104 230 L117 224 Q112 160 115 96 Z" fill="${k}"/>`)};}},
+ {id:'boxbraids',name:'Long braids',d:(c,d)=>{let b=`<path d="M104 82 Q100 28 150 28 Q200 28 196 82 Z" fill="${c}"/>`,f='';
+   for(let x=102;x<=198;x+=8){const w=Math.sin(x)*4;b+=`<path d="M${x} 70 Q${x-(150-x)*.12+w} 200 ${x-(150-x)*.1} 330" stroke="${c}" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M${x} 70 Q${x-(150-x)*.12+w} 200 ${x-(150-x)*.1} 330" stroke="${d}" stroke-width="8" fill="none" stroke-dasharray="2 5" opacity=".55"/>`;}
+   for(const x of [108,114,186,192]){f+=`<path d="M${x} 80 Q${x<150?x-8:x+8} 200 ${x<150?x-4:x+4} 310" stroke="${c}" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M${x} 80 Q${x<150?x-8:x+8} 200 ${x<150?x-4:x+4} 310" stroke="${d}" stroke-width="7" fill="none" stroke-dasharray="2 5" opacity=".55"/>`;}
+   return {back:b,front:`<path d="${PART}" fill="${c}"/>`+f+sym(`<circle cx="110" cy="312" r="3" fill="#e0b04a"/>`)};}},
+ {id:'bigcurls',name:'Big curls',d:(c,d)=>{const B=[[100,70],[200,70],[86,100],[214,100],[80,135],[220,135],[78,170],[222,170],[82,205],[218,205],[90,240],[210,240],[104,268],[196,268],[128,282],[172,282],[150,286]];
+   const F=[[110,62],[124,48],[176,48],[190,62],[106,86],[194,86],[104,112],[196,112]];
+   return {back:`<path d="M96 70 Q150 20 204 70 L214 270 L86 270 Z" fill="${c}"/>`+B.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="24" fill="${c}"/><path d="M${p[0]-10} ${p[1]} Q${p[0]} ${p[1]-12} ${p[0]+10} ${p[1]}" stroke="${d}" stroke-width="2" fill="none" opacity=".45"/>`).join(''),
+     front:`<path d="${CAP}" fill="${c}"/><circle cx="150" cy="22" r="20" fill="${c}"/><path d="M138 22 Q150 8 162 22" stroke="${d}" stroke-width="2" fill="none" opacity=".5"/>`+F.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="12" fill="${c}"/><circle cx="${p[0]-3}" cy="${p[1]-3}" r="4" fill="#fff" opacity=".12"/>`).join('')};}},
 ];
 
 /* ---------- hair salon (build-your-own hair) ---------- */
@@ -629,6 +644,23 @@ const TOPS=[
    return s+`<circle cx="136" cy="296" r="3.2" fill="#d4af37"/><circle cx="164" cy="296" r="3.2" fill="#d4af37"/>`;}},
  {id:'jacket',name:'Jean jacket',c:'#5c7cfa',d:c=>{const dk=shade(c,-.18);return sleeve(c,1,27)+`<path d="${TORSO(270,172)}" fill="#ffffff"/>`+
    sym(`<path d="M112 156 Q128 160 140 174 L145 270 L114 270 Q109 222 101 178 Q101 161 112 156 Z" fill="${c}"/><path d="M120 196 L138 196 L138 212 L120 212 Z" fill="${dk}"/><path d="M128 158 L140 174 L132 186 Z" fill="${dk}"/><line x1="145" y1="176" x2="145" y2="270" stroke="${dk}" stroke-width="2"/>`)+heart(150,214,8,'#ff6fae');}},
+ {id:'furshrug',name:'Fur shrug top',c:'#ffffff',d:c=>{const o=shade(c,-.12);let s=`<path d="M118 168 Q150 180 182 168 L190 186 Q188 212 186 236 L114 236 Q112 212 110 186 Z" fill="#d6d9e2"/>`;
+   for(let y=176;y<236;y+=12)s+=`<path d="M114 ${y} Q132 ${y+8} 150 ${y} Q168 ${y+8} 186 ${y}" stroke="#9aa0b0" stroke-width="2.5" fill="none" opacity=".6"/>`;
+   s+=`<path d="M124 186 Q150 196 176 186" stroke="#fff" stroke-width="3" opacity=".6" fill="none"/>`;
+   return s+sym([[106,166,15],[98,184,14],[93,204,13],[90,222,12],[118,160,11],[95,240,10]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${o}" stroke-width="1"/>`).join(''));}},
+ {id:'furcoat',name:'Fuzzy coat',c:'#a8e6d9',d:c=>{const o=shade(c,-.12);let s=sleeve(c,1,32)+`<path d="${TORSO(262)}" fill="#e9d5f7"/>`;
+   for(let i=0;i<4;i++)s+=`<path d="M${118+i*16} 180 L${126+i*16} 200 L${118+i*16} 220 L${110+i*16} 200 Z" fill="none" stroke="#b388ff" stroke-width="1.5" opacity=".6"/>`;
+   s+=sym(`<path d="M112 156 Q100 162 100 180 L94 300 L128 304 Q128 230 136 168 Z" fill="${c}"/>`);
+   const fuzz=[];for(let y=164;y<304;y+=10)fuzz.push([132-(y-164)*.03,y],[97-(y-164)*.02,y+5]);
+   return s+sym(fuzz.map(([x,y])=>`<circle cx="${x.toFixed(1)}" cy="${y}" r="6" fill="${c}" stroke="${o}" stroke-width=".8"/>`).join('')+[[94,304],[89,316]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="15" fill="${c}"/>`).join(''));}},
+ {id:'graphiccrop',name:'Graphic crop tee',c:'#ff9ccf',d:c=>sleeve(c,0)+`<path d="M112 156 Q150 168 188 156 Q199 161 199 178 Q192 210 188 236 L112 236 Q108 210 101 178 Q101 161 112 156 Z" fill="${c}"/>`+neck(c)+
+   `<path d="M128 214 Q128 186 150 186 Q172 186 172 214 Z" fill="#2d2d3a"/><path d="M130 192 L132 176 L142 186 Z M170 192 L168 176 L158 186 Z" fill="#2d2d3a"/><circle cx="142" cy="200" r="3" fill="${c}"/><circle cx="158" cy="200" r="3" fill="${c}"/><rect x="112" y="226" width="76" height="8" fill="${shade(c,-.15)}"/>`},
+ {id:'corset',name:'Silver corset',c:'#d6d9e2',d:c=>{const o=shade(c,-.25);let s=sym(`<line x1="122" y1="176" x2="121" y2="158" stroke="${o}" stroke-width="2.5"/>`)+`<path d="M112 178 Q132 168 150 180 Q168 168 188 178 L189 210 Q187 236 185 260 L115 260 Q113 236 111 210 Z" fill="${c}"/>`;
+   for(const x of [126,138,162,174])s+=`<path d="M${x} ${178-(x%2)} Q${x+(x<150?-2:2)} 220 ${x} 260" stroke="${o}" stroke-width="1.5" fill="none"/>`;
+   for(let y=190;y<256;y+=10)s+=`<path d="M146 ${y} L154 ${y+6} M154 ${y} L146 ${y+6}" stroke="#ff8fc8" stroke-width="1.5"/>`;
+   s+=`<path d="M118 196 Q122 230 120 256" stroke="#fff" stroke-width="4" opacity=".5" fill="none"/>`;
+   for(let i=0;i<12;i++){const t=i/11;s+=`<circle cx="${(113+74*t).toFixed(1)}" cy="${(178+Math.sin(t*Math.PI*2)*-4+(Math.abs(t-.5)<.1?2:0)).toFixed(1)}" r="2.4" fill="#fff" stroke="#c9c9d6" stroke-width=".6"/>`;}
+   return s;}},
 ];
 const BOTTOMS=[
  {id:'jeans',name:'Jeans',c:'#5c7cfa',d:c=>`<path d="${PANTS}" fill="${c}"/><path d="M150 264 L150 322" stroke="${shade(c,-.2)}" stroke-width="2"/><rect x="113" y="255" width="74" height="10" rx="3" fill="${shade(c,-.15)}"/>`},
@@ -645,6 +677,19 @@ const BOTTOMS=[
    return s+`<rect x="113" y="252" width="74" height="10" rx="3" fill="#3b2314"/><rect x="141" y="250" width="14" height="14" rx="6" fill="none" stroke="#e0b04a" stroke-width="2.5"/>`;}},
  {id:'skinny',name:'White jeans',c:'#ffffff',d:c=>{const o=shade(c,-.14);return `<path d="${LEGGINGS}" fill="${c}" stroke="${o}" stroke-width="1.2"/><rect x="113" y="255" width="74" height="10" rx="3" fill="${shade(c,-.06)}" stroke="${o}" stroke-width="1"/><path d="M150 264 L150 322" stroke="${o}" stroke-width="1.5"/>`+sym(`<path d="M106 280 Q120 286 128 276" stroke="${o}" stroke-width="1.5" fill="none"/>`)+`<rect x="146" y="257" width="8" height="6" rx="1" fill="#e0b04a"/>`;}},
  {id:'maxi',name:'Long skirt',c:'#b388ff',d:c=>`<path d="M116 256 L184 256 Q206 400 220 548 Q150 564 80 548 Q94 400 116 256 Z" fill="${c}"/>`+flower(120,480,7,'#fff')+flower(178,430,7,'#fff')+flower(150,520,6,'#ffd1e6')+flower(130,380,6,'#ffd1e6')+`<rect x="114" y="252" width="72" height="10" rx="4" fill="${shade(c,-.15)}"/>`},
+ {id:'silvermini',name:'Metallic mini',c:'#d6d9e2',d:c=>{const o=shade(c,-.3);let s=`<path d="M116 256 L184 256 L198 330 Q150 340 102 330 Z" fill="${c}"/>`;
+   for(let i=0;i<6;i++){const y=270+i*11;s+=`<path d="M${108+i*2} ${y} Q${125} ${y-6} ${140} ${y+2} M${160} ${y+2} Q${176} ${y-6} ${192-i*2} ${y}" stroke="${o}" stroke-width="2.5" fill="none" opacity=".6"/>`;}
+   return s+`<path d="M124 262 Q118 300 112 328" stroke="#fff" stroke-width="5" opacity=".55" fill="none"/><rect x="114" y="252" width="72" height="9" rx="4" fill="${shade(c,-.12)}"/>`;}},
+ {id:'furskirt',name:'Fluffy skirt',c:'#ffb3d1',d:c=>{let s=`<path d="M116 256 L184 256 L212 332 Q150 344 88 332 Z" fill="${c}"/>`;
+   for(let x=90;x<=210;x+=10)s+=`<circle cx="${x}" cy="${336-Math.abs(x-150)*.04}" r="8" fill="#2d2d3a"/>`;
+   for(let y=270;y<330;y+=14)for(let x=118-(y-256)*.35;x<=182+(y-256)*.35;x+=12)s+=`<circle cx="${x.toFixed(1)}" cy="${y}" r="7" fill="${shade(c,(x+y)%3?.12:-.06)}" opacity=".9"/>`;
+   return s+`<rect x="114" y="250" width="72" height="11" rx="5" fill="${shade(c,-.15)}"/>`;}},
+ {id:'cargo',name:'Chain cargo pants',c:'#5b4a8a',d:c=>{const dk=shade(c,-.25);let s=`<path d="M114 256 L186 256 Q204 282 204 310 L200 430 L190 556 L155 556 L151 430 L150 322 L149 430 L145 556 L110 556 L100 430 L96 310 Q96 282 114 256 Z" fill="${c}"/>`;
+   for(let y=300;y<550;y+=28)s+=`<path d="M100 ${y} L200 ${y}" stroke="${dk}" stroke-width="3" opacity=".35"/>`;
+   s+=sym(`<path d="M104 330 L114 486" stroke="${shade(c,.25)}" stroke-width="3" opacity=".5"/><rect x="98" y="380" width="26" height="30" rx="4" fill="${dk}"/><path d="M98 388 L124 388" stroke="${c}" stroke-width="2"/>`);
+   s+=`<rect x="112" y="253" width="76" height="10" rx="3" fill="${dk}"/>`;
+   for(const [a,b,y] of [[114,186,284],[118,170,300],[140,196,272]])s+=`<path d="M${a} 262 Q${(a+b)/2} ${y} ${b} 262" stroke="#e0b04a" stroke-width="3" stroke-dasharray="4 3" fill="none"/>`;
+   return s+`<path d="M170 290 L172 322" stroke="#e0b04a" stroke-width="3" stroke-dasharray="4 3"/><circle cx="172" cy="326" r="4" fill="#e0b04a"/>`;}},
 ];
 const DRESSES=[
  {id:'gown',name:'Princess gown',c:'#ff8fc8',d:c=>sym(`<circle cx="107" cy="170" r="17" fill="${shade(c,.2)}"/>`)+BOD(c)+`<path d="M116 255 L184 255 Q240 400 264 556 Q150 584 36 556 Q60 400 116 255 Z" fill="${c}"/><g stroke="${shade(c,-.12)}" stroke-width="2" fill="none"><path d="M136 262 Q118 420 96 566"/><path d="M164 262 Q182 420 204 566"/><path d="M150 262 L150 572"/></g><rect x="114" y="250" width="72" height="12" rx="6" fill="${shade(c,-.15)}"/>`+sparkles([[100,470],[200,500],[150,420],[124,360,4],[178,350,4],[70,540,4],[230,540,4]])},
@@ -702,6 +747,17 @@ const DRESSES=[
    s+=sleeve(c,0,24)+`<path d="M112 156 Q150 168 188 156 Q199 161 199 178 Q191 222 190 280 L178 268 L170 290 L158 272 L148 296 L138 274 L126 292 L118 270 L110 286 Q109 222 101 178 Q101 161 112 156 Z" fill="${c}"/>`;
    s+=`<rect x="160" y="200" width="18" height="16" fill="#a0522d" transform="rotate(8 169 208)"/><path d="M160 200 L178 216 M178 200 L160 216" stroke="#2d2d3a" stroke-width="1" opacity=".4"/><path d="M124 196 L132 214 L126 226" stroke="${dk}" stroke-width="2.5" fill="none"/><path d="M168 380 L176 392 L170 404" stroke="#3b4652" stroke-width="2.5" fill="none"/><rect x="114" y="390" width="16" height="14" fill="#8e44ad" transform="rotate(-6 122 397)"/>`;
    return s;}},
+ {id:'redtulle',name:'Red tulle gown',c:'#d7263d',d:c=>{const dk=shade(c,-.25);
+   return `<path d="M116 258 Q56 420 34 568 Q150 594 266 568 Q244 420 184 258 Z" fill="${c}" opacity=".35"/><path d="M116 258 Q80 420 66 566 M184 258 Q220 420 234 566" stroke="${shade(c,.3)}" stroke-width="2" opacity=".5" fill="none"/>`+
+   `<path d="M120 168 Q150 182 180 168 L190 186 Q188 222 186 262 L114 262 Q111 222 110 186 Z" fill="${c}"/><path d="M120 168 L144 152 M180 168 L156 152" stroke="${c}" stroke-width="7" stroke-linecap="round"/>`+
+   `<path d="M150 158 L136 148 L136 168 Z M150 158 L164 148 L164 168 Z" fill="${dk}"/><circle cx="150" cy="158" r="4" fill="${c}"/>`+
+   `<path d="M116 256 L184 256 L196 334 Q150 344 104 334 Z" fill="${dk}"/>`+[0,1,2,3,4].map(i=>`<path d="M${108+i*21} 260 Q${116+i*21} 290 ${104+i*23} 334" stroke="${c}" stroke-width="3" fill="none" opacity=".7"/>`).join('')+
+   `<path d="M110 258 Q150 272 190 258" stroke="${shade(c,.2)}" stroke-width="8" fill="none"/>`+flower(176,262,7,shade(c,.15),dk);}},
+ {id:'catsuit',name:'Denim catsuit',c:'#2d2d3a',d:c=>{const hi=shade(c,.35);
+   return sleeve(c,1,27)+`<path d="M116 258 L184 258 Q198 282 196 302 L196 430 L210 556 L155 556 L151 430 L150 322 L149 430 L145 556 L90 556 L104 430 L104 302 Q102 282 116 258 Z" fill="${c}"/><path d="${TORSO(266,174)}" fill="${c}"/>`+
+   `<path d="M150 176 L150 300" stroke="#c0c4cf" stroke-width="2.5"/><rect x="112" y="252" width="76" height="9" rx="3" fill="${shade(c,-.2)}"/><rect x="144" y="250" width="12" height="13" rx="2" fill="#c0c4cf"/>`+
+   [[110,340,96,380],[176,420,190,470],[120,470,108,520],[160,500,172,540],[96,220,90,270]].map(([a,b,x,y])=>`<path d="M${a} ${b} L${x} ${y}" stroke="${hi}" stroke-width="4" stroke-linecap="round" opacity=".8"/>`).join('')+
+   [[118,158],[130,166],[150,170],[170,166],[182,158],[110,150],[190,150],[124,152],[176,152]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="#8e6cff"/>`).join('')+`<rect x="168" y="196" width="12" height="9" rx="2" fill="#c0c4cf"/>`;}},
 ];
 const SHOES=[
  {id:'sneaker',name:'Sneakers',c:'#ffffff',d:c=>{const lc=c==='#ffffff'?'#ff6fae':'#ffffff';return sym(`<path d="M118 546 L146 546 Q151 556 151 568 L113 568 Q113 556 118 546 Z" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1.2"/><path d="M114 560 Q132 552 150 560 L151 568 L113 568 Z" fill="${shade(c,-.06)}"/><rect x="111" y="566" width="42" height="11" rx="5.5" fill="#fff" stroke="#d9d9e3" stroke-width="1.2"/><path d="M112 573 L152 573" stroke="${lc}" stroke-width="2"/><path d="M122 551 L142 549 M121 556 L143 554" stroke="${lc}" stroke-width="2.4" stroke-linecap="round"/><path d="M117 562 Q130 556 148 563" stroke="${lc}" stroke-width="3" fill="none"/><ellipse cx="125" cy="552" rx="3" ry="2" fill="#fff" opacity=".6"/>`);}},
@@ -720,6 +776,18 @@ const SHOES=[
  {id:'glass',name:'Glass slippers',c:'#bfe9ff',d:c=>sym(`<path d="M123 552 L145 552 L147 571 Q141 578 134 578 Q125 578 122 571 Z" fill="${c}" opacity=".85" stroke="#fff" stroke-width="1.5"/><rect x="141" y="570" width="4" height="10" fill="${c}"/>`+star(132,563,4,'#fff'))},
  {id:'skates',name:'Roller skates',c:'#b388ff',d:c=>sym(`<path d="M118 520 L148 520 L149 568 L116 568 Q114 540 118 520 Z" fill="${c}"/><rect x="113" y="566" width="38" height="8" rx="3" fill="#fff"/><circle cx="121" cy="582" r="6" fill="#ffd23f"/><circle cx="144" cy="582" r="6" fill="#ffd23f"/><path d="M124 530 L142 530 M124 540 L142 540" stroke="#fff" stroke-width="2"/>`)},
  {id:'paws',name:'Monster paws',c:'#7a5230',d:c=>sym(`<path d="M116 520 L150 520 L150 566 Q150 580 134 580 L108 578 Q96 574 100 562 Q106 540 116 520 Z" fill="${c}"/><path d="M114 520 L119 508 L124 520 L130 506 L136 520 L142 508 L148 520 L152 510 L152 524 L114 524 Z" fill="${shade(c,-.2)}"/><path d="M100 572 L94 580 M110 576 L106 584 M120 578 L118 586" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`)},
+ {id:'furwarmers',name:'Fluffy leg warmers',c:'#ffffff',d:c=>{const o=shade(c,-.12);let s=`<path d="M112 436 L154 436 L156 570 Q150 584 134 584 Q112 584 110 570 Z" fill="${c}" stroke="${o}" stroke-width="1"/>`;
+   for(let y=440;y<580;y+=12)s+=`<circle cx="${110+(y%3)}" cy="${y}" r="7" fill="${c}"/><circle cx="${155-(y%2)}" cy="${y+5}" r="7" fill="${c}"/><path d="M${120+(y%7)} ${y} q4 6 0 12" stroke="${o}" stroke-width="1.5" fill="none"/>`;
+   return sym(s+`<ellipse cx="133" cy="436" rx="23" ry="7" fill="${shade(c,-.05)}"/>`);}},
+ {id:'chunkyboots',name:'Chunky boots',c:'#ff6fae',d:c=>{const dk=shade(c,-.2);let s='';
+   for(let y=436;y<556;y+=20)s+=`<rect x="113" y="${y}" width="40" height="22" rx="10" fill="${y%40?c:shade(c,.1)}" stroke="${dk}" stroke-width="1.5"/>`;
+   s+=`<path d="M112 552 L154 552 L156 572 L110 572 Z" fill="${c}"/><rect x="106" y="570" width="54" height="18" rx="5" fill="${dk}"/><circle cx="133" cy="500" r="4" fill="#7ee081"/>`;
+   return sym(s);}},
+ {id:'platforms',name:'Platform heels',c:'#ffc93c',d:c=>{const dk=shade(c,-.25);
+   return sym(`<path d="M122 548 Q134 544 146 548 L148 566 L120 566 Z" fill="${c}"/><path d="M120 538 Q134 546 148 538" stroke="${c}" stroke-width="5" fill="none"/><rect x="116" y="566" width="36" height="12" rx="3" fill="${dk}"/><rect x="138" y="566" width="14" height="24" rx="2" fill="${dk}"/><path d="M118 570 L150 570" stroke="#fff" stroke-width="1.5" opacity=".5"/>`);}},
+ {id:'laceheels',name:'Lace-up heels',c:'#d6d9e2',d:c=>{const dk=shade(c,-.3);let s=`<path d="M122 552 Q134 546 146 552 L148 568 Q145 578 134 580 Q124 578 121 568 Z" fill="${c}"/><path d="M143 568 L148 568 L147 588 L144 588 Z" fill="${dk}"/>`;
+   for(let y=450;y<550;y+=18)s+=`<path d="M119 ${y} L148 ${y+14} M148 ${y} L119 ${y+14}" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>`;
+   return sym(s+`<path d="M118 448 L150 448" stroke="${c}" stroke-width="3"/>`);}},
 ];
 const HATS=[
  {id:'tiara',name:'Tiara',c:'#ffd23f',d:c=>`<path d="M118 52 L126 34 L136 46 L150 20 L164 46 L174 34 L182 52 Q150 42 118 52 Z" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1.5"/><circle cx="150" cy="36" r="4.5" fill="#ff4d8d"/><circle cx="126" cy="44" r="3" fill="#4fc3f7"/><circle cx="174" cy="44" r="3" fill="#4fc3f7"/>`},
@@ -743,6 +811,8 @@ const HATS=[
  {id:'wolfears',name:'Wolf ears',c:'#7a5230',d:c=>sym(`<path d="M108 60 L112 6 L146 40 Z" fill="${c}"/><path d="M116 48 L117 22 L136 40 Z" fill="${shade(c,.45)}"/><path d="M112 6 L108 0 L116 10 Z" fill="${shade(c,-.25)}"/>`)+`<path d="M138 38 L144 26 L150 36 L156 26 L162 38 Z" fill="${c}"/>`},
  {id:'mummywrap',name:'Mummy wrap',c:'#efe6cf',d:c=>{const dk=shade(c,-.2);return `<path d="M106 58 Q150 30 194 58 L196 72 Q150 46 104 72 Z" fill="${c}" stroke="${dk}" stroke-width="1.2"/><path d="M110 40 Q150 20 190 40 L192 52 Q150 32 108 52 Z" fill="${c}" stroke="${dk}" stroke-width="1.2"/><path d="M190 64 Q214 76 210 104 L202 102 Q204 80 186 72 Z" fill="${c}" stroke="${dk}" stroke-width="1.2"/>`;}},
  {id:'hibiscus',name:'Hibiscus flower',c:'#ff4d6d',d:c=>{let s='';for(let i=0;i<5;i++){const a=i*72-90;s+=`<ellipse cx="124" cy="40" rx="8" ry="13" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1" transform="rotate(${a} 124 52)"/>`;}return s+`<circle cx="124" cy="52" r="4" fill="${shade(c,-.3)}"/><path d="M124 52 L134 44" stroke="#ffd23f" stroke-width="2"/><circle cx="135" cy="43" r="2.5" fill="#ffd23f"/>`;}},
+ {id:'fluffyears',name:'Fluffy kitty ears',c:'#7a4a2a',d:c=>sym(`<path d="M108 58 Q106 22 116 10 Q132 22 146 36 Z" fill="${c}"/><path d="M114 48 Q114 26 119 20 Q130 30 138 38 Z" fill="#ffd1e6"/><path d="M115 44 l3 -6 M120 46 l2 -7 M125 44 l1 -6" stroke="#fff" stroke-width="1.5"/>`)},
+ {id:'horns',name:'Horn clips',c:'#e0b04a',d:c=>sym(`<path d="M120 46 Q110 26 116 12 Q122 26 130 40 Z" fill="${c}" stroke="${shade(c,-.25)}" stroke-width="1.2"/><path d="M116 20 Q119 30 126 38" stroke="#fff" stroke-width="1.5" opacity=".6" fill="none"/>`)},
 ];
 const EXTRAS=[
  {id:'pearls',name:'Pearls',c:'#ffffff',vb:'110 140 80 60',d:c=>{let s='';for(let i=0;i<11;i++){const a=Math.PI*(.05+i*.09);s+=`<circle cx="${(150-24*Math.cos(a)).toFixed(1)}" cy="${(158+18*Math.sin(a)).toFixed(1)}" r="3.6" fill="${c}" stroke="${shade(c,-.2)}" stroke-width=".8"/>`;}return {front:s};}},
@@ -770,6 +840,10 @@ const EXTRAS=[
  {id:'bat',name:'Bat wings',c:'#2d2d3a',vb:'0 120 300 200',d:c=>({back:sym(`<path d="M120 190 Q80 130 20 150 Q40 170 36 190 Q56 186 64 206 Q80 196 92 214 Q100 200 120 214 Z" fill="${c}"/>`)})},
  {id:'vampcape',name:'Vampire cape',c:'#2d2d3a',vb:'20 80 260 480',d:c=>({back:`<path d="M100 156 Q150 144 200 156 Q244 300 288 540 Q150 576 12 540 Q56 300 100 156 Z" fill="${c}"/><path d="M106 164 Q150 152 194 164 Q236 300 276 534 Q150 566 24 534 Q64 300 106 164 Z" fill="#b3001b"/>`+sym(`<path d="M128 162 Q86 130 70 78 Q104 104 142 150 Z" fill="${c}"/><path d="M128 156 Q94 128 82 94 Q110 116 138 150 Z" fill="#b3001b"/>`)})},
  {id:'lei',name:'Flower lei',c:'#ff8fc8',vb:'100 140 100 90',d:c=>{let s='';const cols=[c,'#ffd23f','#ffffff','#ff4d6d'];for(let i=0;i<11;i++){const a=Math.PI*(.04+i*.092);s+=flower(+(150-30*Math.cos(a)).toFixed(1),+(160+30*Math.sin(a)).toFixed(1),5,cols[i%4]);}return {front:s};}},
+ {id:'tail',name:'Kitty tail',c:'#ffffff',vb:'140 120 160 200',d:c=>({back:`<path d="M168 262 Q240 270 250 200 Q258 150 232 128" stroke="${shade(c,-.15)}" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M168 262 Q240 270 250 200 Q258 150 232 128" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M236 132 Q228 124 232 128" stroke="#7a4a2a" stroke-width="11" stroke-linecap="round"/>`})},
+ {id:'whiskers',name:'Kitty face paint',c:'#ffffff',vb:'105 85 90 45',d:c=>({head:sym(`<g stroke="${shade(c,-.3)}" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"><path d="M112 104 L128 107 M111 111 L128 111 M112 118 L128 115"/></g><g stroke="${c}" stroke-width="2" stroke-linecap="round"><path d="M112 104 L128 107 M111 111 L128 111 M112 118 L128 115"/></g>`)+`<path d="M147 104 L150 107 L153 104 Z" fill="${c}" stroke="${shade(c,-.3)}" stroke-opacity=".4" stroke-width=".8"/>`})},
+ {id:'facegems',name:'Face gems',c:'#4fc3f7',vb:'110 55 80 65',d:c=>({head:`<path d="M150 64 L154 69 L150 74 L146 69 Z" fill="${c}" stroke="#fff" stroke-width="1"/>`+sym(`<circle cx="126" cy="104" r="1.8" fill="${c}"/><circle cx="131" cy="106" r="1.4" fill="#fff"/><circle cx="121" cy="102" r="1.3" fill="${c}"/>`)})},
+ {id:'bangles',name:'Gold bangles',c:'#e0b04a',vb:'70 270 160 60',d:c=>({hand:sym(`<ellipse cx="90" cy="296" rx="12" ry="4" fill="none" stroke="${c}" stroke-width="3"/><ellipse cx="90" cy="303" rx="12" ry="4" fill="none" stroke="${shade(c,.2)}" stroke-width="2.5"/><ellipse cx="90" cy="290" rx="12" ry="4" fill="none" stroke="${shade(c,-.15)}" stroke-width="2.5"/>`)})},
 ];
 const SCENES=[
  {id:'studio',name:'Sparkle studio'},{id:'bedroom',name:'My room'},{id:'birthday',name:'Birthday party'},{id:'halloween',name:'Halloween'},
