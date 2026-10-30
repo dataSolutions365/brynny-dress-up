@@ -1216,9 +1216,6 @@ $('#braidTie').onclick=()=>{const l=L();ensureSalon(l);l.salon[BR.side]='braid';
 /* ---------- nail spa: manicure + pedicure ---------- */
 const NAIL_COLORS=['#ff3b6b','#ff6fae','#ffb3d1','#c2185b','#b388ff','#6a3df0','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#ff8a1f','#ffffff','#2d2d3a','#d4af37','#c0c0c0'];
 const NAIL_STICKERS=[{id:'heart',e:'💖'},{id:'star',e:'⭐'},{id:'flower',e:'🌸'},{id:'dot',e:'⚪'}];
-const NAIL_SHAPES={
-  hands:[{x:74,y:150,w:30,h:100,r:-40},{x:96,y:70,w:32,h:150},{x:134,y:50,w:33,h:170},{x:173,y:62,w:32,h:160},{x:210,y:96,w:28,h:130}],
-  feet:[{cx:84,cy:92,r:30},{cx:136,cy:80,r:22},{cx:178,cy:86,r:20},{cx:215,cy:100,r:18},{cx:246,cy:120,r:15}]};
 const SPA_STEPS={hands:[{id:'soak',e:'🫧',n:'Soak'},{id:'scrub',e:'🧴',n:'Lotion'},{id:'file',e:'💅',n:'File'}],feet:[{id:'soak',e:'🛁',n:'Soak'},{id:'scrub',e:'🧽',n:'Scrub'},{id:'file',e:'💅',n:'File'}]};
 const SPA_TOOLS=[{id:'polish',e:'🖌️',n:'Polish'},{id:'glitter',e:'✨',n:'Glitter'},{id:'sticker',e:'💖',n:'Sticker'},{id:'dry',e:'💨',n:'Dry'},{id:'remove',e:'🧽',n:'Remove'}];
 const SPA={kind:'hands',tool:'soak',prog:{},color:'#ff6fae',sticker:'heart',down:false,last:null,fx:0};
@@ -1229,21 +1226,42 @@ function nailDeco(n,x,y,s){
   if(n.s==='heart')o+=heart(x,y,s*.32,'#fff');else if(n.s==='star')o+=star(x,y,s*.42,'#fff');else if(n.s==='flower')o+=flower(x,y,s*.22,'#fff','#ffd23f');else if(n.s==='dot')o+=`<circle cx="${x}" cy="${y}" r="${s*.22}" fill="#fff"/>`;
   return o;
 }
+// finger: base point, lean angle, length, width (back-of-hand view, fingers up)
+const SPA_FINGERS=[{x:96,y:214,a:-52,l:74,w:32},{x:118,y:168,a:-9,l:92,w:29},{x:147,y:162,a:-1,l:104,w:30},{x:176,y:168,a:7,l:94,w:28},{x:202,y:182,a:16,l:74,w:24}];
+const SPA_TOES=[{cx:100,cy:96,w:46,h:52},{cx:141,cy:86,w:33,h:38},{cx:173,cy:93,w:30,h:34},{cx:202,cy:106,w:27,h:30},{cx:227,cy:123,w:23,h:25}];
+const SPA_DIRT=[[96,170,22,14],[150,210,26,16],[200,180,18,12],[120,250,20,12],[180,250,24,14],[98,100,10,7],[176,96,7,5],[228,128,6,4],[140,140,14,9]];
+function spaClean(){const p=SPA.prog;return Math.min(1,((p.soak||0)*.2+(p.scrub||0)*.8)/100);}
 function nailClose(){
-  const l=L(),k=SPA.kind,set=nailSet(l,k),sk=l.skin,d=shade(sk,-.15);let s='';
-  const nail=(i,cx,cy,rx,ry,rot)=>{const n=set[i],t=rot?` transform="rotate(${rot} ${cx} ${cy})"`:'';
-    return `<g data-n="${i}"${t}><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${n?n.c:'#ffe4ec'}" stroke="${n?shade(n.c,-.2):shade(sk,-.25)}" stroke-width="1.5"/>`+(n?`<ellipse cx="${cx-rx*.35}" cy="${cy-ry*.3}" rx="${rx*.18}" ry="${ry*.4}" fill="#fff" opacity=".55"/>`:'')+nailDeco(n,cx,cy+ry*.1,rx*2)+`</g>`;};
+  const l=L(),k=SPA.kind,set=nailSet(l,k),sk=l.skin,d=shade(sk,-.16),lt=shade(sk,.1),dk=shade(sk,-.08);
+  let s=`<defs><linearGradient id="spaSkin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${sk}"/><stop offset="1" stop-color="${dk}"/></linearGradient><linearGradient id="spaFoot" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="260" y2="0"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${sk}"/><stop offset="1" stop-color="${dk}"/></linearGradient>
+<filter id="spaForm" x="-10%" y="-10%" width="120%" height="120%"><feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur in="inv" stdDeviation="4" result="ib"/><feOffset in="ib" dx="-4" dy="-2" result="o1"/><feComposite in="o1" in2="SourceAlpha" operator="in" result="m1"/><feFlood flood-color="#5a2a3a" flood-opacity=".35"/><feComposite in2="m1" operator="in" result="sh"/><feOffset in="ib" dx="3" dy="2" result="o2"/><feComposite in="o2" in2="SourceAlpha" operator="in" result="m2"/><feFlood flood-color="#fff" flood-opacity=".35"/><feComposite in2="m2" operator="in" result="hi"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sh"/><feMergeNode in="hi"/></feMerge></filter></defs>`;
+  const grime=1-Math.min(1,(SPA.prog.file||0)/100);
+  const nail=(i,cx,cy,rx,ry)=>{const n=set[i];
+    return `<path d="M${cx-rx} ${cy+ry*.55} L${cx-rx} ${cy-ry*.35} Q${cx-rx} ${cy-ry*1.15} ${cx} ${cy-ry*1.15} Q${cx+rx} ${cy-ry*1.15} ${cx+rx} ${cy-ry*.35} L${cx+rx} ${cy+ry*.55} Q${cx} ${cy+ry*.85} ${cx-rx} ${cy+ry*.55} Z" fill="${n?n.c:'#ffe1e8'}" stroke="${n?shade(n.c,-.25):shade(sk,-.22)}" stroke-width="1.2"/>`
+      +(n?'':`<path d="M${cx-rx*.6} ${cy+ry*.45} Q${cx} ${cy+ry*.1} ${cx+rx*.6} ${cy+ry*.45}" fill="#fff" opacity=".6"/><path d="M${cx-rx*.9} ${cy-ry*.75} Q${cx} ${cy-ry*1.05} ${cx+rx*.9} ${cy-ry*.75}" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/>`)
+      +(!n&&grime>0?`<path d="M${cx-rx*.85} ${cy-ry*.8} Q${cx} ${cy-ry*1.08} ${cx+rx*.85} ${cy-ry*.8}" stroke="#6b4a2a" stroke-width="2.5" fill="none" opacity="${(grime*.75).toFixed(2)}" class="grime"/>`:'')
+      +`<path d="M${cx-rx*.55} ${cy-ry*.6} Q${cx-rx*.6} ${cy} ${cx-rx*.45} ${cy+ry*.3}" stroke="#fff" stroke-width="${(rx*.35).toFixed(1)}" fill="none" opacity="${n?.45:.3}" stroke-linecap="round"/>`
+      +nailDeco(n,cx,cy,rx*2);};
+  const water=(y)=>SPA.tool==='soak'&&!SPA.prog.soak_done?`<rect x="0" y="${y}" width="300" height="${300-y}" fill="#9fe3ff" opacity=".45"/><path d="M0 ${y} Q25 ${y-6} 50 ${y} T100 ${y} T150 ${y} T200 ${y} T250 ${y} T300 ${y}" stroke="#fff" stroke-width="2" fill="none" opacity=".8"/>`:'';
   if(k==='hands'){
-    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="210" width="300" height="90" fill="#9fe3ff" opacity=".55"/>`;
-    s+=`<ellipse cx="160" cy="236" rx="78" ry="74" fill="${sk}"/><rect x="104" y="250" width="100" height="60" fill="${sk}"/>`;
-    NAIL_SHAPES.hands.forEach((f,i)=>{const r=f.r||0,cx=f.x+f.w/2;
-      s+=`<g data-n="${i}" transform="rotate(${r} ${cx} ${f.y+f.h})"><rect x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="${f.w/2}" fill="${sk}"/><path d="M${f.x+6} ${f.y+f.h*.42} q${f.w/2-6} 5 ${f.w-12} 0" stroke="${d}" stroke-width="1.5" fill="none" opacity=".6"/>${nail(i,cx,f.y+20,f.w*.34,15)}</g>`;});
-    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="210" width="300" height="90" fill="#9fe3ff" opacity=".35"/>`;
+    s+=water(220).replace('opacity=".45"','opacity=".55"');
+    let fingers='';
+    SPA_FINGERS.forEach((f,i)=>{const tw=f.w*.86,L2=f.l-tw/2;
+      fingers+=`<g data-n="${i}" transform="translate(${f.x} ${f.y}) rotate(${f.a})"><path d="M${-f.w/2} 8 L${-tw/2} ${-L2} A${tw/2} ${tw/2} 0 0 1 ${tw/2} ${-L2} L${f.w/2} 8 Z" fill="url(#spaSkin)"/>`
+        +`<path d="M${-tw*.32} ${-f.l*.42} q${tw*.32} 4 ${tw*.64} 0 M${-tw*.3} ${-f.l*.47} q${tw*.3} 3 ${tw*.6} 0" stroke="${d}" stroke-width="1.3" fill="none" opacity=".55"/><path d="M${-tw*.28} ${-f.l*.72} q${tw*.28} 3 ${tw*.56} 0" stroke="${d}" stroke-width="1.1" fill="none" opacity=".45"/>`
+        +nail(i,0,-f.l+tw*.55,tw*.34,tw*.5)+`</g>`;});
+    s+=`<g filter="url(#spaForm)">`+fingers+`<path d="M98 196 Q98 166 120 164 L204 172 Q222 180 220 206 L214 258 Q208 292 198 304 L196 320 L118 320 L118 300 Q96 278 94 240 Z" fill="url(#spaSkin)"/>`
+      +[[128,176],[154,172],[180,178],[203,190]].map(([x,y])=>`<path d="M${x-8} ${y} q8 -5 16 0" stroke="${d}" stroke-width="1.4" fill="none" opacity=".45"/>`).join('')
+      +`<path d="M134 214 Q160 222 186 214" stroke="${d}" stroke-width="1" fill="none" opacity=".25"/></g>`;
+    s+=water(220).replace('opacity=".45"','opacity=".3"');
   }else{
-    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="150" width="300" height="150" fill="#9fe3ff" opacity=".55"/>`;
-    s+=`<path d="M52 100 Q150 66 268 116 Q300 220 250 300 L90 300 Q30 210 52 100 Z" fill="${sk}"/>`;
-    NAIL_SHAPES.feet.forEach((t,i)=>{s+=`<circle data-n="${i}" cx="${t.cx}" cy="${t.cy}" r="${t.r}" fill="${sk}" stroke="${d}" stroke-width="1"/>`;s+=nail(i,t.cx,t.cy-t.r*.18,t.r*.55,t.r*.48);});
-    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="150" width="300" height="150" fill="#9fe3ff" opacity=".35"/>`;
+    s+=water(160);
+    let toes='';
+    SPA_TOES.forEach((t,i)=>{const r=t.w/2,b=t.cy+t.h/2+26;toes+=`<g data-n="${i}"><path d="M${t.cx-r} ${b} L${t.cx-r} ${t.cy} A${r} ${t.h/2} 0 0 1 ${t.cx+r} ${t.cy} L${t.cx+r} ${b} Z" fill="url(#spaFoot)"/>`+nail(i,t.cx,t.cy-t.h*.12,t.w*.3,t.h*.24)+`</g>`;});
+    s+=`<g filter="url(#spaForm)"><path d="M70 138 Q66 112 90 110 Q160 116 238 134 Q254 148 250 178 Q240 226 220 262 L212 300 L108 300 Q104 254 88 214 Q72 176 70 138 Z" fill="url(#spaFoot)"/>`+toes+SPA_TOES.slice(1).map((t,i)=>{const x=t.cx-t.w/2,y=t.cy+t.h*.15;return `<path d="M${x} ${y} Q${x} ${y+18} ${x+3} ${y+24}" stroke="${d}" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>`;}).join('')+`<path d="M112 286 Q118 250 108 214" stroke="${d}" stroke-width="2" fill="none" opacity=".25"/><path d="M188 150 Q204 200 196 250" stroke="#fff" stroke-width="10" fill="none" opacity=".15" stroke-linecap="round"/></g>`;
+    const dirt=1-spaClean();
+    s+=`<g id="spaDirt" opacity="${dirt.toFixed(2)}" style="pointer-events:none">`+SPA_DIRT.map(([x,y,rx,ry],i)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${i%2?'#5e4026':'#6e4e2e'}" opacity=".6" transform="rotate(${i*23} ${x} ${y})"/><circle cx="${x+rx*.6}" cy="${y-ry*.4}" r="${ry*.35}" fill="#6b4a2a" opacity=".4"/>`).join('')+`</g>`;
+    s+=water(160).replace('opacity=".45"','opacity=".25"');
   }
   return s+`<g id="nailFx"></g>`;
 }
@@ -1254,7 +1272,7 @@ function nailDraw(){
   $('#nailTools').innerHTML=steps.concat(SPA_TOOLS).map(t=>{const id=t.id;const done=SPA.prog[id+'_done'];return `<button data-t="${id}" class="${SPA.tool===id?'on':''} ${done?'did':''}"><b>${t.e}</b>${t.n}${done?' ✓':''}</button>`;}).join('');
   const st=steps.find(x=>x.id===SPA.tool);
   $('#nailBar').parentNode.style.visibility=st?'visible':'hidden';$('#nailBar').style.width=(SPA.prog[SPA.tool]||0)+'%';
-  $('#nailHint').textContent={soak:k==='hands'?'Swish your finger in the bubbly water!':'Swish the warm water around the toes!',scrub:k==='hands'?'Rub the lotion all over the hand.':'Scrub, scrub, scrub!',file:'Rub across the tips of each nail to shape them.',
+  $('#nailHint').textContent={soak:k==='hands'?'Swish your finger in the bubbly water!':'Uh oh, muddy feet! Swish the warm water around the toes.',scrub:k==='hands'?'Rub the lotion all over the hand.':'Muddy feet! Scrub, scrub, scrub!',file:'Rub across the tips of each nail to shape them.',
     polish:'Pick a color, then paint each nail with your finger.',glitter:'Tap a nail to make it sparkle.',sticker:'Pick a sticker, then tap a nail.',dry:'Rub to blow air so the polish dries.',remove:'Tap a nail to wipe off the polish.'}[SPA.tool]||'';
   let o='';
   if(SPA.tool==='polish'||SPA.tool==='glitter')o+=swatches('nailc',NAIL_COLORS,SPA.color)+`<div class="addrow" style="justify-content:center"><button class="pill soft" id="nailAll">🎨 Paint them all</button></div>`;
@@ -1277,6 +1295,7 @@ function nailAct(ev,first){
     SPA.prog[t]=Math.min(100,(SPA.prog[t]||0)+moved/(t==='file'?6:9));
     if(++SPA.fx%3===0)nailFx(x,y,{soak:'🫧',scrub:SPA.kind==='hands'?'🤍':'🫧',file:'✨',dry:'💨'}[t]);
     $('#nailBar').style.width=SPA.prog[t]+'%';
+    const dg=$('#spaDirt');if(dg)dg.setAttribute('opacity',(1-spaClean()).toFixed(2));if(t==='file')document.querySelectorAll('#nailSvg .grime').forEach(g=>g.setAttribute('opacity',((1-SPA.prog.file/100)*.75).toFixed(2)));
     if(SPA.prog[t]>=100&&!SPA.prog[t+'_done']){SPA.prog[t+'_done']=true;Music.sfx();
       toast({soak:'🫧 Nice and soft!',scrub:SPA.kind==='hands'?'🤍 Silky smooth!':'🧽 Squeaky clean!',file:'💅 Perfect shape!',dry:'✨ All dry and shiny!'}[t]);
       const order=SPA_STEPS[SPA.kind].map(s=>s.id).concat(['polish']),nx=order[order.indexOf(t)+1];if(nx){SPA.tool=nx;SPA.down=false;}nailDraw();}
