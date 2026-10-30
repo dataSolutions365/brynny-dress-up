@@ -604,12 +604,13 @@ function braidLobes(x0,y0,x1,y1,w){
 const braidHi=c=>c&&c[0]==='#'?shade(c,.42):'#fff',braidLo=c=>c&&c[0]==='#'?shade(c,-.55):'#000';
 function wbraid(x0,y0,x1,y1,c,d,w=22){
   const B=braidLobes(x0,y0,x1,y1,w),hi=braidHi(c),lo=braidLo(c);
-  return `<path d="${B.under}" fill="${shade(c,-.25)}"/>`+B.out.map(l=>`<path d="${l.d}" fill="${c}" stroke="${lo}" stroke-width="1.1" stroke-opacity=".7"/><path d="${l.sh}" stroke="${lo}" stroke-width="2.2" fill="none" opacity=".45" stroke-linecap="round"/><path d="${l.hl}" stroke="${hi}" stroke-width="2.2" fill="none" opacity=".7" stroke-linecap="round"/>`).join('');
+  return `<path d="${B.under}" fill="${c}"/>`+B.out.map(l=>`<path d="${l.d}" fill="${c}" stroke="${lo}" stroke-width="1.1" stroke-opacity=".7"/><path d="${l.sh}" stroke="${lo}" stroke-width="2.2" fill="none" opacity=".45" stroke-linecap="round"/><path d="${l.hl}" stroke="${hi}" stroke-width="2.2" fill="none" opacity=".7" stroke-linecap="round"/>`).join('');
 }
 // hair gathered from the side of the head down into the top of the braid
-const braidRoot=(xa,xb,ya,x,y,w,c,d)=>`<path d="M${xa} ${ya} Q${(xa+x-w/2)/2-4} ${(ya+y)/2} ${x-w/2} ${y+4} L${x+w/2} ${y+4} Q${(xb+x+w/2)/2+4} ${(ya+y)/2} ${xb} ${ya} Z" fill="${c}"/><path d="M${(xa+xb)/2} ${ya+2} Q${(xa+xb)/2-2} ${(ya+y)/2} ${x} ${y}" stroke="${d}" stroke-width="1.4" fill="none" opacity=".4"/>`;
+const braidRootD=(xo,xi,yt,x,y,w)=>{const o=xo<xi?-1:1;return `M${xo} ${yt} C${xo+o*2} ${yt+16} ${x+o*w/2} ${y-16} ${x+o*w/2} ${y+8} L${x-o*w/2} ${y+8} C${x-o*w/2} ${y-8} ${xi} ${yt+14} ${xi} ${yt} Z`;};
+const braidRoot=(xo,xi,yt,x,y,w,c,d)=>`<path d="${braidRootD(xo,xi,yt,x,y,w)}" fill="${c}"/><path d="M${(xo+xi)/2} ${yt+2} Q${(xo+xi)/2} ${(yt+y)/2} ${x} ${y+4}" stroke="${braidLo(c)}" stroke-width="1.4" fill="none" opacity=".35"/><path d="M${(xo*.3+xi*.7)} ${yt+4} Q${(xo*.3+xi*.7)} ${(yt+y)/2} ${x+(xi>xo?3:-3)} ${y+2}" stroke="${braidHi(c)}" stroke-width="1.6" fill="none" opacity=".4"/>`;
 const braidTail=(x,y,c)=>`<path d="M${x-6} ${y} L${x-10} ${y+22} L${x} ${y+14} L${x+10} ${y+22} L${x+6} ${y} Z" fill="${c}"/><rect x="${x-7}" y="${y-5}" width="14" height="8" rx="4" fill="#ff6fae"/>`;
-const braid=(x,c,d)=>braidRoot(x<150?104:180,x<150?120:196,78,x,104,22,c,d)+wbraid(x,104,x,250,c,d)+braidTail(x,250,c);
+const braid=(x,c,d)=>{const L=x<150,bx=L?x-3:x+3;return braidRoot(L?107:193,L?119:181,60,bx,98,22,c,d)+wbraid(bx,94,bx,250,c,d)+braidTail(bx,250,c);};
 const HAIR=[
  {id:'long',name:'Long',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L204 246 Q150 262 96 246 Z" fill="${c}"/>`,
    front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/>`+sym(`<path d="M109 88 Q101 140 103 196 L116 190 Q112 140 115 96 Z" fill="${c}"/>`)})},
@@ -654,7 +655,7 @@ const HAIR=[
  {id:'halfup',name:'Half-up',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 Q210 140 200 250 Q150 264 100 250 Q90 140 104 80 Z" fill="${c}"/><circle cx="150" cy="22" r="15" fill="${c}"/><path d="M140 22 Q150 12 160 22" stroke="${d}" stroke-width="2" fill="none"/>`,
    front:`<path d="M108 100 Q102 30 150 30 Q198 30 192 100 Q186 62 150 58 Q114 62 108 100 Z" fill="${c}"/><path d="M120 46 Q150 34 180 46" stroke="${d}" stroke-width="2" fill="none" opacity=".4"/>`+sym(`<path d="M108 94 Q98 150 104 220 Q110 232 116 220 Q110 150 116 100 Z" fill="${c}"/>`)})},
  {id:'sidebraid',name:'Side braid',d:(c,d)=>({back:`<path d="M104 82 Q100 28 150 28 Q200 28 196 82 Z" fill="${c}"/>`,
-   front:`<path d="M108 100 Q101 32 150 31 Q199 32 194 100 Q190 70 176 58 Q150 60 120 72 Q110 82 108 100 Z" fill="${c}"/>`+braidRoot(172,198,70,188,104,24,c,d)+wbraid(188,104,197,252,c,d,24)+braidTail(197,252,c)})},
+   front:`<path d="M108 100 Q101 32 150 31 Q199 32 194 100 Q190 70 176 58 Q150 60 120 72 Q110 82 108 100 Z" fill="${c}"/>`+braidRoot(180,193,60,188,104,24,c,d)+wbraid(188,104,197,252,c,d,24)+braidTail(197,252,c)})},
  {id:'locs',name:'Locs',d:(c,d)=>{let b=`<path d="M104 82 Q100 28 150 28 Q200 28 196 82 Z" fill="${c}"/>`,f='';
    for(let x=100;x<=200;x+=10){const e=x-(150-x)*.18;b+=`<path d="M${x} 66 Q${(x+e)/2+(x%20?3:-3)} 160 ${e} 250" stroke="${c}" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M${x} 66 Q${(x+e)/2+(x%20?3:-3)} 160 ${e} 250" stroke="${d}" stroke-width="10" fill="none" stroke-dasharray="1 9" opacity=".5"/>`;}
    for(const x of [110,190])f+=`<path d="M${x} 74 Q${x<150?x-10:x+10} 160 ${x<150?x-6:x+6} 236" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M${x} 74 Q${x<150?x-10:x+10} 160 ${x<150?x-6:x+6} 236" stroke="${d}" stroke-width="9" fill="none" stroke-dasharray="1 9" opacity=".5"/>`;
@@ -674,9 +675,9 @@ function salonShapes(S){
     if(st==='braid'){
       const bl=Math.max(len,170);let y=110,i=0;
       // root from the side of the head, a solid underlay, then strands leaning left and right so it reads as one braid
-      front.push(`<path d="M${X(104)} 80 Q${X(102)} 96 ${X(101)} 106 L${X(122)} 106 Q${X(122)} 92 ${X(120)} 80 Z"/>`);
+      front.push(`<path d="${braidRootD(X(107),X(119),60,X(107),96,22)}"/>`);
       while(y<bl-6)y+=16;
-      const B=braidLobes(X(111),104,X(113),y,22);
+      const B=braidLobes(X(107),92,X(109),y,22);
       front.push(`<path d="${B.under}" data-braidbase="1"/>`);
       B.out.forEach(l=>{front.push(`<path d="${l.d}" data-braid="1"/>`);front.push(`<path d="${l.sh}" data-braidlo="1"/>`);front.push(`<path d="${l.hl}" data-braidhl="1"/>`);});
       front.push(`<path d="M${X(105)} ${y} L${X(100)} ${y+18} L${X(110)} ${y+10} L${X(120)} ${y+18} L${X(115)} ${y} Z"/>`);
@@ -707,7 +708,7 @@ function clipSVG(k,x,y,c){
 function salonHair(L,c,d){
   const S=L.salon,sh=salonShapes(S),id=++hcId;
   const hi=braidHi(c),lo=braidLo(c);
-  const paint=arr=>arr.map(x=>x.includes('data-braidhl')?x.replace('/>',` fill="none" stroke="${hi}" stroke-width="2.2" opacity=".7" stroke-linecap="round"/>`):x.includes('data-braidlo')?x.replace('/>',` fill="none" stroke="${lo}" stroke-width="2.2" opacity=".45" stroke-linecap="round"/>`):x.includes('data-braidbase')?x.replace('/>',` fill="${shade(c,-.25)}"/>`):x.includes('data-braid')?x.replace('/>',` fill="${c}" stroke="${lo}" stroke-width="1.1" stroke-opacity=".7"/>`):x.includes('data-tie')?x.replace('/>',` fill="#ff6fae"/>`):x.replace('/>',` fill="${c}"/>`)).join('');
+  const paint=arr=>arr.map(x=>x.includes('data-braidhl')?x.replace('/>',` fill="none" stroke="${hi}" stroke-width="2.2" opacity=".7" stroke-linecap="round"/>`):x.includes('data-braidlo')?x.replace('/>',` fill="none" stroke="${lo}" stroke-width="2.2" opacity=".45" stroke-linecap="round"/>`):x.includes('data-braidbase')?x.replace('/>',` fill="${c}"/>`):x.includes('data-braid')?x.replace('/>',` fill="${c}" stroke="${lo}" stroke-width="1.1" stroke-opacity=".7"/>`):x.includes('data-tie')?x.replace('/>',` fill="#ff6fae"/>`):x.replace('/>',` fill="${c}"/>`)).join('');
   const streaks=(S.streaks||[]).map(strokeSVG).join('');
   let back=paint(sh.back),front=paint(sh.front);
   if(streaks){back+=`<clipPath id="hcb${id}">${sh.back.join('')}</clipPath><g clip-path="url(#hcb${id})">${streaks}</g>`;
