@@ -140,7 +140,8 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .votes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
 .votes button{background:#fff6fb;border-radius:16px;padding:6px;font-size:15px}.votes button:disabled{opacity:.35}
 .mine{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px}.mine button{background:#fff6fb;border-radius:12px;padding:8px;font-weight:700;text-align:left}.mine small{display:block;font-weight:500;opacity:.7}
-.vcard{background:#fff6fb;border-radius:16px;padding:6px;text-align:center}.vcard b,.vcard small{display:block}.vcard small{opacity:.7}
+.vcard .watch{display:inline-block;margin-top:4px;font-size:12px;font-weight:700;color:var(--pink)}
+.vcard{width:100%;font:inherit;border-radius:16px;padding:6px;text-align:center}.vcard b,.vcard small{display:block}.vcard small{opacity:.7}
 .vcard svg,.votes svg{display:block;width:100%;height:150px}
 .winner svg{display:block;margin:0 auto;height:200px}
 .ranks{text-align:left;margin:8px auto;max-width:320px;line-height:1.8}
@@ -2146,9 +2147,11 @@ function scoreLook(l,th){
   fin=Math.min(10,fin);
   return {theme:Math.round(theme),style:Math.round(style),finish:Math.round(fin),hits};
 }
-function judgeSays(k,v,th){
+function judgeSays(k,v,th,l){
   const hi={theme:[`That is SO ${th.name}! 💯`,`Perfect for the ${th.name}!`],style:['Those colors look amazing together! 🎨','Gorgeous color choices!'],finish:['Every little detail is perfect! ✨','Love the finishing touches!']};
   const mid={theme:['Nice! A few more theme pieces would wow me.','Ooh, getting close to the theme!'],style:['Pretty! Try colors from the same family.','Cute colors! Matching shades pop even more.'],finish:['Add shoes, a hat or jewelry for extra sparkle!','Try makeup or nails to finish the look!']};
+  if(l&&k==='finish'&&v<9){const ex=Object.keys(l.extras||{}).length,mk=l.makeup&&(l.makeup.lips||l.makeup.shadow);
+    mid.finish=!l.shoes||!l.hat?['Add shoes or a hat for extra sparkle!']:ex<2?['Some jewelry or a bag would finish the look!']:!mk?['Try a little makeup to finish the look!']:['Try painted nails for the final touch!'];}
   const pick=a=>a[Math.floor(Math.random()*a.length)];return v>=9?pick(hi[k]):pick(mid[k]);
 }
 function contestPick(){
@@ -2181,7 +2184,8 @@ $('#contestBody').addEventListener('click',e=>{
       if(new Set(names.map(n=>n.toLowerCase())).size<2){toast('👭 Type at least 2 different names');return;}C.opt.names=names;persist();startFriends(th,secs,[...new Set(names)]);return;}
     startContest(th,secs,$('#contestBody [data-mode="online"].on')?{host:true,judges:[...C.judges]}:null);return;}
   if(e.target.closest('#cAgain'))contestPick();
-  const rs=e.target.closest('[data-results]');if(rs)showResults(rs.dataset.results);
+  const rs=e.target.closest('[data-results]');if(rs){renderStage();showResults(rs.dataset.results);}
+  const wt=e.target.closest('[data-watch]');if(wt)watchWalk(+wt.dataset.watch);
   if(e.target.closest('#cShare'))shareChallenge(e.target.closest('#cShare').dataset.code);
   if(e.target.closest('#cAccept'))acceptChallenge();
   if(e.target.closest('#fReady'))friendTurn();
@@ -2212,7 +2216,7 @@ function showJudges(){
    <div id="cResult" style="opacity:0;transition:opacity .4s"><h2>${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</h2><p style="font-weight:700">${total}/${max} · ${stars===3?'🏆 Top model! You won the trophy!':stars===2?'🥈 Fabulous! So close to the top!':'🎀 Great walk! Try the judges\' tips for more stars.'}</p>${unlocked.length?`<p>🔓 New theme unlocked: ${unlocked.map(t=>t.e+' '+t.name).join(', ')}!</p>`:''}
    ${contest.online?'<div id="cOnline"><p>🌍 Sending your look…</p></div>':''}<button class="big-btn" id="cAgain">Play again 🏆</button></div>`;
   $('#contestModal').classList.add('show');if(contest.online)sendOnline(contest.online,th);
-  js.forEach((j,i)=>setTimeout(()=>{$('#js'+i).classList.add('in');$('#jc'+i).textContent=judgeSays(j.k,sc[j.k],th);try{Music.sfx();}catch(e){}},700+i*900));
+  js.forEach((j,i)=>setTimeout(()=>{$('#js'+i).classList.add('in');$('#jc'+i).textContent=judgeSays(j.k,sc[j.k],th,L());try{Music.sfx();}catch(e){}},700+i*900));
   setTimeout(()=>{$('#cResult').style.opacity=1;$('#contestBody p').textContent='The judges have spoken!';if(stars===3)sparkle();try{applyMusic();}catch(e){}},700+js.length*900);
   contest=null;
 }
@@ -2249,11 +2253,26 @@ async function showResults(code){
   let ch=null,list=[];try{const db=await chalDB();[ch,list]=await Promise.all([db.get(code),db.list(code)]);}catch(e){}
   if(!ch){$('#contestBody').innerHTML='<h2>🏆 Challenge scores</h2><p>😕 Couldn\'t load the scores. Try again when you\'re online.</p>';return;}
   const th=THEMES.find(t=>t.id===ch.theme)||THEMES[0],js=judgesOn(ch.judges),max=js.length*10;
-  const rows=[{name:ch.host,look:ch.look,host:true},...list].map(r=>{let lk=null;try{lk=JSON.parse(r.look);}catch(e){}return lk&&{name:String(r.name||'?').slice(0,20),look:lk,host:r.host,score:judgeTotal(scoreLook(lk,th),js)};}).filter(Boolean).sort((a,b)=>b.score-a.score);
+  lastRes={code,th,js};
+  const rows=lastRes.rows=[{name:ch.host,look:ch.look,host:true},...list].map(r=>{let lk=null;try{lk=JSON.parse(r.look);}catch(e){}return lk&&{name:String(r.name||'?').slice(0,20),look:lk,host:r.host,score:judgeTotal(scoreLook(lk,th),js)};}).filter(Boolean).sort((a,b)=>b.score-a.score);
   $('#contestBody').innerHTML=`<h2>${th.e} ${th.name}</h2><p>${rows.length<2?'Nobody has played yet. Send the link to a friend!':`👑 ${esc(rows[0].name)} is winning!`}</p>
-   <div class="votes">${rows.map((r,i)=>`<div class="vcard">${miniDoll(r.look)}<b>${['🥇','🥈','🥉'][i]||'🎀'} ${esc(r.name)}</b><small>${r.score}/${max}${r.host?' · started it':''}</small></div>`).join('')}</div>
+   <p style="opacity:.75;margin:0">Tap a model to watch their runway walk ▶️</p><div class="votes">${rows.map((r,i)=>`<button class="vcard" data-watch="${i}">${miniDoll(r.look)}<b>${['🥇','🥈','🥉'][i]||'🎀'} ${esc(r.name)}</b><small>${r.score}/${max}${r.host?' · started it':''}</small><span class="watch">▶️ Watch</span></button>`).join('')}</div>
    <button class="big-btn" id="cShare" data-code="${code}">📤 Send challenge link</button><button class="pill" id="cAgain" style="margin-top:6px">Back to contests</button>`;
 }
+// replay: someone else's walk and judging, shown on this phone without touching its own dolls
+let lastRes=null,replaying=false;
+function watchWalk(i){const R=lastRes,r=R&&R.rows[i];if(!r||replaying)return;replaying=true;$('#contestModal').classList.remove('show');
+  const st=$('#stage');st.innerHTML=fullSVG({...r.look,scene:'runway'},r.name);st.style.background=STAGEBG.runway||'#fff';
+  try{Music.playTrack('runway');}catch(e){}toast(`✨ Now on the runway: ${r.name}!`);
+  st.classList.add('walking');[900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
+  setTimeout(()=>{st.classList.remove('walking');
+    const sc=scoreLook(r.look,R.th),max=R.js.length*10,total=judgeTotal(sc,R.js);
+    $('#contestBody').innerHTML=`<h2>${R.th.e} ${esc(r.name)}'s walk</h2><p>The judges are scoring…</p><div class="judges" style="grid-template-columns:repeat(${R.js.length},1fr)">${R.js.map((j,k)=>`<div class="judge"><div class="face">${j.e}</div><div class="nm">${j.n}</div><div class="sc" id="js${k}">${sc[j.k]}</div><div class="cm" id="jc${k}"></div></div>`).join('')}</div>
+     <div id="cResult" style="opacity:0;transition:opacity .4s"><p style="font-weight:800;font-size:19px">${total}/${max}</p><button class="big-btn" data-results="${R.code}">🏆 Back to scores</button></div>`;
+    $('#contestModal').classList.add('show');
+    R.js.forEach((j,k)=>setTimeout(()=>{$('#js'+k).classList.add('in');$('#jc'+k).textContent=judgeSays(j.k,sc[j.k],R.th,r.look);try{Music.sfx();}catch(e){}},700+k*900));
+    setTimeout(()=>{$('#cResult').style.opacity=1;$('#contestBody p').textContent='The judges have spoken!';replaying=false;try{applyMusic();}catch(e){}},700+R.js.length*900);
+  },3900);}
 /* pass-the-phone: each friend dresses their own doll, everyone walks, everyone votes */
 function startFriends(th,secs,names){
   const players=names.map(n=>{let c=DB.chars.find(x=>x.name.toLowerCase()===n.toLowerCase());if(!c){c={id:uid(),name:n,look:randomLook()};DB.chars.push(c);}return {id:c.id,name:c.name,votes:0};});
