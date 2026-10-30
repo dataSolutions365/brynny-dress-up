@@ -84,6 +84,19 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .card input{width:100%;font-size:16px;font-weight:600;border:2px solid #eadcf0;border-radius:10px;padding:6px 8px;color:var(--ink);background:#fff}
 .pill{background:var(--pink);color:#fff;border-radius:999px;padding:8px 12px;font-weight:600;font-size:14px}
 .pill.soft{background:#f6e3ef;color:var(--ink)}
+.spatools{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.spatools button{background:#f6e3ef;border-radius:14px;padding:6px 8px;font-size:13px;font-weight:600;min-width:52px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.spatools button b{font-size:22px;line-height:1}
+.spatools button.on{background:var(--pink);color:#fff}
+.spatools button.did:not(.on){box-shadow:0 0 0 2px #7ee081 inset}
+.spabar{height:8px;background:#f3e6f0;border-radius:99px;overflow:hidden;max-width:300px;margin:0 auto 6px}
+.spabar div{height:100%;width:0;background:linear-gradient(90deg,#7ee081,#4fb6ff);transition:width .15s}
+#nailOpts .swatches{justify-content:center}
+#nailOpts .stk{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+#nailOpts .stk button{width:44px;height:44px;border-radius:12px;background:#f6e3ef;font-size:22px}
+#nailOpts .stk button.on{box-shadow:0 0 0 3px var(--pink) inset}
+@keyframes bub{from{opacity:.9;transform:translateY(0)}to{opacity:0;transform:translateY(-30px)}}
+#nailSvg .fx{animation:bub 1s ease-out forwards}
 .tbtn .badge{background:#ff3b6b;color:#fff;border-radius:999px;font-size:11px;padding:1px 6px;margin-left:-2px}
 .msg{background:#fff4fa;border-radius:16px;padding:10px 12px;margin:8px 0;text-align:left}
 .msg.new{background:#ffe2f0;box-shadow:0 0 0 2px #ff8fc8 inset}
@@ -93,12 +106,15 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .msgform{display:flex;flex-direction:column;gap:8px}
 .msgform input,.msgform textarea{font:inherit;border:2px solid #f0d6e6;border-radius:14px;padding:8px 10px;width:100%;box-sizing:border-box}
 #cloudBody p{margin:8px 0}
+#cloudModal{z-index:40}
 .pill.warn{background:#ff6b6b}
 .small{font-size:12px;color:var(--muted)}
 .addrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .addrow input{flex:1;min-width:150px;font-size:17px;border:2px solid #eadcf0;border-radius:12px;padding:10px 12px;color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;opacity:0;transition:.3s;z-index:40;pointer-events:none;max-width:90vw;width:max-content;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.stage .twirl{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:#fff;font-size:22px;box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:2}
+.stage.zoomed .twirl{display:none}
 .spark{position:absolute;font-size:26px;pointer-events:none;animation:pop .9s ease-out forwards}
 @keyframes pop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.8) translateY(-30px)}}
 #welcome{position:fixed;inset:0;z-index:30;background:linear-gradient(160deg,#ffd1e8,#e3d6ff);display:none;align-items:center;justify-content:center;padding:16px;overflow:auto}
@@ -211,6 +227,18 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="cards" id="galVideos"></div>
 </div></div>
 
+<div class="modal" id="nailModal"><div class="sheet" style="max-width:440px;text-align:center">
+  <button class="close" data-close>×</button>
+  <h2 id="nailTitle">💅 Nail Spa</h2>
+  <div class="seg" id="nailKind" style="max-width:280px;margin:0 auto 8px"><button data-k="hands">✋ Manicure</button><button data-k="feet">🦶 Pedicure</button></div>
+  <div class="spatools" id="nailTools"></div>
+  <div class="spabar"><div id="nailBar"></div></div>
+  <svg id="nailSvg" viewBox="0 0 300 300" style="width:min(300px,100%);touch-action:none;border-radius:20px;background:linear-gradient(#fff4fa,#f3e6ff)"></svg>
+  <p class="hint" id="nailHint"></p>
+  <div id="nailOpts"></div>
+  <button class="big-btn" id="nailDone">All done! 💖</button>
+</div></div>
+
 <div class="modal" id="cloudModal"><div class="sheet" style="max-width:420px;text-align:center">
   <button class="close" data-close>×</button>
   <h2>☁️ Cloud Save</h2>
@@ -309,14 +337,15 @@ function body(L){
   const sk=L.skin,d=shade(sk,-.15);
   let s='';
   s+=sym(`<polyline points="110,170 94,250 88,322" fill="none" stroke="${sk}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>`);
-  s+=sym(`<path d="M106 290 L150 296 L148 300 L146 430 L142 556 L126 556 L118 430 Z" fill="${sk}"/><ellipse cx="134" cy="562" rx="11" ry="7" fill="${sk}"/><path d="M122 430 Q132 436 142 430" stroke="${d}" stroke-width="2" fill="none" opacity=".6"/>`);
+  s+=sym(`<path d="M106 290 L150 296 L148 300 L146 430 L142 556 L126 556 L118 430 Z" fill="${sk}"/><ellipse cx="134" cy="562" rx="11" ry="7" fill="${sk}"/>${nailDots(L.nails&&L.nails.feet,[[127,566],[131.5,567.5],[135.5,567.8],[139,567.2],[142,566]],1.4,1.3)}<path d="M122 430 Q132 436 142 430" stroke="${d}" stroke-width="2" fill="none" opacity=".6"/>`);
   s+=`<path d="M139 110 L161 110 L162 162 L138 162 Z" fill="${sk}"/><path d="M139 132 Q150 146 161 132 L161 146 Q150 156 139 146 Z" fill="${d}" opacity=".45"/>`;
   s+=`<path d="${TORSO_BODY}" fill="${sk}"/>`;
   s+=`<path d="M118 168 Q150 180 182 168 L190 186 Q187 222 183 258 L117 258 Q113 222 110 186 Z" fill="#fff0f6"/>`;
   s+=`<path d="M117 254 L183 254 Q196 280 196 302 L156 312 L150 324 L144 312 L104 302 Q104 280 117 254 Z" fill="#fff0f6"/>`;
   return s;
 }
-const hands=L=>sym(`<circle cx="88" cy="328" r="10" fill="${L.skin}"/>`);
+const nailDots=(set,pts,rx,ry)=>(set||[]).map((n,i)=>n&&pts[i]?`<ellipse cx="${pts[i][0]}" cy="${pts[i][1]}" rx="${rx}" ry="${ry}" fill="${n.c}"${n.g?' stroke="#fff" stroke-width=".5"':''}/>`:'').join('');
+const hands=L=>sym(`<circle cx="88" cy="328" r="10" fill="${L.skin}"/>`+nailDots(L.nails&&L.nails.hands,[[79,331],[82,336],[87,338.5],[92,337.5],[96,334]],1.7,2.2));
 
 function face(L){
   const toon=L.style==='cartoon',rx=9,ry=toon?10:5.6,ir=toon?7:4.6,ey=92;
@@ -609,6 +638,7 @@ function sceneSVG(id,name){
 }
 
 /* ---------- character ---------- */
+let dollBack=false;
 function charInner(L){
   const T=headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):(find(HAIR,L.hairStyle)||HAIR[0]).d(hf(L.hairColor),hs(L.hairColor));
   const hat=L.hat&&find(HATS,L.hat.id)?parts(find(HATS,L.hat.id).d(L.hat.c)):{};
@@ -617,6 +647,14 @@ function charInner(L){
   const wear=(list,v)=>v&&find(list,v.id)?allParts(parts(find(list,v.id).d(v.c))):'';
   const A=artLayers(L);
   const v=x=>x?`<g filter="url(#vol)">${x}</g>`:'';
+  if(dollBack){
+    // seen from behind: no face or makeup, hair covers the whole head
+    const hc=hf(L.hairColor),hd=hs(L.hairColor);
+    let b=v(body(L))+(L.dress?v(wear(DRESSES,L.dress)):v(wear(BOTTOMS,L.bottom))+v(wear(TOPS,L.top)))+v(wear(SHOES,L.shoes))+v(hands(L))+v(ex.hand)+v(ex.back);
+    b+=`<g transform="${T}">`+v(sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${L.skin}"/>`)+`<ellipse cx="150" cy="88" rx="40" ry="46" fill="${L.skin}"/>`+`<path d="M108 100 Q102 36 150 36 Q198 36 192 100 Q190 124 150 128 Q110 124 108 100 Z" fill="${hc}"/>`+H.back)
+      +`<path d="M128 52 Q150 44 172 52 M120 74 Q150 62 180 74 M118 98 Q150 88 182 98" stroke="${hd}" stroke-width="2.5" fill="none" opacity=".45" stroke-linecap="round"/>`+v(hat.back)+v(hat.front)+`</g>`;
+    return b;
+  }
   let s=ex.back+`<g transform="${T}">${v(H.back)}${hat.back||''}</g>`+v(body(L));
   if(L.dress)s+=v(wear(DRESSES,L.dress));else s+=v(wear(BOTTOMS,L.bottom))+v(wear(TOPS,L.top));
   s+=A.body+v(wear(SHOES,L.shoes))+A.feet+v(ex.front)+v(hands(L))+v(ex.hand)+A.hand;
@@ -624,7 +662,7 @@ function charInner(L){
   return s;
 }
 const VIEW='-40 -75 380 680';
-function fullSVG(L,name,attrs=''){return `<svg viewBox="${VIEW}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" ${attrs}>${DEFS}${bgSVG(L,name)}<ellipse cx="150" cy="580" rx="80" ry="12" fill="url(#floorShadow)"/><g class="doll">${charInner(L)}</g></svg>`;}
+function fullSVG(L,name,attrs=''){return `<svg viewBox="${VIEW}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" ${attrs}>${DEFS}${bgSVG(L,name)}<ellipse cx="150" cy="580" rx="80" ry="12" fill="url(#floorShadow)"/><g class="spin"><g class="doll">${charInner(L)}</g></g></svg>`;}
 const mini=(vb,inner)=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 
 /* ---------- state ---------- */
@@ -640,6 +678,7 @@ function randomLook(base){
   L.shoes=pick(SHOES);L.hat=Math.random()<.5?pick(HATS):null;
   L.extras={};const n=Math.floor(Math.random()*3);for(let i=0;i<n;i++){const e=rnd(EXTRAS);L.extras[e.id]=e.c;}
   L.makeup={shadow:Math.random()<.5?rnd(SHADOW):null,lips:Math.random()<.6?rnd(LIPS):null,blush:rnd(BLUSH),lashes:rnd(LASHES).id,paint:Math.random()<.3?rnd(PAINT).id:null};
+  if(base&&base.nails)L.nails=base.nails;
   L.scene=rnd(SCENES).id;return L;
 }
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -679,7 +718,7 @@ function applyZoom(){
   const mode=zoomMode();
   sv.setAttribute('viewBox',mode==='face'?faceZoomVB(L()):mode==='hair'?hairZoomVB(L()):VIEW);
   $('#stage').classList.toggle('arting',tab==='art');
-  $('#stage').style.touchAction=mode?'none':'';sv.style.cursor=mode?'crosshair':'';
+  $('#stage').style.touchAction=mode?'none':'pan-y';$('#stage').classList.toggle('zoomed',!!mode);sv.style.cursor=mode?'crosshair':'';
   $('#stage').classList.toggle('painting',!!mode);
 }
 function toFace(ev){
@@ -1049,12 +1088,123 @@ const braidUp=ev=>{
 $('#braidSvg').addEventListener('pointerup',braidUp);$('#braidSvg').addEventListener('pointercancel',braidUp);
 $('#braidTie').onclick=()=>{const l=L();ensureSalon(l);l.salon[BR.side]='braid';persist();$('#braidModal').classList.remove('show');renderStage();renderPanel();sparkle();Music.sfx();toast('🪢 You braided it!');};
 
+/* ---------- nail spa: manicure + pedicure ---------- */
+const NAIL_COLORS=['#ff3b6b','#ff6fae','#ffb3d1','#c2185b','#b388ff','#6a3df0','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#ff8a1f','#ffffff','#2d2d3a','#d4af37','#c0c0c0'];
+const NAIL_STICKERS=[{id:'heart',e:'💖'},{id:'star',e:'⭐'},{id:'flower',e:'🌸'},{id:'dot',e:'⚪'}];
+const NAIL_SHAPES={
+  hands:[{x:74,y:150,w:30,h:100,r:-40},{x:96,y:70,w:32,h:150},{x:134,y:50,w:33,h:170},{x:173,y:62,w:32,h:160},{x:210,y:96,w:28,h:130}],
+  feet:[{cx:84,cy:92,r:30},{cx:136,cy:80,r:22},{cx:178,cy:86,r:20},{cx:215,cy:100,r:18},{cx:246,cy:120,r:15}]};
+const SPA_STEPS={hands:[{id:'soak',e:'🫧',n:'Soak'},{id:'scrub',e:'🧴',n:'Lotion'},{id:'file',e:'💅',n:'File'}],feet:[{id:'soak',e:'🛁',n:'Soak'},{id:'scrub',e:'🧽',n:'Scrub'},{id:'file',e:'💅',n:'File'}]};
+const SPA_TOOLS=[{id:'polish',e:'🖌️',n:'Polish'},{id:'glitter',e:'✨',n:'Glitter'},{id:'sticker',e:'💖',n:'Sticker'},{id:'dry',e:'💨',n:'Dry'},{id:'remove',e:'🧽',n:'Remove'}];
+const SPA={kind:'hands',tool:'soak',prog:{},color:'#ff6fae',sticker:'heart',down:false,last:null,fx:0};
+function nailSet(l,k){l.nails=l.nails||{};if(!Array.isArray(l.nails[k]))l.nails[k]=[null,null,null,null,null];return l.nails[k];}
+function nailDeco(n,x,y,s){
+  if(!n)return '';let o='';
+  if(n.g)for(let i=0;i<7;i++){const a=i*2.4,rr=s*.55*((i*37%10)/10);o+=`<circle cx="${(x+Math.cos(a)*rr).toFixed(1)}" cy="${(y+Math.sin(a)*rr*1.3).toFixed(1)}" r="${(s*.09).toFixed(1)}" fill="#fff" opacity=".9"/>`;}
+  if(n.s==='heart')o+=heart(x,y,s*.32,'#fff');else if(n.s==='star')o+=star(x,y,s*.42,'#fff');else if(n.s==='flower')o+=flower(x,y,s*.22,'#fff','#ffd23f');else if(n.s==='dot')o+=`<circle cx="${x}" cy="${y}" r="${s*.22}" fill="#fff"/>`;
+  return o;
+}
+function nailClose(){
+  const l=L(),k=SPA.kind,set=nailSet(l,k),sk=l.skin,d=shade(sk,-.15);let s='';
+  const nail=(i,cx,cy,rx,ry,rot)=>{const n=set[i],t=rot?` transform="rotate(${rot} ${cx} ${cy})"`:'';
+    return `<g data-n="${i}"${t}><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${n?n.c:'#ffe4ec'}" stroke="${n?shade(n.c,-.2):shade(sk,-.25)}" stroke-width="1.5"/>`+(n?`<ellipse cx="${cx-rx*.35}" cy="${cy-ry*.3}" rx="${rx*.18}" ry="${ry*.4}" fill="#fff" opacity=".55"/>`:'')+nailDeco(n,cx,cy+ry*.1,rx*2)+`</g>`;};
+  if(k==='hands'){
+    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="210" width="300" height="90" fill="#9fe3ff" opacity=".55"/>`;
+    s+=`<ellipse cx="160" cy="236" rx="78" ry="74" fill="${sk}"/><rect x="104" y="250" width="100" height="60" fill="${sk}"/>`;
+    NAIL_SHAPES.hands.forEach((f,i)=>{const r=f.r||0,cx=f.x+f.w/2;
+      s+=`<g data-n="${i}" transform="rotate(${r} ${cx} ${f.y+f.h})"><rect x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="${f.w/2}" fill="${sk}"/><path d="M${f.x+6} ${f.y+f.h*.42} q${f.w/2-6} 5 ${f.w-12} 0" stroke="${d}" stroke-width="1.5" fill="none" opacity=".6"/>${nail(i,cx,f.y+20,f.w*.34,15)}</g>`;});
+    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="210" width="300" height="90" fill="#9fe3ff" opacity=".35"/>`;
+  }else{
+    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="150" width="300" height="150" fill="#9fe3ff" opacity=".55"/>`;
+    s+=`<path d="M52 100 Q150 66 268 116 Q300 220 250 300 L90 300 Q30 210 52 100 Z" fill="${sk}"/>`;
+    NAIL_SHAPES.feet.forEach((t,i)=>{s+=`<circle data-n="${i}" cx="${t.cx}" cy="${t.cy}" r="${t.r}" fill="${sk}" stroke="${d}" stroke-width="1"/>`;s+=nail(i,t.cx,t.cy-t.r*.18,t.r*.55,t.r*.48);});
+    if(SPA.tool==='soak'&&!SPA.prog.soak_done)s+=`<rect x="0" y="150" width="300" height="150" fill="#9fe3ff" opacity=".35"/>`;
+  }
+  return s+`<g id="nailFx"></g>`;
+}
+function nailDraw(){
+  const k=SPA.kind,steps=SPA_STEPS[k];
+  $('#nailKind').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  $('#nailTitle').textContent=k==='hands'?'💅 Manicure':'🦶 Pedicure';
+  $('#nailTools').innerHTML=steps.concat(SPA_TOOLS).map(t=>{const id=t.id;const done=SPA.prog[id+'_done'];return `<button data-t="${id}" class="${SPA.tool===id?'on':''} ${done?'did':''}"><b>${t.e}</b>${t.n}${done?' ✓':''}</button>`;}).join('');
+  const st=steps.find(x=>x.id===SPA.tool);
+  $('#nailBar').parentNode.style.visibility=st?'visible':'hidden';$('#nailBar').style.width=(SPA.prog[SPA.tool]||0)+'%';
+  $('#nailHint').textContent={soak:k==='hands'?'Swish your finger in the bubbly water!':'Swish the warm water around the toes!',scrub:k==='hands'?'Rub the lotion all over the hand.':'Scrub, scrub, scrub!',file:'Rub across the tips of each nail to shape them.',
+    polish:'Pick a color, then paint each nail with your finger.',glitter:'Tap a nail to make it sparkle.',sticker:'Pick a sticker, then tap a nail.',dry:'Rub to blow air so the polish dries.',remove:'Tap a nail to wipe off the polish.'}[SPA.tool]||'';
+  let o='';
+  if(SPA.tool==='polish'||SPA.tool==='glitter')o+=swatches('nailc',NAIL_COLORS,SPA.color)+`<div class="addrow" style="justify-content:center"><button class="pill soft" id="nailAll">🎨 Paint them all</button></div>`;
+  if(SPA.tool==='sticker')o+=`<div class="stk">${NAIL_STICKERS.map(x=>`<button data-stk="${x.id}" class="${SPA.sticker===x.id?'on':''}">${x.e}</button>`).join('')}</div>`;
+  if(k==='feet'&&L().shoes)o+=`<div class="addrow" style="justify-content:center"><button class="pill soft" id="nailShoes">👣 Take shoes off to show her toes</button></div>`;
+  $('#nailOpts').innerHTML=o;
+  $('#nailSvg').innerHTML=nailClose();
+}
+function openNails(kind){SPA.kind=kind||'hands';SPA.prog={};SPA.tool=SPA_STEPS[SPA.kind][0].id;$('#nailModal').classList.add('show');nailDraw();}
+function nailFx(x,y,ch){const g=$('#nailFx');if(!g)return;if(g.childNodes.length>24)g.firstChild.remove();
+  const e=document.createElementNS('http://www.w3.org/2000/svg','text');e.setAttribute('x',x);e.setAttribute('y',y);e.setAttribute('font-size','18');e.setAttribute('text-anchor','middle');e.setAttribute('class','fx');e.textContent=ch;g.appendChild(e);setTimeout(()=>e.remove(),1000);}
+function nailPt(ev){const sv=$('#nailSvg'),pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(sv.getScreenCTM().inverse());return [q.x,q.y];}
+function nailAt(ev){const el=document.elementFromPoint(ev.clientX,ev.clientY);const g=el&&el.closest&&el.closest('#nailSvg [data-n]');return g?+g.dataset.n:-1;}
+function nailSave(){persist();salonRender();}
+function nailAct(ev,first){
+  const [x,y]=nailPt(ev),t=SPA.tool,l=L(),set=nailSet(l,SPA.kind),i=nailAt(ev);
+  const moved=SPA.last?Math.hypot(x-SPA.last[0],y-SPA.last[1]):0;SPA.last=[x,y];
+  if(SPA_STEPS[SPA.kind].some(s=>s.id===t)||t==='dry'){
+    if(t==='file'&&i<0)return;
+    SPA.prog[t]=Math.min(100,(SPA.prog[t]||0)+moved/(t==='file'?6:9));
+    if(++SPA.fx%3===0)nailFx(x,y,{soak:'🫧',scrub:SPA.kind==='hands'?'🤍':'🫧',file:'✨',dry:'💨'}[t]);
+    $('#nailBar').style.width=SPA.prog[t]+'%';
+    if(SPA.prog[t]>=100&&!SPA.prog[t+'_done']){SPA.prog[t+'_done']=true;Music.sfx();
+      toast({soak:'🫧 Nice and soft!',scrub:SPA.kind==='hands'?'🤍 Silky smooth!':'🧽 Squeaky clean!',file:'💅 Perfect shape!',dry:'✨ All dry and shiny!'}[t]);
+      const order=SPA_STEPS[SPA.kind].map(s=>s.id).concat(['polish']),nx=order[order.indexOf(t)+1];if(nx){SPA.tool=nx;SPA.down=false;}nailDraw();}
+    return;}
+  if(i<0)return;
+  if(t==='polish'){if(!set[i]||set[i].c!==SPA.color){set[i]={...(set[i]||{}),c:SPA.color};if(first||moved>0){Music.sfx();}nailDraw();nailSave();}}
+  else if(!first)return;
+  else if(t==='glitter'){set[i]={...(set[i]||{c:SPA.color}),g:!(set[i]&&set[i].g)};nailDraw();nailSave();Music.sfx();}
+  else if(t==='sticker'){set[i]={...(set[i]||{c:SPA.color}),s:set[i]&&set[i].s===SPA.sticker?null:SPA.sticker};nailDraw();nailSave();Music.sfx();}
+  else if(t==='remove'){set[i]=null;nailDraw();nailSave();nailFx(x,y,'🫧');}
+}
+$('#nailSvg').addEventListener('pointerdown',ev=>{ev.preventDefault();SPA.down=true;SPA.last=null;try{$('#nailSvg').setPointerCapture(ev.pointerId);}catch(e){}nailAct(ev,true);});
+$('#nailSvg').addEventListener('pointermove',ev=>{if(!SPA.down)return;ev.preventDefault();nailAct(ev,false);});
+['pointerup','pointercancel'].forEach(n=>$('#nailSvg').addEventListener(n,()=>{SPA.down=false;}));
+$('#nailKind').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b&&b.dataset.k!==SPA.kind)openNails(b.dataset.k);});
+$('#nailTools').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;SPA.tool=b.dataset.t;nailDraw();});
+$('#nailOpts').addEventListener('click',e=>{
+  const sw=e.target.closest('[data-act="nailc"]'),sk=e.target.closest('[data-stk]');
+  if(sw){SPA.color=sw.dataset.c;if(SPA.tool==='glitter')SPA.tool='polish';nailDraw();}
+  if(sk){SPA.sticker=sk.dataset.stk;nailDraw();}
+  if(e.target.id==='nailAll'){const set=nailSet(L(),SPA.kind);for(let i=0;i<5;i++)set[i]={...(set[i]||{}),c:SPA.color};nailDraw();nailSave();Music.sfx();}
+  if(e.target.id==='nailShoes'){L().shoes=null;persist();renderStage();nailDraw();}
+});
+$('#nailDone').onclick=()=>{$('#nailModal').classList.remove('show');renderStage();renderPanel();sparkle();Music.sfx();toast(SPA.kind==='hands'?'💅 Gorgeous nails!':'🦶 Pretty toes!');};
+
+/* ---------- twirl: swipe the doll (or tap 🔄) to turn her around ---------- */
+let spinA=0,spinDrag=null,spinAnim=0;
+function setSpin(a,noSwap){
+  spinA=a;const c=Math.cos(a*Math.PI/180),back=c<0,sv=$('#stage svg');if(!sv)return;
+  if(!noSwap&&back!==(sv.dataset.back==='1')){const g=sv.querySelector('.doll');dollBack=back;g.innerHTML=charInner(L());dollBack=false;}
+  sv.dataset.back=back?'1':'';
+  const sx=Math.max(.04,Math.abs(c)).toFixed(3);
+  sv.querySelector('.spin').setAttribute('transform',`translate(150 0) scale(${sx} 1) translate(-150 0)`);
+}
+function spinTo(to,ms=500){
+  cancelAnimationFrame(spinAnim);const from=spinA,t0=performance.now();
+  const step=t=>{const k=Math.min(1,(t-t0)/ms),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;setSpin(from+(to-from)*e);if(k<1)spinAnim=requestAnimationFrame(step);else setSpin(((to%360)+360)%360);};
+  spinAnim=requestAnimationFrame(step);
+}
+$('#stage').addEventListener('click',e=>{if(e.target.id!=='twirlBtn')return;spinTo(spinA+360,1100);Music.sfx();});
+$('#stage').addEventListener('pointerdown',e=>{if(zoomMode()||tab==='art'||e.target.id==='twirlBtn')return;spinDrag={x:e.clientX,a:spinA,id:e.pointerId,moved:false};});
+$('#stage').addEventListener('pointermove',e=>{if(!spinDrag||e.pointerId!==spinDrag.id)return;const dx=e.clientX-spinDrag.x;if(!spinDrag.moved&&Math.abs(dx)<8)return;
+  if(!spinDrag.moved){spinDrag.moved=true;cancelAnimationFrame(spinAnim);try{$('#stage').setPointerCapture(e.pointerId);}catch(_){}}
+  setSpin(spinDrag.a+dx*.9);});
+const spinUp=e=>{if(!spinDrag||e.pointerId!==spinDrag.id)return;const d=spinDrag;spinDrag=null;if(!d.moved)return;spinTo(Math.round(spinA/180)*180,300);};
+$('#stage').addEventListener('pointerup',spinUp);$('#stage').addEventListener('pointercancel',spinUp);
+
 /* ---------- UI ---------- */
-const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'Hair'},{id:'makeup',ico:'💄',name:'Makeup'},{id:'tops',ico:'👚',name:'Tops'},{id:'bottoms',ico:'👖',name:'Bottoms'},
+const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'Hair'},{id:'makeup',ico:'💄',name:'Makeup'},{id:'nails',ico:'💅',name:'Nails'},{id:'tops',ico:'👚',name:'Tops'},{id:'bottoms',ico:'👖',name:'Bottoms'},
   {id:'dresses',ico:'👗',name:'Dresses'},{id:'shoes',ico:'👠',name:'Shoes'},{id:'hats',ico:'👑',name:'Hats'},{id:'extras',ico:'👜',name:'Extras'},{id:'art',ico:'🖍️',name:'My Art'},{id:'scenes',ico:'🎃',name:'Places'}];
 
 const STAGEBG={studio:'#f6e6fb',bedroom:'#ecd9f7',birthday:'#ffeaf0',halloween:'#2a1440',christmas:'#1d3a63',wedding:'#fff0f5',beach:'#c9eeff',runway:'#1a1028'};
-function renderStage(){artHighlight=tab==='art';$('#stage').innerHTML=fullSVG(L(),me().name);artHighlight=false;$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();}
+function renderStage(){artHighlight=tab==='art';if(zoomMode())spinA=0;dollBack=Math.cos(spinA*Math.PI/180)<0;$('#stage').innerHTML=fullSVG(L(),me().name)+`<button class="twirl" id="twirlBtn" aria-label="Twirl" title="Twirl">🔄</button>`;dollBack=false;artHighlight=false;setSpin(spinA,true);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();}
 function renderTabs(){$('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
 function swatches(act,list,sel,{none=false,arg=''}={}){
   let h='<div class="swatches">';if(none)h+=`<button class="sw none ${!sel?'on':''}" data-act="${act}" data-arg="${arg}" data-c="" aria-label="none"></button>`;
@@ -1084,6 +1234,9 @@ function renderPanel(){
     h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
     for(const it of HAIR){const p=it.d(hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle===it.id,'hair','',it.id,mini('56 -6 188 280',`${p.back||''}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front||''}`),it.name);}
     h+='</div>';
+  }else if(tab==='nails'){
+    h+=`<h3>💅 Nail Spa</h3><div class="addrow" style="margin-top:0"><button class="pill" data-act="nailspa" data-c="hands" style="font-size:16px;padding:12px 16px">✋ Manicure</button><button class="pill" data-act="nailspa" data-c="feet" style="font-size:16px;padding:12px 16px;background:#8e6cff">🦶 Pedicure</button></div><p class="hint">Soak, scrub, file, then paint every nail with your finger!</p>`;
+    h+=`<h3>Quick polish for fingernails</h3>`+swatches('nailq',NAIL_COLORS,null,{none:true,arg:'hands'})+`<h3>Quick polish for toenails</h3>`+swatches('nailq',NAIL_COLORS,null,{none:true,arg:'feet'});
   }else if(tab==='makeup'){
     const m=l.makeup;
     h+=paintPanel()+`<details class="quick" ${quickOpen?'open':''}><summary>⚡ Quick makeup buttons</summary>`;
@@ -1120,6 +1273,7 @@ $('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');i
 $('#content').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const {act,arg,id,c}=b.dataset;
   if(act==='camera'||act==='cameraVideo'){openCamera();return;}
+  if(act==='nailspa'){openNails(c);return;}
   if(act==='artDel'&&!b.dataset.sure){b.dataset.sure=1;b.textContent='Sure?';b.classList.add('warn');return;}
   update(l=>{
     switch(act){
@@ -1141,6 +1295,7 @@ $('#content').addEventListener('click',e=>{
       case 'artOff':l.art=(l.art||[]).filter(w=>w.u!==artSel);artSel=null;break;
       case 'artDel':l.art=(l.art||[]).filter(w=>w.id!==id);if(l.artBg===id)l.artBg=null;artSel=null;delete ART[id];ArtDB.del(id);break;
       case 'mk':l.makeup[arg]=c||null;break;
+      case 'nailq':{const set=nailSet(l,arg);for(let i=0;i<5;i++)set[i]=c?{...(set[i]||{}),c}:null;if(arg==='feet'&&c&&l.shoes)toast('👣 Take her shoes off to see the toes');break;}
       case 'mkItem':l.makeup[arg]=id||null;break;
       case 'scene':l.scene=id;l.artBg=null;break;
       case 'brush':brushState.id=brushState.id===id?null:id;break;
@@ -1426,6 +1581,7 @@ function loadSDK(){
     auth=F.getAuth(app);
     try{fs=F.initializeFirestore(app,{localCache:F.persistentLocalCache()});}catch(e){fs=F.getFirestore(app);}
     F.getRedirectResult(auth).catch(()=>{});
+    finishEmailLink();
     startAnalytics(app);
     F.onAuthStateChanged(auth,onUser);
     failed=false;return F;
@@ -1493,7 +1649,7 @@ function adoptByName(docs){
 }
 function commitLocal(){window.__applyingRemote=true;persist();window.__applyingRemote=false;saveSent();refresh();}
 function refresh(){
-  if(busy||document.querySelector('#braidModal.show,#cropModal.show,#camModal.show,#artModal.show')){pendingRender=true;return;}
+  if(busy||document.querySelector('#nailModal.show,#braidModal.show,#cropModal.show,#camModal.show,#artModal.show')){pendingRender=true;return;}
   pendingRender=false;
   renderStage();renderPanel();
   if($('#galModal').classList.contains('show'))renderGallery();
@@ -1565,15 +1721,39 @@ function updateBtn(){
 function renderCloud(){
   const b=$('#cloudBody');if(!b)return;
   if(user)b.innerHTML=`<p>Signed in as <b>${esc(user.email||user.displayName||'you')}</b></p>
-    <p>✅ Characters, saved looks, selfies, and drawings are kept in the cloud. Sign in with this same Google account on any phone, tablet, or computer to see them there too.</p>
+    <p>✅ Characters, saved looks, selfies, and drawings are kept in the cloud. Sign in with this same account on any phone, tablet, or computer to see them there too.</p>
     <p class="hint">Videos and songs stay on the device they were made on.</p>
     <div class="mrow" style="justify-content:center"><button class="pill soft" id="cloudOut">Sign out</button></div>`;
   else b.innerHTML=`<p>Sign in to keep your looks safe and see them on every device. 💖</p>
     <button class="big-btn" id="cloudIn">Sign in with Google</button>
-    <p class="hint">${failed?'😕 Can\'t reach the cloud right now. Check the internet and try again.':'Use the family Google account on every device.'}</p>`;
+    <p class="hint" style="margin:12px 0 4px">or get a sign-in link by email</p>
+    <div class="msgform"><input id="cloudEmail" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email" value="${esc(lsGet(EMAIL_KEY)||'')}">
+    <button class="pill" id="cloudEmailGo" style="font-size:16px;padding:12px">${emailWaiting?'✅ Finish signing in':'📧 Email me a link'}</button></div>
+    <p class="hint">${failed?'😕 Can\'t reach the cloud right now. Check the internet and try again.':emailWaiting?'Type the email the link was sent to.':'Use the same family account on every device.'}</p>`;
+}
+/* passwordless email link: the link comes back to this page and finishes sign-in */
+const EMAIL_KEY='brynny-signin-email';let emailWaiting='';
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+async function finishEmailLink(email){
+  if(!F.isSignInWithEmailLink(auth,location.href))return;
+  email=email||lsGet(EMAIL_KEY);
+  if(!email){emailWaiting=' ';renderCloud();$('#cloudModal').classList.add('show');return;}
+  try{await F.signInWithEmailLink(auth,email,location.href);emailWaiting='';history.replaceState(null,'',location.pathname);toast('✅ Signed in!');$('#cloudModal').classList.remove('show');}
+  catch(e){const c=(e&&e.code)||'';toast(/invalid-email/.test(c)?'😕 That email doesn\'t match the link':'😕 That link expired. Send a new one.');if(!/invalid-email/.test(c))history.replaceState(null,'',location.pathname);emailWaiting=/invalid-email/.test(c)?' ':'';renderCloud();}
+}
+async function sendEmailLink(){
+  const email=($('#cloudEmail').value||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('✏️ Type an email address first');return;}
+  if(!F){try{await loadSDK();}catch(e){toast('😕 Can\'t reach the cloud right now');return;}}
+  if(emailWaiting){finishEmailLink(email);return;}
+  try{await F.sendSignInLinkToEmail(auth,email,{url:location.origin+location.pathname,handleCodeInApp:true});
+    try{localStorage.setItem(EMAIL_KEY,email);}catch(e){}
+    $('#cloudBody').innerHTML=`<p>📧 We sent a link to <b>${esc(email)}</b>.</p><p>Open that email on this device and tap the link to finish signing in.</p><p class="hint">Don't see it? Check the spam folder.</p>`;}
+  catch(e){toast('😕 Couldn\'t send the email ('+(((e&&e.code)||'').replace('auth/','')||'try again')+')');}
 }
 $('#cloudBtn').onclick=()=>{renderCloud();$('#cloudModal').classList.add('show');};
 $('#cloudBody').addEventListener('click',async e=>{
+  if(e.target.id==='cloudEmailGo'){sendEmailLink();return;}
   if(e.target.id==='cloudIn'){await signIn();if(user)$('#cloudModal').classList.remove('show');}
   if(e.target.id==='cloudOut'){clearTimeout(syncTimer);sync();await F.signOut(auth);toast('👋 Signed out. Your looks are still on this device.');renderCloud();}
 });
