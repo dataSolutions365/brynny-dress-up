@@ -2282,9 +2282,9 @@ $('#cbWalk').onclick=()=>contest&&contest.f?friendDone():walkRunway();
 function walkRunway(){
   if(!contest||contest.walking)return;contest.walking=true;clearInterval(contestTimer);$('#contestBar').classList.remove('show');
   const l=L(),keep=l.scene;l.scene='runway';renderStage();l.scene=keep;
-  try{Music.playTrack('runway');}catch(e){}
+  try{playAny('fashionshow');}catch(e){}
   const st=$('#stage');st.classList.add('walking');
-  [900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
+  [900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{try{Music.shot('camera',.5);}catch(e){}const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
   setTimeout(()=>{st.classList.remove('walking');strikePose(Math.random()*POSES.length|0,'runway');setTimeout(showJudges,1700);},3900);
 }
 function showJudges(){
@@ -2343,8 +2343,8 @@ async function showResults(code){
 let lastRes=null,replaying=false;
 function watchWalk(i){const R=lastRes,r=R&&R.rows[i];if(!r||replaying)return;replaying=true;$('#contestModal').classList.remove('show');
   const st=$('#stage');st.innerHTML=fullSVG({...r.look,scene:'runway'},r.name);st.style.background=STAGEBG.runway||'#fff';
-  try{Music.playTrack('runway');}catch(e){}toast(`✨ Now on the runway: ${r.name}!`);
-  st.classList.add('walking');[900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
+  try{playAny('fashionshow');}catch(e){}toast(`✨ Now on the runway: ${r.name}!`);
+  st.classList.add('walking');[900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{try{Music.shot('camera',.5);}catch(e){}const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
   setTimeout(()=>{st.classList.remove('walking');strikePose(Math.random()*POSES.length|0,'runway',r);},3900);
   setTimeout(()=>{
     const sc=scoreLook(r.look,R.th),max=R.js.length*10,total=judgeTotal(sc,R.js);
@@ -2369,9 +2369,9 @@ function friendDone(){const f=contest.f;if(f.phase!=='dress')return;clearInterva
   if(++f.turn<f.players.length)friendPass();else friendParade(0);}
 function friendParade(i){const f=contest.f;f.phase='parade';if(i>=f.players.length){f.voter=0;if(f.win==='judges')friendWinner();else friendVote();return;}
   const p=f.players[i];DB.cur=p.id;const l=L(),keep=l.scene;l.scene='runway';renderStage();l.scene=keep;
-  if(!i)try{Music.playTrack('runway');}catch(e){}
+  if(!i)try{playAny('fashionshow');}catch(e){}
   toast(`✨ Now on the runway: ${p.name}!`);const st=$('#stage');st.classList.remove('walking');void st.offsetWidth;st.classList.add('walking');
-  [900,1700,2500].forEach(t=>setTimeout(()=>{const fl=document.createElement('div');fl.className='flash';st.appendChild(fl);setTimeout(()=>fl.remove(),400);},t));
+  [900,1700,2500].forEach(t=>setTimeout(()=>{try{Music.shot('camera',.5);}catch(e){}const fl=document.createElement('div');fl.className='flash';st.appendChild(fl);setTimeout(()=>fl.remove(),400);},t));
   setTimeout(()=>{st.classList.remove('walking');strikePose(Math.random()*POSES.length|0,'runway');setTimeout(()=>friendParade(i+1),1800);},3900);}
 const miniDoll=look=>`<svg viewBox="40 -40 220 640" xmlns="http://www.w3.org/2000/svg">${DEFS}${charInner(look)}</svg>`;
 function friendVote(){const f=contest.f,v=f.players[f.voter];f.phase='vote';
@@ -2455,10 +2455,24 @@ const TRACKS=[
   mel:'E5 r E5 G5 E5 r D5 C5 | B4 r B4 D5 B4 r A4 G#4 | A4 C5 E5 A5 G#5 E5 D5 B4 | C5/2 B4/2 A4/4 | E5 r E5 G5 E5 r D5 C5 | B4 r B4 D5 B4 r C5 D5 | E5 F5 E5 D5 C5 B4 G#4 B4 | A4/4 r/4',
   bass:'A2/2*4 E2/2*4 A2/2*4 E2/2*2 A2/4 A2/2*4 E2/2*4 E2/2*4 A2/4 A2/4',drums:'k.s.k.s.'},
 ];
+// real recordings (free Pixabay music), streamed only when picked; if one can't load, its synth twin plays instead
+const FILE_TRACKS=[
+ {id:'clouds',e:'☁️',name:'Dancing on the Clouds',url:'audio/clouds.mp3',fb:'pop'},
+ {id:'fashionwalk',e:'💃',name:'Fashion Walk',url:'audio/fashion-walk.mp3',fb:'runway'},
+ {id:'fashionshow',e:'📸',name:'Fashion Show',url:'audio/fashion-show.mp3',fb:'runway'},
+ {id:'ukulele',e:'🎂',name:'Happy Birthday Ukulele',url:'audio/bday-ukulele.mp3',fb:'bday'},
+ {id:'winterdays',e:'❄️',name:'Winter Days',url:'audio/winter-days.mp3',fb:'jingle'},
+ {id:'xmasbox',e:'🎁',name:'Christmas Music Box',url:'audio/xmas-musicbox.mp3',fb:'jingle'},
+ {id:'hwaltz',e:'🎃',name:'Halloween Waltz',url:'audio/halloween-waltz.mp3',fb:'stalker'},
+ {id:'creepy',e:'🕸️',name:'Creepy and Simple',url:'audio/creepy-simple.mp3',fb:'spooky'},
+ {id:'pumpkin',e:'👻',name:'Pumpkin Spooks',url:'audio/pumpkin-horror.mp3',fb:'skeleton'},
+ {id:'weddingmusic',e:'💐',name:'Wedding Song',url:'audio/wedding-music.mp3',fb:'wedding'},
+];
+const isFileTrack=t=>!!t&&(t==='suno'||t.startsWith('song:')||FILE_TRACKS.some(x=>x.id===t));
 const SUNO={id:'suno',e:'🎤',name:"Brynny's Song",
   urls:['brynny-song-11.mp3']};
 let sunoFailed=false,sunoGen=0;
-const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'suno',halloween:'stalker',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway',soccer:'pop',ballet:'dreamy',pool:'pop',icerink:'jingle',school:'pop',sleepover:'dreamy',valentine:'dreamy',spring:'dreamy',fireworks:'runway',fall:'pop',city:'runway'};
+const SCENE_TRACK={studio:'clouds',bedroom:'dreamy',birthday:'suno',halloween:'hwaltz',christmas:'winterdays',wedding:'weddingmusic',beach:'pop',runway:'fashionwalk',soccer:'pop',ballet:'dreamy',pool:'pop',icerink:'xmasbox',school:'pop',sleepover:'dreamy',valentine:'dreamy',spring:'dreamy',fireworks:'runway',fall:'pop',city:'runway'};
 const Music=(()=>{
   let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
@@ -2547,23 +2561,39 @@ const Music=(()=>{
   }
   /* background sounds for each place, made live from filtered noise and little synth voices: waves, wind, birds, crickets, a crowd, a crackling fire */
   let amb=null,ambKind=null,ambNoise=null;
-  function ambStop(){if(!amb)return;const a=amb;amb=null;clearInterval(a.timer);
+  function ambStop(){if(!amb)return;const a=amb;amb=null;clearInterval(a.timer);clearInterval(a.timer2);
     try{const t=ctx.currentTime;a.out.gain.cancelScheduledValues(t);a.out.gain.setValueAtTime(a.out.gain.value,t);a.out.gain.linearRampToValueAtTime(0,t+.6);}catch(e){}
     setTimeout(()=>{a.nodes.forEach(n=>{try{n.stop();}catch(e){}});try{a.out.disconnect();}catch(e){}},800);}
+  // recorded sounds (free Pixabay clips in audio/): decoded once, then looped or dropped in now and then
+  const bufs={};
+  const loadBuf=n=>bufs[n]||(bufs[n]=fetch('audio/'+n+'.mp3').then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer();}).then(b=>new Promise((res,rej)=>ctx.decodeAudioData(b,res,rej))).catch(e=>{delete bufs[n];throw e;}));
+  function shot(n,g=.8,dest){if(!ensure())return;loadBuf(n).then(b=>{const s=ctx.createBufferSource(),v=ctx.createGain();s.buffer=b;v.gain.value=g;s.connect(v);v.connect(dest||master);s.start();}).catch(()=>{});}
+  const REAL={ocean:{loop:'sea-waves',g:4},city:{loop:'city-park'},spring:{loop:'spring-birds'},fall:{loop:'autumn-wind'},rink:{loop:'ice-rink',g:.9},fireworks:{loop:'fireworks',g:.9},
+    spooky:{loop:'spooky-wind',keep:1},stadium:{loop:'stadium',shots:['stadium-cheer'],every:22},pool:{shots:['pool-splash'],every:16},crickets:{shots:['kids-giggle'],every:20},
+    school:{enter:'school-bell'},fire:{enter:'merry-xmas'}};
+  const SYN={city:'birds',spring:'birds',fall:'wind',rink:'wind',fireworks:'crickets',stadium:'crowd'};
   function ambSet(kind){
     if(!DB.music.amb)kind=null;if(kind===ambKind)return;ambKind=kind;ambStop();if(!kind||!ensure())return;
+    const R=REAL[kind]||{};
     if(!ambNoise){ambNoise=ctx.createBuffer(1,ctx.sampleRate*4,ctx.sampleRate);const d=ambNoise.getChannelData(0);let b=0;for(let i=0;i<d.length;i++){const w=Math.random()*2-1;b=(b+.02*w)/1.02;d[i]=w*.5+b*3.5;}}
     const t=ctx.currentTime,out=ctx.createGain();out.gain.setValueAtTime(0,t);out.gain.linearRampToValueAtTime(1,t+1.5);out.connect(master);
-    const a={out,nodes:[],timer:0};amb=a;
+    const a={out,nodes:[],timer:0,timer2:0};amb=a;
+    // the made-up sounds go through their own fader so a recording can take over once it has loaded
+    const sOut=ctx.createGain();sOut.connect(out);
+    if(R.loop)loadBuf(R.loop).then(b=>{if(amb!==a)return;const n=ctx.createBufferSource(),g=ctx.createGain(),t1=ctx.currentTime;n.buffer=b;n.loop=true;g.gain.setValueAtTime(0,t1);g.gain.linearRampToValueAtTime(R.g||2,t1+1.5);
+      n.connect(g);g.connect(out);n.start(t1,Math.random()*Math.max(0,b.duration-2));a.nodes.push(n);if(!R.keep){sOut.gain.setValueAtTime(sOut.gain.value,t1);sOut.gain.linearRampToValueAtTime(0,t1+1.5);}}).catch(()=>{});
+    if(R.enter)setTimeout(()=>{if(amb===a)shot(R.enter,1.1,out);},700);
+    if(R.shots)a.timer2=setInterval(()=>{if(amb===a&&!document.hidden&&Math.random()<4/R.every)shot(R.shots[Math.random()*R.shots.length|0],1.1,out);},4000);
     const lfo=(hz,depth,param,off)=>{param.value=off;const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=hz;g.gain.value=depth;o.connect(g);g.connect(param);o.start(t);a.nodes.push(o);};
     const layer=(type,f,q,gain)=>{const n=ctx.createBufferSource(),b=ctx.createBiquadFilter(),g=ctx.createGain();n.buffer=ambNoise;n.loop=true;n.loopStart=Math.random();
-      b.type=type;b.frequency.value=f;b.Q.value=q;g.gain.value=gain;n.connect(b);b.connect(g);g.connect(out);n.start(t,Math.random()*3);a.nodes.push(n);return {b,g};};
+      b.type=type;b.frequency.value=f;b.Q.value=q;g.gain.value=gain;n.connect(b);b.connect(g);g.connect(sOut);n.start(t,Math.random()*3);a.nodes.push(n);return {b,g};};
     const ping=(f,at,dur,g,type='sine',f2)=>{const o=ctx.createOscillator(),v=ctx.createGain();o.type=type;o.frequency.setValueAtTime(f,at);if(f2)o.frequency.exponentialRampToValueAtTime(f2,at+dur);
-      v.gain.setValueAtTime(0,at);v.gain.linearRampToValueAtTime(g,at+.008);v.gain.exponentialRampToValueAtTime(.0005,at+dur);o.connect(v);v.connect(out);o.start(at);o.stop(at+dur+.02);};
+      v.gain.setValueAtTime(0,at);v.gain.linearRampToValueAtTime(g,at+.008);v.gain.exponentialRampToValueAtTime(.0005,at+dur);o.connect(v);v.connect(sOut);o.start(at);o.stop(at+dur+.02);};
     const crackle=(at,g)=>{const n=ctx.createBufferSource(),b=ctx.createBiquadFilter(),v=ctx.createGain();n.buffer=ambNoise;b.type='highpass';b.frequency.value=1800;
-      v.gain.setValueAtTime(g,at);v.gain.exponentialRampToValueAtTime(.0005,at+.03);n.connect(b);b.connect(v);v.connect(out);n.start(at,Math.random()*3);n.stop(at+.04);};
+      v.gain.setValueAtTime(g,at);v.gain.exponentialRampToValueAtTime(.0005,at+.03);n.connect(b);b.connect(v);v.connect(sOut);n.start(at,Math.random()*3);n.stop(at+.04);};
     const every=(ms,fn)=>{a.timer=setInterval(()=>{if(amb!==a||document.hidden)return;fn(ctx.currentTime+.05);},ms);};
     const bird=at=>{const f=2300+Math.random()*1800,n=2+(Math.random()*4|0),gap=.07+Math.random()*.05;for(let i=0;i<n;i++)ping(f*(1+(i%2)*.12),at+i*gap,.06,.09,'sine',f*1.45);};
+    kind=SYN[kind]||kind;
     if(kind==='ocean'||kind==='pool'){const big=kind==='ocean',sp=big?.09:.17;
       const w=layer('lowpass',big?650:900,.7,0);lfo(sp,big?.13:.11,w.g.gain,big?.14:.14);lfo(sp,big?380:160,w.b.frequency,big?700:950);
       const h=layer('highpass',2500,.5,0);lfo(sp,big?.015:.014,h.g.gain,big?.016:.017);if(big)every(1700,at=>{if(Math.random()<.25)ping(1300+Math.random()*300,at,.35,.012,'sine',900);});}
@@ -2576,7 +2606,7 @@ const Music=(()=>{
       every(600,at=>{if(Math.random()<(kind==='crowd'?.35:.15))crackle(at,.05);});}
     else if(kind==='fire'){layer('lowpass',380,.7,.12);every(70,at=>{if(Math.random()<.3)crackle(at+Math.random()*.06,.02+Math.random()*.07);});}
   }
-  return {parse,playTrack,stopAll,stopSynth,pause,resume,setVol,sfx,ensure,ambSet,get ambient(){return ambKind;},get playing(){return !!cur;}};
+  return {parse,playTrack,stopAll,stopSynth,pause,resume,setVol,sfx,ensure,ambSet,shot,get ambient(){return ambKind;},get playing(){return !!cur;}};
 })();
 
 /* songs stored in IndexedDB */
@@ -2597,6 +2627,13 @@ function playSuno(){
     a.src=SUNO.urls[i++];a.play().catch(err=>{if(err&&err.name==='NotSupportedError')tryNext();});};
   a.onerror=tryNext;tryNext();
 }
+function playFile(tr){
+  Music.stopSynth();const a=$('#songPlayer'),gen=++sunoGen;a.loop=true;a.volume=DB.music.vol/100;
+  a.onerror=()=>{if(gen!==sunoGen)return;a.onerror=null;Music.playTrack(tr.fb);musicPlayingTrack=tr.fb;};
+  a.src=tr.url;a.play().catch(()=>{});
+}
+// a track by id, whether synth or recording (used by the runway walks)
+function playAny(id){const f=FILE_TRACKS.find(x=>x.id===id);if(f){playFile(f);musicPlayingTrack=id;}else{sunoGen++;Music.playTrack(id);musicPlayingTrack=id;}}
 function playSong(id){
   const sg=songs.find(x=>x.id===id);if(!sg)return;Music.stopSynth();sunoGen++;
   const a=$('#songPlayer');a.onerror=null;a.loop=false;if(songUrl)URL.revokeObjectURL(songUrl);songUrl=URL.createObjectURL(sg.blob);a.src=songUrl;a.volume=DB.music.vol/100;a.play().catch(()=>{});
@@ -2610,6 +2647,7 @@ function applyMusic(){
   if(!t||t==='off'){Music.stopAll();}
   else if(t.startsWith('song:'))playSong(t.slice(5));
   else if(t==='suno')playSuno();
+  else if(FILE_TRACKS.some(x=>x.id===t))playFile(FILE_TRACKS.find(x=>x.id===t));
   else{sunoGen++;Music.playTrack(t);}
   musicPlayingTrack=t;
   $('#musicBtn').classList.toggle('playing',!!t&&t!=='off');
@@ -2617,7 +2655,7 @@ function applyMusic(){
 let musicPlayingTrack=null;
 function renderMusic(){
   const m=DB.music;
-  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...TRACKS];
+  const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...FILE_TRACKS,...TRACKS];
   $('#trackList').innerHTML=opts.map(o=>`<button class="track ${m.track===o.id?'on':''}" data-track="${o.id}"><span class="e">${o.e}</span>${o.name}</button>`).join('');
   $('#vol').value=m.vol;
   $('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';$('#ambBtn').textContent=m.amb?'🌊 Background sounds: ON':'🌊 Background sounds: OFF';
@@ -2642,19 +2680,19 @@ $('#songFile').addEventListener('change',async e=>{
   await loadSongs();renderMusic();if(added)toast(`🎶 Added ${added} song${added>1?'s':''}!`);
 });
 DB.music=Object.assign({track:'auto',vol:60,sfx:true,amb:true},DB.music||{});
-const SCENE_AMB={beach:'ocean',pool:'pool',city:'birds',spring:'birds',wedding:'birds',fall:'wind',icerink:'wind',sleepover:'crickets',fireworks:'crickets',halloween:'spooky',christmas:'fire',runway:'crowd',soccer:'crowd',birthday:'party'};
+const SCENE_AMB={beach:'ocean',pool:'pool',city:'city',spring:'spring',wedding:'birds',fall:'fall',icerink:'rink',sleepover:'crickets',fireworks:'fireworks',halloween:'spooky',christmas:'fire',runway:'crowd',soccer:'stadium',birthday:'party',school:'school'};
 function applyAmbient(scene){if(!window.__audioOk)return;try{Music.ambSet(SCENE_AMB[scene||L().scene]||null);}catch(e){}}
 let musicStarted=false;
 document.addEventListener('pointerdown',()=>{
   // every tap keeps audio unlocked (phones pause it after calls, app switches, or locking)
-  Music.ensure();const a=$('#songPlayer');if(musicStarted&&musicPlayingTrack&&(musicPlayingTrack==='suno'||musicPlayingTrack.startsWith('song:'))&&a.paused&&a.src)a.play().catch(()=>{});
+  Music.ensure();const a=$('#songPlayer');if(musicStarted&&isFileTrack(musicPlayingTrack)&&a.paused&&a.src)a.play().catch(()=>{});
   if(musicStarted)return;musicStarted=true;window.__audioOk=true;applyAmbient($('#stage svg')&&$('#stage').dataset.scene);
   // start inside the tap itself; phones block sound started later
   if(!String(wantedTrack()).startsWith('song:'))applyMusic();
   loadSongs().then(()=>{if(String(wantedTrack()).startsWith('song:'))applyMusic();});
 },{capture:true});
 // iPhones only count some touches as permission for sound, so try again when the finger lifts
-const audioRetry=()=>{if(!musicStarted)return;Music.ensure();const a=$('#songPlayer');if(musicPlayingTrack&&(musicPlayingTrack==='suno'||musicPlayingTrack.startsWith('song:'))&&a.paused&&a.src)a.play().catch(()=>{});};
+const audioRetry=()=>{if(!musicStarted)return;Music.ensure();const a=$('#songPlayer');if(isFileTrack(musicPlayingTrack)&&a.paused&&a.src)a.play().catch(()=>{});};
 document.addEventListener('touchend',audioRetry,{capture:true,passive:true});document.addEventListener('click',audioRetry,true);
 // phones never play sound until the first tap: the party's song button is that tap
 $('#partySound').onclick=()=>{if(DB.music.track==='off'){DB.music.track='auto';persist();}applyMusic();$('#partySound').style.display='none';};
