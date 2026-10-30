@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pet Parlor</title>
+<meta name="description" content="Dress up a pet cat, dog or squirrel. Under construction.">
+<meta name="theme-color" content="#ff8fc1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--pink:#ff6fae;--pink2:#ffd6ea;--purple:#8e6cff;--ink:#3b2357;--bg:#fff4fa;--muted:#8a7499}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{touch-action:manipulation}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Fredoka,"Trebuchet MS",system-ui,sans-serif}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none;padding:0}
+input{font-family:inherit}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:linear-gradient(90deg,#ff8fc1,#b79cff);color:#fff}
+header a{color:var(--ink);background:#fff;border-radius:999px;padding:8px 13px;font-weight:700;text-decoration:none;box-shadow:0 2px 0 rgba(0,0,0,.12);white-space:nowrap}
+header h1{margin:0;font-size:20px;flex:1;text-align:center;white-space:nowrap}
+.tbtn{background:#fff;color:var(--ink);border-radius:999px;padding:8px 13px;font-weight:700;box-shadow:0 2px 0 rgba(0,0,0,.12);white-space:nowrap}
+.wip{background:repeating-linear-gradient(-45deg,#ffd23f 0 12px,#2d2d3a 12px 24px);color:#fff;text-align:center;font-weight:700;font-size:13px;padding:3px 8px}
+.wip span{background:#2d2d3a;padding:1px 10px;border-radius:999px}
+main{flex:1;display:flex;min-height:0}
+.stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden}
+.stage svg{width:100%;height:100%;display:block}
+.pet{transform-origin:150px 290px;cursor:pointer}
+.pet.hop{animation:hop .5s ease}
+@keyframes hop{30%{transform:translateY(-22px) scaleY(1.04)}60%{transform:translateY(0) scaleY(.94)}}
+.wag{transform-origin:205px 255px;animation:wag .6s ease-in-out infinite alternate}
+@keyframes wag{from{transform:rotate(-8deg)}to{transform:rotate(10deg)}}
+.swish{transform-origin:200px 262px;animation:swish 2.4s ease-in-out infinite alternate}
+@keyframes swish{from{transform:rotate(-4deg)}to{transform:rotate(5deg)}}
+.blink{animation:blink 4s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.say{position:absolute;top:10%;left:50%;transform:translateX(-50%);background:#fff;border-radius:18px;padding:8px 16px;font-weight:700;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.18);animation:say 1.2s ease forwards;pointer-events:none}
+@keyframes say{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+.panel{width:min(470px,46vw);display:flex;flex-direction:column;background:#fff;border-left:3px solid var(--pink2);min-height:0}
+.pets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px;border-bottom:2px solid var(--pink2)}
+.pets button{border-radius:16px;padding:6px;font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;color:var(--muted)}
+.pets button span{font-size:30px;line-height:1.1}
+.pets button.on{background:var(--pink2);color:var(--ink)}
+.content{flex:1;overflow-y:auto;padding:4px 14px 30px;-webkit-overflow-scrolling:touch}
+h3{margin:14px 0 8px;font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.item{border:3px solid #f6e3ef;border-radius:16px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff9fc;font-size:12.5px;font-weight:600}
+.item .big{font-size:28px;line-height:1.15}
+.item.on{border-color:var(--pink);background:#ffeaf4}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #eadcf0}
+.sw.on{box-shadow:0 0 0 4px var(--pink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row input{flex:1;min-width:120px;border:3px solid #eadcf0;border-radius:14px;padding:9px 12px;font-size:17px;color:var(--ink)}
+.pill{background:var(--pink);color:#fff;border-radius:999px;padding:10px 16px;font-weight:700;font-size:15px}
+.pill.soft{background:#f6e3ef;color:var(--ink)}
+.soon{margin-top:18px;border:3px dashed #eadcf0;border-radius:16px;padding:10px 12px;color:var(--muted);font-size:14px;line-height:1.4}
+@media (max-width:760px){
+  main{flex-direction:column}
+  .stage{flex:0 0 42%}
+  .panel{width:auto;flex:1;border-left:none;border-top:3px solid var(--pink2)}
+  header h1{font-size:17px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a href="./" aria-label="Back to the dress-up game">← Dress-up</a>
+  <h1>🐾 Pet Parlor</h1>
+  <button class="tbtn" id="randBtn" title="Surprise costume">🎲</button>
+</header>
+<div class="wip"><span>🚧 Under construction: more coming soon! 🚧</span></div>
+<main>
+  <div class="stage" id="stage"></div>
+  <div class="panel">
+    <div class="pets" id="pets"></div>
+    <div class="content" id="content"></div>
+  </div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const KINDS=[{id:'cat',e:'🐱',name:'Kitty',say:'Meow!'},{id:'dog',e:'🐶',name:'Puppy',say:'Woof woof!'},{id:'squirrel',e:'🐿️',name:'Squirrel',say:'Chitter chatter!'}];
+const FUR={cat:['#f4a259','#9aa0a6','#3a3540','#f5efe6','#c9b28f'],dog:['#d9a35b','#8b5a2b','#f3ece2','#3a3036','#c46b3c'],squirrel:['#b06a3b','#8d8d8d','#6b4a32','#d98b4a']};
+const COSTUMES=[{id:'none',e:'🐾',name:'Just me'},{id:'pumpkin',e:'🎃',name:'Pumpkin'},{id:'ghost',e:'👻',name:'Ghost'},{id:'witch',e:'🧙',name:'Witch'},{id:'vampire',e:'🧛',name:'Vampire'},{id:'skeleton',e:'💀',name:'Skeleton'},{id:'bat',e:'🦇',name:'Bat wings'},{id:'hero',e:'🦸',name:'Superhero'},{id:'tutu',e:'🩰',name:'Tutu'},{id:'sweater',e:'🧶',name:'Sweater'}];
+const HATS=[{id:'none',e:'🚫',name:'No hat'},{id:'witch',e:'🧙',name:'Witch hat'},{id:'pumpkin',e:'🎃',name:'Pumpkin cap'},{id:'horns',e:'😈',name:'Little horns'},{id:'crown',e:'👑',name:'Crown'},{id:'party',e:'🥳',name:'Party hat'},{id:'bow',e:'🎀',name:'Big bow'},{id:'bunny',e:'🐰',name:'Bunny ears'}];
+const NECKS=[{id:'none',e:'🚫',name:'Nothing'},{id:'collar',e:'🔔',name:'Bell collar'},{id:'bowtie',e:'🎀',name:'Bow tie'},{id:'bandana',e:'🧣',name:'Bandana'}];
+const PLACES=[{id:'spooky',e:'🌙',name:'Spooky night'},{id:'park',e:'🌳',name:'Park'},{id:'room',e:'🏠',name:'Cozy room'}];
+const COLORS=['#8e44ad','#ff6fae','#ff4d6d','#ff8a3d','#ffd23f','#7ee081','#2ec4b6','#4fc3f7','#5c7cfa','#2d2d3a'];
+const KEY='brynny-pets-v1';
+let S={kind:'cat',fur:{cat:FUR.cat[0],dog:FUR.dog[0],squirrel:FUR.squirrel[0]},names:{cat:'Pumpkin',dog:'Biscuit',squirrel:'Nutmeg'},
+  fit:{cat:{body:'witch',hat:'witch',neck:'none',c:'#8e44ad'},dog:{body:'pumpkin',hat:'none',neck:'bandana',c:'#ff8a3d'},squirrel:{body:'none',hat:'bow',neck:'collar',c:'#ff6fae'}},bg:'spooky'};
+try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&o.fit)S=Object.assign(S,o);}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const f=v=>Math.round(amt<0?v*(1+amt):v+(255-v)*amt);return '#'+[f(r),f(g),f(b)].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');}
+const star=(x,y,r,c)=>{let d='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;d+=(i?'L':'M')+(x+Math.cos(a)*rr).toFixed(1)+' '+(y+Math.sin(a)*rr).toFixed(1);}return `<path d="${d}Z" fill="${c}"/>`;};
+
+/* ---------- places ---------- */
+function placeSVG(id){
+  if(id==='park')return `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fdcff"/><stop offset="1" stop-color="#e3f6ff"/></linearGradient></defs>
+    <rect x="-400" y="-200" width="1100" height="720" fill="url(#sky)"/><circle cx="255" cy="45" r="22" fill="#ffe066"/>
+    <ellipse cx="60" cy="60" rx="34" ry="12" fill="#fff" opacity=".9"/><ellipse cx="85" cy="52" rx="22" ry="12" fill="#fff" opacity=".9"/>
+    <rect x="18" y="120" width="16" height="120" rx="6" fill="#8b5a2b"/><circle cx="26" cy="110" r="46" fill="#5fbf5a"/><circle cx="2" cy="130" r="30" fill="#54ad50"/>
+    <path d="M-400 250 Q150 225 700 250 L700 520 L-400 520 Z" fill="#7ed36f"/><path d="M-400 270 Q150 255 700 272 L700 520 L-400 520 Z" fill="#69c25c"/>
+    ${[[230,262],[250,270],[70,268]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4" fill="#fff"/><circle cx="${x}" cy="${y}" r="1.6" fill="#ffd23f"/>`).join('')}`;
+  if(id==='room')return `<rect x="-400" y="-200" width="1100" height="720" fill="#ffe3ee"/>${Array.from({length:32},(_,i)=>`<rect x="${-400+i*36}" y="-200" width="14" height="435" fill="#ffd2e4"/>`).join('')}
+    <rect x="200" y="40" width="80" height="80" rx="8" fill="#bfe9ff" stroke="#fff" stroke-width="7"/><line x1="240" y1="40" x2="240" y2="120" stroke="#fff" stroke-width="5"/><line x1="200" y1="80" x2="280" y2="80" stroke="#fff" stroke-width="5"/>
+    <rect x="-400" y="235" width="1100" height="300" fill="#d9a46a"/>${Array.from({length:22},(_,i)=>`<line x1="${-400+i*52}" y1="235" x2="${-400+i*52}" y2="520" stroke="#c48d55" stroke-width="2"/>`).join('')}
+    <ellipse cx="150" cy="292" rx="120" ry="22" fill="#b79cff"/><ellipse cx="150" cy="292" rx="96" ry="15" fill="#d6c6ff"/>`;
+  return `<defs><linearGradient id="night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d0f36"/><stop offset="1" stop-color="#4b2a6b"/></linearGradient></defs>
+    <rect x="-400" y="-200" width="1100" height="720" fill="url(#night)"/><circle cx="245" cy="55" r="30" fill="#fff6c8"/><circle cx="232" cy="48" r="5" fill="#f0e3a0"/><circle cx="255" cy="66" r="4" fill="#f0e3a0"/>
+    ${[[30,30],[80,60],[140,25],[190,90],[20,110],[290,120],[110,95]].map(([x,y],i)=>star(x,y,i%2?3:4.5,'#fff6c8')).join('')}
+    <path d="M70 60 q8 -8 16 0 q8 -8 16 0 q-8 2 -16 10 q-8 -8 -16 -10z" fill="#120a20"/>
+    <path d="M-400 255 Q150 232 700 255 L700 520 L-400 520 Z" fill="#2c1846"/>
+    ${[[40,262,20],[262,266,16],[-10,270,14]].map(([x,y,r])=>`<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r*.8}" fill="#ff8a2b"/><path d="M${x} ${y-r*.8} q2 -7 6 -9" stroke="#5a8a2a" stroke-width="3" fill="none"/><path d="M${x-r*.4} ${y-2} l4 -5 l4 5 z M${x+r*.4-8} ${y-2} l4 -5 l4 5 z M${x-r*.45} ${y+5} q${r*.45} 7 ${r*.9} 0" fill="#ffe066" stroke="#ffe066" stroke-width="1.5"/>`).join('')}`;
+}
+
+/* ---------- the pets ---------- */
+function petSVG(){
+  const k=S.kind,f=S.fur[k],dk=shade(f,-.25),lt=shade(f,.45),fit=S.fit[k],c=fit.c,sq=k==='squirrel';
+  const hy=sq?75:67;// top of the head
+  let back='',tail='',ears='',earsFront='',face='';
+  // costume pieces that go behind the pet
+  if(fit.body==='witch')back+=`<path d="M110 165 L66 292 L234 292 L190 165 Z" fill="${c}"/>`;
+  if(fit.body==='vampire')back+=`<path d="M100 160 L55 295 L245 295 L200 160 Z" fill="#1a1020"/><path d="M112 168 L80 290 L220 290 L188 168 Z" fill="#b3122e"/><path d="M84 150 L104 92 L136 162 Z M216 150 L196 92 L164 162 Z" fill="#1a1020"/>`;
+  if(fit.body==='bat')back+=['M112 192 Q62 150 28 176 Q44 186 38 202 Q58 196 62 214 Q78 202 88 220 Q100 206 114 216 Z','M188 192 Q238 150 272 176 Q256 186 262 202 Q242 196 238 214 Q222 202 212 220 Q200 206 186 216 Z'].map(d=>`<path d="${d}" fill="#2a2233" stroke="#4a3a5a" stroke-width="2"/>`).join('');
+  if(fit.body==='hero')back+=`<path d="M108 165 Q90 240 76 296 L224 296 Q210 240 192 165 Z" fill="${c}"/>`;
+  if(k==='cat')tail=`<g class="swish"><path d="M200 262 Q262 254 254 196 Q250 166 270 146" stroke="${f}" stroke-width="18" fill="none" stroke-linecap="round"/><path d="M262 158 Q266 150 270 146" stroke="${dk}" stroke-width="18" fill="none" stroke-linecap="round"/></g>`;
+  if(k==='dog')tail=`<g class="wag"><path d="M205 255 Q242 238 238 200" stroke="${f}" stroke-width="16" fill="none" stroke-linecap="round"/></g>`;
+  if(sq)tail=`<g class="swish"><path d="M188 272 Q272 266 266 182 Q262 118 214 96 Q186 86 198 112 Q236 142 230 192 Q226 244 182 248 Z" fill="${f}"/><path d="M200 258 Q252 250 250 186 Q248 136 214 108" stroke="${lt}" stroke-width="6" fill="none" opacity=".55" stroke-linecap="round"/></g>`;
+  if(k==='cat')ears=`<path d="M106 96 L102 44 L144 72 Z M194 96 L198 44 L156 72 Z" fill="${f}"/><path d="M111 86 L109 58 L133 74 Z M189 86 L191 58 L167 74 Z" fill="#ffb3c7"/>`;
+  if(sq)ears=`<ellipse cx="114" cy="80" rx="11" ry="18" fill="${f}" transform="rotate(-18 114 80)"/><ellipse cx="186" cy="80" rx="11" ry="18" fill="${f}" transform="rotate(18 186 80)"/><path d="M108 64 l-3 -10 l6 6 M192 64 l3 -10 l-6 6" stroke="${dk}" stroke-width="3"/><ellipse cx="115" cy="83" rx="5" ry="10" fill="#e8b7a0" transform="rotate(-18 115 83)"/><ellipse cx="185" cy="83" rx="5" ry="10" fill="#e8b7a0" transform="rotate(18 185 83)"/>`;
+  if(k==='dog')earsFront=`<ellipse cx="97" cy="128" rx="18" ry="38" fill="${dk}" transform="rotate(16 97 128)"/><ellipse cx="203" cy="128" rx="18" ry="38" fill="${dk}" transform="rotate(-16 203 128)"/>`;
+  const hr=sq?50:55,hc=sq?125:122;
+  // faces
+  const shine=(x,y)=>`<circle cx="${x-3}" cy="${y-4}" r="3.2" fill="#fff"/><circle cx="${x+3}" cy="${y+3}" r="1.5" fill="#fff"/>`;
+  if(k==='cat')face=`<g class="blink"><ellipse cx="128" cy="120" rx="10" ry="12" fill="#4f9d5d"/><ellipse cx="172" cy="120" rx="10" ry="12" fill="#4f9d5d"/><ellipse cx="128" cy="121" rx="4" ry="9" fill="#1d1d1d"/><ellipse cx="172" cy="121" rx="4" ry="9" fill="#1d1d1d"/>${shine(128,119)}${shine(172,119)}</g>
+    <path d="M144 138 L156 138 L150 145 Z" fill="#ff8fb1"/><path d="M150 145 Q150 153 142 154 M150 145 Q150 153 158 154" stroke="#5a3a3a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M136 146 L100 140 M136 150 L100 153 M164 146 L200 140 M164 150 L200 153" stroke="${k==='cat'&&f==='#3a3540'?'#ddd':'#6b5050'}" stroke-width="1.6" opacity=".7"/>`;
+  if(k==='dog')face=`<ellipse cx="150" cy="146" rx="29" ry="21" fill="${lt}"/><g class="blink"><circle cx="128" cy="116" r="9.5" fill="#2b1d16"/><circle cx="172" cy="116" r="9.5" fill="#2b1d16"/>${shine(128,116)}${shine(172,116)}</g>
+    <ellipse cx="150" cy="137" rx="10.5" ry="7.5" fill="#2b1d16"/><circle cx="147" cy="135" r="2.4" fill="#fff" opacity=".6"/><path d="M150 144 Q150 152 141 154 M150 144 Q150 152 159 154" stroke="#2b1d16" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M144 154 Q150 168 156 154 Z" fill="#ff7f9a"/>`;
+  if(sq)face=`<circle cx="122" cy="142" r="16" fill="${lt}"/><circle cx="178" cy="142" r="16" fill="${lt}"/><g class="blink"><circle cx="128" cy="118" r="10.5" fill="#1d130e"/><circle cx="172" cy="118" r="10.5" fill="#1d130e"/>${shine(128,118)}${shine(172,118)}</g>
+    <ellipse cx="150" cy="136" rx="6.5" ry="4.5" fill="#3a2418"/><path d="M140 143 Q150 150 160 143" stroke="#3a2418" stroke-width="2.2" fill="none" stroke-linecap="round"/><rect x="145.5" y="146" width="9" height="8" rx="2" fill="#fff" stroke="#d8cfc4" stroke-width="1"/><line x1="150" y1="146" x2="150" y2="154" stroke="#d8cfc4" stroke-width="1"/>`;
+  const blush=`<ellipse cx="114" cy="140" rx="9" ry="5" fill="#ff8fb1" opacity=".45"/><ellipse cx="186" cy="140" rx="9" ry="5" fill="#ff8fb1" opacity=".45"/>`;
+  // the body
+  let body=`<ellipse cx="108" cy="256" rx="28" ry="30" fill="${f}"/><ellipse cx="192" cy="256" rx="28" ry="30" fill="${f}"/><ellipse cx="98" cy="285" rx="21" ry="9" fill="${f}"/><ellipse cx="202" cy="285" rx="21" ry="9" fill="${f}"/>
+    <ellipse cx="150" cy="215" rx="58" ry="68" fill="${f}"/><ellipse cx="150" cy="230" rx="34" ry="44" fill="${lt}"/>`;
+  let suit='',paws=`<ellipse cx="130" cy="283" rx="15" ry="10" fill="${f}"/><ellipse cx="170" cy="283" rx="15" ry="10" fill="${f}"/><path d="M125 287 v-5 M131 288 v-5 M165 288 v-5 M171 287 v-5" stroke="${dk}" stroke-width="1.6" stroke-linecap="round"/>`;
+  switch(fit.body){
+    case 'pumpkin':suit=`<ellipse cx="150" cy="228" rx="76" ry="62" fill="#ff8a2b"/>${[-48,-24,0,24,48].map(o=>`<path d="M${150+o} 170 Q${150+o*1.5} 228 ${150+o} 288" stroke="#e46f12" stroke-width="3" fill="none"/>`).join('')}
+      <path d="M126 168 Q150 152 174 168 Q150 178 126 168 Z" fill="#5a9a2a"/><path d="M126 214 l9 -13 l9 13 z M156 214 l9 -13 l9 13 z M122 238 l8 7 l8 -7 l8 7 l8 -7 l8 7 l8 -7 l8 7 l6 -6 Q150 268 122 238 Z" fill="#3b1d0b"/>`;break;
+    case 'ghost':suit=`<path d="M106 168 Q150 158 194 168 Q218 230 216 290 Q205 278 194 290 Q183 278 172 292 Q161 278 150 292 Q139 278 128 292 Q117 278 106 290 Q95 278 84 290 Q82 230 106 168 Z" fill="#fff" stroke="#e4dcef" stroke-width="2"/>
+      <ellipse cx="134" cy="214" rx="7" ry="10" fill="#3b2357"/><ellipse cx="166" cy="214" rx="7" ry="10" fill="#3b2357"/><ellipse cx="150" cy="242" rx="7" ry="9" fill="#3b2357"/>`;paws='';break;
+    case 'witch':suit=`<path d="M112 172 Q150 184 188 172 L212 286 L88 286 Z" fill="#2d2140"/><rect x="104" y="232" width="92" height="9" fill="#ff8a2b"/><rect x="143" y="229" width="14" height="15" rx="2" fill="#ffd23f"/>${star(128,262,6,'#ffd23f')}${star(176,268,5,'#ffd23f')}`;break;
+    case 'vampire':suit=`<path d="M122 172 Q150 182 178 172 L172 270 L128 270 Z" fill="#fff"/><path d="M150 176 L140 186 L150 196 L160 186 Z" fill="#b3122e"/><circle cx="150" cy="208" r="3" fill="#2d2d3a"/><circle cx="150" cy="226" r="3" fill="#2d2d3a"/>`;break;
+    case 'skeleton':suit=`<ellipse cx="150" cy="216" rx="60" ry="70" fill="#22202a"/><line x1="150" y1="176" x2="150" y2="262" stroke="#fff" stroke-width="6" stroke-linecap="round"/>${[192,208,224,240].map((y,i)=>`<path d="M${122+i*2} ${y} Q150 ${y-8} ${178-i*2} ${y}" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>`).join('')}<ellipse cx="150" cy="268" rx="18" ry="8" fill="#fff"/>`;
+      paws=`<ellipse cx="130" cy="283" rx="15" ry="10" fill="#22202a"/><ellipse cx="170" cy="283" rx="15" ry="10" fill="#22202a"/><path d="M124 284 h12 M164 284 h12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;break;
+    case 'hero':suit=`<circle cx="150" cy="205" r="20" fill="#ffd23f"/>${star(150,205,13,c)}`;break;
+    case 'tutu':suit=Array.from({length:13},(_,i)=>{const a=Math.PI*(i/12),x=150-Math.cos(a)*68,y=252+Math.sin(a)*12;return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="18" ry="12" fill="${c}" opacity=".78"/>`;}).join('')+`<rect x="96" y="242" width="108" height="9" rx="4" fill="${shade(c,-.15)}"/>`;break;
+    case 'sweater':suit=`<path d="M96 172 Q150 192 204 172 Q216 230 206 272 L94 272 Q84 230 96 172 Z" fill="${c}"/>${[205,230,255].map(y=>`<path d="M${97} ${y} H203" stroke="#fff" stroke-width="5" opacity=".75"/>`).join('')}<path d="M104 174 Q150 192 196 174" stroke="${shade(c,-.2)}" stroke-width="7" fill="none"/>`;break;
+  }
+  if(fit.body==='witch'||fit.body==='vampire')suit+=`<path d="M138 176 L126 168 L126 184 Z M162 176 L174 168 L174 184 Z" fill="${fit.body==='witch'?'#ff8a2b':'#1a1020'}"/>`;
+  if(fit.body==='hero')suit+=`<path d="M108 170 Q150 186 192 170" stroke="${shade(c,-.2)}" stroke-width="6" fill="none"/>`;
+  // neck
+  let neck='';
+  if(fit.neck==='collar')neck=`<path d="M108 170 Q150 194 192 170" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="150" cy="188" r="7.5" fill="#ffd23f" stroke="#d9a400" stroke-width="1.5"/><path d="M146 190 h8" stroke="#a87e00" stroke-width="1.6"/>`;
+  if(fit.neck==='bowtie')neck=`<path d="M150 182 L130 170 L130 194 Z M150 182 L170 170 L170 194 Z" fill="${c}"/><circle cx="150" cy="182" r="5" fill="${shade(c,-.25)}"/>`;
+  if(fit.neck==='bandana')neck=`<path d="M106 168 Q150 186 194 168 L150 214 Z" fill="${c}"/>${[[136,186],[160,188],[150,200],[124,178],[176,178]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.4" fill="#fff"/>`).join('')}`;
+  // hats
+  let hat='';
+  switch(fit.hat){
+    case 'witch':hat=`<ellipse cx="150" cy="${hy+8}" rx="54" ry="11" fill="#2d2140"/><path d="M120 ${hy+6} Q138 ${hy-30} 150 ${hy-64} Q166 ${hy-52} 178 ${hy-58} Q166 ${hy-28} 180 ${hy+6} Z" fill="#2d2140"/><path d="M123 ${hy-4} Q150 ${hy+2} 177 ${hy-4} L178 ${hy+4} Q150 ${hy+10} 122 ${hy+4} Z" fill="${c}"/><rect x="143" y="${hy-6}" width="14" height="12" rx="2" fill="none" stroke="#ffd23f" stroke-width="3"/>`;break;
+    case 'pumpkin':hat=`<ellipse cx="150" cy="${hy}" rx="32" ry="20" fill="#ff8a2b"/><path d="M134 ${hy-18} Q134 ${hy} 134 ${hy+18} M150 ${hy-20} V${hy+20} M166 ${hy-18} Q166 ${hy} 166 ${hy+18}" stroke="#e46f12" stroke-width="2.5" fill="none"/><path d="M150 ${hy-19} q2 -10 9 -13" stroke="#5a8a2a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M152 ${hy-25} q12 -6 16 2 q-10 4 -16 -2z" fill="#6cbf3a"/>`;break;
+    case 'horns':hat=`<path d="M120 ${hy+12} Q106 ${hy-12} 120 ${hy-26} Q120 ${hy-6} 134 ${hy+8} Z M180 ${hy+12} Q194 ${hy-12} 180 ${hy-26} Q180 ${hy-6} 166 ${hy+8} Z" fill="#e0233d"/>`;break;
+    case 'crown':hat=`<path d="M122 ${hy+8} L122 ${hy-18} L136 ${hy-4} L150 ${hy-26} L164 ${hy-4} L178 ${hy-18} L178 ${hy+8} Z" fill="#ffd23f" stroke="#e0a800" stroke-width="2" stroke-linejoin="round"/><circle cx="150" cy="${hy-2}" r="4.5" fill="${c}"/><circle cx="134" cy="${hy+1}" r="3" fill="#fff"/><circle cx="166" cy="${hy+1}" r="3" fill="#fff"/>`;break;
+    case 'party':hat=`<g transform="rotate(12 150 ${hy})"><path d="M128 ${hy+8} L150 ${hy-52} L172 ${hy+8} Z" fill="${c}"/>${[[142,hy-14],[156,hy-4],[150,hy-30],[138,hy+2]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3.2" fill="#fff"/>`).join('')}<circle cx="150" cy="${hy-54}" r="7" fill="#ffd23f"/></g>`;break;
+    case 'bow':hat=`<g transform="translate(${k==='cat'?178:184} ${hy+10}) rotate(18)"><path d="M0 0 L-22 -14 L-22 14 Z M0 0 L22 -14 L22 14 Z" fill="${c}"/><circle r="6" fill="${shade(c,-.25)}"/></g>`;break;
+    case 'bunny':hat=`<path d="M104 ${hy+22} Q150 ${hy-20} 196 ${hy+22}" stroke="${c}" stroke-width="6" fill="none"/><ellipse cx="132" cy="${hy-30}" rx="11" ry="34" fill="#fff" stroke="#eee" transform="rotate(-10 132 ${hy-30})"/><ellipse cx="168" cy="${hy-30}" rx="11" ry="34" fill="#fff" stroke="#eee" transform="rotate(10 168 ${hy-30})"/><ellipse cx="132" cy="${hy-28}" rx="5" ry="24" fill="#ffc1d6" transform="rotate(-10 132 ${hy-28})"/><ellipse cx="168" cy="${hy-28}" rx="5" ry="24" fill="#ffc1d6" transform="rotate(10 168 ${hy-28})"/>`;break;
+  }
+  return `<svg viewBox="0 0 300 320" xmlns="http://www.w3.org/2000/svg">${placeSVG(S.bg)}<ellipse cx="150" cy="294" rx="88" ry="10" fill="#000" opacity=".18"/>
+    <g class="pet" id="pet">${back}${tail}${body}${suit}${paws}${ears}<circle cx="${150}" cy="${hc}" r="${hr}" fill="${f}"/>${earsFront}${face}${blush}${neck}${hat}</g></svg>`;
+}
+
+/* ---------- sounds ---------- */
+let ac=null;
+function voice(kind){
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();}catch(e){return;}
+  const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(0,t);
+  if(kind==='cat'){o.type='triangle';o.frequency.setValueAtTime(620,t);o.frequency.linearRampToValueAtTime(980,t+.18);o.frequency.linearRampToValueAtTime(560,t+.55);g.gain.linearRampToValueAtTime(.25,t+.05);g.gain.linearRampToValueAtTime(0,t+.6);o.start(t);o.stop(t+.62);}
+  else if(kind==='dog'){o.type='sawtooth';[0,.28].forEach(d=>{o.frequency.setValueAtTime(330,t+d);o.frequency.exponentialRampToValueAtTime(170,t+d+.14);g.gain.setValueAtTime(.18,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.16);});o.start(t);o.stop(t+.48);}
+  else{o.type='sine';for(let i=0;i<6;i++){const d=i*.07;o.frequency.setValueAtTime(1700,t+d);o.frequency.exponentialRampToValueAtTime(2600,t+d+.04);g.gain.setValueAtTime(.16,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.05);}o.start(t);o.stop(t+.45);}
+}
+
+/* ---------- screen ---------- */
+function render(){
+  $('#stage').innerHTML=petSVG();
+  $('#pet').addEventListener('click',()=>{const p=$('#pet');p.classList.remove('hop');void p.getBoundingClientRect();p.classList.add('hop');voice(S.kind);
+    const b=document.createElement('div');b.className='say';b.textContent=KINDS.find(x=>x.id===S.kind).say;$('#stage').appendChild(b);setTimeout(()=>b.remove(),1200);});
+  $('#pets').innerHTML=KINDS.map(k=>`<button class="${S.kind===k.id?'on':''}" data-kind="${k.id}"><span>${k.e}</span>${k.name}</button>`).join('');
+  const fit=S.fit[S.kind],grid=(act,list,sel)=>`<div class="grid">${list.map(x=>`<button class="item ${sel===x.id?'on':''}" data-act="${act}" data-id="${x.id}"><span class="big">${x.e}</span>${x.name}</button>`).join('')}</div>`;
+  const sw=(act,list,sel)=>`<div class="swatches">${list.map(c=>`<button class="sw ${sel===c?'on':''}" style="background:${c}" data-act="${act}" data-id="${c}" aria-label="${c}"></button>`).join('')}</div>`;
+  const sc=$('#content').scrollTop;
+  $('#content').innerHTML=`<h3>Name</h3><div class="row"><input id="petName" maxlength="16" value="${S.names[S.kind].replace(/"/g,'&quot;')}" aria-label="Pet name"></div>
+    <h3>🎃 Costume</h3>${grid('body',COSTUMES,fit.body)}
+    <h3>🎩 Hat</h3>${grid('hat',HATS,fit.hat)}
+    <h3>🎀 Neck</h3>${grid('neck',NECKS,fit.neck)}
+    <h3>🖍️ Costume color</h3>${sw('color',COLORS,fit.c)}
+    <h3>🎨 Fur</h3>${sw('fur',FUR[S.kind],S.fur[S.kind])}
+    <h3>📍 Place</h3>${grid('bg',PLACES,S.bg)}
+    <div class="soon">🚧 <b>Coming soon:</b> more pets, more costumes, and taking your pet into the dress-up game. Tap your pet to say hi!</div>`;
+  $('#content').scrollTop=sc;
+  $('#petName').addEventListener('input',e=>{S.names[S.kind]=e.target.value.trim()||KINDS.find(x=>x.id===S.kind).name;save();});
+}
+$('#pets').addEventListener('click',e=>{const b=e.target.closest('[data-kind]');if(!b)return;S.kind=b.dataset.kind;save();render();});
+$('#content').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const fit=S.fit[S.kind],id=b.dataset.id;
+  switch(b.dataset.act){case 'body':fit.body=id;break;case 'hat':fit.hat=id;break;case 'neck':fit.neck=id;break;case 'color':fit.c=id;break;case 'fur':S.fur[S.kind]=id;break;case 'bg':S.bg=id;break;}
+  save();render();});
+$('#randBtn').onclick=()=>{const r=a=>a[Math.random()*a.length|0],fit=S.fit[S.kind];fit.body=r(COSTUMES.slice(1)).id;fit.hat=r(HATS).id;fit.neck=r(NECKS).id;fit.c=r(COLORS);save();render();};
+render();
+</script>
+</body>
+</html>
