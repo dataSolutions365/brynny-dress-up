@@ -172,6 +172,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="spacer"></div>
   <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
   <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
+  <button class="tbtn" id="partyBtn" title="Birthday party">🎂 <span class="lbl">Party</span></button>
   <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span></button>
   <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
   <button class="tbtn" id="msgBtn" title="Messages" style="display:none">💌 <span class="lbl">Messages</span><span class="badge" id="msgBadge" style="display:none"></span></button>
@@ -2045,6 +2046,7 @@ function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add
   for(let i=0;i<6;i++)setTimeout(()=>partyLaunch(true),i*180);
 }
 $('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
+$('#partyBtn').onclick=showParty;
 $('#partyBlow').onclick=()=>{[...document.querySelectorAll('#partyCake .candle:not(.out)')].forEach((g,i)=>setTimeout(()=>blowCandle(g),i*90));};
 $('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=true;persist();if(!DB.welcomed)showWelcome();else sparkle();};
 // fireworks on a canvas, only while the party is open and on screen
@@ -2329,7 +2331,7 @@ function countStat(...names){
     F.setDoc(F.doc(statsFs,'dressup_stats',new Date().toISOString().slice(0,10)),add,{merge:true}).catch(()=>{});}catch(e){}
 }
 {const phone=matchMedia('(pointer: coarse)').matches&&!matchMedia('(any-pointer: fine)').matches;countStat('visits',phone?'phone_visits':'computer_visits');}
-const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',msgSend:'send_message'};
+const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',partyBtn:'party',msgSend:'send_message'};
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-tab]');if(!b)return;
   if(TAPS[b.id])track(TAPS[b.id]);else if(b.dataset.tab)track('open_tab',{tab:b.dataset.tab});},true);
 
