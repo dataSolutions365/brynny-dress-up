@@ -282,6 +282,52 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 <div class="toast" id="toast"></div>
 
 <script>
+/* ---------- errors: save what went wrong (snake game's Firebase, list dressup_errors) and keep playing ---------- */
+const DRESSUP_VERSION='2026-10-30';
+const MAX_ERRORS_SAVED=5;
+let errorsSaved=0;const errorQueue=[];window.sendError=null;
+function errorWhere(where){
+  let s=where||'';
+  try{s+=' | tab: '+tab;const m=[...document.querySelectorAll('.modal.show')].map(x=>x.id);if(m.length)s+=' | open: '+m.join(',');s+=' | scene: '+L().scene;}catch(e){}
+  return s;
+}
+function reportError(error,where,showBox){
+  try{
+    if(errorsSaved>=MAX_ERRORS_SAVED)return;errorsSaved++;
+    const cut=(v,n)=>String(v==null?'':v).slice(0,n);
+    const e={message:cut(error&&error.message||error,500),stack:cut(error&&error.stack,1500),where:cut(errorWhere(where),200),version:DRESSUP_VERSION,device:cut(navigator.userAgent,300)};
+    if(window.sendError)window.sendError(e);else errorQueue.push(e);
+  }catch(x){}
+  if(showBox)showErrorBox();
+}
+function showErrorBox(){
+  if(document.getElementById('errorBox'))return;
+  const b=document.createElement('div');b.id='errorBox';b.className='modal show';b.style.zIndex=99;
+  b.innerHTML='<div class="sheet" style="max-width:340px;text-align:center"><h2>Oops, something went wrong 😕</h2><p>Your looks are saved. You can keep playing, or start again.</p><button class="big-btn" id="errKeep">Keep playing ✨</button><p><button class="pill" id="errReload">Start again</button></p></div>';
+  document.body.appendChild(b);
+  b.querySelector('#errKeep').onclick=()=>{b.remove();recover();};
+  b.querySelector('#errReload').onclick=()=>location.reload();
+}
+// put the game back in a working state: close stuck windows, unstick buttons, draw again
+function recover(){
+  try{document.querySelectorAll('#cropModal.show,#camModal.show,#artModal.show,#nailModal.show,#braidModal.show').forEach(m=>m.classList.remove('show'));}catch(e){}
+  try{const b=$('#cropUse');if(b){b.disabled=false;b.textContent='Put it on! ✨';}}catch(e){}
+  try{window.unstick&&window.unstick();}catch(e){}
+  try{renderStage();}catch(e){}
+  try{renderPanel();}catch(e){}
+}
+window.addEventListener('error',ev=>{
+  // only our own code gets the box; a hiccup in someone else's script (fonts, Firebase, face finder) is just saved
+  const ours=!ev.filename||ev.filename.startsWith(location.origin);
+  reportError(ev.error||ev.message,'window: '+(ev.filename||'').split('/').pop()+':'+ev.lineno,ours);
+});
+window.addEventListener('unhandledrejection',ev=>{const r=ev.reason;reportError(r,'promise: '+(r&&r.name||typeof r),false);});
+// freeze watchdog: if the page stopped answering for a while (while on screen), save it and tidy up
+{let last=Date.now(),shownAt=0;
+  document.addEventListener('visibilitychange',()=>{last=Date.now();if(!document.hidden)shownAt=last;});
+  setInterval(()=>{const now=Date.now(),gap=now-last;last=now;
+    if(gap>5000&&!document.hidden&&now-shownAt>gap){reportError({message:'freeze '+Math.round(gap/1000)+'s',stack:''},'watchdog',false);recover();}},1000);}
+
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -467,6 +513,12 @@ function facePaint(p){
 
 /* ---------- hair ---------- */
 const CAP='M108 98 Q103 33 150 32 Q197 33 192 98 Q187 60 150 56 Q113 60 108 98 Z';
+// her own hair, traced from a selfie: the whole shape sits behind the face, and the part above the brows also goes in front as bangs
+function myHairParts(m,c,d){
+  const p=`<path d="${m.d}" fill="${c}" fill-rule="evenodd" stroke="${d}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  return {back:`<ellipse cx="150" cy="80" rx="41" ry="46" fill="${c}"/>`+p,front:`<clipPath id="mhTop"><rect x="0" y="-100" width="300" height="178"/></clipPath><g clip-path="url(#mhTop)">${p}</g>`};
+}
+const hairParts=l=>l.hairStyle==='mine'&&l.myHair?myHairParts(l.myHair,hf(l.hairColor),hs(l.hairColor)):(find(HAIR,l.hairStyle)||HAIR[0]).d(hf(l.hairColor),hs(l.hairColor));
 const PART='M108 98 Q103 33 150 32 Q197 33 192 98 Q186 58 153 50 L150 60 L147 50 Q114 58 108 98 Z';
 const braid=(x,c,d)=>{let s='';for(let i=0;i<8;i++){const y=112+i*17;s+=`<ellipse cx="${x}" cy="${y}" rx="${(11-i*.4).toFixed(1)}" ry="11" fill="${c}" stroke="${d}" stroke-width="1.5"/>`;}
   return s+`<path d="M${x-6} 250 L${x-10} 272 L${x} 264 L${x+10} 272 L${x+6} 250 Z" fill="${c}"/><rect x="${x-7}" y="245" width="14" height="8" rx="4" fill="#ff6fae"/>`;};
@@ -699,14 +751,19 @@ const EXTRAS=[
  {id:'glasses',name:'Glasses',c:'#8e44ad',vb:'110 70 80 45',d:c=>({head:sym(`<circle cx="134" cy="93" r="12" fill="#fff" fill-opacity=".15" stroke="${c}" stroke-width="3"/>`)+`<path d="M146 92 Q150 88 154 92" stroke="${c}" stroke-width="3" fill="none"/>`})},
  {id:'heartglasses',name:'Heart shades',c:'#ff4d8d',vb:'110 70 80 45',d:c=>({head:sym(heart(134,92,9,c,'opacity=".9"'))+`<path d="M144 90 Q150 86 156 90" stroke="${c}" stroke-width="3" fill="none"/>`})},
  {id:'scarf',name:'Scarf',c:'#ff4d6d',vb:'100 140 100 110',d:c=>({front:`<path d="M124 152 Q150 170 176 152 L180 168 Q150 188 120 168 Z" fill="${c}"/><path d="M160 172 L176 230 L160 236 L148 176 Z" fill="${c}"/><path d="M162 228 L176 226 M160 234 L174 232" stroke="${shade(c,-.25)}" stroke-width="2"/>`})},
- {id:'purse',name:'Purse',c:'#ff6fae',vb:'180 290 70 90',d:c=>({hand:`<path d="M200 344 Q212 312 224 344" stroke="${shade(c,-.25)}" stroke-width="3" fill="none"/><rect x="194" y="340" width="38" height="30" rx="8" fill="${c}"/>`+heart(213,355,5,'#fff')})},
+ {id:'purse',name:'Purse',c:'#ff6fae',vb:'170 280 90 120',d:c=>({hand:`<g transform="translate(212 334) scale(1.35) translate(-212 -334)">`+`<path d="M200 344 Q212 312 224 344" stroke="${shade(c,-.25)}" stroke-width="3" fill="none"/><rect x="194" y="340" width="38" height="30" rx="8" fill="${c}"/>`+heart(213,355,5,'#fff')+'</g>'})},
  {id:'wand',name:'Magic wand',c:'#ffd23f',vb:'40 230 70 120',d:c=>({hand:`<line x1="88" y1="334" x2="68" y2="262" stroke="#ff8fc8" stroke-width="4" stroke-linecap="round"/>`+star(66,256,14,c)+sparkles([[52,240,4],[84,236,3]],c)})},
- {id:'bouquet',name:'Bouquet',c:'#ff8fc8',vb:'50 290 80 90',d:c=>({hand:`<path d="M80 336 L88 372 L96 336 Z" fill="#3c8d5a"/>`+flower(78,320,8,c)+flower(98,318,8,'#fff')+flower(88,304,8,c)+flower(70,306,6,'#ffd1e6')+flower(106,304,6,'#ffd1e6')})},
- {id:'candy',name:'Candy bucket',c:'#ff8a1f',vb:'175 290 75 95',d:c=>({hand:`<path d="M196 344 Q212 312 228 344" stroke="#2d2d3a" stroke-width="3" fill="none"/><ellipse cx="212" cy="358" rx="22" ry="19" fill="${c}"/><path d="M202 352 L206 346 L210 352 Z M214 352 L218 346 L222 352 Z" fill="#3b1d00"/><path d="M202 362 Q212 370 222 362" stroke="#3b1d00" stroke-width="2.5" fill="none"/>`})},
- {id:'present',name:'Gift box',c:'#7ee081',vb:'175 290 75 95',d:c=>({hand:`<rect x="194" y="334" width="38" height="34" rx="3" fill="${c}"/><rect x="209" y="334" width="8" height="34" fill="#ff4d6d"/><rect x="194" y="347" width="38" height="8" fill="#ff4d6d"/><path d="M213 334 L200 322 L206 336 Z M213 334 L226 322 L220 336 Z" fill="#ff4d6d"/>`})},
- {id:'pompoms',name:'Pom-poms',c:'#ff4d8d',vb:'40 280 220 90',d:c=>{let p='';for(let i=0;i<14;i++){const a=i*0.45,r=10+((i*7)%5);p+=`<line x1="88" y1="330" x2="${(88+Math.cos(a)*r*1.6).toFixed(1)}" y2="${(330+Math.sin(a)*r*1.4).toFixed(1)}" stroke="${i%3?c:'#fff'}" stroke-width="5" stroke-linecap="round"/>`;}return {hand:sym(p)};}},
- {id:'racket',name:'Tennis racket',c:'#7ee081',vb:'170 250 80 130',d:c=>({hand:`<line x1="212" y1="334" x2="222" y2="300" stroke="#2d2d3a" stroke-width="6" stroke-linecap="round"/><ellipse cx="228" cy="276" rx="18" ry="24" fill="none" stroke="${c}" stroke-width="5" transform="rotate(15 228 276)"/><g stroke="#fff" stroke-width="1" opacity=".8" transform="rotate(15 228 276)"><path d="M216 266 L240 266 M214 276 L242 276 M216 286 L240 286 M222 256 L222 296 M228 254 L228 298 M234 256 L234 296"/></g>`})},
- {id:'ball',name:'Soccer ball',c:'#ffffff',vb:'170 520 70 70',d:c=>({front:`<circle cx="206" cy="560" r="20" fill="${c}" stroke="#2d2d3a" stroke-width="1.5"/><path d="M206 552 L214 558 L211 567 L201 567 L198 558 Z" fill="#2d2d3a"/><path d="M206 552 L206 541 M214 558 L224 554 M211 567 L217 576 M201 567 L195 576 M198 558 L188 554" stroke="#2d2d3a" stroke-width="1.5"/>`})},
+ {id:'bouquet',name:'Bouquet',c:'#ff8fc8',vb:'40 270 100 120',d:c=>({hand:`<g transform="translate(88 334) scale(1.3) translate(-88 -334)">`+`<path d="M80 336 L88 372 L96 336 Z" fill="#3c8d5a"/>`+flower(78,320,8,c)+flower(98,318,8,'#fff')+flower(88,304,8,c)+flower(70,306,6,'#ffd1e6')+flower(106,304,6,'#ffd1e6')+'</g>'})},
+ {id:'candy',name:'Candy bucket',c:'#ff8a1f',vb:'170 280 90 120',d:c=>({hand:`<g transform="translate(212 334) scale(1.35) translate(-212 -334)">`+`<path d="M196 344 Q212 312 228 344" stroke="#2d2d3a" stroke-width="3" fill="none"/><ellipse cx="212" cy="358" rx="22" ry="19" fill="${c}"/><path d="M202 352 L206 346 L210 352 Z M214 352 L218 346 L222 352 Z" fill="#3b1d00"/><path d="M202 362 Q212 370 222 362" stroke="#3b1d00" stroke-width="2.5" fill="none"/>`+'</g>'})},
+ {id:'present',name:'Gift box',c:'#7ee081',vb:'170 280 90 120',d:c=>({hand:`<g transform="translate(212 334) scale(1.35) translate(-212 -334)">`+`<rect x="194" y="334" width="38" height="34" rx="3" fill="${c}"/><rect x="209" y="334" width="8" height="34" fill="#ff4d6d"/><rect x="194" y="347" width="38" height="8" fill="#ff4d6d"/><path d="M213 334 L200 322 L206 336 Z M213 334 L226 322 L220 336 Z" fill="#ff4d6d"/>`+'</g>'})},
+ {id:'pompoms',name:'Pom-poms',c:'#ff4d8d',vb:'20 270 260 120',d:c=>{let p='';for(let i=0;i<14;i++){const a=i*0.45,r=10+((i*7)%5);p+=`<line x1="88" y1="330" x2="${(88+Math.cos(a)*r*1.6).toFixed(1)}" y2="${(330+Math.sin(a)*r*1.4).toFixed(1)}" stroke="${i%3?c:'#fff'}" stroke-width="5" stroke-linecap="round"/>`;}return {hand:sym(`<g transform="translate(88 330) scale(1.5) translate(-88 -330)">${p}</g>`)};}},
+ {id:'racket',name:'Tennis racket',c:'#7ee081',vb:'170 120 140 240',d:c=>{const dk=shade(c,-.3);let st='';for(let i=-4;i<=4;i++)st+=`<line x1="${i*8}" y1="-60" x2="${i*8}" y2="60"/>`;for(let j=-6;j<=6;j++)st+=`<line x1="-45" y1="${j*8}" x2="45" y2="${j*8}"/>`;
+   return {hand:`<g transform="translate(212 334) rotate(22)"><rect x="-6" y="-58" width="12" height="62" rx="5" fill="#2d2d3a"/><path d="M-6 -50 L6 -44 M-6 -38 L6 -32 M-6 -26 L6 -20 M-6 -14 L6 -8" stroke="#555" stroke-width="2"/><rect x="-7" y="2" width="14" height="6" rx="3" fill="#2d2d3a"/>
+   <path d="M-5 -58 L-20 -96 M5 -58 L20 -96" stroke="${c}" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M-12 -86 Q0 -80 12 -86" stroke="${dk}" stroke-width="3" fill="none"/>
+   <g transform="translate(0 -150)"><clipPath id="rkClip"><ellipse rx="34" ry="46"/></clipPath><g clip-path="url(#rkClip)" stroke="#f4f4f4" stroke-width="1.2" opacity=".9">${st}</g><ellipse rx="38" ry="50" fill="none" stroke="${c}" stroke-width="8"/><ellipse rx="38" ry="50" fill="none" stroke="${dk}" stroke-width="2" transform="translate(1.5 1.5)" opacity=".6"/><ellipse rx="38" ry="50" fill="none" stroke="#fff" stroke-width="1.5" opacity=".5" transform="translate(-1.5 -1.5)"/></g></g>`};}},
+ {id:'ball',name:'Soccer ball',c:'#ffffff',vb:'180 490 100 100',d:c=>{const R=38,cx=228,cy=542,pent=(x,y,r,a)=>Array.from({length:5},(_,i)=>{const t=a+i*Math.PI*2/5;return `${(x+r*Math.cos(t)).toFixed(1)},${(y+r*Math.sin(t)).toFixed(1)}`;}).join(' ');
+   let o='';for(let i=0;i<5;i++){const t=-Math.PI/2+i*Math.PI*2/5+Math.PI/5;const x=cx+Math.cos(t)*R*.86,y=cy+Math.sin(t)*R*.86;o+=`<polygon points="${pent(x,y,R*.3,t)}" fill="#2d2d3a"/><line x1="${(cx+Math.cos(t-Math.PI/5)*R*.34).toFixed(1)}" y1="${(cy+Math.sin(t-Math.PI/5)*R*.34).toFixed(1)}" x2="${(cx+Math.cos(t-Math.PI/5)*R).toFixed(1)}" y2="${(cy+Math.sin(t-Math.PI/5)*R).toFixed(1)}" stroke="#9a9aa8" stroke-width="1.2"/>`;}
+   return {front:`<ellipse cx="${cx}" cy="${cy+R-2}" rx="${R*.8}" ry="5" fill="#000" opacity=".18"/><radialGradient id="ballSh" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#fff"/><stop offset=".65" stop-color="${c}"/><stop offset="1" stop-color="${shade(c,-.28)}"/></radialGradient><clipPath id="ballClip"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#ballSh)"/><g clip-path="url(#ballClip)"><polygon points="${pent(cx,cy,R*.34,-Math.PI/2)}" fill="#2d2d3a"/>${o}<circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#ballSh)" opacity=".25"/></g><circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#2d2d3a" stroke-width="1.5" opacity=".6"/><ellipse cx="${cx-12}" cy="${cy-15}" rx="9" ry="5" fill="#fff" opacity=".55" transform="rotate(-30 ${cx-12} ${cy-15})"/>`};}},
  {id:'medal',name:'Gold medal',c:'#ffd23f',vb:'110 140 80 120',d:c=>({front:`<path d="M134 158 L150 214 L166 158" stroke="#4fb6ff" stroke-width="7" fill="none"/><circle cx="150" cy="222" r="13" fill="${c}" stroke="${shade(c,-.25)}" stroke-width="2"/>`+star(150,222,7,'#fff')})},
  {id:'wings',name:'Fairy wings',c:'#bfe9ff',vb:'20 110 260 230',d:c=>({back:sym(`<ellipse cx="96" cy="190" rx="58" ry="40" fill="${c}" opacity=".7" stroke="#fff" stroke-width="3" transform="rotate(-30 96 190)"/><ellipse cx="106" cy="270" rx="40" ry="26" fill="${c}" opacity=".7" stroke="#fff" stroke-width="3" transform="rotate(25 106 270)"/>`)+sparkles([[60,150,5],[240,150,5],[80,290,4],[220,290,4]])})},
  {id:'cape',name:'Cape',c:'#8e44ad',vb:'40 140 220 420',d:c=>({back:`<path d="M112 160 Q150 150 188 160 L238 520 Q150 545 62 520 Z" fill="${c}"/>`})},
@@ -847,7 +904,7 @@ function sceneSVG(id,name){
 /* ---------- character ---------- */
 let dollBack=false;
 function charInner(L){
-  const T=headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):(find(HAIR,L.hairStyle)||HAIR[0]).d(hf(L.hairColor),hs(L.hairColor));
+  const T=headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):hairParts(L);
   const hat=L.hat&&find(HATS,L.hat.id)?parts(find(HATS,L.hat.id).d(L.hat.c)):{};
   const ex={back:'',front:'',hand:'',head:''};
   for(const [id,c] of Object.entries(L.extras||{})){const it=find(EXTRAS,id);if(!it)continue;const p=parts(it.d(c));for(const k in ex)ex[k]+=p[k]||'';}
@@ -988,7 +1045,7 @@ function setZoom(v){
   crop.ox=cx-(cx-crop.ox)*crop.s/old;crop.oy=cy-(cy-crop.oy)*crop.s/old;drawCrop();
 }
 function openCrop(file){
-  getLandmarker().catch(()=>{});
+  getLandmarker().catch(()=>{});getHairSeg().catch(()=>{});
   const url=URL.createObjectURL(file),im=new Image();
   im.onload=()=>{crop.img=im;crop.min=Math.max(2*OV.rx/im.width,2*OV.ry/im.height);crop.s=crop.min;
     crop.ox=300-im.width*crop.s/2;crop.oy=300-im.height*crop.s/2;$('#cropZoom').value=0;setZoom(30);$('#cropZoom').value=30;
@@ -1033,13 +1090,13 @@ const FEAT_SLIDERS=[{k:'fw',n:'🙂 Face width',a:.92,b:1.06,d:1},{k:'chin',n:'�
 const CMP_HAIR=['long','wavy','curly','ponytail','bob','pixie','braids','buns'];
 // just the head, so it sits next to the selfie at the same size
 function dollHead(l){
-  const p=(find(HAIR,l.hairStyle)||HAIR[0]).d(hf(l.hairColor),hs(l.hairColor));let head='';
+  const p=hairParts(l);let head='';
   for(const id of ['glasses','earrings'])if(l.extras&&l.extras[id]){const it=find(EXTRAS,id);if(it)head+=parts(it.d(l.extras[id])).head||'';}
-  return mini('100 34 100 120',`<rect x="0" y="0" width="300" height="300" fill="#f6e3ef"/>${p.back||''}<rect x="138" y="120" width="24" height="40" fill="${l.skin}"/>${face({...l,photoOn:false})}${head}${p.front||''}`);
+  return mini('92 12 116 139',`<rect x="0" y="0" width="300" height="300" fill="#f6e3ef"/>${p.back||''}<rect x="138" y="120" width="24" height="40" fill="${l.skin}"/>${face({...l,photoOn:false})}${head}${p.front||''}`);
 }
 function detailEditor(l){
   const F=l.feat||{};let h=`<h3>Skin</h3>`+swatches('dskin',SKIN,l.skin)+`<h3>Hair</h3>`+swatches('dhairc',HAIRC,l.hairColor);
-  h+=`<div class="chips" style="margin-top:8px">`+CMP_HAIR.map(id=>{const it=find(HAIR,id);return it?`<button class="${l.hairStyle===id?'on':''}" data-hs="${id}">${it.name}</button>`:'';}).join('')+`</div>`;
+  h+=`<div class="chips" style="margin-top:8px">`+(l.myHair?['mine',...CMP_HAIR]:CMP_HAIR).map(id=>{const it=id==='mine'?{name:'My hair'}:find(HAIR,id);return it?`<button class="${l.hairStyle===id?'on':''}" data-hs="${id}">${it.name}</button>`:'';}).join('')+`</div>`;
   h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Brows</h3><div class="chips">`+[['soft','Soft'],['straight','Straight'],['high','Arched'],['thick','Bold']].map(([id,n])=>`<button class="${(F.bshape||'soft')===id?'on':''}" data-bs="${id}">${n}</button>`).join('')+`</div><h3>Face</h3>`;
   h+=FEAT_SLIDERS.map(x=>`<div class="fs"><label for="fs_${x.k}">${x.n}</label><input type="range" id="fs_${x.k}" data-fk="${x.k}" min="${x.a}" max="${x.b}" step="${((x.b-x.a)/40).toFixed(4)}" value="${F[x.k]??x.d}"></div>`).join('');
   return h+`<h3>Little details</h3><div class="grid" id="detailGrid">${detailTiles(l)}</div>`;
@@ -1064,9 +1121,56 @@ $('#detailDone').onclick=()=>{$('#detailModal').classList.remove('show');renderS
 function nearestSkin(r,g,b){let best=SKIN[0],bd=1e9;for(const h of SKIN){const n=parseInt(h.slice(1),16),d=(r-(n>>16))**2+(g-(n>>8&255))**2+(b-(n&255))**2;if(d<bd){bd=d;best=h;}}return best;}
 // face detection (MediaPipe) loads only when someone takes a selfie
 const FACE_LIB='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14',FACE_MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-let faceLM=null;
+const HAIR_MODEL='https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite';
+let faceLM=null,hairSeg=null,visionLib=null;
+const getVision=()=>visionLib||(visionLib=(async()=>{const v=await import(FACE_LIB+'/vision_bundle.mjs');return {v,fs:await v.FilesetResolver.forVisionTasks(FACE_LIB+'/wasm')};})().catch(e=>{visionLib=null;throw e;}));
+function getHairSeg(){
+  if(!hairSeg)hairSeg=getVision().then(({v,fs})=>v.ImageSegmenter.createFromOptions(fs,{baseOptions:{modelAssetPath:HAIR_MODEL},runningMode:'IMAGE',outputCategoryMask:true,outputConfidenceMasks:false})).catch(e=>{hairSeg=null;throw e;});
+  return hairSeg;
+}
+// outline of the 1s in a grid, as closed loops (marching squares)
+function gridLoops(g,W,H){
+  const at=(x,y)=>x<0||y<0||x>=W||y>=H?0:g[y*W+x],segs=[];
+  const E={t:(x,y)=>[x+.5,y],r:(x,y)=>[x+1,y+.5],b:(x,y)=>[x+.5,y+1],l:(x,y)=>[x,y+.5]};
+  const T={1:['lb'],2:['br'],3:['lr'],4:['tr'],5:['lt','br'],6:['tb'],7:['lt'],8:['tl'],9:['tb'],10:['tr','lb'],11:['tr'],12:['lr'],13:['rb'],14:['lb']};
+  for(let y=-1;y<H;y++)for(let x=-1;x<W;x++){const k=at(x,y)*8+at(x+1,y)*4+at(x+1,y+1)*2+at(x,y+1);for(const s of T[k]||[])segs.push([E[s[0]](x,y),E[s[1]](x,y)]);}
+  const key=p=>p[0]+','+p[1],adj=new Map();
+  segs.forEach((s,i)=>{for(const p of s){const k=key(p);if(!adj.has(k))adj.set(k,[]);adj.get(k).push(i);}});
+  const used=new Uint8Array(segs.length),loops=[];
+  for(let i=0;i<segs.length;i++){if(used[i])continue;used[i]=1;const loop=[segs[i][0]];let cur=segs[i][1];
+    for(;;){loop.push(cur);const nx=(adj.get(key(cur))||[]).find(j=>!used[j]);if(nx===undefined)break;used[nx]=1;const s=segs[nx];cur=key(s[0])===key(cur)?s[1]:s[0];}
+    loops.push(loop);}
+  return loops;
+}
+const chaikin=p=>{const o=[];for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];o.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25],[a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}return o;};
+// find her hair in the selfie and redraw its outline in doll coordinates
+async function traceHair(im,P){
+  const seg=await Promise.race([getHairSeg(),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),30000))]);
+  // a wider view than the face crop, so long hair isn't cut off
+  const c=document.createElement('canvas');c.width=c.height=600;const x=c.getContext('2d');const Z=.5;
+  x.fillStyle='#fff';x.fillRect(0,0,600,600);x.drawImage(im,300+(crop.ox-300)*Z,300+(crop.oy-300)*Z,im.width*crop.s*Z,im.height*crop.s*Z);
+  // categories: 0 background, 1 hair, 2 body skin, 3 face skin, 4 clothes, 5 other
+  const r=seg.segment(c),m=r.categoryMask,mw=m.width,mh=m.height,mask=Uint8Array.from(m.getAsUint8Array(),v=>v===1?1:0),hairVal=1;r.close&&r.close();
+  const fw=Math.hypot(P[234][0]-P[454][0],P[234][1]-P[454][1]),cx=(P[234][0]+P[454][0])/2,top=P[10][1],fh=P[152][1]-top;
+  const sx=80/fw,sy=80/fh,X0=16,Y0=-48,ST=2,W=136,H=192,g=new Uint8Array(W*H);let n=0;
+  for(let j=0;j<H;j++)for(let i=0;i<W;i++){const dx=X0+i*ST,dy=Y0+j*ST;
+    const px=300+(cx+(dx-150)/sx-300)*Z,py=300+(top+(dy-54)/sy-300)*Z;
+    const mx=Math.floor(px*mw/600),my=Math.floor(py*mh/600);
+    if(mx>=0&&my>=0&&mx<mw&&my<mh&&(mask[my*mw+mx]>0)===(hairVal>0)){g[j*W+i]=1;n++;}}
+  if(n<120)return null;
+  // the top of the head is often cut off in a selfie: fill in the skull above the forehead
+  let topHair=0;for(let j=0;j<H;j++)for(let i=0;i<W;i++){const dx=X0+i*ST,dy=Y0+j*ST;if(g[j*W+i]&&dy<70&&((dx-150)/44)**2+((dy-82)/50)**2<1)topHair++;}
+  if(topHair>15)for(let j=0;j<H;j++)for(let i=0;i<W;i++){const dx=X0+i*ST,dy=Y0+j*ST;if(dy<66&&((dx-150)/43)**2+((dy-82)/50)**2<1)g[j*W+i]=1;}
+  const id=x.getImageData(0,0,600,600).data,hp=[];
+  for(let y=0;y<600;y+=3)for(let X=0;X<600;X+=3)if(mask[Math.floor(y*mh/600)*mw+Math.floor(X*mw/600)]){const k=(y*600+X)*4;hp.push([id[k],id[k+1],id[k+2]]);}
+  const area=p=>{let a=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1];}return Math.abs(a/2);};
+  const loops=gridLoops(g,W,H).filter(p=>p.length>10&&area(p)>30).map(p=>chaikin(chaikin(p.filter((_,i)=>i%2===0))));
+  if(!loops.length)return null;
+  const d=loops.map(p=>'M'+p.map(([i,j])=>`${Math.round(X0+i*ST)} ${Math.round(Y0+j*ST)}`).join('L')+'Z').join('');
+  return {d,px:hp};
+}
 function getLandmarker(){
-  if(!faceLM)faceLM=(async()=>{const v=await import(FACE_LIB+'/vision_bundle.mjs');const fs=await v.FilesetResolver.forVisionTasks(FACE_LIB+'/wasm');
+  if(!faceLM)faceLM=(async()=>{const {v,fs}=await getVision();
     return v.FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:FACE_MODEL},runningMode:'IMAGE',numFaces:1});})().catch(e=>{faceLM=null;throw e;});
   return faceLM;
 }
@@ -1132,6 +1236,7 @@ async function readFace(){
       for(let y=0;y<w;y++)for(let X=0;X<w;X++){const q=Math.hypot(X-r,y-r)/r;if(q>.45&&q<.9){const k=(y*w+X)*4;o.push([d[k],d[k+1],d[k+2]]);}}return o;};
     iris=med([...ring(468),...ring(473)].filter(p=>lum(p)>15&&lum(p)<200));}
   else{const eye=[...px(170,240,90,70),...px(340,240,90,70)].sort((p,q)=>lum(p)-lum(q));iris=med(eye.slice(0,Math.ceil(eye.length*.2)).filter(p=>lum(p)>22));}
+  if(P){try{const mh=await traceHair(im,P);if(mh){out.myHair={d:mh.d};out.hairStyle='mine';const hc=med(mh.px.map(p=>p.map((v,k)=>Math.min(255,v*wb[k]))));if(hc&&mh.px.length>50)out.hairColor=near(HAIRC.slice(0,6),hc);}}catch(e){}}
   if(iris){const [r,g,b]=iris,L=lum(iris),sat=Math.max(r,g,b)-Math.min(r,g,b);
     out.eyes=sat<18&&L>70?'#6b7b8c':b>r+8&&b>=g?'#2f6fb5':g>r+4&&g>=b?'#3c8d5a':L<40?'#1f1a24':L>85?'#9a6a3a':'#6b4423';}
   return out;
@@ -1141,7 +1246,7 @@ $('#cropUse').onclick=async()=>{
   const k=W/(2*OV.rx),im=crop.img;
   x.drawImage(im,(crop.ox-(OV.cx-OV.rx))*k,(crop.oy-(OV.cy-OV.ry))*k,im.width*crop.s*k,im.height*crop.s*k);
   const btn=$('#cropUse');btn.disabled=true;btn.textContent='🔍 Looking at your face…';
-  let look={};try{look=await readFace();}catch(e){}
+  let look={};try{look=await Promise.race([readFace(),new Promise((_,no)=>setTimeout(()=>no(new Error('face reading took too long')),25000))]);}catch(e){if(/too long/.test(e.message))reportError(e,'readFace',false);}
   btn.disabled=false;btn.textContent='Put it on! ✨';
   const data=out.toDataURL('image/jpeg',.82),toon=cartoonize(out);
   $('#cropModal').classList.remove('show');
@@ -1577,6 +1682,7 @@ function renderPanel(){
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
     h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
+    if(l.myHair){const p=myHairParts(l.myHair,hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle==='mine','hair','','mine',mini('56 -6 188 280',`${p.back}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front}`),'📸 My hair');}
     for(const it of HAIR){const p=it.d(hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle===it.id,'hair','',it.id,mini('56 -6 188 280',`${p.back||''}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front||''}`),it.name);}
     h+='</div>';
   }else if(tab==='nails'){
@@ -1789,8 +1895,12 @@ const Music=(()=>{
     if(ch==='h'||ch==='x')hit(7000,.05,.04);
   }
   function tick(){
+    if(!cur||!ctx)return;
     const e=60/cur.bpm/2;
-    while(nextTime<ctx.currentTime+.15){
+    // after the phone pauses timers (tab switch, lock, slow page) don't try to play every missed note at once: skip ahead
+    if(nextTime<ctx.currentTime-.2)nextTime=ctx.currentTime+.05;
+    let n=0;
+    while(nextTime<ctx.currentTime+.15&&n++<16){
       (cur.m.map[step]||[]).forEach(n=>lead(cur.lead,n.f,nextTime,n.len*e));
       (cur.b.map[step]||[]).forEach(n=>tone(n.f,nextTime,n.len*e*.9,'triangle',.18));
       if(cur.drums){const k=step-(cur.off||0);if(k>=0){const ch=cur.drums[k%cur.drums.length];if(ch!=='.')drum(ch,nextTime);}}
@@ -1801,6 +1911,9 @@ const Music=(()=>{
     stopAll();const tr=TRACKS.find(t=>t.id===id);if(!tr||!ensure())return;
     cur={...tr,m:parse(tr.mel),b:parse(tr.bass)};step=0;nextTime=ctx.currentTime+.1;tick();timer=setInterval(tick,40);
   }
+  // quiet and idle while the game is hidden, back where it was when it comes back
+  function pause(){if(timer){clearInterval(timer);timer=null;}if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});}
+  function resume(){if(cur&&!timer&&ensure()){nextTime=ctx.currentTime+.1;timer=setInterval(tick,40);}}
   function stopSynth(){if(timer)clearInterval(timer);timer=null;cur=null;}
   function stopAll(){stopSynth();const a=$('#songPlayer');a.pause();}
   function sfx(kind){
@@ -1808,7 +1921,7 @@ const Music=(()=>{
     if(kind==='snap'){const s=ctx.createBufferSource(),v=ctx.createGain();s.buffer=noise;v.gain.setValueAtTime(.25,t);v.gain.exponentialRampToValueAtTime(.001,t+.12);s.connect(v);v.connect(master);s.start(t);s.stop(t+.15);tone(1568,t+.05,.25,'sine',.15);return;}
     const sc=[1047,1175,1319,1568,1760,2093];const a=rnd(sc);tone(a,t,.12,'sine',.12);tone(a*1.5,t+.07,.18,'sine',.09);
   }
-  return {parse,playTrack,stopAll,stopSynth,setVol,sfx,ensure,get playing(){return !!cur;}};
+  return {parse,playTrack,stopAll,stopSynth,pause,resume,setVol,sfx,ensure,get playing(){return !!cur;}};
 })();
 
 /* songs stored in IndexedDB */
@@ -1880,7 +1993,7 @@ document.addEventListener('pointerdown',()=>{
   if(!String(wantedTrack()).startsWith('song:'))applyMusic();
   loadSongs().then(()=>{if(String(wantedTrack()).startsWith('song:'))applyMusic();});
 },{capture:true});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&musicStarted)Music.ensure();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)Music.pause();else if(musicStarted){Music.ensure();Music.resume();}});
 
 $('#content').addEventListener('change',async e=>{
   const i=e.target.closest('[data-artfile]');if(!i||!i.files[0])return;const f=i.files[0];i.value='';
@@ -1910,6 +2023,9 @@ if(!DB.welcomed)showWelcome();
 /* ---------- cloud save + messages (Firebase, free Spark plan) ---------- */
 const FB_CONFIG={apiKey:"AIzaSyCz20IcwmqTfaUR6N2Ik8YUliZkvi_ICCw",authDomain:"brynny-dress-up.firebaseapp.com",projectId:"brynny-dress-up",storageBucket:"brynny-dress-up.firebasestorage.app",messagingSenderId:"76439287191",appId:"1:76439287191:web:83a94aed952e8711ccc0d2",measurementId:"G-38E5337GL0"};
 const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
+/* daily play counts for the owner area on datasolutions365.com: numbers only, kept in the snake game's Firebase project so one sign-in sees both games */
+const STATS_CONFIG={apiKey:'AIzaSyAA8sqDROwZoVvcy8MoJ1cTmGlg0GCP_nY',authDomain:'snake-game-2e23b.firebaseapp.com',projectId:'snake-game-2e23b',appId:'1:185426735320:web:84d5c2b47233711dd527ad'};
+const STAT_NAMES=['visits','phone_visits','computer_visits','start_playing','surprise','save_look','open_gallery','open_music','open_messages','send_message'];
 const SENT_KEY='brynny-cloud-sent',MSG_SENT_KEY='brynny-msgs-sent-here',FROM_KEY='brynny-msg-from';
 let F=null,loading=null,auth=null,fs=null,user=null,ready=false,failed=false,unsubs=[],lastSent={},syncTimer=null,syncing=false,again=false,busy=false,pendingRender=false,warnedBig=false;
 let msgs=[],player=null,recAudio=null,recState=null;
@@ -1931,6 +2047,7 @@ function loadSDK(){
     F.getRedirectResult(auth).catch(()=>{});
     finishEmailLink();
     startAnalytics(app);
+    startStats();
     F.onAuthStateChanged(auth,onUser);
     failed=false;return F;
   })();
@@ -1945,7 +2062,19 @@ async function startAnalytics(app){
     const a=an.initializeAnalytics(app,{config:{allow_google_signals:false,allow_ad_personalization_signals:false}});
     GA=(n,p)=>an.logEvent(a,n,p);gaQueue.splice(0).forEach(([n,p])=>GA(n,p));}catch(e){}
 }
-const track=(n,p)=>{if(GA)GA(n,p);else if(gaQueue.length<50)gaQueue.push([n,p]);};
+const track=(n,p)=>{countStat(n);if(GA)GA(n,p);else if(gaQueue.length<50)gaQueue.push([n,p]);};
+
+let statsFs=null;const statsQueue=[];
+function startStats(){try{statsFs=F.getFirestore(F.initializeApp(STATS_CONFIG,'stats'));statsQueue.splice(0).forEach(n=>countStat(...n));
+  window.sendError=e=>{try{F.addDoc(F.collection(statsFs,'dressup_errors'),{...e,at:F.serverTimestamp()}).catch(()=>{});}catch(x){}};
+  errorQueue.splice(0).forEach(window.sendError);}catch(e){}}
+function countStat(...names){
+  names=names.filter(n=>STAT_NAMES.includes(n));if(!names.length)return;
+  if(!statsFs){if(statsQueue.length<50)statsQueue.push(names);return;}
+  try{const add={};names.forEach(n=>add[n]=F.increment(1));
+    F.setDoc(F.doc(statsFs,'dressup_stats',new Date().toISOString().slice(0,10)),add,{merge:true}).catch(()=>{});}catch(e){}
+}
+{const phone=matchMedia('(pointer: coarse)').matches&&!matchMedia('(any-pointer: fine)').matches;countStat('visits',phone?'phone_visits':'computer_visits');}
 const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',msgSend:'send_message'};
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-tab]');if(!b)return;
   if(TAPS[b.id])track(TAPS[b.id]);else if(b.dataset.tab)track('open_tab',{tab:b.dataset.tab});},true);
@@ -2004,6 +2133,7 @@ function refresh(){
   if($('#whoModal').classList.contains('show'))renderWho();
 }
 document.addEventListener('pointerdown',()=>{busy=true;},true);
+window.unstick=()=>{busy=false;refresh();};
 const done=()=>{busy=false;if(pendingRender)setTimeout(refresh,50);};
 document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',done,true);
 document.addEventListener('click',e=>{if(pendingRender&&e.target.closest('[data-close]'))setTimeout(refresh,50);},true);
