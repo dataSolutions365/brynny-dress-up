@@ -14,6 +14,8 @@
 <style>
 :root{--pink:#ff6fae;--pink2:#ffd6ea;--purple:#8e6cff;--ink:#3b2357;--bg:#fff4fa;--muted:#8a7499}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{touch-action:manipulation}
+#unzoom{position:fixed;left:0;top:0;z-index:99;display:none;transform-origin:0 0;background:#ff4d8d;color:#fff;font-weight:800;font-size:17px;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Fredoka,"Trebuchet MS",system-ui,sans-serif}
 body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;user-select:none;-webkit-user-select:none}
 button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none;padding:0}
@@ -342,6 +344,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <button class="big-btn" id="welcomeGo">Let's play! ✨</button>
 </div></div>
 
+<button id="unzoom">🔍 Zoom back out</button>
 <div id="party" role="dialog" aria-label="Birthday celebration"><canvas id="partyFx"></canvas><div id="partyBannerWrap"></div><div class="pbox">
   <h1 id="partyTitle">Happy 11th Birthday!</h1>
   <p class="sub" id="partySub"></p>
@@ -2171,6 +2174,11 @@ function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add
 }
 $('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
 $('#partyBtn').onclick=showParty;
+/* if the page gets pinched or double-tapped bigger, offer a button that snaps it back to normal size */
+(()=>{const vv=window.visualViewport,b=$('#unzoom'),meta=document.querySelector('meta[name=viewport]');if(!vv||!b||!meta)return;
+  const place=()=>{const z=vv.scale>1.05;b.style.display=z?'block':'none';if(z)b.style.transform=`translate(${vv.offsetLeft+10}px,${vv.offsetTop+10}px) scale(${1/vv.scale})`;};
+  vv.addEventListener('resize',place);vv.addEventListener('scroll',place);
+  b.onclick=()=>{const c=meta.content;meta.content=c+', maximum-scale=1';b.style.display='none';setTimeout(()=>{meta.content=c;window.scrollTo(0,0);place();},400);};})();
 
 /* ---------- modeling contest: a theme, a runway walk, three judges ---------- */
 const THEMES=[
