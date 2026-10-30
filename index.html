@@ -14,6 +14,8 @@
 <style>
 :root{--pink:#ff6fae;--pink2:#ffd6ea;--purple:#8e6cff;--ink:#3b2357;--bg:#fff4fa;--muted:#8a7499}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{touch-action:manipulation}
+#unzoom{position:fixed;left:0;top:0;z-index:99;display:none;transform-origin:0 0;background:#ff4d8d;color:#fff;font-weight:800;font-size:17px;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Fredoka,"Trebuchet MS",system-ui,sans-serif}
 body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;user-select:none;-webkit-user-select:none}
 button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none;padding:0}
@@ -166,6 +168,8 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 #partyCake .out .flame,#partyCake .out .glow{display:none}
 #partyCake .smoke{opacity:0}
 #partyCake .out .smoke{animation:pSmoke 1.4s ease-out forwards}
+#partySound{margin:2px auto 8px;background:#fff;color:#7b3fe4;font-weight:800;animation:soundPulse 1.4s ease-in-out infinite}
+@keyframes soundPulse{50%{transform:scale(1.07)}}
 #party .hint{color:#fff;font-weight:600;font-size:17px;min-height:24px;margin:6px 0 10px}
 #party .prow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 #party .pill{font-size:16px;padding:10px 16px}
@@ -340,9 +344,11 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <button class="big-btn" id="welcomeGo">Let's play! ✨</button>
 </div></div>
 
+<button id="unzoom">🔍 Zoom back out</button>
 <div id="party" role="dialog" aria-label="Birthday celebration"><canvas id="partyFx"></canvas><div id="partyBannerWrap"></div><div class="pbox">
   <h1 id="partyTitle">Happy 11th Birthday!</h1>
   <p class="sub" id="partySub"></p>
+  <button class="pill" id="partySound">🔊 Tap to hear your birthday song!</button>
   <div id="partyStage"><div id="partyDoll"></div><div id="partyCakeWrap"></div></div>
   <p class="hint" id="partyHint">Make a wish, then tap the candles to blow them out! 🌬️</p>
   <div class="prow"><button class="pill" id="partyBlow">🌬️ Blow them all</button><button class="big-btn" id="partyGo" style="width:auto;padding:12px 22px">Let's play! 🎁</button></div>
@@ -2152,6 +2158,8 @@ function bannerSVG(){
 function showParty(){
   const name=(DB.chars[0]&&DB.chars[0].name)||'Brynny';
   $('#partyTitle').textContent=`Happy ${PARTY_AGE}th Birthday!`;$('#partySub').textContent=`🎉 ${name}, this party is all for you! 🎉`;
+  $('#partySound').style.display=typeof musicStarted!=='undefined'&&musicStarted?'none':'';
+  setTimeout(()=>{try{if(musicStarted&&DB.music.track==='auto')applyMusic();}catch(e){}},0);
   $('#partyCakeWrap').innerHTML=cakeSVG(name);$('#partyBannerWrap').innerHTML=bannerSVG();
   // her own doll as the birthday princess
   const base=(DB.chars[0]&&DB.chars[0].look)||defaultLook(),princess={...base,dress:{id:'gown',c:'#ff8fc8'},hat:{id:'tiara',c:'#ffd23f'},shoes:{id:'glass',c:'#cfefff'},extras:{},scene:'birthday'};
@@ -2166,6 +2174,11 @@ function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add
 }
 $('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
 $('#partyBtn').onclick=showParty;
+/* if the page gets pinched or double-tapped bigger, offer a button that snaps it back to normal size */
+(()=>{const vv=window.visualViewport,b=$('#unzoom'),meta=document.querySelector('meta[name=viewport]');if(!vv||!b||!meta)return;
+  const place=()=>{const z=vv.scale>1.05;b.style.display=z?'block':'none';if(z)b.style.transform=`translate(${vv.offsetLeft+10}px,${vv.offsetTop+10}px) scale(${1/vv.scale})`;};
+  vv.addEventListener('resize',place);vv.addEventListener('scroll',place);
+  b.onclick=()=>{const c=meta.content;meta.content=c+', maximum-scale=1';b.style.display='none';setTimeout(()=>{meta.content=c;window.scrollTo(0,0);place();},400);};})();
 
 /* ---------- modeling contest: a theme, a runway walk, three judges ---------- */
 const THEMES=[
@@ -2428,11 +2441,24 @@ const TRACKS=[
  {id:'runway',e:'💃',name:'Runway Beat',bpm:124,lead:'square',
   mel:'C5 r C5 D#5 r F5 D#5 C5 | A#4 r A#4 C5 r D#5 C5 A#4 | G#4 r G#4 C5 r D#5 F5 G5 | G5/2 F5/2 D#5/2 D5/2',
   bass:'C2/1*8 A#1/1*8 G#1/1*8 G1/1*8',drums:'xhsxhxsh'},
+ // original Halloween tunes (no movie melodies): slasher-style piano in 5/4, a haunted music box, a ghostly theremin, a skeleton dance
+ {id:'stalker',e:'🔪',name:'Midnight Stalker',bpm:168,lead:'piano',
+  mel:'E5 F5 B4 E5 F5 B4 G5 F5 B4 E5 | E5 F5 B4 E5 F5 B4 G5 F5 B4 E5 | D#5 E5 A#4 D#5 E5 A#4 F#5 E5 A#4 D#5 | D#5 E5 A#4 D#5 E5 A#4 F#5 E5 A#4 D#5 | C#5 D5 G#4 C#5 D5 G#4 E5 D5 G#4 C#5 | C#5 D5 G#4 C#5 D5 G#4 E5 D5 G#4 C#5 | D5 D#5 A4 D5 D#5 A4 F5 D#5 A4 D5 | E5/2 F5/2 B4/6',
+  bass:'E2/10 E2/10 D#2/10 D#2/10 C#2/10 C#2/10 D2/10 E2/10',pad:'E3/20 D#3/20 C#3/20 D3/10 E3/10',drums:'k.k.......'},
+ {id:'musicbox',e:'🎠',name:'Haunted Music Box',bpm:96,lead:'musicbox',
+  mel:'A5/2 C6/2 E6/2 | D#6/2 E6/2 B5/2 | C6/2 A5/2 E5/2 | F5/4 E5/2 | A5/2 C6/2 E6/2 | F6/2 E6/2 C6/2 | B5/2 G#5/2 E5/2 | A5/6',
+  bass:'A2/6 A2/6 A2/6 D2/6 A2/6 F2/6 E2/6 A2/6',pad:'A3/12 A3/6 D3/6 A3/6 F3/6 E3/6 A3/6',drums:''},
+ {id:'theremin',e:'👻',name:'Ghostly Theremin',bpm:70,lead:'theremin',
+  mel:'D5/4 A5/4 | G#5/2 A5/2 F5/4 | E5/3 F5 D5/4 | C#5/8 | D5/2 F5/2 A5/4 | A#5/4 A5/2 G#5/2 | A5/4 E5/4 | D5/8',
+  bass:'D2/16 A#1/8 A1/8 D2/16 A#1/8 A1/4 D2/4',pad:'D3/16 A#2/8 A2/8 D3/16 A#2/8 A2/4 D3/4',drums:''},
+ {id:'skeleton',e:'💀',name:'Skeleton Stomp',bpm:132,lead:'xylo',
+  mel:'E5 r E5 G5 E5 r D5 C5 | B4 r B4 D5 B4 r A4 G#4 | A4 C5 E5 A5 G#5 E5 D5 B4 | C5/2 B4/2 A4/4 | E5 r E5 G5 E5 r D5 C5 | B4 r B4 D5 B4 r C5 D5 | E5 F5 E5 D5 C5 B4 G#4 B4 | A4/4 r/4',
+  bass:'A2/2*4 E2/2*4 A2/2*4 E2/2*2 A2/4 A2/2*4 E2/2*4 E2/2*4 A2/4 A2/4',drums:'k.s.k.s.'},
 ];
 const SUNO={id:'suno',e:'🎤',name:"Brynny's Song",
   urls:['brynny-song-11.mp3']};
 let sunoFailed=false,sunoGen=0;
-const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'suno',halloween:'spooky',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway',soccer:'pop',ballet:'dreamy',pool:'pop',icerink:'jingle',school:'pop',sleepover:'dreamy',valentine:'dreamy',spring:'dreamy',fireworks:'runway',fall:'pop',city:'runway'};
+const SCENE_TRACK={studio:'pop',bedroom:'dreamy',birthday:'suno',halloween:'stalker',christmas:'jingle',wedding:'wedding',beach:'pop',runway:'runway',soccer:'pop',ballet:'dreamy',pool:'pop',icerink:'jingle',school:'pop',sleepover:'dreamy',valentine:'dreamy',spring:'dreamy',fireworks:'runway',fall:'pop',city:'runway'};
 const Music=(()=>{
   let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
@@ -2472,8 +2498,19 @@ const Music=(()=>{
   function lead(kind,f,t,dur){
     if(kind==='bell'){tone(f,t,Math.max(dur,.5),'sine',.28);tone(f*2.76,t,.25,'sine',.06);}
     else if(kind==='organ'){tone(f,t,dur*.95,'sine',.22);tone(f*2,t,dur*.95,'sine',.08);tone(f*3,t,dur*.95,'triangle',.04);}
+    else if(kind==='piano'){tone(f,t,Math.max(dur,.7),'triangle',.2);tone(f*2,t,.35,'sine',.05);}
+    else if(kind==='musicbox'){tone(f,t,1.3,'sine',.2);tone(f*4,t,.18,'sine',.04);}
+    else if(kind==='xylo'){tone(f,t,.3,'sine',.26);tone(f*3,t,.1,'triangle',.06);}
+    else if(kind==='theremin'){const o=ctx.createOscillator(),l=ctx.createOscillator(),lg=ctx.createGain(),v=ctx.createGain();o.type='sine';o.frequency.value=f;
+      l.frequency.value=5.5;lg.gain.value=f*.014;l.connect(lg);lg.connect(o.frequency);
+      v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(.2,t+.12);v.gain.setValueAtTime(.2,t+dur*.8);v.gain.exponentialRampToValueAtTime(.0005,t+dur+.2);
+      o.connect(v);v.connect(master);o.start(t);l.start(t);o.stop(t+dur+.3);l.stop(t+dur+.3);}
     else tone(f,t,dur*.9,kind,kind==='square'?.07:kind==='sine'?.22:.2);
   }
+  // a dark, slow-swelling drone under the spooky tunes
+  function pad(f,t,dur){const fl=ctx.createBiquadFilter(),v=ctx.createGain();fl.type='lowpass';fl.frequency.value=650;
+    v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(.05,t+Math.min(.8,dur*.4));v.gain.setValueAtTime(.05,t+dur*.8);v.gain.linearRampToValueAtTime(0,t+dur+.1);
+    fl.connect(v);v.connect(master);[-7,7].forEach(c=>{const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=c;o.connect(fl);o.start(t);o.stop(t+dur+.2);});}
   function drum(ch,t){
     if(ch==='k'||ch==='x'){const o=ctx.createOscillator(),v=ctx.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);v.gain.setValueAtTime(.5,t);v.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(v);v.connect(master);o.start(t);o.stop(t+.2);}
     const hit=(hp,g,dur)=>{const s=ctx.createBufferSource(),fl=ctx.createBiquadFilter(),v=ctx.createGain();s.buffer=noise;fl.type='highpass';fl.frequency.value=hp;v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(fl);fl.connect(v);v.connect(master);s.start(t);s.stop(t+dur+.02);};
@@ -2489,13 +2526,14 @@ const Music=(()=>{
     while(nextTime<ctx.currentTime+.15&&n++<16){
       (cur.m.map[step]||[]).forEach(n=>lead(cur.lead,n.f,nextTime,n.len*e));
       (cur.b.map[step]||[]).forEach(n=>tone(n.f,nextTime,n.len*e*.9,'triangle',.18));
+      if(cur.p)(cur.p.map[step]||[]).forEach(n=>pad(n.f,nextTime,n.len*e));
       if(cur.drums){const k=step-(cur.off||0);if(k>=0){const ch=cur.drums[k%cur.drums.length];if(ch!=='.')drum(ch,nextTime);}}
       nextTime+=e;step=(step+1)%cur.m.total;
     }
   }
   function playTrack(id){
     stopAll();const tr=TRACKS.find(t=>t.id===id);if(!tr||!ensure())return;
-    cur={...tr,m:parse(tr.mel),b:parse(tr.bass)};step=0;nextTime=ctx.currentTime+.1;tick();timer=setInterval(tick,40);
+    cur={...tr,m:parse(tr.mel),b:parse(tr.bass),p:tr.pad?parse(tr.pad):null};step=0;nextTime=ctx.currentTime+.1;tick();timer=setInterval(tick,40);
   }
   // quiet and idle while the game is hidden, back where it was when it comes back
   function pause(){if(timer){clearInterval(timer);timer=null;}if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});}
@@ -2533,7 +2571,9 @@ function playSong(id){
   const a=$('#songPlayer');a.onerror=null;a.loop=false;if(songUrl)URL.revokeObjectURL(songUrl);songUrl=URL.createObjectURL(sg.blob);a.src=songUrl;a.volume=DB.music.vol/100;a.play().catch(()=>{});
 }
 $('#songPlayer').addEventListener('ended',()=>{const i=songs.findIndex(x=>'song:'+x.id===DB.music.track);const nx=songs[(i+1)%songs.length];if(nx){DB.music.track='song:'+nx.id;persist();playSong(nx.id);renderMusic();}});
-function wantedTrack(){let t=DB.music.track;if(t==='auto')t=SCENE_TRACK[L().scene];return t==='suno'&&sunoFailed?'bday':t;}
+// on Brynny's birthday (October 30) her song is the music everywhere unless a track is picked
+const isBirthday=()=>{const d=new Date();return d.getMonth()===9&&d.getDate()===30;};
+function wantedTrack(){let t=DB.music.track;if(t==='auto')t=$('#party').classList.contains('show')||isBirthday()?'suno':SCENE_TRACK[L().scene];return t==='suno'&&sunoFailed?'bday':t;}
 function applyMusic(){
   const t=wantedTrack();
   if(!t||t==='off'){Music.stopAll();}
@@ -2579,6 +2619,12 @@ document.addEventListener('pointerdown',()=>{
   if(!String(wantedTrack()).startsWith('song:'))applyMusic();
   loadSongs().then(()=>{if(String(wantedTrack()).startsWith('song:'))applyMusic();});
 },{capture:true});
+// iPhones only count some touches as permission for sound, so try again when the finger lifts
+const audioRetry=()=>{if(!musicStarted)return;Music.ensure();const a=$('#songPlayer');if(musicPlayingTrack&&(musicPlayingTrack==='suno'||musicPlayingTrack.startsWith('song:'))&&a.paused&&a.src)a.play().catch(()=>{});};
+document.addEventListener('touchend',audioRetry,{capture:true,passive:true});document.addEventListener('click',audioRetry,true);
+// phones never play sound until the first tap: the party's song button is that tap
+$('#partySound').onclick=()=>{if(DB.music.track==='off'){DB.music.track='auto';persist();}applyMusic();$('#partySound').style.display='none';};
+document.addEventListener('pointerdown',()=>{const b=$('#partySound');if(b)setTimeout(()=>{b.style.display='none';},400);},{capture:true,once:true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)Music.pause();else if(musicStarted){Music.ensure();Music.resume();}});
 
 $('#content').addEventListener('change',async e=>{
