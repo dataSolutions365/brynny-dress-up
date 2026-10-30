@@ -2613,7 +2613,7 @@ const Music=(()=>{
   function shot(n,g=.8,dest){if(!ensure())return;loadBuf(n).then(b=>{const s=ctx.createBufferSource(),v=ctx.createGain();s.buffer=b;v.gain.value=g;s.connect(v);v.connect(dest||master);s.start();}).catch(()=>{});}
   const REAL={ocean:{loop:'sea-waves',g:4},city:{loop:'city-park'},spring:{loop:'spring-birds'},fall:{loop:'autumn-wind'},rink:{loop:'ice-rink',g:.9},fireworks:{loop:'fireworks',g:.9},
     spooky:{loop:'spooky-wind',keep:1},stadium:{loop:'stadium',shots:['stadium-cheer'],every:22},pool:{shots:['pool-splash'],every:16},crickets:{shots:['kids-giggle'],every:20},
-    school:{enter:'school-bell'},fire:{enter:'merry-xmas'}};
+    school:{enter:'school-bell'},fire:{enter:'merry-xmas'},runway:{enter:'camera',shots:['camera'],every:6},party:{shots:['kids-giggle'],every:24}};
   const SYN={city:'birds',spring:'birds',fall:'wind',rink:'wind',fireworks:'crickets',stadium:'crowd'};
   function ambSet(kind){
     if(!DB.music.amb)kind=null;if(kind===ambKind)return;ambKind=kind;ambStop();if(!kind||!ensure())return;
@@ -2725,7 +2725,7 @@ $('#songFile').addEventListener('change',async e=>{
   await loadSongs();renderMusic();if(added)toast(`🎶 Added ${added} song${added>1?'s':''}!`);
 });
 DB.music=Object.assign({track:'auto',vol:60,sfx:true,amb:true},DB.music||{});
-const SCENE_AMB={beach:'ocean',pool:'pool',city:'city',spring:'spring',wedding:'birds',fall:'fall',icerink:'rink',sleepover:'crickets',fireworks:'fireworks',halloween:'spooky',christmas:'fire',runway:'crowd',soccer:'stadium',birthday:'party',school:'school'};
+const SCENE_AMB={beach:'ocean',pool:'pool',city:'city',spring:'spring',wedding:'birds',fall:'fall',icerink:'rink',sleepover:'crickets',fireworks:'fireworks',halloween:'spooky',christmas:'fire',runway:'runway',soccer:'stadium',birthday:'party',school:'school'};
 function applyAmbient(scene){if(!window.__audioOk)return;try{Music.ambSet(SCENE_AMB[scene||L().scene]||null);}catch(e){}}
 let musicStarted=false;
 document.addEventListener('pointerdown',()=>{
