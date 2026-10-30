@@ -177,6 +177,12 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="mrow"><span>➖</span><input type="range" id="cropZoom" min="0" max="100" value="30" aria-label="Zoom"><span>➕</span></div>
   <button class="big-btn" id="cropUse">Put it on! ✨</button>
 </div></div>
+<div class="modal" id="detailModal"><div class="sheet" style="max-width:380px;text-align:center">
+  <h2>✨ Anything else?</h2>
+  <p class="hint" id="detailGuess"></p>
+  <div class="grid" id="detailGrid"></div>
+  <button class="big-btn" id="detailDone" style="margin-top:12px">All done! ✨</button>
+</div></div>
 <div class="modal" id="artModal"><div class="sheet" style="max-width:420px;text-align:center">
   <button class="close" data-close>×</button>
   <h2>🖍️ What did you draw?</h2>
@@ -391,7 +397,8 @@ function spookyTop(id){
   return '';
 }
 function face(L){
-  const toon=L.style==='cartoon',rx=9,ry=toon?10:5.6,ir=toon?7:4.6,ey=92;
+  const F=L.feat||{},es=F.eye||1,gx=F.gap||0;
+  const toon=L.style==='cartoon',rx=9,ry=(toon?10:5.6)*(F.open||1),ir=toon?7:4.6,ey=92;
   const sk=L.skin,d=shade(sk,-.18),bc=L.hairColor==='rainbow'?'#6b4a8a':shade(L.hairColor,-.35);
   const m=L.makeup||{};
   let s='<g filter="url(#vol)">'+sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
@@ -419,12 +426,17 @@ function face(L){
       one+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x-len*.8).toFixed(1)}" y2="${(y-len*.75).toFixed(1)}" stroke="#2b1a2e" stroke-width="${lw*.7}" stroke-linecap="round"/>`;}
   }
   one+='</g>';
-  one+=`<path d="M123 ${ey-ry-8} Q134 ${ey-ry-14} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="2.8" stroke-linecap="round"/>`;
+  one=`<g transform="translate(${134-gx} ${ey}) scale(${es}) translate(-134 ${-ey})">${one}</g>`;
+  one+=`<path d="M123 ${ey-ry-8} Q134 ${ey-ry-14} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="${(2.8*(F.bw||1)).toFixed(1)}" stroke-linecap="round" transform="translate(${-gx} ${(-ry*(es-1)-(F.brow||0)).toFixed(1)})"/>`;
   if(m.blush) one+=`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".5"/>`;
   s+=sym(one);
-  s+=`<path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/><ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/>`;
+  s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
+  s+=`<g transform="translate(150 118) scale(${F.mouth||1} ${F.lips||1}) translate(-150 -118)">`;
   if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
   else s+=`<path d="M141 117 Q150 128 159 117 Q150 122 141 117 Z" fill="#e08a92" opacity=".7"/><path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="147" cy="121" rx="2.5" ry=".9" fill="#fff" opacity=".45"/>`;
+  s+='</g>';
+  if(F.freckles)s+=sym([[124,104],[129,107],[121,109],[127,111],[133,105],[138,108],[131,101]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1" fill="${shade(sk,-.4)}" opacity=".55"/>`).join(''))+`<circle cx="145" cy="98" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/><circle cx="155" cy="97" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/>`;
+  if(F.stud)s+=`<g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><circle cx="156.5" cy="106" r="1.6" fill="#e8e8f0" stroke="#9a9ab0" stroke-width=".5"/><circle cx="156" cy="105.5" r=".6" fill="#fff"/></g>`;
   s+=spookyTop(m.spooky);
   s+=facePaint(m.paint);
   s+=`<g clip-path="url(#faceClip)" class="paintLayer">${(m.strokes||[]).map(strokeSVG).join('')}</g>`;
@@ -999,16 +1011,96 @@ function cartoonize(src){
     d[i*4]=Math.max(0,Math.min(255,q(r)*k));d[i*4+1]=Math.max(0,Math.min(255,q(g)*k));d[i*4+2]=Math.max(0,Math.min(255,q(b)*k));}
   x.putImageData(id,0,0);return c.toDataURL('image/jpeg',.85);
 }
+// "anything else?" card after a selfie: the little things that make the doll look like her
+const DETAILS=[{id:'glasses',e:'👓',n:'Glasses'},{id:'stud',e:'💎',n:'Nose stud'},{id:'freckles',e:'🌟',n:'Freckles'},{id:'earrings',e:'✨',n:'Earrings'}];
+const hasDetail=(l,id)=>id==='glasses'||id==='earrings'?!!(l.extras&&l.extras[id]):!!(l.feat&&l.feat[id]);
+function toggleDetail(l,id){
+  if(id==='glasses'||id==='earrings'){l.extras=l.extras||{};if(l.extras[id])delete l.extras[id];else l.extras[id]=id==='glasses'?'#2d2d3a':'#e8e8f0';}
+  else{l.feat=l.feat||{};l.feat[id]=!l.feat[id];}
+}
+const detailTiles=l=>DETAILS.map(x=>`<button class="item ${hasDetail(l,x.id)?'on':''}" data-act="detail" data-id="${x.id}"><span class="big">${x.e}</span><span>${x.n}</span></button>`).join('');
+function openDetails(guess){
+  $('#detailGuess').textContent=guess?'It looks like you wear glasses, so I added them. Tap to change.':'Tap anything that looks like you.';
+  $('#detailGrid').innerHTML=detailTiles(L());$('#detailModal').classList.add('show');
+}
+$('#detailGrid').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;update(l=>toggleDetail(l,b.dataset.id));$('#detailGrid').innerHTML=detailTiles(L());});
+$('#detailDone').onclick=()=>{$('#detailModal').classList.remove('show');renderStage();renderPanel();sparkle();toast('🪄 Your doll looks just like you!');};
 function nearestSkin(r,g,b){let best=SKIN[0],bd=1e9;for(const h of SKIN){const n=parseInt(h.slice(1),16),d=(r-(n>>16))**2+(g-(n>>8&255))**2+(b-(n&255))**2;if(d<bd){bd=d;best=h;}}return best;}
-$('#cropUse').onclick=()=>{
+// face detection (MediaPipe) loads only when someone takes a selfie
+const FACE_LIB='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14',FACE_MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+let faceLM=null;
+function getLandmarker(){
+  if(!faceLM)faceLM=(async()=>{const v=await import(FACE_LIB+'/vision_bundle.mjs');const fs=await v.FilesetResolver.forVisionTasks(FACE_LIB+'/wasm');
+    return v.FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:FACE_MODEL},runningMode:'IMAGE',numFaces:1});})().catch(e=>{faceLM=null;throw e;});
+  return faceLM;
+}
+async function findFace(c){
+  const lm=await Promise.race([getLandmarker(),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),15000))]);
+  const r=lm.detect(c);const f=r&&r.faceLandmarks&&r.faceLandmarks[0];return f?f.map(p=>[p.x*600,p.y*600]):null;
+}
+// look at the fitted selfie and copy her face onto the drawn doll
+async function readFace(){
+  const c=document.createElement('canvas');c.width=600;c.height=600;const x=c.getContext('2d',{willReadFrequently:true}),im=crop.img;
+  x.drawImage(im,crop.ox,crop.oy,im.width*crop.s,im.height*crop.s);
+  let P=null;try{P=await findFace(c);}catch(e){}
+  const px=(x0,y0,w,h)=>{const d=x.getImageData(x0,y0,w,h).data,o=[];for(let i=0;i<d.length;i+=16)o.push([d[i],d[i+1],d[i+2]]);return o;};
+  const med=a=>{if(!a.length)return null;const m=k=>{const v=a.map(p=>p[k]).sort((p,q)=>p-q);return v[v.length>>1];};return [m(0),m(1),m(2)];};
+  const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]),lum=p=>.3*p[0]+.59*p[1]+.11*p[2];
+  const hex2=h=>{const n=parseInt(h.slice(1),16);return [n>>16,n>>8&255,n&255];};
+  const near=(list,p)=>list.reduce((b,h)=>dist(hex2(h),p)<dist(hex2(b),p)?h:b);
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v)),D=(i,j)=>Math.hypot(P[i][0]-P[j][0],P[i][1]-P[j][1]),R=v=>Math.round(v*100)/100;
+  const at=(i,r)=>px(Math.round(P[i][0]-r),Math.round(P[i][1]-r),2*r,2*r);
+  const skin=P?med([...at(50,14),...at(280,14),...at(151,12)]):med([...px(170,320,60,50),...px(370,320,60,50),...px(250,130,100,40)]);
+  const out={skin:nearestSkin(...skin)};
+  if(P){
+    const fw=D(234,454),fh=D(10,152),ew=(D(33,133)+D(362,263))/2;
+    out.feat={eye:R(cl(ew/fw/.215,.85,1.2)),open:R(cl((D(159,145)/D(33,133)+D(386,374)/D(362,263))/2/.3,.7,1.35)),gap:R(cl((D(133,362)/fw-.27)*50,-3,3)),
+      nose:R(cl(D(129,358)/fw/.26,.85,1.25)),mouth:R(cl(D(61,291)/fw/.36,.85,1.2)),lips:R(cl(D(0,17)/D(61,291)/.35,.75,1.35)),
+      brow:R(cl(((D(105,159)+D(334,386))/2/fh-.1)*60,-3,3))};
+    // glasses: frames make strong edges on the bridge of the nose and under the eyes
+    const edge=(i,r)=>{const d=x.getImageData(Math.round(P[i][0]-r),Math.round(P[i][1]-r),2*r,2*r).data,w=2*r;let t=0,n=0;
+      for(let y=1;y<w-1;y++)for(let X=1;X<w-1;X++){const o=(y*w+X)*4,g=k=>.3*d[k]+.59*d[k+1]+.11*d[k+2];t+=Math.abs(g(o+4)-g(o-4))+Math.abs(g(o+w*4)-g(o-w*4));n++;}return t/n;};
+    const bridge=(edge(168,10)+edge(6,10))/2,cheek=(edge(50,10)+edge(280,10))/2;out.glasses=bridge>cheek*2.5+8;
+  }
+  // hair: pixels around the top of the head that don't look like skin
+  let top,sides,shoulderA,cheekA;
+  if(P){const fw=D(234,454),fh=D(10,152),T=P[10],box=(x0,y0,w,h)=>{x0=cl(Math.round(x0),0,590);y0=cl(Math.round(y0),0,590);return px(x0,y0,cl(Math.round(w),4,600-x0),cl(Math.round(h),4,600-y0));};
+    top=box(T[0]-fw*.25,T[1]-fh*.2,fw*.5,fh*.14);sides=[...box(P[234][0]-fw*.18,T[1],fw*.12,fh*.3),...box(P[454][0]+fw*.06,T[1],fw*.12,fh*.3)];
+    shoulderA=[...box(P[234][0]-fw*.2,P[152][1]+fh*.1,fw*.18,fh*.2),...box(P[454][0]+fw*.02,P[152][1]+fh*.1,fw*.18,fh*.2)];
+    cheekA=[...box(P[234][0]-fw*.14,P[234][1],fw*.1,fh*.25),...box(P[454][0]+fw*.04,P[454][1],fw*.1,fh*.25)];
+  }else{top=px(200,10,200,90);sides=[...px(60,160,70,140),...px(470,160,70,140)];shoulderA=[...px(50,470,90,90),...px(460,470,90,90)];cheekA=[...px(60,300,60,120),...px(480,300,60,120)];}
+  top=top.filter(p=>dist(p,skin)>55);sides=sides.filter(p=>dist(p,skin)>55);
+  const cand=[...top,...sides],dark=cand.filter(p=>lum(p)<lum(skin)-25);
+  const hair=dark.length>cand.length*.3?med(dark):med(top);
+  if(hair&&cand.length>40){
+    out.hairColor=near(HAIRC.slice(0,6),hair);
+    const frac=a=>a.length?a.filter(p=>dist(p,hair)<60).length/a.length:0;
+    const shoulders=frac(shoulderA),cheeks=frac(cheekA);
+    if(shoulders>.45&&cheeks>.3)out.hairStyle='long';else if(cheeks>.4&&shoulders<.15)out.hairStyle='bob';
+  }
+  // eyes: the darkest bits around each eye, minus the black pupil
+  let iris;
+  if(P&&P.length>473){const ring=c=>{const r=Math.max(3,D(c,c+1)),o=[];const d=x.getImageData(Math.round(P[c][0]-r),Math.round(P[c][1]-r),Math.ceil(2*r),Math.ceil(2*r)).data,w=Math.ceil(2*r);
+      for(let y=0;y<w;y++)for(let X=0;X<w;X++){const q=Math.hypot(X-r,y-r)/r;if(q>.45&&q<.9){const k=(y*w+X)*4;o.push([d[k],d[k+1],d[k+2]]);}}return o;};
+    iris=med([...ring(468),...ring(473)].filter(p=>lum(p)>15&&lum(p)<200));}
+  else{const eye=[...px(170,240,90,70),...px(340,240,90,70)].sort((p,q)=>lum(p)-lum(q));iris=med(eye.slice(0,Math.ceil(eye.length*.2)).filter(p=>lum(p)>22));}
+  if(iris){const [r,g,b]=iris,L=lum(iris),sat=Math.max(r,g,b)-Math.min(r,g,b);
+    out.eyes=sat<18&&L>70?'#6b7b8c':b>r+8&&b>=g?'#2f6fb5':g>r+4&&g>=b?'#3c8d5a':L<40?'#1f1a24':L>85?'#9a6a3a':'#6b4423';}
+  return out;
+}
+$('#cropUse').onclick=async()=>{
   const W=160,H=184,out=document.createElement('canvas');out.width=W;out.height=H;const x=out.getContext('2d');
   const k=W/(2*OV.rx),im=crop.img;
   x.drawImage(im,(crop.ox-(OV.cx-OV.rx))*k,(crop.oy-(OV.cy-OV.ry))*k,im.width*crop.s*k,im.height*crop.s*k);
-  let skin=null;try{const d=x.getImageData(W*.22,H*.55,W*.18,H*.12).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}skin=nearestSkin(r/n,g/n,b/n);}catch(e){}
+  const btn=$('#cropUse');btn.disabled=true;btn.textContent='🔍 Looking at your face…';
+  let look={};try{look=await readFace();}catch(e){}
+  btn.disabled=false;btn.textContent='Put it on! ✨';
   const data=out.toDataURL('image/jpeg',.82),toon=cartoonize(out);
   $('#cropModal').classList.remove('show');
-  update(l=>{l.photo=data;l.photoToon=toon;l.photoOn=true;l.photoMode=l.photoMode||'photo';if(skin)l.skin=skin;});
-  toast('🤳 Looking great!');
+  const glasses=look.glasses;delete look.glasses;
+  update(l=>{l.photo=data;l.photoToon=toon;l.photoOn=false;l.photoMode=l.photoMode||'photo';const fe=look.feat;delete look.feat;Object.assign(l,look);l.feat={...(l.feat||{}),...(fe||{})};
+    l.extras=l.extras||{};if(glasses&&!l.extras.glasses)l.extras.glasses='#2d2d3a';});
+  openDetails(glasses);
 };
 
 /* salon tools */
@@ -1433,7 +1525,7 @@ function renderPanel(){
     }else{
       h+=`<div class="addrow" style="margin-top:0"><button class="pill" data-act="camera" style="font-size:16px;padding:12px 16px">🤳 Take a selfie</button><label class="pill soft" style="cursor:pointer;font-size:16px;padding:12px 16px">📁 Use a picture<input type="file" accept="image/*" hidden data-selfie></label></div>`;
     }
-    h+=`<p class="hint">Put your real face on the doll! The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
+    h+=`<h3>Little details</h3><div class="grid">`+detailTiles(l)+`</div>${l.feat&&(l.feat.eye||l.feat.nose)?`<div class="addrow"><button class="pill soft" data-act="plainFace">↩️ Plain doll face</button></div>`:''}<p class="hint">Take a selfie and the doll copies your face shape and colors. Tap 📷 Photo to wear your real face. The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
     h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
@@ -1509,6 +1601,8 @@ $('#content').addEventListener('click',e=>{
       case 'undoStroke':l.makeup.strokes=(l.makeup.strokes||[]).slice(0,-1);break;
       case 'washFace':l.makeup.strokes=[];break;
       case 'photoOn':l.photoOn=!!c;if(c)l.photoMode=c;break;
+      case 'detail':toggleDetail(l,id);break;
+      case 'plainFace':l.feat={freckles:l.feat.freckles,stud:l.feat.stud};break;
       case 'photoDel':delete l.photo;delete l.photoToon;l.photoOn=false;break;
       case 'extra':if(id in l.extras){delete l.extras[id];}else{l.extras[id]=find(EXTRAS,id).c;lastExtra=id;}break;
       case 'wear':{const k=KEY[arg];if(!id){l[k]=null;}else{const it=find(CATS[arg],id);l[k]={id,c:l[k]&&l[k].id===id?l[k].c:it.c};}
