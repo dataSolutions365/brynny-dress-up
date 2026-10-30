@@ -25,7 +25,7 @@ header.top{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:
 .tbtn{background:#fff;color:var(--ink);border-radius:999px;padding:8px 13px;font-weight:600;font-size:15px;box-shadow:0 2px 0 rgba(0,0,0,.12);display:flex;gap:5px;align-items:center;white-space:nowrap}
 .tbtn:active{transform:translateY(1px)}
 @media (max-width:560px){.tbtn .lbl{display:none}.tbtn{padding:8px 11px;font-size:18px}}
-main{flex:1;display:flex;min-height:0}
+main{flex:1;display:flex;min-height:0;position:relative}
 .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;background:#fff}
 .stage{transition:background .4s}
 .stage.painting{outline:4px dashed var(--pink);outline-offset:-6px}
@@ -115,6 +115,31 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .stage .twirl{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:#fff;font-size:22px;box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:2}
 .stage.zoomed .twirl{display:none}
+#contestBar{position:absolute;left:8px;top:8px;z-index:3;display:none;align-items:center;gap:8px;background:#fff;border-radius:999px;padding:6px 8px 6px 14px;box-shadow:0 3px 12px rgba(59,35,87,.22);font-weight:700;white-space:nowrap;max-width:calc(100% - 16px)}
+#contestBar.show{display:flex}
+#contestBar .t{font-variant-numeric:tabular-nums;color:var(--pink)}
+#contestBar .pill{padding:7px 12px;font-size:14px}
+.stage.walking .doll{transform-box:fill-box;transform-origin:50% 100%;animation:walkIn 3.6s cubic-bezier(.3,.7,.4,1) both}
+.stage.walking .twirl{display:none}
+@keyframes walkIn{0%{transform:translateY(-46%) scale(.42)}12%{transform:translateY(-41%) scale(.48) rotate(-2deg)}24%{transform:translateY(-35%) scale(.55) rotate(2deg)}36%{transform:translateY(-29%) scale(.62) rotate(-2deg)}48%{transform:translateY(-22%) scale(.7) rotate(2deg)}60%{transform:translateY(-15%) scale(.79) rotate(-2deg)}72%{transform:translateY(-8%) scale(.88) rotate(1.5deg)}84%{transform:translateY(-2%) scale(.96) rotate(-1deg)}100%{transform:none}}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4;animation:flash .35s ease-out}
+@keyframes flash{0%{opacity:.85}100%{opacity:0}}
+.judges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.judge{background:#fff6fb;border-radius:16px;padding:10px 6px;text-align:center}
+.judge .face{font-size:34px}.judge .nm{font-size:12px;font-weight:700;opacity:.75}
+.judge .sc{font-size:30px;font-weight:800;color:var(--pink);opacity:0;transform:scale(.3);transition:all .35s cubic-bezier(.3,1.6,.5,1)}
+.judge .sc.in{opacity:1;transform:none}
+.judge .cm{font-size:12.5px;min-height:34px;margin-top:4px}
+.themes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.themes button{background:#fff6fb;border-radius:14px;padding:10px;font-weight:700;text-align:left}
+.themes button.lock{opacity:.45}
+.fnames{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 10px}.fnames input{min-width:0;padding:9px 10px;border-radius:12px;border:2px solid #f6cfe3;font:inherit;font-size:16px}
+.votes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.votes button{background:#fff6fb;border-radius:16px;padding:6px;font-size:15px}.votes button:disabled{opacity:.35}
+.votes svg{display:block;width:100%;height:150px}
+.winner svg{display:block;margin:0 auto;height:200px}
+.ranks{text-align:left;margin:8px auto;max-width:320px;line-height:1.8}
+.themes small{display:block;font-weight:500;opacity:.7}
 .spark{position:absolute;font-size:26px;pointer-events:none;animation:pop .9s ease-out forwards}
 @keyframes pop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.8) translateY(-30px)}}
 #welcome{position:fixed;inset:0;z-index:30;background:linear-gradient(160deg,#ffd1e8,#e3d6ff);display:none;align-items:center;justify-content:center;padding:16px;overflow:auto}
@@ -172,6 +197,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="spacer"></div>
   <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
   <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
+  <button class="tbtn" id="contestBtn" title="Modeling contest">🏆 <span class="lbl">Contest</span></button>
   <button class="tbtn" id="partyBtn" title="Birthday party">🎂 <span class="lbl">Party</span></button>
   <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span></button>
   <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
@@ -180,6 +206,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 </header>
 <main>
   <div class="stage" id="stage"></div>
+  <div id="contestBar"><span id="cbTheme"></span><span class="t" id="cbTime"></span><button class="pill" id="cbWalk">Walk the runway ✨</button></div>
   <div class="panel">
     <nav class="tabs" id="tabs"></nav>
     <div class="content" id="content"></div>
@@ -252,6 +279,11 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="mrow"><label class="pill" style="cursor:pointer">➕ Add songs<input type="file" id="songFile" accept="audio/*,video/*" multiple hidden></label><button class="pill" id="voiceBtn" style="background:#8e6cff">🎙️ Record my voice</button></div>
 </div></div>
 <audio id="songPlayer" preload="none"></audio>
+
+<div class="modal" id="contestModal"><div class="sheet" style="max-width:460px;text-align:center">
+  <button class="close" data-close>×</button>
+  <div id="contestBody"></div>
+</div></div>
 
 <div class="modal" id="galModal"><div class="sheet">
   <button class="close" data-close>×</button>
@@ -2062,6 +2094,144 @@ function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add
 }
 $('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
 $('#partyBtn').onclick=showParty;
+
+/* ---------- modeling contest: a theme, a runway walk, three judges ---------- */
+const THEMES=[
+ {id:'royal',e:'👑',name:'Royal Ball',hint:'Gowns, crowns, sparkles and fancy shoes.',need:0,cols:['#ff8fc8','#b388ff','#ffd23f','#ffffff','#c2185b'],
+  items:['gown','redcarpet','wedding','party','redtulle','tiara','crown','veil','glass','heels','platforms','laceheels','pearls','wand','cape','earrings','heartneck','bouquet']},
+ {id:'beach',e:'🏖️',name:'Beach Day',hint:'Sunny, bright and ready for the waves.',need:0,cols:['#4fc3f7','#ffd23f','#ff8a3d','#7ee081','#2ec4b6'],
+  items:['swimsuit','sundress','island','shorts','tank','sandals','sunhat','cap','hibiscus','lei','heartglasses','glasses','athshorts','flats']},
+ {id:'spooky',e:'🎃',name:'Spooky Night',hint:'Witches, vampires and monsters welcome!',need:0,cols:['#2d2d3a','#ff8a1f','#7b3fe4','#8b0016','#7ee081'],
+  items:['witch','vampire','werewolf','mummy','zombie','pumpkin','spacepup','witchhat','catears','wolfears','mummywrap','pupears','witchboots','paws','bat','vampcape','cape','candy','wand','horns','tail']},
+ {id:'sporty',e:'⚽',name:'Sporty Star',hint:'Game day! Jerseys, sneakers and a medal.',need:1,cols:['#ff6fae','#4fc3f7','#ffffff','#2d2d3a','#ff8a1f'],
+  items:['jersey','athshorts','tennis','tennisskirt','cheer','cheertop','leotard','joggers','leggings','hoodie','sneaker','cleats','hightops','cap','sweatband','headband','racket','ball','medal','pompoms']},
+ {id:'popstar',e:'🎤',name:'Pop Star Stage',hint:'Shiny, fluffy, bold. Own the stage!',need:2,cols:['#d6d9e2','#ff6fae','#2d2d3a','#b388ff','#d7263d'],
+  items:['sequin','minidress','furshrug','furcoat','corset','graphiccrop','silvermini','furskirt','cargo','catsuit','redtulle','moto','chunkyboots','platforms','laceheels','furwarmers','kneeboots','fluffyears','horns','facegems','bangles','tail','whiskers','heartglasses','earrings']},
+ {id:'winter',e:'❄️',name:'Winter Wonderland',hint:'Cozy layers for a snowy day.',need:3,cols:['#ffffff','#4fc3f7','#d62839','#b388ff','#2e8b57'],
+  items:['sweater','xmas','santa','turtleneck','jacket','military','blazer','jeans','leggings','skinny','snowboots','kneeboots','boots','beanie','santahat','antlers','scarf','skates']},
+ {id:'fairy',e:'🧚',name:'Fairy Garden',hint:'Wings, flowers and a little magic.',need:4,cols:['#bfe9ff','#ff8fc8','#7ee081','#ffd23f','#b388ff'],
+  items:['fairy','mermaid','ballerina','sundress','tutu','skirt','wings','flowers','wand','flats','pointe','glass','hibiscus','bouquet','sandals','tiara']},
+ {id:'school',e:'🎒',name:'First Day of School',hint:'Neat, comfy and ready to learn.',need:5,cols:['#5c7cfa','#ff6fae','#ffd23f','#ffffff','#7ee081'],
+  items:['tee','startee','hearttee','blouse','sweater','jacket','varsity','turtleneck','jeans','skirt','tennisskirt','flares','leggings','sneaker','maryjanes','hightops','flats','headband','bow','purse','glasses','backpack']},
+];
+const JUDGES=[{e:'🦄',n:'Ula the Unicorn',k:'theme'},{e:'🐱',n:'Coco Cat',k:'style'},{e:'🦜',n:'Polly Parrot',k:'finish'}];
+let contest=null,contestTimer=0;
+const CS=()=>{DB.contest=DB.contest||{stars:0,best:{}};return DB.contest;};
+const hueOf=h=>{if(!h||h[0]!=='#')return null;const n=parseInt(h.slice(1),16),r=(n>>16)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+  if(d<.12)return {gray:true,l:(mx+mn)/2};let hh=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return {h:(hh*60+360)%360,l:(mx+mn)/2};};
+const colorNear=(a,b)=>{const x=hueOf(a),y=hueOf(b);if(!x||!y)return false;if(x.gray||y.gray)return x.gray&&y.gray&&Math.abs(x.l-y.l)<.35;return Math.min(Math.abs(x.h-y.h),360-Math.abs(x.h-y.h))<30;};
+function scoreLook(l,th){
+  const worn=[];if(l.dress)worn.push(l.dress);else{if(l.top)worn.push(l.top);if(l.bottom)worn.push(l.bottom);}
+  if(l.shoes)worn.push(l.shoes);if(l.hat)worn.push(l.hat);
+  const ex=Object.entries(l.extras||{}).map(([id,c])=>({id,c}));
+  const all=[...worn,...ex],hits=all.filter(w=>th.items.includes(w.id)).length;
+  // judge 1: does it fit the theme?
+  const theme=Math.min(10,3+hits*1.8+(l.dress&&th.items.includes(l.dress.id)?1.5:0));
+  // judge 2: colors that go together and match the theme
+  const cols=all.map(w=>w.c).filter(Boolean);let pal=cols.filter(c=>th.cols.some(t=>colorNear(c,t))).length;
+  let pairs=0,same=0;for(let i=0;i<cols.length;i++)for(let j=i+1;j<cols.length;j++){pairs++;if(colorNear(cols[i],cols[j]))same++;}
+  const style=Math.min(10,5.5+pal*.9+(pairs?same/pairs*2.5:0)+(l.style==='glam'?.5:0));
+  // judge 3: finishing touches
+  const m=l.makeup||{},nails=l.nails&&((l.nails.hands||[]).some(Boolean)||(l.nails.feet||[]).some(Boolean));
+  let fin=5+(l.shoes?1:0)+(l.hat?1:0)+Math.min(2,ex.length)*.8+((m.lips||m.shadow)?.8:0)+(m.paint?.4:0)+(nails?.6:0)+(l.hairStyle!=='long'?.6:0)+((l.salon&&(l.salon.clips||[]).length)?.4:0);
+  fin=Math.min(10,fin);
+  return {theme:Math.round(theme),style:Math.round(style),finish:Math.round(fin),hits};
+}
+function judgeSays(k,v,th){
+  const hi={theme:[`That is SO ${th.name}! 💯`,`Perfect for the ${th.name}!`],style:['Those colors look amazing together! 🎨','Gorgeous color choices!'],finish:['Every little detail is perfect! ✨','Love the finishing touches!']};
+  const mid={theme:['Nice! A few more theme pieces would wow me.','Ooh, getting close to the theme!'],style:['Pretty! Try colors from the same family.','Cute colors! Matching shades pop even more.'],finish:['Add shoes, a hat or jewelry for extra sparkle!','Try makeup or nails to finish the look!']};
+  const pick=a=>a[Math.floor(Math.random()*a.length)];return v>=9?pick(hi[k]):pick(mid[k]);
+}
+function contestPick(){
+  const st=CS().stars;
+  $('#contestBody').innerHTML=`<h2>🏆 Modeling Contest</h2><p>Pick a theme, dress up, then walk the runway for the judges!</p><p style="font-weight:700">⭐ ${st} star${st===1?'':'s'}</p>
+   <div class="seg" style="justify-content:center"><button class="on" data-mode="solo">💃 Just me</button><button data-mode="friends">👭 With friends</button></div>
+   <div id="cFriends" style="display:none"><p>Everyone dresses their own doll for the same theme, then you all vote! Type 2 to 4 names:</p><div class="fnames">${[0,1,2,3].map(i=>`<input maxlength="20" placeholder="Player ${i+1}" value="${i===0?esc(me().name):''}">`).join('')}</div></div>
+   <div class="themes">${THEMES.map(t=>{const lk=st<t.need*3,b=CS().best[t.id]||0;return `<button data-theme="${t.id}" class="${lk?'lock':''}">${t.e} ${t.name}<small>${lk?`🔒 ${t.need*3} stars to unlock`:(b?'⭐'.repeat(b):t.hint)}</small></button>`;}).join('')}</div>
+   <div class="seg" style="justify-content:center"><button class="on" data-tm="0">No timer</button><button data-tm="120">2 minutes</button><button data-tm="60">1 minute</button></div>`;
+  $('#contestModal').classList.add('show');
+}
+$('#contestBtn').onclick=contestPick;
+$('#contestBody').addEventListener('click',e=>{
+  const md=e.target.closest('[data-mode]');if(md){$('#contestBody').querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('on',b===md));$('#cFriends').style.display=md.dataset.mode==='friends'?'':'none';return;}
+  const tm=e.target.closest('[data-tm]');if(tm){$('#contestBody').querySelectorAll('[data-tm]').forEach(b=>b.classList.toggle('on',b===tm));return;}
+  const t=e.target.closest('[data-theme]');if(t){const th=THEMES.find(x=>x.id===t.dataset.theme);if(t.classList.contains('lock')){toast(`🔒 Win ${th.need*3} stars to unlock ${th.name}`);return;}
+    const secs=+($('#contestBody [data-tm].on')||{dataset:{tm:0}}).dataset.tm;
+    if($('#contestBody [data-mode="friends"].on')){const names=[...$('#contestBody').querySelectorAll('.fnames input')].map(i=>i.value.trim()).filter(Boolean);
+      if(new Set(names.map(n=>n.toLowerCase())).size<2){toast('👭 Type at least 2 different names');return;}startFriends(th,secs,[...new Set(names)]);return;}
+    startContest(th,secs);return;}
+  if(e.target.closest('#cAgain'))contestPick();
+  if(e.target.closest('#fReady'))friendTurn();
+  const v=e.target.closest('[data-vote]');if(v)castVote(+v.dataset.vote);
+});
+function startContest(th,secs){
+  contest={th,end:secs?Date.now()+secs*1000:0};$('#contestModal').classList.remove('show');
+  $('#cbTheme').textContent=`${th.e} ${th.name}`;$('#cbWalk').textContent='Walk the runway ✨';$('#contestBar').classList.add('show');toast(`${th.e} ${th.name}: ${th.hint}`);
+  clearInterval(contestTimer);contestTick();contestTimer=setInterval(contestTick,500);
+}
+function contestTick(){if(!contest)return;if(!contest.end){$('#cbTime').textContent='';return;}
+  const left=Math.max(0,Math.ceil((contest.end-Date.now())/1000));$('#cbTime').textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;
+  if(!left){if(contest.f){toast(`⏰ Time is up, ${contest.f.players[contest.f.turn].name}!`);friendDone();}else{toast('⏰ Time is up! Off to the runway!');walkRunway();}}}
+$('#cbWalk').onclick=()=>contest&&contest.f?friendDone():walkRunway();
+function walkRunway(){
+  if(!contest||contest.walking)return;contest.walking=true;clearInterval(contestTimer);$('#contestBar').classList.remove('show');
+  const l=L(),keep=l.scene;l.scene='runway';renderStage();l.scene=keep;
+  try{Music.playTrack('runway');}catch(e){}
+  const st=$('#stage');st.classList.add('walking');
+  [900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
+  setTimeout(()=>{st.classList.remove('walking');showJudges();},3900);
+}
+function showJudges(){
+  const th=contest.th,sc=scoreLook(L(),th),total=sc.theme+sc.style+sc.finish,stars=total>=27?3:total>=23?2:1;
+  const C=CS(),prev=C.best[th.id]||0;if(stars>prev){C.stars+=stars-prev;C.best[th.id]=stars;}persist();
+  const unlocked=THEMES.filter(t=>t.need*3>C.stars-(stars>prev?stars-prev:0)&&t.need*3<=C.stars);
+  $('#contestBody').innerHTML=`<h2>${th.e} ${th.name}</h2><p>The judges are scoring…</p><div class="judges">${JUDGES.map((j,i)=>`<div class="judge"><div class="face">${j.e}</div><div class="nm">${j.n}</div><div class="sc" id="js${i}">${sc[j.k]}</div><div class="cm" id="jc${i}"></div></div>`).join('')}</div>
+   <div id="cResult" style="opacity:0;transition:opacity .4s"><h2>${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</h2><p style="font-weight:700">${total}/30 · ${stars===3?'🏆 Top model! You won the trophy!':stars===2?'🥈 Fabulous! So close to the top!':'🎀 Great walk! Try the judges\' tips for more stars.'}</p>${unlocked.length?`<p>🔓 New theme unlocked: ${unlocked.map(t=>t.e+' '+t.name).join(', ')}!</p>`:''}
+   <button class="big-btn" id="cAgain">Play again 🏆</button></div>`;
+  $('#contestModal').classList.add('show');
+  JUDGES.forEach((j,i)=>setTimeout(()=>{$('#js'+i).classList.add('in');$('#jc'+i).textContent=judgeSays(j.k,sc[j.k],th);try{Music.sfx();}catch(e){}},700+i*900));
+  setTimeout(()=>{$('#cResult').style.opacity=1;if(stars===3)sparkle();try{applyMusic();}catch(e){}},700+3*900);
+  contest=null;
+}
+/* pass-the-phone: each friend dresses their own doll, everyone walks, everyone votes */
+function startFriends(th,secs,names){
+  const players=names.map(n=>{let c=DB.chars.find(x=>x.name.toLowerCase()===n.toLowerCase());if(!c){c={id:uid(),name:n,look:randomLook()};DB.chars.push(c);}return {id:c.id,name:c.name,votes:0};});
+  contest={th,secs,f:{players,turn:0,phase:'pass',orig:DB.cur,voter:0}};persist();$('#contestBar').classList.remove('show');friendPass();
+}
+function friendPass(){const f=contest.f,p=f.players[f.turn];f.phase='pass';
+  $('#contestBody').innerHTML=`<h2>${contest.th.e} ${contest.th.name}</h2><p style="font-size:20px;font-weight:800">📱 Pass the phone to ${esc(p.name)}!</p><p>${contest.th.hint}${contest.secs?` You get ${contest.secs/60} minute${contest.secs>60?'s':''}.`:''}</p><button class="big-btn" id="fReady">I'm ${esc(p.name)}, let's go! 💃</button>`;
+  $('#contestModal').classList.add('show');}
+function friendTurn(){const f=contest.f,p=f.players[f.turn];f.phase='dress';DB.cur=p.id;persist();renderStage();renderPanel();$('#contestModal').classList.remove('show');
+  $('#cbTheme').textContent=`${contest.th.e} ${p.name}'s turn`;$('#cbWalk').textContent='Done ✓';$('#contestBar').classList.add('show');
+  contest.end=contest.secs?Date.now()+contest.secs*1000:0;clearInterval(contestTimer);contestTick();contestTimer=setInterval(contestTick,500);}
+function friendDone(){const f=contest.f;if(f.phase!=='dress')return;clearInterval(contestTimer);$('#contestBar').classList.remove('show');persist();
+  if(++f.turn<f.players.length)friendPass();else friendParade(0);}
+function friendParade(i){const f=contest.f;f.phase='parade';if(i>=f.players.length){f.voter=0;friendVote();return;}
+  const p=f.players[i];DB.cur=p.id;const l=L(),keep=l.scene;l.scene='runway';renderStage();l.scene=keep;
+  if(!i)try{Music.playTrack('runway');}catch(e){}
+  toast(`✨ Now on the runway: ${p.name}!`);const st=$('#stage');st.classList.remove('walking');void st.offsetWidth;st.classList.add('walking');
+  [900,1700,2500].forEach(t=>setTimeout(()=>{const fl=document.createElement('div');fl.className='flash';st.appendChild(fl);setTimeout(()=>fl.remove(),400);},t));
+  setTimeout(()=>{st.classList.remove('walking');friendParade(i+1);},3900);}
+const miniDoll=look=>`<svg viewBox="40 -40 220 640" xmlns="http://www.w3.org/2000/svg">${DEFS}${charInner(look)}</svg>`;
+function friendVote(){const f=contest.f,v=f.players[f.voter];f.phase='vote';
+  $('#contestBody').innerHTML=`<h2>🗳️ Time to vote!</h2><p style="font-weight:800">${esc(v.name)}, tap your favorite look (not your own!) 🤫</p>
+   <div class="votes">${f.players.map((p,i)=>{const c=DB.chars.find(x=>x.id===p.id);return `<button data-vote="${i}" ${i===f.voter?'disabled':''}>${c?miniDoll(c.look):''}<b>${esc(p.name)}</b></button>`;}).join('')}</div>`;
+  $('#contestModal').classList.add('show');}
+function castVote(i){const f=contest.f;if(f.phase!=='vote'||i===f.voter)return;f.players[i].votes++;try{Music.sfx();}catch(e){}
+  if(++f.voter<f.players.length){$('#contestBody').innerHTML=`<h2>🗳️ Vote saved!</h2><p style="font-size:20px;font-weight:800">📱 Pass the phone to ${esc(f.players[f.voter].name)}</p><button class="big-btn" id="fNext">I'm ${esc(f.players[f.voter].name)} ✋</button>`;$('#fNext').onclick=friendVote;}
+  else friendWinner();}
+function friendWinner(){const f=contest.f,th=contest.th;
+  f.players.forEach(p=>{const c=DB.chars.find(x=>x.id===p.id),s=c?scoreLook(c.look,th):{theme:0,style:0,finish:0};p.judge=s.theme+s.style+s.finish;});
+  const rank=[...f.players].sort((a,b)=>b.votes-a.votes||b.judge-a.judge),w=rank[0],wc=DB.chars.find(x=>x.id===w.id);
+  const tie=rank[1]&&rank[1].votes===w.votes;
+  $('#contestBody').innerHTML=`<h2>🏆 And the winner is…</h2><div class="winner">${wc?miniDoll(wc.look):''}</div><h2>👑 ${esc(w.name)}! 👑</h2>
+   <p>${tie?'It was a tie, so the judges picked the winner! ':''}${th.e} ${th.name}</p>
+   <div class="ranks">${rank.map((p,i)=>`<div>${['🥇','🥈','🥉','🎀'][i]} <b>${esc(p.name)}</b> · ${p.votes} vote${p.votes===1?'':'s'} · judges ${p.judge}/30</div>`).join('')}</div>
+   <button class="big-btn" id="cAgain">Play again 🏆</button>`;
+  $('#contestModal').classList.add('show');endFriends();sparkle();try{applyMusic();}catch(e){}}
+function endFriends(){if(!contest||!contest.f)return;clearInterval(contestTimer);$('#contestBar').classList.remove('show');
+  if(DB.chars.some(c=>c.id===contest.f.orig))DB.cur=contest.f.orig;contest=null;persist();renderStage();renderPanel();}
+$('#contestModal').addEventListener('click',e=>{if(e.target.closest('[data-close]')){if(contest&&contest.f&&contest.f.phase==='pass')friendTurn();else if(contest&&contest.f&&contest.f.phase==='vote')endFriends();renderStage();}});
 $('#partyBlow').onclick=()=>{[...document.querySelectorAll('#partyCake .candle:not(.out)')].forEach((g,i)=>setTimeout(()=>blowCandle(g),i*90));};
 $('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=true;persist();if(!DB.welcomed)showWelcome();else sparkle();};
 // fireworks on a canvas, only while the party is open and on screen
@@ -2346,7 +2516,7 @@ function countStat(...names){
     F.setDoc(F.doc(statsFs,'dressup_stats',new Date().toISOString().slice(0,10)),add,{merge:true}).catch(()=>{});}catch(e){}
 }
 {const phone=matchMedia('(pointer: coarse)').matches&&!matchMedia('(any-pointer: fine)').matches;countStat('visits',phone?'phone_visits':'computer_visits');}
-const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',partyBtn:'party',msgSend:'send_message'};
+const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',partyBtn:'party',contestBtn:'contest',cbWalk:'contest_walk',msgSend:'send_message'};
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-tab]');if(!b)return;
   if(TAPS[b.id])track(TAPS[b.id]);else if(b.dataset.tab)track('open_tab',{tab:b.dataset.tab});},true);
 
