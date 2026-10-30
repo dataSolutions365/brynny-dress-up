@@ -131,6 +131,12 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .track .e{font-size:30px;line-height:1}
 .track.on{border-color:var(--pink);background:#ffe6f2}
 .mrow{display:flex;align-items:center;gap:10px;margin:12px 0}
+.cmp{display:flex;gap:10px;justify-content:center;margin:6px -6px;padding:6px;position:sticky;top:-16px;background:#fff;z-index:2;border-radius:0 0 16px 16px}
+.cmp>div{flex:1;max-width:170px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;color:var(--ink2,#6b5a7a)}
+.cmp img,#cmpDoll{width:100%;aspect-ratio:5/6;border-radius:20px;object-fit:cover;background:#f6e3ef}
+#cmpDoll svg{width:100%;height:100%}
+.fs{display:flex;align-items:center;gap:8px;margin:6px 0}.fs label{width:92px;font-weight:700;font-size:14px}.fs input{flex:1;accent-color:var(--pink);height:28px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips button{padding:8px 12px;border-radius:999px;background:#f6e3ef;font-weight:700}.chips button.on{background:var(--pink);color:#fff}
 .mrow input[type=range]{flex:1;accent-color:var(--pink);height:28px}
 .songs{display:flex;flex-direction:column;gap:8px}
 .song{display:flex;align-items:center;gap:8px;border:3px solid #f6e3ef;border-radius:14px;padding:8px 10px;background:#fff7fb}
@@ -177,11 +183,11 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="mrow"><span>➖</span><input type="range" id="cropZoom" min="0" max="100" value="30" aria-label="Zoom"><span>➕</span></div>
   <button class="big-btn" id="cropUse">Put it on! ✨</button>
 </div></div>
-<div class="modal" id="detailModal"><div class="sheet" style="max-width:380px;text-align:center">
-  <h2>✨ Anything else?</h2>
+<div class="modal" id="detailModal"><div class="sheet" style="max-width:420px;text-align:center;max-height:92vh;overflow:auto">
+  <h2>🪞 You and your doll</h2>
+  <div class="cmp"><div><img id="cmpPhoto" alt="Your selfie"><span>You</span></div><div><div id="cmpDoll"></div><span>Your doll</span></div></div>
   <p class="hint" id="detailGuess"></p>
-  <h3 style="text-align:left">Skin</h3><div id="detailSkin"></div>
-  <div class="grid" id="detailGrid"></div>
+  <div id="detailEdit" style="text-align:left"></div>
   <button class="big-btn" id="detailDone" style="margin-top:12px">All done! ✨</button>
 </div></div>
 <div class="modal" id="artModal"><div class="sheet" style="max-width:420px;text-align:center">
@@ -1021,12 +1027,36 @@ function toggleDetail(l,id){
   else{l.feat=l.feat||{};l.feat[id]=!l.feat[id];}
 }
 const detailTiles=l=>DETAILS.map(x=>`<button class="item ${hasDetail(l,x.id)?'on':''}" data-act="detail" data-id="${x.id}"><span class="big">${x.e}</span><span>${x.n}</span></button>`).join('');
-function openDetails(guess,found){
-  $('#detailGuess').textContent=(found?'I copied your face shape, skin, hair and eyes! ':'I couldn\'t find your face, so I only copied colors. Try a closer, brighter selfie. ')+(guess?'It looks like you wear glasses, so I added them.':'Tap anything else that looks like you.');
-  $('#detailGrid').innerHTML=detailTiles(L());$('#detailSkin').innerHTML=swatches('dskin',SKIN,L().skin);$('#detailModal').classList.add('show');
+const FEAT_SLIDERS=[{k:'eye',n:'👁️ Eye size',a:.7,b:1.3,d:1},{k:'gap',n:'↔️ Eye gap',a:-4,b:4,d:0},{k:'open',n:'😮 Eye shape',a:.6,b:1.4,d:1},{k:'brow',n:'〰️ Brows',a:-3,b:3,d:0},{k:'nose',n:'👃 Nose',a:.8,b:1.3,d:1},{k:'mouth',n:'👄 Mouth',a:.8,b:1.25,d:1},{k:'lips',n:'💋 Lips',a:.7,b:1.4,d:1}];
+const CMP_HAIR=['long','wavy','curly','ponytail','bob','pixie','braids','buns'];
+// just the head, so it sits next to the selfie at the same size
+function dollHead(l){
+  const p=(find(HAIR,l.hairStyle)||HAIR[0]).d(hf(l.hairColor),hs(l.hairColor));let head='';
+  for(const id of ['glasses','earrings'])if(l.extras&&l.extras[id]){const it=find(EXTRAS,id);if(it)head+=parts(it.d(l.extras[id])).head||'';}
+  return mini('100 34 100 120',`<rect x="0" y="0" width="300" height="300" fill="#f6e3ef"/>${p.back||''}<rect x="138" y="120" width="24" height="40" fill="${l.skin}"/>${face({...l,photoOn:false})}${head}${p.front||''}`);
 }
-$('#detailSkin').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;update(l=>{l.skin=b.dataset.c;});$('#detailSkin').innerHTML=swatches('dskin',SKIN,L().skin);});
-$('#detailGrid').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;update(l=>toggleDetail(l,b.dataset.id));$('#detailGrid').innerHTML=detailTiles(L());});
+function detailEditor(l){
+  const F=l.feat||{};let h=`<h3>Skin</h3>`+swatches('dskin',SKIN,l.skin)+`<h3>Hair</h3>`+swatches('dhairc',HAIRC,l.hairColor);
+  h+=`<div class="chips" style="margin-top:8px">`+CMP_HAIR.map(id=>{const it=find(HAIR,id);return it?`<button class="${l.hairStyle===id?'on':''}" data-hs="${id}">${it.name}</button>`:'';}).join('')+`</div>`;
+  h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Face</h3>`;
+  h+=FEAT_SLIDERS.map(x=>`<div class="fs"><label for="fs_${x.k}">${x.n}</label><input type="range" id="fs_${x.k}" data-fk="${x.k}" min="${x.a}" max="${x.b}" step=".05" value="${F[x.k]??x.d}"></div>`).join('');
+  return h+`<h3>Little details</h3><div class="grid" id="detailGrid">${detailTiles(l)}</div>`;
+}
+const drawCmp=()=>{$('#cmpDoll').innerHTML=dollHead(L());};
+function openDetails(guess,found){
+  $('#detailGuess').textContent=(found?'I copied your face shape, skin, hair and eyes. Does it look like you? Fix anything below. ':'I couldn\'t find your face, so I only copied colors. Fix anything below, or try a closer, brighter selfie. ')+(guess?'It looks like you wear glasses, so I added them.':'');
+  $('#cmpPhoto').src=L().photo||'';$('#detailEdit').innerHTML=detailEditor(L());drawCmp();$('#detailModal').classList.add('show');
+}
+$('#detailEdit').addEventListener('click',e=>{
+  const sw=e.target.closest('[data-c]'),hs=e.target.closest('[data-hs]'),dt=e.target.closest('[data-id]');
+  if(sw){const k={dskin:'skin',dhairc:'hairColor',deyes:'eyes'}[sw.dataset.act];if(!k)return;update(l=>{l[k]=sw.dataset.c;});}
+  else if(hs)update(l=>{l.hairStyle=hs.dataset.hs;});
+  else if(dt)update(l=>toggleDetail(l,dt.dataset.id));
+  else return;
+  $('#detailEdit').innerHTML=detailEditor(L());drawCmp();
+});
+$('#detailEdit').addEventListener('input',e=>{const k=e.target.dataset.fk;if(!k)return;const v=+e.target.value;L().feat=L().feat||{};L().feat[k]=v;drawCmp();});
+$('#detailEdit').addEventListener('change',e=>{if(e.target.dataset.fk)update(()=>{});});
 $('#detailDone').onclick=()=>{$('#detailModal').classList.remove('show');renderStage();renderPanel();sparkle();toast('🪄 Your doll looks just like you!');};
 function nearestSkin(r,g,b){let best=SKIN[0],bd=1e9;for(const h of SKIN){const n=parseInt(h.slice(1),16),d=(r-(n>>16))**2+(g-(n>>8&255))**2+(b-(n&255))**2;if(d<bd){bd=d;best=h;}}return best;}
 // face detection (MediaPipe) loads only when someone takes a selfie
@@ -1540,7 +1570,7 @@ function renderPanel(){
     }else{
       h+=`<div class="addrow" style="margin-top:0"><button class="pill" data-act="camera" style="font-size:16px;padding:12px 16px">🤳 Take a selfie</button><label class="pill soft" style="cursor:pointer;font-size:16px;padding:12px 16px">📁 Use a picture<input type="file" accept="image/*" hidden data-selfie></label></div>`;
     }
-    h+=`<h3>Little details</h3><div class="grid">`+detailTiles(l)+`</div>${l.feat&&(l.feat.eye||l.feat.nose)?`<div class="addrow"><button class="pill soft" data-act="plainFace">↩️ Plain doll face</button></div>`:''}<p class="hint">Take a selfie and the doll copies your face shape and colors. Tap 📷 Photo to wear your real face. The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
+    h+=`<h3>Little details</h3><div class="grid">`+detailTiles(l)+`</div>${l.feat&&(l.feat.eye||l.feat.nose)?`<div class="addrow"><button class="pill soft" data-act="compare">🪞 Compare &amp; fix</button><button class="pill soft" data-act="plainFace">↩️ Plain doll face</button></div>`:''}<p class="hint">Take a selfie and the doll copies your face shape and colors. Tap 📷 Photo to wear your real face. The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
     h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
@@ -1586,6 +1616,7 @@ $('#content').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const {act,arg,id,c}=b.dataset;
   if(act==='camera'||act==='cameraVideo'){openCamera();return;}
   if(act==='nailspa'){openNails(c);return;}
+  if(act==='compare'){openDetails(false,true);return;}
   if(act==='artDel'&&!b.dataset.sure){b.dataset.sure=1;b.textContent='Sure?';b.classList.add('warn');return;}
   update(l=>{
     switch(act){
