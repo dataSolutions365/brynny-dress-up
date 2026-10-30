@@ -57,6 +57,22 @@ h3{margin:14px 0 8px;font-size:17px}
 .pill{background:var(--pink);color:#fff;border-radius:999px;padding:10px 16px;font-weight:700;font-size:15px}
 .pill.soft{background:#f6e3ef;color:var(--ink)}
 .soon{margin-top:18px;border:3px dashed #eadcf0;border-radius:16px;padding:10px 12px;color:var(--muted);font-size:14px;line-height:1.4}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px;border-bottom:2px solid var(--pink2)}
+.modes button{border-radius:999px;padding:8px;font-weight:700;font-size:15px;background:#f6e3ef}
+.modes button.on{background:var(--pink);color:#fff}
+.stage.care{touch-action:none}
+.needs{position:absolute;top:10px;left:10px;background:#fff;border-radius:16px;padding:4px 10px;font-size:20px;box-shadow:0 3px 10px rgba(0,0,0,.15);pointer-events:none}
+.hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(59,35,87,.85);color:#fff;border-radius:999px;padding:5px 14px;font-size:14px;font-weight:600;white-space:nowrap;pointer-events:none}
+.float{position:absolute;font-size:26px;pointer-events:none;animation:float 1.1s ease-out forwards}
+@keyframes float{from{opacity:1;transform:translateY(0) scale(.7)}to{opacity:0;transform:translateY(-70px) scale(1.2)}}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:110px 1fr;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.bar i{display:block;height:14px;border-radius:999px;background:#f6e3ef;overflow:hidden}
+.bar i b{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#ff8fc1,#8e6cff);transition:width .3s}
+.drip{animation:drip .6s ease-in forwards}
+@keyframes drip{to{transform:translateY(40px);opacity:0}}
+.puff{animation:puff .6s ease-out forwards;transform-box:fill-box;transform-origin:center}
+@keyframes puff{to{transform:scale(2.2);opacity:0}}
 @media (max-width:760px){
   main{flex-direction:column}
   .stage{flex:0 0 42%}
@@ -76,6 +92,7 @@ h3{margin:14px 0 8px;font-size:17px}
   <div class="stage" id="stage"></div>
   <div class="panel">
     <div class="pets" id="pets"></div>
+    <div class="modes" id="modes"></div>
     <div class="content" id="content"></div>
   </div>
 </main>
@@ -88,10 +105,17 @@ const HATS=[{id:'none',e:'🚫',name:'No hat'},{id:'witch',e:'🧙',name:'Witch 
 const NECKS=[{id:'none',e:'🚫',name:'Nothing'},{id:'collar',e:'🔔',name:'Bell collar'},{id:'bowtie',e:'🎀',name:'Bow tie'},{id:'bandana',e:'🧣',name:'Bandana'}];
 const PLACES=[{id:'spooky',e:'🌙',name:'Spooky night'},{id:'park',e:'🌳',name:'Park'},{id:'room',e:'🏠',name:'Cozy room'}];
 const COLORS=['#8e44ad','#ff6fae','#ff4d6d','#ff8a3d','#ffd23f','#7ee081','#2ec4b6','#4fc3f7','#5c7cfa','#2d2d3a'];
+const FOODS={cat:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],dog:[['🦴','Bone'],['🍖','Meat'],['🥕','Carrot']],squirrel:[['🌰','Acorn'],['🥜','Peanuts'],['🍓','Berry']]};
+const TOOLS={soap:'Rub your pet with soap 🧼',rinse:'Rub to rinse the bubbles off 🚿',dry:'Rub to blow-dry 🌬️',trim:'Tap the fluffy tufts to trim them ✂️',brush:'Rub your pet to brush ✨',clip:'Tap each nail to clip it 🐾',polish:'Tap a nail to paint it 💅'};
+const NAILPOS=[[121,290],[130,292],[139,290],[161,290],[170,292],[179,290]];
+const MUD=[[122,222,9,6],[178,244,11,7],[146,266,7,5],[112,100,6,4],[196,200,7,5]];
+const newCare=()=>({food:55,clean:40,tufts:[0,1,2,3,4,5],grow:0,nails:[1,1,1,1,1,1],polish:[0,0,0,0,0,0],cutAt:0,t:Date.now()});
 const KEY='brynny-pets-v1';
 let S={kind:'cat',fur:{cat:FUR.cat[0],dog:FUR.dog[0],squirrel:FUR.squirrel[0]},names:{cat:'Pumpkin',dog:'Biscuit',squirrel:'Nutmeg'},
-  fit:{cat:{body:'witch',hat:'witch',neck:'none',c:'#8e44ad'},dog:{body:'pumpkin',hat:'none',neck:'bandana',c:'#ff8a3d'},squirrel:{body:'none',hat:'bow',neck:'collar',c:'#ff6fae'}},bg:'spooky'};
+  fit:{cat:{body:'witch',hat:'witch',neck:'none',c:'#8e44ad'},dog:{body:'pumpkin',hat:'none',neck:'bandana',c:'#ff8a3d'},squirrel:{body:'none',hat:'bow',neck:'collar',c:'#ff6fae'}},bg:'spooky',mode:'dress',tool:null,polishC:'#ff6fae',care:{cat:newCare(),dog:newCare(),squirrel:newCare()}};
 try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&o.fit)S=Object.assign(S,o);}catch(e){}
+S.tool=null;for(const k of KINDS)S.care[k.id]=Object.assign(newCare(),S.care[k.id]);
+let T={foam:[],soaped:0,rinsed:0,wet:0,dry:0,brush:0,last:null,snd:0};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const f=v=>Math.round(amt<0?v*(1+amt):v+(255-v)*amt);return '#'+[f(r),f(g),f(b)].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');}
 const star=(x,y,r,c)=>{let d='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;d+=(i?'L':'M')+(x+Math.cos(a)*rr).toFixed(1)+' '+(y+Math.sin(a)*rr).toFixed(1);}return `<path d="${d}Z" fill="${c}"/>`;};
@@ -118,7 +142,7 @@ function placeSVG(id){
 
 /* ---------- the pets ---------- */
 function petSVG(){
-  const k=S.kind,f=S.fur[k],dk=shade(f,-.25),lt=shade(f,.45),fit=S.fit[k],c=fit.c,sq=k==='squirrel';
+  const k=S.kind,f=S.fur[k],dk=shade(f,-.25),lt=shade(f,.45),care=S.mode==='care',fit=care?{body:'none',hat:'none',neck:'none',c:'#fff'}:S.fit[k],c=fit.c,sq=k==='squirrel';
   const hy=sq?75:67;// top of the head
   let back='',tail='',ears='',earsFront='',face='';
   // costume pieces that go behind the pet
@@ -178,45 +202,152 @@ function petSVG(){
     case 'bow':hat=`<g transform="translate(${k==='cat'?178:184} ${hy+10}) rotate(18)"><path d="M0 0 L-22 -14 L-22 14 Z M0 0 L22 -14 L22 14 Z" fill="${c}"/><circle r="6" fill="${shade(c,-.25)}"/></g>`;break;
     case 'bunny':hat=`<path d="M104 ${hy+22} Q150 ${hy-20} 196 ${hy+22}" stroke="${c}" stroke-width="6" fill="none"/><ellipse cx="132" cy="${hy-30}" rx="11" ry="34" fill="#fff" stroke="#eee" transform="rotate(-10 132 ${hy-30})"/><ellipse cx="168" cy="${hy-30}" rx="11" ry="34" fill="#fff" stroke="#eee" transform="rotate(10 168 ${hy-30})"/><ellipse cx="132" cy="${hy-28}" rx="5" ry="24" fill="#ffc1d6" transform="rotate(-10 132 ${hy-28})"/><ellipse cx="168" cy="${hy-28}" rx="5" ry="24" fill="#ffc1d6" transform="rotate(10 168 ${hy-28})"/>`;break;
   }
-  return `<svg viewBox="0 0 300 320" xmlns="http://www.w3.org/2000/svg">${placeSVG(S.bg)}<ellipse cx="150" cy="294" rx="88" ry="10" fill="#000" opacity=".18"/>
-    <g class="pet" id="pet">${back}${tail}${body}${suit}${paws}${ears}<circle cx="${150}" cy="${hc}" r="${hr}" fill="${f}"/>${earsFront}${face}${blush}${neck}${hat}</g></svg>`;
+  // pet care: costume comes off, and fur tufts, mud, wet drops, nails and the tub show
+  let mess='',front='',vb='0 0 300 320';
+  if(care){const C=S.care[k];
+    back=tuftPos(k).filter((_,i)=>C.tufts.includes(i)).map(([x,y,a])=>{const P=(b,l)=>(x+Math.cos(b)*l).toFixed(1)+' '+(y+Math.sin(b)*l).toFixed(1);
+      return `<path d="M${P(a+1.4,10)} L${P(a+.5,22)} L${P(a+.25,9)} L${P(a,28)} L${P(a-.25,9)} L${P(a-.5,22)} L${P(a-1.4,10)} Z" fill="${f}" stroke="${dk}" stroke-width="1.5" stroke-linejoin="round"/>`;}).join('')+back;
+    if(C.clean<60){const o=Math.min(.85,(60-C.clean)/45);mess+=MUD.map(([x,y,rx,ry])=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#7a5233" opacity="${o.toFixed(2)}"/>`).join('');}
+    if(T.wet)mess+=[[110,150],[195,160],[128,248],[176,206],[150,84],[186,96],[100,200]].map(([x,y])=>`<path d="M${x} ${y-7} Q${x+5} ${y+2} ${x} ${y+4} Q${x-5} ${y+2} ${x} ${y-7}Z" fill="#7cc8ff" opacity=".9"/>`).join('');
+    paws+=NAILPOS.map(([x,y],i)=>{const pc=C.polish[i]||'#f6f0ea';return C.nails[i]?`<path d="M${x-3.2} ${y-3} Q${x} ${y+12} ${x+3.2} ${y-3} Z" fill="${pc}" stroke="#bfb2a6" stroke-width="1"/>`:`<ellipse cx="${x}" cy="${y}" rx="3.2" ry="2.6" fill="${pc}" stroke="#bfb2a6" stroke-width="1"/>`;}).join('');
+    if(['soap','rinse','dry'].includes(S.tool))front=`<path d="M52 232 H248 L236 300 Q150 316 64 300 Z" fill="#fff" stroke="#cfe3f5" stroke-width="3"/><rect x="46" y="226" width="208" height="14" rx="7" fill="#e9f4ff" stroke="#cfe3f5" stroke-width="2"/><path d="M72 304 l-6 12 M228 304 l6 12" stroke="#b9c7d6" stroke-width="6" stroke-linecap="round"/>`;
+    if(['clip','polish'].includes(S.tool))vb='90 228 120 82';}
+  return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${placeSVG(S.bg)}<ellipse cx="150" cy="294" rx="88" ry="10" fill="#000" opacity=".18"/>
+    <g class="pet" id="pet">${back}${tail}${body}${suit}${paws}${ears}<circle cx="${150}" cy="${hc}" r="${hr}" fill="${f}"/>${earsFront}${face}${blush}${mess}${neck}${hat}</g>${front}<g id="fx">${T.foam.map(bubble).join('')}</g></svg>`;
 }
 
 /* ---------- sounds ---------- */
 let ac=null;
+function actx(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();return ac;}catch(e){return null;}}
 function voice(kind){
-  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();}catch(e){return;}
+  if(!actx())return;
   const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(0,t);
   if(kind==='cat'){o.type='triangle';o.frequency.setValueAtTime(620,t);o.frequency.linearRampToValueAtTime(980,t+.18);o.frequency.linearRampToValueAtTime(560,t+.55);g.gain.linearRampToValueAtTime(.25,t+.05);g.gain.linearRampToValueAtTime(0,t+.6);o.start(t);o.stop(t+.62);}
   else if(kind==='dog'){o.type='sawtooth';[0,.28].forEach(d=>{o.frequency.setValueAtTime(330,t+d);o.frequency.exponentialRampToValueAtTime(170,t+d+.14);g.gain.setValueAtTime(.18,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.16);});o.start(t);o.stop(t+.48);}
   else{o.type='sine';for(let i=0;i<6;i++){const d=i*.07;o.frequency.setValueAtTime(1700,t+d);o.frequency.exponentialRampToValueAtTime(2600,t+d+.04);g.gain.setValueAtTime(.16,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.05);}o.start(t);o.stop(t+.45);}
 }
+function sfx(type){
+  const a=actx();if(!a)return;const t=a.currentTime;
+  if(type==='splash'||type==='whoosh'){const now=Date.now();if(now-T.snd<320)return;T.snd=now;
+    const len=type==='splash'?.35:.4,buf=a.createBuffer(1,a.sampleRate*len|0,a.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+    const s=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain();fl.type=type==='splash'?'highpass':'bandpass';fl.frequency.value=type==='splash'?1500:900;g.gain.value=.12;s.buffer=buf;s.connect(fl);fl.connect(g);g.connect(a.destination);s.start(t);return;}
+  const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);
+  if(type==='pop'){o.type='sine';o.frequency.setValueAtTime(500+Math.random()*500,t);o.frequency.exponentialRampToValueAtTime(1400,t+.06);g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.08);o.start(t);o.stop(t+.09);}
+  else if(type==='snip'){o.type='square';[0,.07].forEach(d=>{o.frequency.setValueAtTime(2400-d*4000,t+d);g.gain.setValueAtTime(.07,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.04);});o.start(t);o.stop(t+.12);}
+  else if(type==='chomp'){o.type='triangle';[0,.16,.32].forEach(d=>{o.frequency.setValueAtTime(180,t+d);o.frequency.exponentialRampToValueAtTime(90,t+d+.08);g.gain.setValueAtTime(.25,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.1);});o.start(t);o.stop(t+.45);}
+}
+
+/* ---------- pet care ---------- */
+const headOf=k=>k==='squirrel'?[125,50]:[122,55];
+// where the fluffy tufts grow: four around the head, one on each side of the body
+function tuftPos(k){const [hc,hr]=headOf(k);return [-2.55,-.6,2.75,.4].map(a=>[150+Math.cos(a)*hr,hc+Math.sin(a)*hr,a]).concat([[93,222,Math.PI],[207,222,0]]);}
+const bubble=b=>`<circle cx="${b.x.toFixed(1)}" cy="${b.y.toFixed(1)}" r="${b.r.toFixed(1)}" fill="#fff" fill-opacity=".88" stroke="#cfe6ff" stroke-width="1.2"/><circle cx="${(b.x-b.r*.35).toFixed(1)}" cy="${(b.y-b.r*.35).toFixed(1)}" r="${(b.r*.25).toFixed(1)}" fill="#fff"/>`;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function tick(){const now=Date.now();
+  for(const k in S.care){const C=S.care[k],h=Math.max(0,(now-C.t)/36e5);
+    C.food=Math.max(0,C.food-h*6);C.clean=Math.max(0,C.clean-h*1.5);
+    if(C.tufts.length<6){C.grow+=h;while(C.grow>=8&&C.tufts.length<6){C.tufts.push([0,1,2,3,4,5].find(i=>!C.tufts.includes(i)));C.grow-=8;}}else C.grow=0;
+    if(C.cutAt&&now-C.cutAt>48*36e5){C.nails=C.nails.map(()=>1);C.cutAt=0;}
+    C.t=now;}
+  save();}
+function needs(){const C=S.care[S.kind],n=[];if(C.food<40)n.push('🍖');if(C.clean<50)n.push('🛁');if(C.tufts.length>=3)n.push('✂️');if(C.nails.filter(Boolean).length>=3)n.push('💅');return n;}
+function renderNeeds(){const n=needs();let el=$('#needs');if(!n.length){if(el)el.remove();return;}
+  if(!el){el=document.createElement('div');el.id='needs';el.className='needs';$('#stage').appendChild(el);}el.textContent='💭 '+n.join(' ');}
+const bars=()=>{const C=S.care[S.kind],r=(n,v)=>`<div class="bar">${n}<i><b style="width:${Math.round(v)}%"></b></i></div>`;
+  return r('🍖 Tummy',C.food)+r('🫧 Clean',C.clean)+r('✂️ Tidy fur',100-C.tufts.length/6*100)+r('🐾 Short nails',C.nails.filter(x=>!x).length/6*100);};
+function updateBars(){const b=$('#bars');if(b)b.innerHTML=bars();renderNeeds();}
+function say(text){const b=document.createElement('div');b.className='say';b.textContent=text;$('#stage').appendChild(b);setTimeout(()=>b.remove(),1200);}
+// svg point -> spot on the stage, for floating hearts
+function stageXY(x,y){const svg=$('#stage svg'),P=svg.createSVGPoint();P.x=x;P.y=y;const q=P.matrixTransform(svg.getScreenCTM()),r=$('#stage').getBoundingClientRect();return [q.x-r.left,q.y-r.top];}
+function hearts(n=4,e='💖'){const [x,y]=stageXY(150,120);for(let i=0;i<n;i++)setTimeout(()=>{const s=document.createElement('span');s.className='float';s.textContent=e;s.style.left=(x+rnd(-60,50))+'px';s.style.top=(y+rnd(-30,30))+'px';$('#stage').appendChild(s);setTimeout(()=>s.remove(),1100);},i*120);}
+function fxAdd(html,ms=650){const g=$('#fx');if(!g)return;const t=document.createElementNS('http://www.w3.org/2000/svg','g');t.innerHTML=html;g.appendChild(t);setTimeout(()=>t.remove(),ms);}
+function hello(){const p=$('#pet');if(!p)return;p.classList.remove('hop');void p.getBoundingClientRect();p.classList.add('hop');voice(S.kind);
+  const C=S.care[S.kind];say(C.food<40?"I'm hungry! 🍖":C.clean<50?'Bath time? 🛁':KINDS.find(x=>x.id===S.kind).say);}
+function onPet(x,y){const [hc,hr]=headOf(S.kind);return Math.hypot(x-150,y-hc)<hr+8||((x-150)/66)**2+((y-215)/76)**2<1||(y>225&&y<300&&x>70&&x<230);}
+
+function feed(e){const C=S.care[S.kind];if(T.eating)return;if(C.food>=95){say("I'm full! 😋");return;}
+  const g=$('#fx');if(!g)return;T.eating=1;
+  const el=document.createElementNS('http://www.w3.org/2000/svg','text');el.setAttribute('text-anchor','middle');el.textContent=e;g.appendChild(el);
+  const t0=performance.now(),[,hr]=headOf(S.kind),my=S.kind==='squirrel'?150:150;
+  (function step(now){const k=Math.min(1,(now-t0)/750),x=246+(150-246)*k,y=300+(my-300)*k-Math.sin(k*Math.PI)*50;
+    el.setAttribute('x',x.toFixed(1));el.setAttribute('y',y.toFixed(1));el.setAttribute('font-size',(30*(1-k*.45)).toFixed(1));
+    if(k<1)return requestAnimationFrame(step);
+    el.remove();T.eating=0;C.food=Math.min(100,C.food+30);save();renderStage();updateBars();sfx('chomp');say(C.food>=95?'Yum! All full! 😋':'Nom nom! 😋');hearts(3);})(t0);}
+
+let down=false;
+function careAct(e,tap){
+  const svg=$('#stage svg');if(!svg)return;const P=svg.createSVGPoint();P.x=e.clientX;P.y=e.clientY;const p=P.matrixTransform(svg.getScreenCTM().inverse());
+  const C=S.care[S.kind],on=onPet(p.x,p.y),tool=S.tool,fx=$('#fx');
+  if(!tap&&T.last&&Math.hypot(p.x-T.last.x,p.y-T.last.y)<7)return;T.last={x:p.x,y:p.y};
+  if(!tool){if(tap&&on)hello();return;}
+  if(tool==='soap'){if(!on)return;if(T.foam.length<70){const b={x:p.x+rnd(-4,4),y:p.y+rnd(-4,4),r:rnd(6,12)};T.foam.push(b);fx.insertAdjacentHTML('beforeend',bubble(b));}
+    T.soaped++;if(tap||T.soaped%5===0)sfx('pop');if(T.soaped===24)say('So bubbly! 🫧');return;}
+  if(tool==='rinse'){fxAdd([0,1,2].map(i=>`<path class="drip" d="M${p.x+i*7-7} ${p.y-6} q4 7 0 9 q-4 -2 0 -9z" fill="#5fb8ff"/>`).join(''));sfx('splash');
+    const n=T.foam.length;T.foam=T.foam.filter(b=>Math.hypot(b.x-p.x,b.y-p.y)>24);
+    if(T.foam.length!==n)fx.innerHTML=T.foam.map(bubble).join('');
+    if(!T.foam.length&&T.soaped>=15&&!T.rinsed){T.rinsed=1;T.wet=1;C.clean=100;save();renderStage();updateBars();say('Squeaky clean! ✨');}
+    else if(!T.foam.length&&T.soaped<15&&tap&&on)say('Soap first! 🧼');return;}
+  if(tool==='dry'){if(!on)return;fxAdd(`<circle class="puff" cx="${p.x}" cy="${p.y}" r="8" fill="#fff" opacity=".8"/>`);sfx('whoosh');
+    if(T.wet&&++T.dry>=20){T.wet=0;T.dry=0;T.soaped=0;T.rinsed=0;renderStage();say('So fluffy! 💕');hearts();}return;}
+  if(tool==='brush'){if(!on)return;fxAdd(`<text class="puff" x="${p.x}" y="${p.y}" font-size="13" text-anchor="middle">✨</text>`);if(++T.brush%15===0){hearts(3);voice(S.kind);}return;}
+  if(!tap)return;
+  if(tool==='trim'){let best=-1,bd=26;tuftPos(S.kind).forEach(([x,y],i)=>{const d=Math.hypot(x-p.x,y-p.y);if(C.tufts.includes(i)&&d<bd){bd=d;best=i;}});if(best<0)return;
+    const [x,y]=tuftPos(S.kind)[best];C.tufts=C.tufts.filter(i=>i!==best);save();renderStage();updateBars();sfx('snip');
+    fxAdd([0,1,2,3].map(i=>`<path class="drip" d="M${x+i*5-8} ${y} l3 7 l-6 0z" fill="${S.fur[S.kind]}"/>`).join(''));
+    if(!C.tufts.length){say('Looking sharp! ✂️');hearts();}return;}
+  if(tool==='clip'||tool==='polish'){let best=-1,bd=12;NAILPOS.forEach(([x,y],i)=>{const d=Math.hypot(x-p.x,y-p.y);if(d<bd){bd=d;best=i;}});if(best<0)return;
+    if(tool==='clip'){if(!C.nails[best]){say('Already short!');return;}C.nails[best]=0;C.cutAt=Date.now();sfx('snip');save();renderStage();updateBars();if(C.nails.every(x=>!x)){say('Nice neat nails! 🐾');hearts();}}
+    else{C.polish[best]=S.polishC;sfx('pop');save();renderStage();if(C.polish.every(x=>x)){say('So pretty! 💅');hearts(4,'💅');}}}
+}
+$('#stage').addEventListener('pointerdown',e=>{if(S.mode!=='care')return;down=true;T.last=null;careAct(e,true);});
+$('#stage').addEventListener('pointermove',e=>{if(down)careAct(e,false);});
+['pointerup','pointercancel','pointerleave'].forEach(t=>$('#stage').addEventListener(t,()=>{down=false;}));
 
 /* ---------- screen ---------- */
-function render(){
-  $('#stage').innerHTML=petSVG();
-  $('#pet').addEventListener('click',()=>{const p=$('#pet');p.classList.remove('hop');void p.getBoundingClientRect();p.classList.add('hop');voice(S.kind);
-    const b=document.createElement('div');b.className='say';b.textContent=KINDS.find(x=>x.id===S.kind).say;$('#stage').appendChild(b);setTimeout(()=>b.remove(),1200);});
-  $('#pets').innerHTML=KINDS.map(k=>`<button class="${S.kind===k.id?'on':''}" data-kind="${k.id}"><span>${k.e}</span>${k.name}</button>`).join('');
-  const fit=S.fit[S.kind],grid=(act,list,sel)=>`<div class="grid">${list.map(x=>`<button class="item ${sel===x.id?'on':''}" data-act="${act}" data-id="${x.id}"><span class="big">${x.e}</span>${x.name}</button>`).join('')}</div>`;
-  const sw=(act,list,sel)=>`<div class="swatches">${list.map(c=>`<button class="sw ${sel===c?'on':''}" style="background:${c}" data-act="${act}" data-id="${c}" aria-label="${c}"></button>`).join('')}</div>`;
-  const sc=$('#content').scrollTop;
-  $('#content').innerHTML=`<h3>Name</h3><div class="row"><input id="petName" maxlength="16" value="${S.names[S.kind].replace(/"/g,'&quot;')}" aria-label="Pet name"></div>
+const grid=(act,list,sel)=>`<div class="grid">${list.map(x=>`<button class="item ${sel===x.id?'on':''}" data-act="${act}" data-id="${x.id}"><span class="big">${x.e}</span>${x.name}</button>`).join('')}</div>`;
+const sw=(act,list,sel)=>`<div class="swatches">${list.map(c=>`<button class="sw ${sel===c?'on':''}" style="background:${c}" data-act="${act}" data-id="${c}" aria-label="${c}"></button>`).join('')}</div>`;
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function renderStage(){const st=$('#stage'),care=S.mode==='care';st.classList.toggle('care',care);
+  st.innerHTML=petSVG()+(care&&S.tool?`<div class="hint">${TOOLS[S.tool]}</div>`:'');renderNeeds();
+  if(!care)$('#pet').addEventListener('click',hello);}
+function dressPanel(){const fit=S.fit[S.kind];
+  return `<h3>Name</h3><div class="row"><input id="petName" maxlength="16" value="${esc(S.names[S.kind])}" aria-label="Pet name"></div>
     <h3>🎃 Costume</h3>${grid('body',COSTUMES,fit.body)}
     <h3>🎩 Hat</h3>${grid('hat',HATS,fit.hat)}
     <h3>🎀 Neck</h3>${grid('neck',NECKS,fit.neck)}
     <h3>🖍️ Costume color</h3>${sw('color',COLORS,fit.c)}
     <h3>🎨 Fur</h3>${sw('fur',FUR[S.kind],S.fur[S.kind])}
-    <h3>📍 Place</h3>${grid('bg',PLACES,S.bg)}
-    <div class="soon">🚧 <b>Coming soon:</b> more pets, more costumes, and taking your pet into the dress-up game. Tap your pet to say hi!</div>`;
+    <h3>📍 Place</h3>${grid('bg',PLACES,S.bg)}`;}
+function carePanel(){const tool=(id,e,n)=>({id,e,name:n});
+  return `<h3>💗 How is ${esc(S.names[S.kind])}?</h3><div class="bars" id="bars">${bars()}</div>
+    <h3>🍽️ Feed</h3>${grid('feed',FOODS[S.kind].concat([['🍪','Treat']]).map(([e,n])=>({id:e,e,name:n})),null)}
+    <h3>🛁 Bath time</h3>${grid('tool',[tool('soap','🧼','Soap'),tool('rinse','🚿','Rinse'),tool('dry','🌬️','Dry')],S.tool)}
+    <h3>✂️ Haircut</h3>${grid('tool',[tool('trim','✂️','Trim'),tool('brush','✨','Brush')],S.tool)}
+    <h3>💅 Nails</h3>${grid('tool',[tool('clip','🐾','Clip'),tool('polish','💅','Polish')],S.tool)}
+    <div style="margin-top:10px">${sw('polishc',COLORS,S.tool==='polish'?S.polishC:null)}</div>
+    <div class="row" style="margin-top:10px"><button class="pill" data-act="paintall">💅 Paint all</button><button class="pill soft" data-act="wipe">🧽 Remove polish</button></div>`;}
+function renderPanel(){
+  $('#pets').innerHTML=KINDS.map(k=>`<button class="${S.kind===k.id?'on':''}" data-kind="${k.id}"><span>${k.e}</span>${k.name}</button>`).join('');
+  $('#modes').innerHTML=[['dress','🎃 Dress up'],['care','🛁 Pet care']].map(([id,n])=>`<button class="${S.mode===id?'on':''}" data-mode="${id}">${n}</button>`).join('');
+  const sc=$('#content').scrollTop;
+  $('#content').innerHTML=(S.mode==='care'?carePanel():dressPanel())+`<div class="soon">🚧 <b>Coming soon:</b> more pets, more costumes, and taking your pet into the dress-up game. Tap your pet to say hi!</div>`;
   $('#content').scrollTop=sc;
-  $('#petName').addEventListener('input',e=>{S.names[S.kind]=e.target.value.trim()||KINDS.find(x=>x.id===S.kind).name;save();});
+  const n=$('#petName');if(n)n.addEventListener('input',e=>{S.names[S.kind]=e.target.value.trim()||KINDS.find(x=>x.id===S.kind).name;save();});
 }
-$('#pets').addEventListener('click',e=>{const b=e.target.closest('[data-kind]');if(!b)return;S.kind=b.dataset.kind;save();render();});
-$('#content').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const fit=S.fit[S.kind],id=b.dataset.id;
-  switch(b.dataset.act){case 'body':fit.body=id;break;case 'hat':fit.hat=id;break;case 'neck':fit.neck=id;break;case 'color':fit.c=id;break;case 'fur':S.fur[S.kind]=id;break;case 'bg':S.bg=id;break;}
+function render(){renderStage();renderPanel();}
+const freshT=()=>({foam:[],soaped:0,rinsed:0,wet:0,dry:0,brush:0,last:null,snd:0});
+$('#pets').addEventListener('click',e=>{const b=e.target.closest('[data-kind]');if(!b)return;S.kind=b.dataset.kind;T=freshT();save();render();});
+$('#modes').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b||S.mode===b.dataset.mode)return;S.mode=b.dataset.mode;S.tool=null;T=freshT();save();render();$('#content').scrollTop=0;});
+$('#content').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const fit=S.fit[S.kind],C=S.care[S.kind],id=b.dataset.id;
+  switch(b.dataset.act){case 'body':fit.body=id;break;case 'hat':fit.hat=id;break;case 'neck':fit.neck=id;break;case 'color':fit.c=id;break;case 'fur':S.fur[S.kind]=id;break;case 'bg':S.bg=id;break;
+    case 'feed':feed(id);return;
+    case 'tool':S.tool=S.tool===id?null:id;T.last=null;break;
+    case 'polishc':S.polishC=id;S.tool='polish';break;
+    case 'paintall':C.polish=C.polish.map(()=>S.polishC);sfx('pop');hearts(3,'💅');break;
+    case 'wipe':C.polish=C.polish.map(()=>0);break;}
   save();render();});
-$('#randBtn').onclick=()=>{const r=a=>a[Math.random()*a.length|0],fit=S.fit[S.kind];fit.body=r(COSTUMES.slice(1)).id;fit.hat=r(HATS).id;fit.neck=r(NECKS).id;fit.c=r(COLORS);save();render();};
+$('#randBtn').onclick=()=>{if(S.mode==='care'){S.mode='dress';S.tool=null;}const r=a=>a[Math.random()*a.length|0],fit=S.fit[S.kind];fit.body=r(COSTUMES.slice(1)).id;fit.hat=r(HATS).id;fit.neck=r(NECKS).id;fit.c=r(COLORS);save();render();};
+tick();setInterval(()=>{tick();updateBars();},60000);
 render();
 </script>
 </body>
