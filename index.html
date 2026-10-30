@@ -84,6 +84,15 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .card input{width:100%;font-size:16px;font-weight:600;border:2px solid #eadcf0;border-radius:10px;padding:6px 8px;color:var(--ink);background:#fff}
 .pill{background:var(--pink);color:#fff;border-radius:999px;padding:8px 12px;font-weight:600;font-size:14px}
 .pill.soft{background:#f6e3ef;color:var(--ink)}
+.tbtn .badge{background:#ff3b6b;color:#fff;border-radius:999px;font-size:11px;padding:1px 6px;margin-left:-2px}
+.msg{background:#fff4fa;border-radius:16px;padding:10px 12px;margin:8px 0;text-align:left}
+.msg.new{background:#ffe2f0;box-shadow:0 0 0 2px #ff8fc8 inset}
+.msg .mwho{font-weight:700}.msg .when{font-size:12px;color:var(--muted)}
+.msg p{margin:6px 0;white-space:pre-wrap}
+.msg .row{display:flex;gap:6px;flex-wrap:wrap}
+.msgform{display:flex;flex-direction:column;gap:8px}
+.msgform input,.msgform textarea{font:inherit;border:2px solid #f0d6e6;border-radius:14px;padding:8px 10px;width:100%;box-sizing:border-box}
+#cloudBody p{margin:8px 0}
 .pill.warn{background:#ff6b6b}
 .small{font-size:12px;color:var(--muted)}
 .addrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
@@ -123,6 +132,8 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
   <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span></button>
   <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
+  <button class="tbtn" id="msgBtn" title="Messages" style="display:none">💌 <span class="lbl">Messages</span><span class="badge" id="msgBadge" style="display:none"></span></button>
+  <button class="tbtn" id="cloudBtn" title="Cloud save">☁️ <span class="lbl" id="cloudLbl">Sign in</span></button>
 </header>
 <main>
   <div class="stage" id="stage"></div>
@@ -198,6 +209,25 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="cards" id="galCards"></div>
   <h2 style="margin-top:20px">🎥 My Videos</h2>
   <div class="cards" id="galVideos"></div>
+</div></div>
+
+<div class="modal" id="cloudModal"><div class="sheet" style="max-width:420px;text-align:center">
+  <button class="close" data-close>×</button>
+  <h2>☁️ Cloud Save</h2>
+  <div id="cloudBody"></div>
+</div></div>
+
+<div class="modal" id="msgModal"><div class="sheet" style="max-width:480px">
+  <button class="close" data-close>×</button>
+  <h2>💌 Messages</h2>
+  <div id="msgList"></div>
+  <h3>Send a message</h3>
+  <div class="msgform">
+    <input id="msgFrom" maxlength="20" placeholder="From" aria-label="From">
+    <textarea id="msgText" maxlength="500" rows="2" placeholder="Write something sweet…" aria-label="Message"></textarea>
+    <div class="mrow"><button class="pill" id="msgRec" style="background:#8e6cff">🎙️ Record</button><span id="msgRecInfo" class="hint"></span></div>
+    <button class="big-btn" id="msgSend">Send 💌</button>
+  </div>
 </div></div>
 
 <div id="welcome"><div class="wbox">
@@ -619,7 +649,7 @@ function load(){
 }
 let DB=load();
 let warnedFull=false;
-function persist(){try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){if(!warnedFull&&typeof toast==='function'){warnedFull=true;toast('😕 Storage is full. Delete some gallery photos.');}}}
+function persist(){if(!window.__applyingRemote){const c=me();if(c)c.at=Date.now();}try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){if(!warnedFull&&typeof toast==='function'){warnedFull=true;toast('😕 Storage is full. Delete some gallery photos.');}}if(typeof window.onPersist==='function')window.onPersist();}
 const me=()=>DB.chars.find(c=>c.id===DB.cur)||DB.chars[0];
 const L=()=>me().look;
 let tab='me',lastExtra=null,quickOpen=false;
@@ -1372,6 +1402,238 @@ document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=
 renderTabs();renderStage();renderPanel();
 loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
 if(!DB.welcomed)showWelcome();
+</script>
+<script type="module">
+/* ---------- cloud save + messages (Firebase, free Spark plan) ---------- */
+const FB_CONFIG={apiKey:"AIzaSyCz20IcwmqTfaUR6N2Ik8YUliZkvi_ICCw",authDomain:"brynny-dress-up.firebaseapp.com",projectId:"brynny-dress-up",storageBucket:"brynny-dress-up.firebasestorage.app",messagingSenderId:"76439287191",appId:"1:76439287191:web:83a94aed952e8711ccc0d2"};
+const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
+const SENT_KEY='brynny-cloud-sent',MSG_SENT_KEY='brynny-msgs-sent-here',FROM_KEY='brynny-msg-from';
+let F=null,loading=null,auth=null,fs=null,user=null,ready=false,failed=false,unsubs=[],lastSent={},syncTimer=null,syncing=false,again=false,busy=false,pendingRender=false,warnedBig=false;
+let msgs=[],player=null,recAudio=null,recState=null;
+const sentHere=new Set((()=>{try{return JSON.parse(localStorage.getItem(MSG_SENT_KEY))||[];}catch(e){return [];}})());
+const hash=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const saveSent=()=>user&&lsSet(SENT_KEY,{uid:user.uid,map:lastSent});
+const loadSent=uid=>{try{const s=JSON.parse(localStorage.getItem(SENT_KEY));return s&&s.uid===uid?s.map:{};}catch(e){return {};}};
+const col=n=>F.collection(fs,'families',user.uid,n);
+
+function loadSDK(){
+  if(loading)return loading;
+  loading=(async()=>{
+    const [a,au,f]=await Promise.all(['app','auth','firestore'].map(n=>import(SDK+'firebase-'+n+'.js')));
+    F={...a,...au,...f};
+    const app=F.initializeApp(FB_CONFIG);
+    auth=F.getAuth(app);
+    try{fs=F.initializeFirestore(app,{localCache:F.persistentLocalCache()});}catch(e){fs=F.getFirestore(app);}
+    F.getRedirectResult(auth).catch(()=>{});
+    F.onAuthStateChanged(auth,onUser);
+    failed=false;return F;
+  })();
+  loading.catch(()=>{loading=null;failed=true;updateBtn();});
+  return loading;
+}
+
+async function signIn(){
+  if(!F){toast('☁️ Getting ready…');try{await loadSDK();}catch(e){toast('😕 Can\'t reach the cloud right now');return;}}
+  const p=new F.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
+  try{await F.signInWithPopup(auth,p);}catch(e){
+    const c=(e&&e.code)||'';
+    if(/popup-blocked|operation-not-supported|web-storage-unsupported/.test(c)){try{await F.signInWithRedirect(auth,p);}catch(e2){toast('😕 Sign-in didn\'t work. Try again?');}}
+    else if(!/popup-closed|cancelled-popup/.test(c))toast('😕 Sign-in didn\'t work ('+(c.replace('auth/','')||'try again')+')');
+  }
+}
+
+/* ---------- local <-> cloud ---------- */
+const KINDS=['chars','gallery','art'];
+function localItems(){const w={};DB.chars.forEach(c=>w['chars/'+c.id]=c);DB.gallery.forEach(g=>w['gallery/'+g.id]=g);Object.values(ART).forEach(a=>w['art/'+a.id]=a);return w;}
+function getLocal(kind,id){return kind==='chars'?DB.chars.find(c=>c.id===id):kind==='gallery'?DB.gallery.find(g=>g.id===id):ART[id];}
+function setLocal(kind,o){
+  if(kind==='chars'){const i=DB.chars.findIndex(c=>c.id===o.id);if(i<0)DB.chars.push(o);else DB.chars[i]=o;}
+  else if(kind==='gallery'){const i=DB.gallery.findIndex(g=>g.id===o.id);if(i<0){DB.gallery.push(o);DB.gallery.sort((a,b)=>(b.at||0)-(a.at||0));}else DB.gallery[i]=o;}
+  else{ART[o.id]=o;ArtDB.put(o).catch(()=>{});}
+}
+function removeLocal(kind,id){
+  if(kind==='chars'){if(DB.chars.length<2||!DB.chars.some(c=>c.id===id))return false;DB.chars=DB.chars.filter(c=>c.id!==id);if(DB.cur===id)DB.cur=DB.chars[0].id;}
+  else if(kind==='gallery'){if(!DB.gallery.some(g=>g.id===id))return false;DB.gallery=DB.gallery.filter(g=>g.id!==id);}
+  else{if(!ART[id])return false;delete ART[id];ArtDB.del(id);}
+  return true;
+}
+function applyDoc(kind,id,d,removed){
+  const key=kind+'/'+id;
+  if(removed){if(!(key in lastSent))return false;delete lastSent[key];return removeLocal(kind,id);}
+  if(!d||typeof d.json!=='string')return false;
+  const h=hash(d.json);if(lastSent[key]===h)return false;
+  let o;try{o=JSON.parse(d.json);}catch(e){return false;}
+  const loc=getLocal(kind,id);
+  if(loc&&(loc.at||0)>(d.at||0))return false; // ours is newer; sync() will send it
+  lastSent[key]=h;setLocal(kind,o);return true;
+}
+// first time this device links: match characters by name so there aren't two "Brynny"s
+function adoptByName(docs){
+  const remote=docs.map(d=>{try{return JSON.parse(d.data().json);}catch(e){return null;}}).filter(Boolean);
+  const ids=new Set(remote.map(r=>r.id));
+  for(const r of remote){
+    if(DB.chars.some(c=>c.id===r.id))continue;
+    const c=DB.chars.find(c=>!ids.has(c.id)&&(c.name||'').trim().toLowerCase()===(r.name||'').trim().toLowerCase());
+    if(c){if(DB.cur===c.id)DB.cur=r.id;c.id=r.id;}
+  }
+}
+function commitLocal(){window.__applyingRemote=true;persist();window.__applyingRemote=false;saveSent();refresh();}
+function refresh(){
+  if(busy||document.querySelector('#braidModal.show,#cropModal.show,#camModal.show,#artModal.show')){pendingRender=true;return;}
+  pendingRender=false;
+  renderStage();renderPanel();
+  if($('#galModal').classList.contains('show'))renderGallery();
+  if($('#whoModal').classList.contains('show'))renderWho();
+}
+document.addEventListener('pointerdown',()=>{busy=true;},true);
+const done=()=>{busy=false;if(pendingRender)setTimeout(refresh,50);};
+document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',done,true);
+document.addEventListener('click',e=>{if(pendingRender&&e.target.closest('[data-close]'))setTimeout(refresh,50);},true);
+
+async function onUser(u){
+  unsubs.forEach(f=>f());unsubs=[];ready=false;user=u;msgs=[];updateBtn();renderCloud();
+  if(!u)return;
+  const first=DB.cloudUid!==u.uid;
+  lastSent=first?{}:loadSent(u.uid);
+  try{
+    const snaps=await Promise.all(KINDS.map(k=>F.getDocs(col(k))));
+    if(user!==u)return;
+    if(first)adoptByName(snaps[0].docs);
+    let changed=false;
+    snaps.forEach((s,i)=>s.docs.forEach(d=>{if(applyDoc(KINDS[i],d.id,d.data()))changed=true;}));
+    // a delete that happened on another device while this one was closed
+    if(!first){const there=new Set();snaps.forEach((s,i)=>s.docs.forEach(d=>there.add(KINDS[i]+'/'+d.id)));
+      for(const k of Object.keys(lastSent))if(!there.has(k)){const [kind,id]=k.split('/');if(applyDoc(kind,id,null,true))changed=true;}}
+    if(first&&!DB.cloudEver&&snaps.some(s=>s.size))toast('☁️ Your looks are here!');
+    DB.cloudUid=u.uid;DB.cloudEver=true;commitLocal();
+  }catch(e){if(user!==u)return;console.warn('cloud pull',e);}
+  ready=true;sync();
+  KINDS.forEach(k=>unsubs.push(F.onSnapshot(col(k),s=>{
+    let changed=false;
+    s.docChanges().forEach(ch=>{if(applyDoc(k,ch.doc.id,ch.doc.data(),ch.type==='removed'))changed=true;});
+    if(changed)commitLocal();
+  },e=>console.warn('cloud listen',e))));
+  listenMessages();
+}
+
+function sync(){
+  if(!ready||!user)return;
+  if(syncing){again=true;return;}
+  syncing=true;
+  try{
+    const want=localItems(),ops=[];
+    for(const k in want){const json=JSON.stringify(want[k]);const h=hash(json);if(lastSent[k]===h)continue;
+      if(json.length>950000){if(!warnedBig){warnedBig=true;toast('☁️ One thing is too big for the cloud, so it stays on this device');}continue;}
+      ops.push({k,json,h,at:want[k].at||0});}
+    for(const k in lastSent)if(!(k in want))ops.push({k,del:true});
+    if(!ops.length)return;
+    let b=F.writeBatch(fs),size=0,keys=[];
+    const flush=()=>{const ks=keys;b.commit().catch(e=>{console.warn('cloud save',e);ks.forEach(k=>delete lastSent[k]);saveSent();if(e&&e.code==='permission-denied')toast('😕 Cloud said no. Check the Firestore rules.');});b=F.writeBatch(fs);size=0;keys=[];};
+    for(const o of ops){
+      const [kind,id]=o.k.split('/'),ref=F.doc(fs,'families',user.uid,kind,id);
+      if(o.del){b.delete(ref);delete lastSent[o.k];}
+      else{if(size+o.json.length>7e6)flush();b.set(ref,{json:o.json,at:o.at});lastSent[o.k]=o.h;keys.push(o.k);size+=o.json.length;}
+      if(keys.length>=400)flush();
+    }
+    flush();saveSent();
+  }finally{syncing=false;if(again){again=false;setTimeout(sync,0);}}
+}
+window.onPersist=()=>{clearTimeout(syncTimer);syncTimer=setTimeout(sync,2000);};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&syncTimer){clearTimeout(syncTimer);sync();}});
+
+/* ---------- header button + cloud sheet ---------- */
+function updateBtn(){
+  $('#cloudBtn').innerHTML=user?'✅ <span class="lbl">Saved</span>':'☁️ <span class="lbl">Sign in</span>';
+  $('#msgBtn').style.display=user?'':'none';
+  renderBadge();
+}
+function renderCloud(){
+  const b=$('#cloudBody');if(!b)return;
+  if(user)b.innerHTML=`<p>Signed in as <b>${esc(user.email||user.displayName||'you')}</b></p>
+    <p>✅ Characters, saved looks, selfies, and drawings are kept in the cloud. Sign in with this same Google account on any phone, tablet, or computer to see them there too.</p>
+    <p class="hint">Videos and songs stay on the device they were made on.</p>
+    <div class="mrow" style="justify-content:center"><button class="pill soft" id="cloudOut">Sign out</button></div>`;
+  else b.innerHTML=`<p>Sign in to keep your looks safe and see them on every device. 💖</p>
+    <button class="big-btn" id="cloudIn">Sign in with Google</button>
+    <p class="hint">${failed?'😕 Can\'t reach the cloud right now. Check the internet and try again.':'Use the family Google account on every device.'}</p>`;
+}
+$('#cloudBtn').onclick=()=>{renderCloud();$('#cloudModal').classList.add('show');};
+$('#cloudBody').addEventListener('click',async e=>{
+  if(e.target.id==='cloudIn'){await signIn();if(user)$('#cloudModal').classList.remove('show');}
+  if(e.target.id==='cloudOut'){clearTimeout(syncTimer);sync();await F.signOut(auth);toast('👋 Signed out. Your looks are still on this device.');renderCloud();}
+});
+
+/* ---------- messages ---------- */
+const mine=m=>sentHere.has(m.id);
+function renderBadge(){const n=user?msgs.filter(m=>!m.heard&&!mine(m)).length:0;const b=$('#msgBadge');b.textContent=n;b.style.display=n?'':'none';}
+function listenMessages(){
+  let firstSnap=true;
+  unsubs.push(F.onSnapshot(F.query(col('messages'),F.orderBy('at','desc'),F.limit(50)),s=>{
+    const fresh=s.docChanges().filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(m=>!m.heard&&!mine(m));
+    msgs=s.docs.map(d=>({id:d.id,...d.data()}));
+    if(fresh.length){toast(firstSnap&&fresh.length>1?`💌 You have ${fresh.length} new messages!`:`💌 New message from ${fresh[0].from||'someone'}!`);if(typeof Music!=='undefined')Music.sfx('snap');}
+    firstSnap=false;renderBadge();if($('#msgModal').classList.contains('show'))renderMsgs();
+  },e=>console.warn('messages',e)));
+}
+function renderMsgs(){
+  $('#msgList').innerHTML=msgs.length?msgs.map(m=>`<div class="msg${!m.heard&&!mine(m)?' new':''}">
+    <div><span class="mwho">💌 ${esc(m.from||'Someone')}</span> <span class="when">${new Date(m.at).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}${mine(m)?' · sent from here':''}</span></div>
+    ${m.text?`<p>${esc(m.text)}</p>`:''}
+    <div class="row">${m.audio?`<button class="pill" data-mplay="${m.id}">▶️ Play</button>`:''}<button class="pill soft" data-mdel="${m.id}">🗑️</button></div></div>`).join('')
+    :`<div class="empty">No messages yet.</div>`;
+}
+function stopPlayer(){if(player){player.pause();player=null;}}
+function playAudio(src){stopPlayer();Music.stopAll();player=new Audio(src);player.onended=()=>{player=null;if(musicStarted)applyMusic();};player.play().catch(()=>toast('😕 Couldn\'t play that one'));}
+$('#msgBtn').onclick=()=>{
+  renderMsgs();$('#msgModal').classList.add('show');
+  $('#msgFrom').value=$('#msgFrom').value||localStorage.getItem(FROM_KEY)||'Dad';
+  msgs.filter(m=>!m.heard&&!mine(m)).forEach(m=>{m.heard=true;F.updateDoc(F.doc(col('messages'),m.id),{heard:true}).catch(()=>{});});
+  renderBadge();
+};
+$('#msgList').addEventListener('click',e=>{
+  const p=e.target.closest('[data-mplay]'),d=e.target.closest('[data-mdel]');
+  if(p){const m=msgs.find(x=>x.id===p.dataset.mplay);if(m)playAudio(m.audio);}
+  if(d){if(!d.dataset.sure){d.dataset.sure=1;d.textContent='Sure?';d.classList.add('warn');return;}
+    F.deleteDoc(F.doc(col('messages'),d.dataset.mdel)).catch(()=>toast('😕 Couldn\'t delete it'));}
+});
+function recInfo(){
+  const i=$('#msgRecInfo');
+  if(recState)i.innerHTML=`🔴 Recording… ${recState.secs}s`;
+  else if(recAudio)i.innerHTML=`✅ Voice ready (${recAudio.secs}s) <button class="pill soft" id="msgHear">▶️</button> <button class="pill soft" id="msgDrop">✖</button>`;
+  else i.textContent='Up to 60 seconds';
+  $('#msgRec').textContent=recState?'⏹️ Stop':'🎙️ Record';
+}
+$('#msgRecInfo').addEventListener('click',e=>{if(e.target.id==='msgHear'&&recAudio)playAudio(recAudio.data);if(e.target.id==='msgDrop'){recAudio=null;recInfo();}});
+$('#msgRec').onclick=async()=>{
+  if(recState){recState.rec.stop();return;}
+  if(!navigator.mediaDevices||!window.MediaRecorder){toast('😕 This browser can\'t record sound');return;}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){toast('🎙️ Please allow the microphone');return;}
+  stopPlayer();Music.stopAll();
+  const mime=pickMime('audio'),opts={audioBitsPerSecond:24000};if(mime)opts.mimeType=mime;
+  let rec;try{rec=new MediaRecorder(stream,opts);}catch(e){rec=new MediaRecorder(stream);}
+  const chunks=[],st={rec,secs:0};recState=st;
+  st.tick=setInterval(()=>{st.secs++;if(st.secs>=60)rec.stop();recInfo();},1000);
+  rec.ondataavailable=e=>e.data&&e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{clearInterval(st.tick);stream.getTracks().forEach(t=>t.stop());recState=null;
+    const blob=new Blob(chunks,{type:rec.mimeType||mime||'audio/webm'});const fr=new FileReader();
+    fr.onload=()=>{if(fr.result.length>900000){toast('😕 That one is too long. Try a shorter message.');recAudio=null;}else recAudio={data:fr.result,secs:st.secs||1};recInfo();if(musicStarted)applyMusic();};
+    fr.readAsDataURL(blob);};
+  rec.start();recInfo();
+};
+$('#msgSend').onclick=async()=>{
+  if(recState){toast('⏹️ Stop the recording first');return;}
+  const from=$('#msgFrom').value.trim()||'Someone',text=$('#msgText').value.trim();
+  if(!text&&!recAudio){toast('✏️ Write or record something first');return;}
+  lsSet(FROM_KEY,from);try{localStorage.setItem(FROM_KEY,from);}catch(e){}
+  const ref=F.doc(col('messages'));sentHere.add(ref.id);lsSet(MSG_SENT_KEY,[...sentHere].slice(-200));
+  const m={from,text,at:Date.now(),heard:false};if(recAudio)m.audio=recAudio.data;
+  F.setDoc(ref,m).then(()=>toast('💌 Sent!')).catch(e=>{console.warn('send',e);toast('😕 Couldn\'t send. Try again?');});
+  $('#msgText').value='';recAudio=null;recInfo();renderMsgs();
+};
+recInfo();
+updateBtn();
+if(navigator.onLine!==false)loadSDK().catch(()=>{});
 </script>
 </body>
 </html>
