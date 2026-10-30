@@ -180,6 +180,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 <div class="modal" id="detailModal"><div class="sheet" style="max-width:380px;text-align:center">
   <h2>✨ Anything else?</h2>
   <p class="hint" id="detailGuess"></p>
+  <h3 style="text-align:left">Skin</h3><div id="detailSkin"></div>
   <div class="grid" id="detailGrid"></div>
   <button class="big-btn" id="detailDone" style="margin-top:12px">All done! ✨</button>
 </div></div>
@@ -979,6 +980,7 @@ function setZoom(v){
   crop.ox=cx-(cx-crop.ox)*crop.s/old;crop.oy=cy-(cy-crop.oy)*crop.s/old;drawCrop();
 }
 function openCrop(file){
+  getLandmarker().catch(()=>{});
   const url=URL.createObjectURL(file),im=new Image();
   im.onload=()=>{crop.img=im;crop.min=Math.max(2*OV.rx/im.width,2*OV.ry/im.height);crop.s=crop.min;
     crop.ox=300-im.width*crop.s/2;crop.oy=300-im.height*crop.s/2;$('#cropZoom').value=0;setZoom(30);$('#cropZoom').value=30;
@@ -1019,10 +1021,11 @@ function toggleDetail(l,id){
   else{l.feat=l.feat||{};l.feat[id]=!l.feat[id];}
 }
 const detailTiles=l=>DETAILS.map(x=>`<button class="item ${hasDetail(l,x.id)?'on':''}" data-act="detail" data-id="${x.id}"><span class="big">${x.e}</span><span>${x.n}</span></button>`).join('');
-function openDetails(guess){
-  $('#detailGuess').textContent=guess?'It looks like you wear glasses, so I added them. Tap to change.':'Tap anything that looks like you.';
-  $('#detailGrid').innerHTML=detailTiles(L());$('#detailModal').classList.add('show');
+function openDetails(guess,found){
+  $('#detailGuess').textContent=(found?'I copied your face shape, skin, hair and eyes! ':'I couldn\'t find your face, so I only copied colors. Try a closer, brighter selfie. ')+(guess?'It looks like you wear glasses, so I added them.':'Tap anything else that looks like you.');
+  $('#detailGrid').innerHTML=detailTiles(L());$('#detailSkin').innerHTML=swatches('dskin',SKIN,L().skin);$('#detailModal').classList.add('show');
 }
+$('#detailSkin').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;update(l=>{l.skin=b.dataset.c;});$('#detailSkin').innerHTML=swatches('dskin',SKIN,L().skin);});
 $('#detailGrid').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;update(l=>toggleDetail(l,b.dataset.id));$('#detailGrid').innerHTML=detailTiles(L());});
 $('#detailDone').onclick=()=>{$('#detailModal').classList.remove('show');renderStage();renderPanel();sparkle();toast('🪄 Your doll looks just like you!');};
 function nearestSkin(r,g,b){let best=SKIN[0],bd=1e9;for(const h of SKIN){const n=parseInt(h.slice(1),16),d=(r-(n>>16))**2+(g-(n>>8&255))**2+(b-(n&255))**2;if(d<bd){bd=d;best=h;}}return best;}
@@ -1035,7 +1038,7 @@ function getLandmarker(){
   return faceLM;
 }
 async function findFace(c){
-  const lm=await Promise.race([getLandmarker(),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),15000))]);
+  const lm=await Promise.race([getLandmarker(),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),30000))]);
   const r=lm.detect(c);const f=r&&r.faceLandmarks&&r.faceLandmarks[0];return f?f.map(p=>[p.x*600,p.y*600]):null;
 }
 // look at the fitted selfie and copy her face onto the drawn doll
@@ -1043,19 +1046,31 @@ async function readFace(){
   const c=document.createElement('canvas');c.width=600;c.height=600;const x=c.getContext('2d',{willReadFrequently:true}),im=crop.img;
   x.drawImage(im,crop.ox,crop.oy,im.width*crop.s,im.height*crop.s);
   let P=null;try{P=await findFace(c);}catch(e){}
-  const px=(x0,y0,w,h)=>{const d=x.getImageData(x0,y0,w,h).data,o=[];for(let i=0;i<d.length;i+=16)o.push([d[i],d[i+1],d[i+2]]);return o;};
+  let wb=[1,1,1];
+  const px=(x0,y0,w,h)=>{const d=x.getImageData(x0,y0,w,h).data,o=[];for(let i=0;i<d.length;i+=16)o.push([d[i]*wb[0],d[i+1]*wb[1],d[i+2]*wb[2]].map(v=>Math.min(255,v)));return o;};
   const med=a=>{if(!a.length)return null;const m=k=>{const v=a.map(p=>p[k]).sort((p,q)=>p-q);return v[v.length>>1];};return [m(0),m(1),m(2)];};
   const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]),lum=p=>.3*p[0]+.59*p[1]+.11*p[2];
   const hex2=h=>{const n=parseInt(h.slice(1),16);return [n>>16,n>>8&255,n&255];};
   const near=(list,p)=>list.reduce((b,h)=>dist(hex2(h),p)<dist(hex2(b),p)?h:b);
   const cl=(v,a,b)=>Math.max(a,Math.min(b,v)),D=(i,j)=>Math.hypot(P[i][0]-P[j][0],P[i][1]-P[j][1]),R=v=>Math.round(v*100)/100;
   const at=(i,r)=>px(Math.round(P[i][0]-r),Math.round(P[i][1]-r),2*r,2*r);
-  const skin=P?med([...at(50,14),...at(280,14),...at(151,12)]):med([...px(170,320,60,50),...px(370,320,60,50),...px(250,130,100,40)]);
-  const out={skin:nearestSkin(...skin)};
+  if(P&&P.length>473){
+    // the whites of the eyes are white, so use them to undo yellow or blue room lighting
+    const mid=(a,b)=>[(P[a][0]+P[b][0])/2,(P[a][1]+P[b][1])/2],wh=[];
+    for(const [a,b] of [[468,33],[468,133],[473,263],[473,362]]){const [mx,my]=mid(a,b);wh.push(...px(Math.round(mx-3),Math.round(my-3),6,6));}
+    wh.sort((p,q)=>lum(q)-lum(p));const top=wh.slice(0,Math.max(1,wh.length>>1)),W=[0,1,2].map(k=>top.reduce((t,p)=>t+p[k],0)/top.length),avg=(W[0]+W[1]+W[2])/3;
+    if(avg>60)wb=W.map(v=>cl(avg/Math.max(v,1),.8,1.25));
+  }
+  // skin: the lit part of the cheeks, not the shadows
+  const lit=a=>{a=a.filter(p=>lum(p)<245).sort((p,q)=>lum(p)-lum(q));return a.slice(Math.floor(a.length*.4),Math.floor(a.length*.9));};
+  const skin=P?med(lit([...at(50,14),...at(280,14),...at(151,12)])):med([...px(170,320,60,50),...px(370,320,60,50),...px(250,130,100,40)]);
+  // phone cameras make faces look darker than they are, so match on brightness with a little lift
+  const out={skin:P?SKIN.reduce((b,h)=>Math.abs(lum(hex2(h))-lum(skin)*1.18)<Math.abs(lum(hex2(b))-lum(skin)*1.18)?h:b):nearestSkin(...skin)};
   if(P){
     const fw=D(234,454),fh=D(10,152),ew=(D(33,133)+D(362,263))/2;
-    out.feat={eye:R(cl(ew/fw/.215,.85,1.2)),open:R(cl((D(159,145)/D(33,133)+D(386,374)/D(362,263))/2/.3,.7,1.35)),gap:R(cl((D(133,362)/fw-.27)*50,-3,3)),
-      nose:R(cl(D(129,358)/fw/.26,.85,1.25)),mouth:R(cl(D(61,291)/fw/.36,.85,1.2)),lips:R(cl(D(0,17)/D(61,291)/.35,.75,1.35)),
+    const X=(v,a,b)=>R(cl(1+(v-1)*1.6,a,b));
+    out.feat={eye:X(ew/fw/.215,.8,1.25),open:X((D(159,145)/D(33,133)+D(386,374)/D(362,263))/2/.3,.65,1.4),gap:R(cl((D(133,362)/fw-.27)*80,-4,4)),
+      nose:X(D(129,358)/fw/.26,.8,1.3),mouth:X(D(61,291)/fw/.36,.8,1.25),lips:X(D(0,17)/D(61,291)/.35,.7,1.4),
       brow:R(cl(((D(105,159)+D(334,386))/2/fh-.1)*60,-3,3))};
     // glasses: frames make strong edges on the bridge of the nose and under the eyes
     const edge=(i,r)=>{const d=x.getImageData(Math.round(P[i][0]-r),Math.round(P[i][1]-r),2*r,2*r).data,w=2*r;let t=0,n=0;
@@ -1076,7 +1091,7 @@ async function readFace(){
     out.hairColor=near(HAIRC.slice(0,6),hair);
     const frac=a=>a.length?a.filter(p=>dist(p,hair)<60).length/a.length:0;
     const shoulders=frac(shoulderA),cheeks=frac(cheekA);
-    if(shoulders>.45&&cheeks>.3)out.hairStyle='long';else if(cheeks>.4&&shoulders<.15)out.hairStyle='bob';
+    if(shoulders>.45&&cheeks>.3)out.hairStyle='long';else if(cheeks>.4&&shoulders<.15)out.hairStyle='bob';else if(cheeks<.15&&shoulders<.15)out.hairStyle='pixie';
   }
   // eyes: the darkest bits around each eye, minus the black pupil
   let iris;
@@ -1097,10 +1112,10 @@ $('#cropUse').onclick=async()=>{
   btn.disabled=false;btn.textContent='Put it on! ✨';
   const data=out.toDataURL('image/jpeg',.82),toon=cartoonize(out);
   $('#cropModal').classList.remove('show');
-  const glasses=look.glasses;delete look.glasses;
+  const glasses=look.glasses,found=!!look.feat;delete look.glasses;
   update(l=>{l.photo=data;l.photoToon=toon;l.photoOn=false;l.photoMode=l.photoMode||'photo';const fe=look.feat;delete look.feat;Object.assign(l,look);l.feat={...(l.feat||{}),...(fe||{})};
     l.extras=l.extras||{};if(glasses&&!l.extras.glasses)l.extras.glasses='#2d2d3a';});
-  openDetails(glasses);
+  openDetails(glasses,found);
 };
 
 /* salon tools */
