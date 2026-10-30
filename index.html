@@ -106,6 +106,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .msgform{display:flex;flex-direction:column;gap:8px}
 .msgform input,.msgform textarea{font:inherit;border:2px solid #f0d6e6;border-radius:14px;padding:8px 10px;width:100%;box-sizing:border-box}
 #cloudBody p{margin:8px 0}
+#cloudModal{z-index:40}
 .pill.warn{background:#ff6b6b}
 .small{font-size:12px;color:var(--muted)}
 .addrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
@@ -1580,6 +1581,7 @@ function loadSDK(){
     auth=F.getAuth(app);
     try{fs=F.initializeFirestore(app,{localCache:F.persistentLocalCache()});}catch(e){fs=F.getFirestore(app);}
     F.getRedirectResult(auth).catch(()=>{});
+    finishEmailLink();
     startAnalytics(app);
     F.onAuthStateChanged(auth,onUser);
     failed=false;return F;
@@ -1719,15 +1721,39 @@ function updateBtn(){
 function renderCloud(){
   const b=$('#cloudBody');if(!b)return;
   if(user)b.innerHTML=`<p>Signed in as <b>${esc(user.email||user.displayName||'you')}</b></p>
-    <p>✅ Characters, saved looks, selfies, and drawings are kept in the cloud. Sign in with this same Google account on any phone, tablet, or computer to see them there too.</p>
+    <p>✅ Characters, saved looks, selfies, and drawings are kept in the cloud. Sign in with this same account on any phone, tablet, or computer to see them there too.</p>
     <p class="hint">Videos and songs stay on the device they were made on.</p>
     <div class="mrow" style="justify-content:center"><button class="pill soft" id="cloudOut">Sign out</button></div>`;
   else b.innerHTML=`<p>Sign in to keep your looks safe and see them on every device. 💖</p>
     <button class="big-btn" id="cloudIn">Sign in with Google</button>
-    <p class="hint">${failed?'😕 Can\'t reach the cloud right now. Check the internet and try again.':'Use the family Google account on every device.'}</p>`;
+    <p class="hint" style="margin:12px 0 4px">or get a sign-in link by email</p>
+    <div class="msgform"><input id="cloudEmail" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email" value="${esc(lsGet(EMAIL_KEY)||'')}">
+    <button class="pill" id="cloudEmailGo" style="font-size:16px;padding:12px">${emailWaiting?'✅ Finish signing in':'📧 Email me a link'}</button></div>
+    <p class="hint">${failed?'😕 Can\'t reach the cloud right now. Check the internet and try again.':emailWaiting?'Type the email the link was sent to.':'Use the same family account on every device.'}</p>`;
+}
+/* passwordless email link: the link comes back to this page and finishes sign-in */
+const EMAIL_KEY='brynny-signin-email';let emailWaiting='';
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+async function finishEmailLink(email){
+  if(!F.isSignInWithEmailLink(auth,location.href))return;
+  email=email||lsGet(EMAIL_KEY);
+  if(!email){emailWaiting=' ';renderCloud();$('#cloudModal').classList.add('show');return;}
+  try{await F.signInWithEmailLink(auth,email,location.href);emailWaiting='';history.replaceState(null,'',location.pathname);toast('✅ Signed in!');$('#cloudModal').classList.remove('show');}
+  catch(e){const c=(e&&e.code)||'';toast(/invalid-email/.test(c)?'😕 That email doesn\'t match the link':'😕 That link expired. Send a new one.');if(!/invalid-email/.test(c))history.replaceState(null,'',location.pathname);emailWaiting=/invalid-email/.test(c)?' ':'';renderCloud();}
+}
+async function sendEmailLink(){
+  const email=($('#cloudEmail').value||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('✏️ Type an email address first');return;}
+  if(!F){try{await loadSDK();}catch(e){toast('😕 Can\'t reach the cloud right now');return;}}
+  if(emailWaiting){finishEmailLink(email);return;}
+  try{await F.sendSignInLinkToEmail(auth,email,{url:location.origin+location.pathname,handleCodeInApp:true});
+    try{localStorage.setItem(EMAIL_KEY,email);}catch(e){}
+    $('#cloudBody').innerHTML=`<p>📧 We sent a link to <b>${esc(email)}</b>.</p><p>Open that email on this device and tap the link to finish signing in.</p><p class="hint">Don't see it? Check the spam folder.</p>`;}
+  catch(e){toast('😕 Couldn\'t send the email ('+(((e&&e.code)||'').replace('auth/','')||'try again')+')');}
 }
 $('#cloudBtn').onclick=()=>{renderCloud();$('#cloudModal').classList.add('show');};
 $('#cloudBody').addEventListener('click',async e=>{
+  if(e.target.id==='cloudEmailGo'){sendEmailLink();return;}
   if(e.target.id==='cloudIn'){await signIn();if(user)$('#cloudModal').classList.remove('show');}
   if(e.target.id==='cloudOut'){clearTimeout(syncTimer);sync();await F.signOut(auth);toast('👋 Signed out. Your looks are still on this device.');renderCloud();}
 });
