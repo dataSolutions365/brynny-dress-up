@@ -1405,7 +1405,7 @@ if(!DB.welcomed)showWelcome();
 </script>
 <script type="module">
 /* ---------- cloud save + messages (Firebase, free Spark plan) ---------- */
-const FB_CONFIG={apiKey:"AIzaSyCz20IcwmqTfaUR6N2Ik8YUliZkvi_ICCw",authDomain:"brynny-dress-up.firebaseapp.com",projectId:"brynny-dress-up",storageBucket:"brynny-dress-up.firebasestorage.app",messagingSenderId:"76439287191",appId:"1:76439287191:web:83a94aed952e8711ccc0d2"};
+const FB_CONFIG={apiKey:"AIzaSyCz20IcwmqTfaUR6N2Ik8YUliZkvi_ICCw",authDomain:"brynny-dress-up.firebaseapp.com",projectId:"brynny-dress-up",storageBucket:"brynny-dress-up.firebasestorage.app",messagingSenderId:"76439287191",appId:"1:76439287191:web:83a94aed952e8711ccc0d2",measurementId:"G-38E5337GL0"};
 const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
 const SENT_KEY='brynny-cloud-sent',MSG_SENT_KEY='brynny-msgs-sent-here',FROM_KEY='brynny-msg-from';
 let F=null,loading=null,auth=null,fs=null,user=null,ready=false,failed=false,unsubs=[],lastSent={},syncTimer=null,syncing=false,again=false,busy=false,pendingRender=false,warnedBig=false;
@@ -1426,12 +1426,25 @@ function loadSDK(){
     auth=F.getAuth(app);
     try{fs=F.initializeFirestore(app,{localCache:F.persistentLocalCache()});}catch(e){fs=F.getFirestore(app);}
     F.getRedirectResult(auth).catch(()=>{});
+    startAnalytics(app);
     F.onAuthStateChanged(auth,onUser);
     failed=false;return F;
   })();
   loading.catch(()=>{loading=null;failed=true;updateBtn();});
   return loading;
 }
+
+/* visit counts (Google Analytics through Firebase): only button taps, never names, photos, or messages */
+let GA=null;const gaQueue=[];
+async function startAnalytics(app){
+  try{const an=await import(SDK+'firebase-analytics.js');if(!(await an.isSupported()))return;
+    const a=an.initializeAnalytics(app,{config:{allow_google_signals:false,allow_ad_personalization_signals:false}});
+    GA=(n,p)=>an.logEvent(a,n,p);gaQueue.splice(0).forEach(([n,p])=>GA(n,p));}catch(e){}
+}
+const track=(n,p)=>{if(GA)GA(n,p);else if(gaQueue.length<50)gaQueue.push([n,p]);};
+const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',msgSend:'send_message'};
+document.addEventListener('click',e=>{const b=e.target.closest('button,[data-tab]');if(!b)return;
+  if(TAPS[b.id])track(TAPS[b.id]);else if(b.dataset.tab)track('open_tab',{tab:b.dataset.tab});},true);
 
 async function signIn(){
   if(!F){toast('☁️ Getting ready…');try{await loadSDK();}catch(e){toast('😕 Can\'t reach the cloud right now');return;}}
@@ -1492,6 +1505,7 @@ document.addEventListener('pointerup',done,true);document.addEventListener('poin
 document.addEventListener('click',e=>{if(pendingRender&&e.target.closest('[data-close]'))setTimeout(refresh,50);},true);
 
 async function onUser(u){
+  if(u&&!user)track('login');
   unsubs.forEach(f=>f());unsubs=[];ready=false;user=u;msgs=[];updateBtn();renderCloud();
   if(!u)return;
   const first=DB.cloudUid!==u.uid;
