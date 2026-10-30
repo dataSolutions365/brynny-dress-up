@@ -1228,12 +1228,12 @@ function nailDeco(n,x,y,s){
 }
 // finger: base point, lean angle, length, width (back-of-hand view, fingers up)
 const SPA_FINGERS=[{x:96,y:214,a:-52,l:74,w:32},{x:118,y:168,a:-9,l:92,w:29},{x:147,y:162,a:-1,l:104,w:30},{x:176,y:168,a:7,l:94,w:28},{x:202,y:182,a:16,l:74,w:24}];
-const SPA_TOES=[{cx:98,cy:96,w:42,h:52},{cx:142,cy:86,w:28,h:38},{cx:175,cy:93,w:25,h:34},{cx:204,cy:106,w:22,h:30},{cx:229,cy:124,w:19,h:25}];
+const SPA_TOES=[{cx:100,cy:96,w:46,h:52},{cx:141,cy:86,w:33,h:38},{cx:173,cy:93,w:30,h:34},{cx:202,cy:106,w:27,h:30},{cx:227,cy:123,w:23,h:25}];
 const SPA_DIRT=[[96,170,22,14],[150,210,26,16],[200,180,18,12],[120,250,20,12],[180,250,24,14],[98,100,10,7],[176,96,7,5],[228,128,6,4],[140,140,14,9]];
 function spaClean(){const p=SPA.prog;return Math.min(1,((p.soak||0)*.2+(p.scrub||0)*.8)/100);}
 function nailClose(){
   const l=L(),k=SPA.kind,set=nailSet(l,k),sk=l.skin,d=shade(sk,-.16),lt=shade(sk,.1),dk=shade(sk,-.08);
-  let s=`<defs><linearGradient id="spaSkin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${sk}"/><stop offset="1" stop-color="${dk}"/></linearGradient>
+  let s=`<defs><linearGradient id="spaSkin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${sk}"/><stop offset="1" stop-color="${dk}"/></linearGradient><linearGradient id="spaFoot" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="260" y2="0"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${sk}"/><stop offset="1" stop-color="${dk}"/></linearGradient>
 <filter id="spaForm" x="-10%" y="-10%" width="120%" height="120%"><feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur in="inv" stdDeviation="4" result="ib"/><feOffset in="ib" dx="-4" dy="-2" result="o1"/><feComposite in="o1" in2="SourceAlpha" operator="in" result="m1"/><feFlood flood-color="#5a2a3a" flood-opacity=".35"/><feComposite in2="m1" operator="in" result="sh"/><feOffset in="ib" dx="3" dy="2" result="o2"/><feComposite in="o2" in2="SourceAlpha" operator="in" result="m2"/><feFlood flood-color="#fff" flood-opacity=".35"/><feComposite in2="m2" operator="in" result="hi"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sh"/><feMergeNode in="hi"/></feMerge></filter></defs>`;
   const grime=1-Math.min(1,(SPA.prog.file||0)/100);
   const nail=(i,cx,cy,rx,ry)=>{const n=set[i];
@@ -1257,8 +1257,8 @@ function nailClose(){
   }else{
     s+=water(160);
     let toes='';
-    SPA_TOES.forEach((t,i)=>{const r=t.w/2,b=t.cy+t.h/2+26;toes+=`<g data-n="${i}"><path d="M${t.cx-r} ${b} L${t.cx-r} ${t.cy} A${r} ${t.h/2} 0 0 1 ${t.cx+r} ${t.cy} L${t.cx+r} ${b} Z" fill="url(#spaSkin)"/>`+nail(i,t.cx,t.cy-t.h*.12,t.w*.3,t.h*.24)+`</g>`;});
-    s+=`<g filter="url(#spaForm)">`+toes+`<path d="M70 138 Q66 112 90 110 Q160 116 238 134 Q254 148 250 178 Q240 226 220 262 L212 300 L108 300 Q104 254 88 214 Q72 176 70 138 Z" fill="url(#spaSkin)"/><path d="M84 112 Q160 118 236 136" stroke="${d}" stroke-width="1.5" fill="none" opacity=".3"/><path d="M112 286 Q118 250 108 214" stroke="${d}" stroke-width="2" fill="none" opacity=".25"/><path d="M188 150 Q204 200 196 250" stroke="#fff" stroke-width="10" fill="none" opacity=".15" stroke-linecap="round"/></g>`;
+    SPA_TOES.forEach((t,i)=>{const r=t.w/2,b=t.cy+t.h/2+26;toes+=`<g data-n="${i}"><path d="M${t.cx-r} ${b} L${t.cx-r} ${t.cy} A${r} ${t.h/2} 0 0 1 ${t.cx+r} ${t.cy} L${t.cx+r} ${b} Z" fill="url(#spaFoot)"/>`+nail(i,t.cx,t.cy-t.h*.12,t.w*.3,t.h*.24)+`</g>`;});
+    s+=`<g filter="url(#spaForm)"><path d="M70 138 Q66 112 90 110 Q160 116 238 134 Q254 148 250 178 Q240 226 220 262 L212 300 L108 300 Q104 254 88 214 Q72 176 70 138 Z" fill="url(#spaFoot)"/>`+toes+SPA_TOES.slice(1).map((t,i)=>{const x=t.cx-t.w/2,y=t.cy+t.h*.15;return `<path d="M${x} ${y} Q${x} ${y+18} ${x+3} ${y+24}" stroke="${d}" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>`;}).join('')+`<path d="M112 286 Q118 250 108 214" stroke="${d}" stroke-width="2" fill="none" opacity=".25"/><path d="M188 150 Q204 200 196 250" stroke="#fff" stroke-width="10" fill="none" opacity=".15" stroke-linecap="round"/></g>`;
     const dirt=1-spaClean();
     s+=`<g id="spaDirt" opacity="${dirt.toFixed(2)}" style="pointer-events:none">`+SPA_DIRT.map(([x,y,rx,ry],i)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${i%2?'#5e4026':'#6e4e2e'}" opacity=".6" transform="rotate(${i*23} ${x} ${y})"/><circle cx="${x+rx*.6}" cy="${y-ry*.4}" r="${ry*.35}" fill="#6b4a2a" opacity=".4"/>`).join('')+`</g>`;
     s+=water(160).replace('opacity=".45"','opacity=".25"');
