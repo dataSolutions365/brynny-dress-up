@@ -341,7 +341,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 </div></div>
 
 <div id="party" role="dialog" aria-label="Birthday celebration"><canvas id="partyFx"></canvas><div id="partyBannerWrap"></div><div class="pbox">
-  <h1 id="partyTitle">Happy 10th Birthday!</h1>
+  <h1 id="partyTitle">Happy 11th Birthday!</h1>
   <p class="sub" id="partySub"></p>
   <div id="partyStage"><div id="partyDoll"></div><div id="partyCakeWrap"></div></div>
   <p class="hint" id="partyHint">Make a wish, then tap the candles to blow them out! 🌬️</p>
@@ -2117,7 +2117,7 @@ function showWelcome(){
   $('#welcome').classList.add('show');
 }
 /* ---------- birthday party: cake, candles to blow out, fireworks ---------- */
-const PARTY_AGE=10;
+const PARTY_AGE=11;
 let partyRaf=0,partyBursts=[],partyRockets=[],partyNext=0,partyBig=false;
 function cakeSVG(name){
   let s=`<svg id="partyCake" viewBox="0 0 360 330" xmlns="http://www.w3.org/2000/svg" aria-label="Birthday cake with ${PARTY_AGE} candles">
@@ -2381,7 +2381,7 @@ function endFriends(){if(!contest||!contest.f)return;clearInterval(contestTimer)
   if(DB.chars.some(c=>c.id===contest.f.orig))DB.cur=contest.f.orig;contest=null;persist();renderStage();renderPanel();}
 $('#contestModal').addEventListener('click',e=>{if(e.target.closest('[data-close]')){if(contest&&contest.f&&contest.f.phase==='pass')friendTurn();else if(contest&&contest.f&&contest.f.phase==='vote')endFriends();renderStage();}});
 $('#partyBlow').onclick=()=>{[...document.querySelectorAll('#partyCake .candle:not(.out)')].forEach((g,i)=>setTimeout(()=>blowCandle(g),i*90));};
-$('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=true;persist();if(!DB.welcomed)showWelcome();else sparkle();};
+$('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=PARTY_AGE;persist();if(!DB.welcomed)showWelcome();else sparkle();};
 // fireworks on a canvas, only while the party is open and on screen
 function partyLaunch(big){const c=$('#partyFx'),w=c.width,h=c.height;partyRockets.push({x:w*(.15+Math.random()*.7),y:h,vx:(Math.random()-.5)*1.5,vy:-(h*.012+Math.random()*h*.004),t:h*(.15+Math.random()*.3),big});}
 function partyBurst(x,y,big){const cols=['#ff6fae','#ffd23f','#4fb6ff','#7ee081','#b388ff','#ffffff','#ff8a3d'],c=cols[Math.random()*cols.length|0],c2=cols[Math.random()*cols.length|0],n=big?90:60,sp=big?5:3.6;
@@ -2608,7 +2608,7 @@ loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
 // the party shows the first time the game opens on each device (add ?party to the address to see it again)
 {const cm=location.search.match(/[?&]c=([a-z0-9]{6})\b/);
   if(cm){try{history.replaceState(null,'',location.pathname);}catch(e){}DB.welcomed=true;persist();openChallenge(cm[1]);}
-  else if(!DB.partied||/[?&]party\b/.test(location.search))showParty();else if(!DB.welcomed)showWelcome();}
+  else if(DB.partied!==PARTY_AGE||/[?&]party\b/.test(location.search))showParty();else if(!DB.welcomed)showWelcome();}
 </script>
 <script type="module">
 /* ---------- cloud save + messages (Firebase, free Spark plan) ---------- */
