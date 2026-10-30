@@ -352,7 +352,7 @@ function flower(x,y,r,c,center='#ffd84d'){
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- palettes ---------- */
-const SKIN=['#ffe3cc','#f7cfae','#eab38c','#d49a6a','#b97a4f','#8d5a3b','#6b4128','#4a2c1c'];
+const SKIN=['#ffe3cc','#f7cfae','#e6c49a','#eab38c','#c8a072','#d49a6a','#b97a4f','#8d5a3b','#6b4128','#4a2c1c','#3a2216'];
 const EYES=['#6b4423','#2f6fb5','#3c8d5a','#9a6a3a','#6b7b8c','#8a4fbf','#1f1a24'];
 const HAIRC=['#2b1d16','#4a2c1a','#7a4a2a','#a0441f','#d9a35a','#f3e2a9','#ff7eb6','#b388ff','#4fb6ff','#2ec4b6','#ff5a5a','rainbow'];
 const CLOTHC=['#ff6fae','#ff4d6d','#ff8a3d','#ffd23f','#7ee081','#2ec4b6','#4fc3f7','#5c7cfa','#b388ff','#8e44ad','#ffd1e6','#ffffff','#bfe9ff','#e8d9b5','#a0522d','#2d2d3a','#e0b04a','#c68642','#6b7d3a','#1f2a5a'];
@@ -392,6 +392,25 @@ const DEFS=`<defs>
  <feFlood flood-color="#fff6e8" flood-opacity=".38"/><feComposite in2="him" operator="in" result="rim"/>
  <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="shade"/><feMergeNode in="rim"/></feMerge>
 </filter>
+<filter id="volG" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+ <feGaussianBlur in="SourceAlpha" stdDeviation="3.6" result="b"/>
+ <feSpecularLighting in="b" surfaceScale="4.5" specularConstant="1" specularExponent="24" lighting-color="#ffffff" result="sp"><fePointLight x="-40" y="-120" z="200"/></feSpecularLighting>
+ <feComposite in="sp" in2="SourceAlpha" operator="in" result="spi"/>
+ <feDiffuseLighting in="b" surfaceScale="4.5" diffuseConstant="1" lighting-color="#ffffff" result="df"><feDistantLight azimuth="235" elevation="50"/></feDiffuseLighting>
+ <feComponentTransfer in="df" result="dfs"><feFuncR type="linear" slope=".6" intercept=".45"/><feFuncG type="linear" slope=".6" intercept=".45"/><feFuncB type="linear" slope=".6" intercept=".45"/></feComponentTransfer>
+ <feComposite in="dfs" in2="SourceAlpha" operator="in" result="dfi"/>
+ <feBlend in="SourceGraphic" in2="dfi" mode="multiply" result="shaded"/>
+ <feComposite in="shaded" in2="SourceAlpha" operator="in" result="sh2"/>
+ <feComposite in="sh2" in2="spi" operator="arithmetic" k1="0" k2="1" k3=".8" k4="0"/>
+</filter>
+<filter id="silk" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+ <feTurbulence type="fractalNoise" baseFrequency=".45 .012" numOctaves="2" seed="7" result="n"/>
+ <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 -.45" result="dk"/>
+ <feComposite in="dk" in2="SourceAlpha" operator="in" result="dki"/>
+ <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -.7 0 0 0 .3" result="lt"/>
+ <feComposite in="lt" in2="SourceAlpha" operator="in" result="lti"/>
+ <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="dki"/><feMergeNode in="lti"/></feMerge>
+</filter>
 <radialGradient id="faceShade" cx=".4" cy=".36" r=".72"><stop offset=".55" stop-color="#5a2a3a" stop-opacity="0"/><stop offset="1" stop-color="#5a2a3a" stop-opacity=".26"/></radialGradient>
 <radialGradient id="irisShade" cx=".5" cy=".7" r=".62"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset=".86" stop-color="#000" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
 <linearGradient id="lidShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3a4a" stop-opacity=".38"/><stop offset=".5" stop-color="#5a3a4a" stop-opacity="0"/></linearGradient>
@@ -402,7 +421,8 @@ const DEFS=`<defs>
 
 /* ---------- body ---------- */
 const TORSO_BODY='M112 158 Q150 148 188 158 Q198 162 198 178 Q190 220 182 258 Q196 280 196 300 L104 300 Q104 280 118 258 Q110 220 102 178 Q102 162 112 158 Z';
-const headT=L=>L.style==='cartoon'?'translate(150 135) scale(1.3) translate(-150 -135)':'translate(0 0)';
+const headK=L=>L.style==='cartoon'?1.3:L.style==='glam'?1.16:1;
+const headT=L=>{const k=headK(L);return k===1?'translate(0 0)':`translate(150 135) scale(${k}) translate(-150 -135)`;};
 
 function body(L){
   const sk=L.skin,d=shade(sk,-.15);
@@ -449,9 +469,12 @@ function spookyTop(id){
   }
   return '';
 }
+// eye and nose shapes from the face designer: real features to mix and match
+const ESHAPE={none:{rx:1,ry:1,tilt:0},almond:{rx:1.05,ry:.85,tilt:3},round:{rx:.95,ry:1.2,tilt:0},monolid:{rx:1.05,ry:.75,tilt:4},hooded:{rx:1,ry:1,tilt:0},upturned:{rx:1,ry:.92,tilt:8}};
+const NSHAPE={button:[.92,.82],wide:[1.3,.96],narrow:[.8,1.08]};
 function face(L){
-  const F=L.feat||{},es=F.eye||1,gx=F.gap||0,frx=40*(F.fw||1),fry=46*(F.chin||1),fcy=42+fry;
-  const toon=L.style==='cartoon',rx=9,ry=(toon?10:5.6)*(F.open||1),ir=toon?7:4.6,ey=92;
+  const F=L.feat||{},es=F.eye||1,gx=F.gap||0,frx=(L.style==='glam'?38:40)*(F.fw||1),fry=(L.style==='glam'?47:46)*(F.chin||1),fcy=42+fry;
+  const toon=L.style==='cartoon',glam=L.style==='glam',rx=(glam?11:9)*(ESHAPE[F.eshape]||ESHAPE.none).rx,ry=(toon?10:glam?8.4:5.6)*(F.open||1)*(ESHAPE[F.eshape]||ESHAPE.none).ry,ir=toon?7:glam?6.8:4.6,ey=92,esh=F.eshape;
   const sk=L.skin,d=shade(sk,-.18),bc=L.hairColor==='rainbow'?'#6b4a8a':shade(L.hairColor,-.35);
   const m=L.makeup||{};
   let s='<g filter="url(#vol)">'+sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
@@ -466,32 +489,39 @@ function face(L){
     return s;
   }
   let one='';
-  if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
+  if(glam){const sh=m.shadow||'#b98a9a';one+=`<path d="M${134-rx-5} ${ey+1} Q134 ${ey-ry-13} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.15} ${134-rx-5} ${ey+1} Z" fill="${sh}" opacity="${m.shadow?.8:.45}"/>`;}
+  else if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
   const iy=ey+(toon?1:0);
   one+=`<g class="eye"><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="#fff"/><circle cx="134" cy="${iy}" r="${ir}" fill="${L.eyes}"/><circle cx="134" cy="${iy}" r="${ir}" fill="url(#irisShade)"/><circle cx="134" cy="${iy}" r="${ir*.5}" fill="#1e1424"/><circle cx="${134+ir*.38}" cy="${iy-ir*.38}" r="${ir*.3}" fill="#fff"/><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="url(#lidShade)"/>`;
   if(toon) one+=`<circle cx="${134-ir*.4}" cy="${iy+ir*.4}" r="${ir*.15}" fill="#fff"/>`;
-  const lash=m.lashes||'natural',lw=lash==='bold'?3.4:lash==='long'?2.5:1.9;
-  const P0=[134-rx-1,ey],P1=[134,ey-ry*1.65],P2=[134+rx+1,ey];
+  if(glam) one+=`<circle cx="134" cy="${iy}" r="${ir}" fill="none" stroke="${shade(L.eyes,-.45)}" stroke-width="1.1"/><circle cx="${134-ir*.35}" cy="${iy+ir*.45}" r="${ir*.17}" fill="#fff" opacity=".85"/><path d="M${134-rx-1} ${ey+1} Q134 ${ey+ry*1.05} ${134+rx} ${ey+1}" stroke="#6a4a5a" stroke-width=".9" fill="none" opacity=".7"/>`;
+  const lash=m.lashes||(glam?'long':'natural'),lw=(lash==='bold'?3.4:lash==='long'?2.5:1.9)+(glam?.9:0);
+  const P0=[134-rx-1,ey],P1=[134,ey-ry*(esh==='monolid'?1.2:esh==='hooded'?.95:1.65)],P2=[134+rx+1,ey];
+  // hooded: skin-colored lid comes down over the top of the eye, crease sits above it
+  if(esh==='hooded')one+=`<path d="M${P0[0]-1} ${ey} Q134 ${ey-ry*2.1} ${P2[0]+1} ${ey} Q134 ${ey-ry*.95} ${P0[0]-1} ${ey} Z" fill="${sk}"/><path d="M${P0[0]+1} ${ey-ry*.5} Q134 ${ey-ry*1.75} ${P2[0]-1} ${ey-ry*.5}" stroke="${d}" stroke-width="1.1" fill="none" opacity=".4"/>`;
   one+=`<path d="M${P0[0]} ${P0[1]} Q${P1[0]} ${P1[1]} ${P2[0]} ${P2[1]}" fill="none" stroke="#2b1a2e" stroke-width="${lw}" stroke-linecap="round"/>`;
+  if(glam)one+=`<path d="M${P0[0]+1} ${P0[1]-1} L${P0[0]-6} ${P0[1]-6} L${P0[0]+3} ${P0[1]-3.5} Z" fill="#2b1a2e" stroke="#2b1a2e" stroke-width="1.2" stroke-linejoin="round"/>`;
   if(lash!=='natural'){
     const n=lash==='bold'?4:3,len=lash==='bold'?7:5.5;
     for(let i=0;i<n;i++){const t=.06+i*.12,x=(1-t)**2*P0[0]+2*t*(1-t)*P1[0]+t*t*P2[0],y=(1-t)**2*P0[1]+2*t*(1-t)*P1[1]+t*t*P2[1];
       one+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x-len*.8).toFixed(1)}" y2="${(y-len*.75).toFixed(1)}" stroke="#2b1a2e" stroke-width="${lw*.7}" stroke-linecap="round"/>`;}
   }
   one+='</g>';
-  one=`<g transform="translate(${134-gx} ${ey}) rotate(${F.tilt||0}) scale(${es}) translate(-134 ${-ey})">${one}</g>`;
-  const bs=F.bshape||'soft',arch=(F.arch||0)+(bs==='high'?4:bs==='straight'?-5:0);one+=`<path d="M123 ${ey-ry-8} Q${bs==='high'?138:134} ${ey-ry-14-arch} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="${(2.8*(F.bw||1)*(bs=='thick'?1.5:1)).toFixed(1)}" stroke-linecap="round" transform="translate(${-gx} ${(-ry*(es-1)-(F.brow||0)).toFixed(1)})"/>`;
+  one=`<g transform="translate(${134-gx} ${ey}) rotate(${(F.tilt||0)+(ESHAPE[F.eshape]||ESHAPE.none).tilt}) scale(${es}) translate(-134 ${-ey})">${one}</g>`;
+  const bs=F.bshape||(glam?'high':'soft'),arch=(F.arch||0)+(bs==='high'?4:bs==='straight'?-5:0);one+=`<path d="M123 ${ey-ry-8} Q${bs==='high'?138:134} ${ey-ry-14-arch} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="${(2.8*(F.bw||1)*(bs=='thick'?1.5:1)).toFixed(1)}" stroke-linecap="round" transform="translate(${-gx} ${(-ry*(es-1)-(F.brow||0)).toFixed(1)})"/>`;
   if(m.blush) one+=`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".5"/>`;
+  if(glam) one+=`<path d="M114 104 Q120 118 132 124" stroke="${shade(sk,-.35)}" stroke-width="5" fill="none" opacity=".18" stroke-linecap="round"/><ellipse cx="125" cy="102" rx="6" ry="2.2" fill="#fff" opacity=".13" transform="rotate(-12 125 102)"/>`;
   s+=sym(one);
-  s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
+  s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[0]} ${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[1]}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
   s+=`<g transform="translate(150 118) scale(${F.mouth||1} ${F.lips||1}) translate(-150 -118)">`;
-  if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
+  if(glam){const lc=m.lips||'#d4737f';s+=`<path d="M138 117 Q144 110.5 150 113.8 Q156 110.5 162 117 Q156 119.5 150 119.2 Q144 119.5 138 117 Z" fill="${shade(lc,-.12)}"/><path d="M138.5 117.6 Q150 121 161.5 117.6 Q157 127.5 150 127.8 Q143 127.5 138.5 117.6 Z" fill="${lc}"/><path d="M139 117.8 Q150 120.2 161 117.8" stroke="${shade(lc,-.45)}" stroke-width="1" fill="none"/><ellipse cx="147" cy="122.8" rx="4" ry="1.5" fill="#fff" opacity=".65"/><ellipse cx="154" cy="123.4" rx="1.6" ry=".8" fill="#fff" opacity=".5"/>`;}
+  else if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
   else s+=`<path d="M141 117 Q150 128 159 117 Q150 122 141 117 Z" fill="#e08a92" opacity=".7"/><path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="147" cy="121" rx="2.5" ry=".9" fill="#fff" opacity=".45"/>`;
   s+='</g>';
   if(F.freckles)s+=sym([[124,104],[129,107],[121,109],[127,111],[133,105],[138,108],[131,101]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1" fill="${shade(sk,-.4)}" opacity=".55"/>`).join(''))+`<circle cx="145" cy="98" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/><circle cx="155" cy="97" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/>`;
   if(F.mole)s+=`<circle cx="163" cy="112" r="1.3" fill="${shade(sk,-.55)}"/>`;
   if(F.dimples)s+=sym(`<path d="M133 120 q-1.5 3 0 5" stroke="${d}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".7"/>`);
-  if(F.stud)s+=`<g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><circle cx="156.5" cy="106" r="1.6" fill="#e8e8f0" stroke="#9a9ab0" stroke-width=".5"/><circle cx="156" cy="105.5" r=".6" fill="#fff"/></g>`;
+  if(F.stud)s+=`<g transform="translate(150 104) scale(${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[0]} ${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[1]}) translate(-150 -104)"><circle cx="156.5" cy="106" r="1.6" fill="#e8e8f0" stroke="#9a9ab0" stroke-width=".5"/><circle cx="156" cy="105.5" r=".6" fill="#fff"/></g>`;
   s+=spookyTop(m.spooky);
   s+=facePaint(m.paint);
   s+=`<g clip-path="url(#faceClip)" class="paintLayer">${(m.strokes||[]).map(strokeSVG).join('')}</g>`;
@@ -984,7 +1014,7 @@ function charInner(L){
   for(const [id,c] of Object.entries(L.extras||{})){const it=find(EXTRAS,id);if(!it)continue;const p=parts(it.d(c));for(const k in ex)ex[k]+=p[k]||'';}
   const wear=(list,v)=>v&&find(list,v.id)?allParts(parts(find(list,v.id).d(v.c))):'';
   const A=artLayers(L);
-  const v=x=>x?`<g filter="url(#vol)">${x}</g>`:'';
+  const glam=L.style==='glam',v=x=>x?`<g filter="url(#vol)">${x}</g>`:'',vc=glam?x=>x?`<g filter="url(#volG)">${x}</g>`:'':v,vh=glam&&!['curly','bigcurls','boxbraids'].includes(L.hairStyle)?x=>x?`<g filter="url(#silk)">${v(x)}</g>`:'':v;
   if(dollBack){
     // seen from behind: no face or makeup, hair covers the whole head
     const hc=hf(L.hairColor),hd=hs(L.hairColor);
@@ -993,10 +1023,10 @@ function charInner(L){
       +`<path d="M128 52 Q150 44 172 52 M120 74 Q150 62 180 74 M118 98 Q150 88 182 98" stroke="${hd}" stroke-width="2.5" fill="none" opacity=".45" stroke-linecap="round"/>`+v(hat.back)+v(hat.front)+`</g>`;
     return b;
   }
-  let s=ex.back+`<g transform="${T}">${v(H.back)}${hat.back||''}</g>`+v(body(L));
-  if(L.dress)s+=v(wear(DRESSES,L.dress));else s+=v(wear(BOTTOMS,L.bottom))+v(wear(TOPS,L.top));
-  s+=A.body+v(wear(SHOES,L.shoes))+A.feet+v(ex.front)+v(hands(L))+v(ex.hand)+A.hand;
-  s+=`<g transform="${T}">${face(L)}${ex.head}${v(H.front)}<path d="M122 52 Q150 38 180 52" stroke="#fff" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round"/>${v(hat.front)}${A.head}</g>`;
+  let s=ex.back+`<g transform="${T}">${vh(H.back)}${hat.back||''}</g>`+v(body(L));
+  if(L.dress)s+=vc(wear(DRESSES,L.dress));else s+=vc(wear(BOTTOMS,L.bottom))+vc(wear(TOPS,L.top));
+  s+=A.body+vc(wear(SHOES,L.shoes))+A.feet+vc(ex.front)+v(hands(L))+vc(ex.hand)+A.hand;
+  s+=`<g transform="${T}">${face(L)}${ex.head}${vh(H.front)}<path d="M122 52 Q150 38 180 52" stroke="#fff" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round"/>${v(hat.front)}${A.head}</g>`;
   return s;
 }
 const VIEW='-40 -75 380 680';
@@ -1009,7 +1039,7 @@ function defaultLook(){return {style:'cartoon',skin:SKIN[1],eyes:EYES[0],hairSty
   top:{id:'startee',c:'#b388ff'},bottom:{id:'skirt',c:'#ff6fae'},dress:null,shoes:{id:'sneaker',c:'#ffffff'},hat:null,extras:{},
   makeup:{shadow:null,lips:null,blush:'#ff7aa8',lashes:'natural',paint:null},scene:'studio'};}
 function randomLook(base){
-  const L=defaultLook();L.style=base?base.style:rnd(['cartoon','fashion']);L.skin=base?base.skin:rnd(SKIN);L.eyes=base?base.eyes:rnd(EYES);
+  const L=defaultLook();L.style=base?base.style:rnd(['cartoon','fashion','glam']);L.skin=base?base.skin:rnd(SKIN);L.eyes=base?base.eyes:rnd(EYES);
   L.hairStyle=rnd(HAIR).id;L.hairColor=rnd(HAIRC);
   const pick=list=>{const it=rnd(list);return {id:it.id,c:Math.random()<.5?it.c:rnd(CLOTHC)};};
   if(Math.random()<.45){L.dress=pick(DRESSES);}else{L.top=pick(TOPS);L.bottom=pick(BOTTOMS);}
@@ -1048,8 +1078,8 @@ function strokeSVG(st){
 }
 const curBrush=()=>BRUSHES.find(b=>b.id===brushState.id);
 const brushColor=b=>brushState.c[b.id]||b.colors[0];
-function faceZoomVB(l){const cart=l.style==='cartoon',cy=cart?74:88,r=cart?62:48;const w=r*2.4,h=w*680/380;return `${150-w/2} ${cy-h*.36} ${w} ${h}`;}
-function hairZoomVB(l){const top=l.style==='cartoon'?-75:-40,w=250;return `${150-w/2} ${top} ${w} ${w*680/380}`;}
+function faceZoomVB(l){const cart=l.style==='cartoon',gl=l.style==='glam',cy=cart?74:gl?80:88,r=cart?62:gl?56:48;const w=r*2.4,h=w*680/380;return `${150-w/2} ${cy-h*.36} ${w} ${h}`;}
+function hairZoomVB(l){const top=l.style==='cartoon'?-75:l.style==='glam'?-60:-40,w=250;return `${150-w/2} ${top} ${w} ${w*680/380}`;}
 const zoomMode=()=>tab==='makeup'&&brushState.id?'face':tab==='hair'&&salonTool?'hair':tab==='art'&&artSel?'art':null;
 function applyZoom(){
   const sv=$('#stage svg');if(!sv)return;
@@ -1062,7 +1092,7 @@ function applyZoom(){
 function toFace(ev){
   const sv=$('#stage svg');const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
   const q=pt.matrixTransform(sv.getScreenCTM().inverse());
-  let x=q.x,y=q.y;if(L().style==='cartoon'){x=150+(x-150)/1.3;y=135+(y-135)/1.3;}
+  let x=q.x,y=q.y;const k=headK(L());if(k!==1){x=150+(x-150)/k;y=135+(y-135)/k;}
   return [Math.round(x*2)/2,Math.round(y*2)/2];
 }
 let drawing=null;
@@ -1160,7 +1190,7 @@ function toggleDetail(l,id){
   else{l.feat=l.feat||{};l.feat[id]=!l.feat[id];}
 }
 const detailTiles=l=>DETAILS.map(x=>`<button class="item ${hasDetail(l,x.id)?'on':''}" data-act="detail" data-id="${x.id}"><span class="big">${x.e}</span><span>${x.n}</span></button>`).join('');
-const FEAT_SLIDERS=[{k:'fw',n:'🙂 Face width',a:.92,b:1.06,d:1},{k:'chin',n:'🫥 Chin',a:.94,b:1.08,d:1},{k:'eye',n:'👁️ Eye size',a:.7,b:1.3,d:1},{k:'gap',n:'↔️ Eye gap',a:-4,b:4,d:0},{k:'open',n:'😮 Eye shape',a:.6,b:1.4,d:1},{k:'tilt',n:'🐱 Eye tilt',a:-8,b:10,d:0},{k:'brow',n:'〰️ Brow height',a:-3,b:3,d:0},{k:'arch',n:'🌈 Brow arch',a:-4,b:6,d:0},{k:'bw',n:'✏️ Brow thick',a:.6,b:1.6,d:1},{k:'nose',n:'👃 Nose',a:.8,b:1.3,d:1},{k:'mouth',n:'👄 Mouth',a:.8,b:1.25,d:1},{k:'lips',n:'💋 Lips',a:.7,b:1.4,d:1}];
+const FEAT_SLIDERS=[{k:'fw',n:'🙂 Face width',a:.92,b:1.06,d:1},{k:'chin',n:'🫥 Chin',a:.94,b:1.08,d:1},{k:'eye',n:'👁️ Eye size',a:.7,b:1.3,d:1},{k:'gap',n:'↔️ Eye gap',a:-4,b:4,d:0},{k:'open',n:'😮 Eye opening',a:.6,b:1.4,d:1},{k:'tilt',n:'🐱 Eye tilt',a:-8,b:10,d:0},{k:'brow',n:'〰️ Brow height',a:-3,b:3,d:0},{k:'arch',n:'🌈 Brow arch',a:-4,b:6,d:0},{k:'bw',n:'✏️ Brow thick',a:.6,b:1.6,d:1},{k:'nose',n:'👃 Nose',a:.8,b:1.3,d:1},{k:'mouth',n:'👄 Mouth',a:.8,b:1.25,d:1},{k:'lips',n:'💋 Lips',a:.7,b:1.4,d:1}];
 const CMP_HAIR=['long','wavy','curly','ponytail','bob','pixie','braids','buns'];
 // just the head, so it sits next to the selfie at the same size
 function dollHead(l){
@@ -1171,7 +1201,9 @@ function dollHead(l){
 function detailEditor(l){
   const F=l.feat||{};let h=`<h3>Skin</h3>`+swatches('dskin',SKIN,l.skin)+`<h3>Hair</h3>`+swatches('dhairc',HAIRC,l.hairColor);
   h+=`<div class="chips" style="margin-top:8px">`+(l.myHair?['mine',...CMP_HAIR]:CMP_HAIR).map(id=>{const it=id==='mine'?{name:'My hair'}:find(HAIR,id);return it?`<button class="${l.hairStyle===id?'on':''}" data-hs="${id}">${it.name}</button>`:'';}).join('')+`</div>`;
-  h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Brows</h3><div class="chips">`+[['soft','Soft'],['straight','Straight'],['high','Arched'],['thick','Bold']].map(([id,n])=>`<button class="${(F.bshape||'soft')===id?'on':''}" data-bs="${id}">${n}</button>`).join('')+`</div><h3>Face</h3>`;
+  h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Brows</h3><div class="chips">`+[['soft','Soft'],['straight','Straight'],['high','Arched'],['thick','Bold']].map(([id,n])=>`<button class="${(F.bshape||'soft')===id?'on':''}" data-bs="${id}">${n}</button>`).join('')+`</div>`;
+  h+=`<h3>Eye shape</h3><div class="chips">`+[['','Classic'],['almond','Almond'],['round','Round'],['monolid','Monolid'],['hooded','Hooded'],['upturned','Upturned']].map(([id,n])=>`<button class="${(F.eshape||'')===id?'on':''}" data-es="${id}">${n}</button>`).join('')+`</div>`;
+  h+=`<h3>Nose shape</h3><div class="chips">`+[['','Classic'],['button','Button'],['wide','Wide'],['narrow','Narrow']].map(([id,n])=>`<button class="${(F.nshape||'')===id?'on':''}" data-ns="${id}">${n}</button>`).join('')+`</div><h3>Face</h3>`;
   h+=FEAT_SLIDERS.map(x=>`<div class="fs"><label for="fs_${x.k}">${x.n}</label><input type="range" id="fs_${x.k}" data-fk="${x.k}" min="${x.a}" max="${x.b}" step="${((x.b-x.a)/40).toFixed(4)}" value="${F[x.k]??x.d}"></div>`).join('');
   return h+`<h3>Little details</h3><div class="grid" id="detailGrid">${detailTiles(l)}</div>`;
 }
@@ -1181,10 +1213,12 @@ function openDetails(guess,found){
   const ph=L().photo;$('#cmpPhoto').src=ph||'';$('#cmpPhoto').parentNode.style.display=ph?'':'none';$('#detailEdit').innerHTML=detailEditor(L());drawCmp();$('#detailModal').classList.add('show');
 }
 $('#detailEdit').addEventListener('click',e=>{
-  const sw=e.target.closest('[data-c]'),hs=e.target.closest('[data-hs]'),dt=e.target.closest('[data-id]'),bs=e.target.closest('[data-bs]');
+  const sw=e.target.closest('[data-c]'),hs=e.target.closest('[data-hs]'),dt=e.target.closest('[data-id]'),bs=e.target.closest('[data-bs]'),es=e.target.closest('[data-es]'),ns=e.target.closest('[data-ns]');
   if(sw){const k={dskin:'skin',dhairc:'hairColor',deyes:'eyes'}[sw.dataset.act];if(!k)return;update(l=>{l[k]=sw.dataset.c;});}
   else if(hs)update(l=>{l.hairStyle=hs.dataset.hs;});
   else if(bs)update(l=>{l.feat=l.feat||{};l.feat.bshape=bs.dataset.bs;});
+  else if(es)update(l=>{l.feat=l.feat||{};l.feat.eshape=es.dataset.es||undefined;});
+  else if(ns)update(l=>{l.feat=l.feat||{};l.feat.nshape=ns.dataset.ns||undefined;});
   else if(dt)update(l=>toggleDetail(l,dt.dataset.id));
   else return;
   $('#detailEdit').innerHTML=detailEditor(L());drawCmp();
@@ -1462,7 +1496,7 @@ function artPanel(l){
   return h;
 }
 function toSvgPt(ev){const sv=$('#stage svg');const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(sv.getScreenCTM().inverse());return [q.x,q.y];}
-function artPt(ev,w){const a=ART[w.id],k=ART_KINDS.find(x=>x.id===a.kind);let [x,y]=toSvgPt(ev);if(k.layer==='head'&&L().style==='cartoon'){x=150+(x-150)/1.3;y=135+(y-135)/1.3;}return [x,y];}
+function artPt(ev,w){const a=ART[w.id],k=ART_KINDS.find(x=>x.id===a.kind);let [x,y]=toSvgPt(ev);const hk=headK(L());if(k.layer==='head'&&hk!==1){x=150+(x-150)/hk;y=135+(y-135)/hk;}return [x,y];}
 let artDrag=null;
 function artDown(ev){
   const l=L();let w=(l.art||[]).find(x=>x.u===artSel);
@@ -1742,7 +1776,7 @@ function renderPanel(){
   const l=L();let h='';
   const faceOnly=(extra={})=>{const F={...l,style:'fashion',...extra};return mini('100 38 100 96',`<g>${face(F)}</g>`);};
   if(tab==='me'){
-    h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button></div>`;
+    h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button><button class="${l.style==='glam'?'on':''}" data-act="style" data-c="glam">💎 Glam</button></div>`;
     h+=`<h3>Skin</h3>`+swatches('skin',SKIN,l.skin)+`<h3>Eyes</h3>`+swatches('eyes',EYES,l.eyes);
     h+=`<h3>📷 My face</h3>`;
     if(l.photo){
