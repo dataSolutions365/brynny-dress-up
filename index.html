@@ -241,6 +241,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="setrow">
     <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music &amp; sounds</span></button>
     <button class="tbtn" id="cloudBtn" title="Cloud save">☁️ <span class="lbl" id="cloudLbl">Sign in</span></button>
+    <a class="tbtn" id="petsLink" href="pets.html" style="text-decoration:none">🐾 <span class="lbl">Pet Parlor 🚧</span></a>
   </div>
   <h2>Who's getting dressed up?</h2>
   <div class="cards" id="whoCards"></div>
@@ -259,6 +260,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
     <div><b>🎵 Music</b>Pick songs, background sounds and volume.</div>
     <div><b>☁️ Sign in</b>Keeps your dolls safe so they're never lost.</div>
     <div><b>👧 This panel</b>Switch dolls or add friends and family.</div>
+    <div><b>🐾 Pet Parlor 🚧</b>Dress up a kitty, puppy or squirrel. Still being built!</div>
   </div>
   <p style="font-weight:800;margin:14px 0 6px">👗 The icons under your doll</p>
   <div class="guide">
@@ -2962,8 +2964,8 @@ function countStat(...names){
     F.setDoc(F.doc(statsFs,'dressup_stats',new Date().toISOString().slice(0,10)),add,{merge:true}).catch(()=>{});}catch(e){}
 }
 {const phone=matchMedia('(pointer: coarse)').matches&&!matchMedia('(any-pointer: fine)').matches;countStat('visits',phone?'phone_visits':'computer_visits');}
-const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',partyBtn:'party',contestBtn:'contest',cbWalk:'contest_walk',msgSend:'send_message'};
-document.addEventListener('click',e=>{const b=e.target.closest('button,[data-tab]');if(!b)return;
+const TAPS={randBtn:'surprise',petsLink:'pet_parlor',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',partyBtn:'party',contestBtn:'contest',cbWalk:'contest_walk',msgSend:'send_message'};
+document.addEventListener('click',e=>{const b=e.target.closest('button,a[id],[data-tab]');if(!b)return;
   if(TAPS[b.id])track(TAPS[b.id]);else if(b.dataset.tab)track('open_tab',{tab:b.dataset.tab});},true);
 
 async function signIn(){
