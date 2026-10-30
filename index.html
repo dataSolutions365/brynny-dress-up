@@ -119,6 +119,26 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 @keyframes pop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.8) translateY(-30px)}}
 #welcome{position:fixed;inset:0;z-index:30;background:linear-gradient(160deg,#ffd1e8,#e3d6ff);display:none;align-items:center;justify-content:center;padding:16px;overflow:auto}
 #welcome.show{display:flex}
+#party{position:fixed;inset:0;z-index:40;background:radial-gradient(ellipse at 50% 30%,#3a1d6e,#140a2e 75%);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden;color:#fff;text-align:center}
+#party.show{display:flex}
+#partyFx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#party .pbox{position:relative;max-width:440px;width:100%}
+#party h1{font-size:clamp(28px,8vw,44px);margin:0 0 4px;background:linear-gradient(90deg,#ff8fc8,#ffd23f,#7ee081,#4fb6ff,#b388ff);-webkit-background-clip:text;background-clip:text;color:transparent;animation:pPop 1s ease-out both}
+#party .sub{color:#fff;text-shadow:0 1px 4px #140a2e;font-size:18px;margin:0 0 6px;opacity:.95}
+#partyBanner{position:absolute;top:0;left:0;right:0;width:100%;height:auto;max-height:22vh;pointer-events:none}
+#partyStage{display:flex;align-items:flex-end;justify-content:center;gap:2px}
+#partyDoll svg{width:min(24vw,110px);height:auto;display:block}
+#partyCake{width:min(66vw,320px);height:auto;display:block;margin:0 auto;cursor:pointer;touch-action:manipulation}
+#partyCake .flame{transform-box:fill-box;transform-origin:50% 100%;animation:pFlick .5s ease-in-out infinite alternate}
+#partyCake .out .flame,#partyCake .out .glow{display:none}
+#partyCake .smoke{opacity:0}
+#partyCake .out .smoke{animation:pSmoke 1.4s ease-out forwards}
+#party .hint{color:#fff;font-weight:600;font-size:17px;min-height:24px;margin:6px 0 10px}
+#party .prow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#party .pill{font-size:16px;padding:10px 16px}
+@keyframes pFlick{from{transform:scale(1,1) rotate(-3deg)}to{transform:scale(.9,1.12) rotate(3deg)}}
+@keyframes pSmoke{0%{opacity:.7;transform:translateY(0)}100%{opacity:0;transform:translateY(-30px)}}
+@keyframes pPop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
 .wbox{background:#fff;border-radius:28px;padding:22px;max-width:440px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(142,108,255,.25)}
 .wbox svg{width:180px;height:260px}
 .wbox h1{margin:6px 0 4px;font-size:30px;line-height:1.1}
@@ -277,6 +297,14 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <p>Welcome to your very own Dress-Up Studio 🎀</p>
   <input id="welcomeName" maxlength="20" value="Brynny" aria-label="Your name">
   <button class="big-btn" id="welcomeGo">Let's play! ✨</button>
+</div></div>
+
+<div id="party" role="dialog" aria-label="Birthday celebration"><canvas id="partyFx"></canvas><div id="partyBannerWrap"></div><div class="pbox">
+  <h1 id="partyTitle">Happy 10th Birthday!</h1>
+  <p class="sub" id="partySub"></p>
+  <div id="partyStage"><div id="partyDoll"></div><div id="partyCakeWrap"></div></div>
+  <p class="hint" id="partyHint">Make a wish, then tap the candles to blow them out! 🌬️</p>
+  <div class="prow"><button class="pill" id="partyBlow">🌬️ Blow them all</button><button class="big-btn" id="partyGo" style="width:auto;padding:12px 22px">Let's play! 🎁</button></div>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -1968,7 +1996,78 @@ function showWelcome(){
   $('#welcomeArt').innerHTML=`<svg viewBox="40 -40 220 640" xmlns="http://www.w3.org/2000/svg">${DEFS}${charInner(party)}</svg>`;
   $('#welcome').classList.add('show');
 }
-$('#welcomeGo').onclick=()=>{const n=$('#welcomeName').value.trim()||'Brynny';DB.chars[0].name=n;DB.chars[0].look.scene='birthday';DB.welcomed=true;persist();$('#welcome').classList.remove('show');renderStage();renderPanel();sparkle();if(musicStarted)applyMusic();};
+/* ---------- birthday party: cake, candles to blow out, fireworks ---------- */
+const PARTY_AGE=10;
+let partyRaf=0,partyBursts=[],partyRockets=[],partyNext=0,partyBig=false;
+function cakeSVG(name){
+  let s=`<svg id="partyCake" viewBox="0 0 360 330" xmlns="http://www.w3.org/2000/svg" aria-label="Birthday cake with ${PARTY_AGE} candles">
+  <defs><radialGradient id="pGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>
+  <linearGradient id="pT1" x1="0" x2="1"><stop offset="0" stop-color="#ff7eb6"/><stop offset=".5" stop-color="#ffa6cf"/><stop offset="1" stop-color="#ff6fae"/></linearGradient>
+  <linearGradient id="pT2" x1="0" x2="1"><stop offset="0" stop-color="#b388ff"/><stop offset=".5" stop-color="#d2bbff"/><stop offset="1" stop-color="#9f6fff"/></linearGradient></defs>
+  <ellipse cx="180" cy="312" rx="160" ry="14" fill="#000" opacity=".3"/><ellipse cx="180" cy="300" rx="158" ry="16" fill="#e8e8f2"/><ellipse cx="180" cy="296" rx="150" ry="13" fill="#fff"/>
+  <rect x="40" y="200" width="280" height="96" rx="14" fill="url(#pT1)"/><ellipse cx="180" cy="200" rx="140" ry="16" fill="#ffd1e6"/>
+  <path d="M40 202 Q40 226 52 226 Q62 226 62 210 Q66 232 80 232 Q92 232 94 212 Q100 236 116 234 Q130 232 132 212 Q138 230 152 230 Q166 230 168 212 Q174 236 190 234 Q204 232 206 212 Q212 230 226 230 Q240 230 242 212 Q248 236 264 234 Q278 232 280 212 Q286 228 298 228 Q312 228 320 202 Z" fill="#fff"/>
+  <rect x="78" y="128" width="204" height="78" rx="12" fill="url(#pT2)"/><ellipse cx="180" cy="128" rx="102" ry="12" fill="#e6dbff"/>
+  <path d="M78 130 Q80 150 92 150 Q102 150 104 136 Q110 156 124 154 Q136 152 138 136 Q144 152 158 152 Q172 152 174 136 Q180 156 194 154 Q208 152 210 136 Q216 152 230 152 Q244 152 246 136 Q252 154 266 152 Q278 150 282 130 Z" fill="#fff"/>`;
+  const sp=['#ffd23f','#4fb6ff','#7ee081','#fff','#ff5a5a'];
+  for(let i=0;i<34;i++){const x=52+(i*71)%256,y=242+(i*37)%46;s+=`<rect x="${x}" y="${y}" width="7" height="2.6" rx="1.3" fill="${sp[i%5]}" transform="rotate(${(i*47)%180} ${x} ${y})"/>`;}
+  const nm=esc(name||'');
+  s+=`<text x="180" y="${nm.length>9?280:284}" text-anchor="middle" font-family="Fredoka,Arial Rounded MT Bold,Arial,sans-serif" font-weight="700" font-size="${nm.length>9?28:38}" fill="#fff" stroke="#e0408a" stroke-width="3" paint-order="stroke">${nm}</text>`;
+  s+=`<text x="180" y="186" text-anchor="middle" font-family="Fredoka,Arial,sans-serif" font-weight="700" font-size="30" fill="#7b3fe4">${PARTY_AGE}</text>`;
+  const cc=['#ff6fae','#4fb6ff','#ffd23f','#7ee081','#b388ff'];
+  for(let i=0;i<PARTY_AGE;i++){const x=98+i*(164/(PARTY_AGE-1)),y=i%2?122:116,c=cc[i%5];
+    s+=`<g class="candle" data-i="${i}" style="cursor:pointer"><rect x="${x-14}" y="${y-74}" width="28" height="90" fill="transparent"/><rect x="${x-4.5}" y="${y-44}" width="9" height="46" rx="3" fill="${c}"/>`+[0,1,2,3].map(k=>`<path d="M${x-4.5} ${y-38+k*11} L${x+4.5} ${y-43+k*11}" stroke="#fff" stroke-width="2.2" opacity=".85"/>`).join('')+
+      `<line x1="${x}" y1="${y-44}" x2="${x}" y2="${y-49}" stroke="#3b2a2a" stroke-width="1.5"/><circle class="glow" cx="${x}" cy="${y-58}" r="16" fill="url(#pGlow)"/><path class="flame" d="M${x} ${y-70} Q${x+7} ${y-58} ${x} ${y-49} Q${x-7} ${y-58} ${x} ${y-70} Z" fill="#ffb02e"/><path class="flame" d="M${x} ${y-63} Q${x+3.5} ${y-56} ${x} ${y-51} Q${x-3.5} ${y-56} ${x} ${y-63} Z" fill="#fff4b0"/>`+
+      `<path class="smoke" d="M${x} ${y-50} q-5 -7 0 -14 q5 -7 0 -14" stroke="#cfcfe0" stroke-width="2.5" fill="none" stroke-linecap="round"/></g>`;}
+  return s+'</svg>';
+}
+// a string of pennant flags across the top that spells HAPPY BIRTHDAY
+function bannerSVG(){
+  const t='HAPPY BIRTHDAY!',cols=['#ff6fae','#ffd23f','#4fb6ff','#7ee081','#b388ff','#ff8a3d'],n=t.length,W=760,step=W/(n+1);
+  let s=`<svg id="partyBanner" viewBox="0 0 ${W} 150" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMin meet"><path d="M0 18 Q${W/2} 70 ${W} 18" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/>`;
+  for(let i=0;i<n;i++){const x=step*(i+1),y=18+52*(1-((x-W/2)/(W/2))**2)*.98,ch=t[i];if(ch===' ')continue;const c=cols[i%cols.length],a=((x-W/2)/(W/2))*-8;
+    s+=`<g transform="rotate(${a.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"><path d="M${(x-step*.44).toFixed(1)} ${y.toFixed(1)} L${(x+step*.44).toFixed(1)} ${y.toFixed(1)} L${x.toFixed(1)} ${(y+step*1.25).toFixed(1)} Z" fill="${c}" stroke="#fff" stroke-width="2"/><text x="${x.toFixed(1)}" y="${(y+step*.62).toFixed(1)}" text-anchor="middle" font-family="Fredoka,Arial Rounded MT Bold,Arial,sans-serif" font-weight="700" font-size="${(step*.6).toFixed(0)}" fill="#fff" stroke="${shade(c,-.35)}" stroke-width="2" paint-order="stroke">${ch}</text></g>`;}
+  return s+'</svg>';
+}
+function showParty(){
+  const name=(DB.chars[0]&&DB.chars[0].name)||'Brynny';
+  $('#partyTitle').textContent=`Happy ${PARTY_AGE}th Birthday!`;$('#partySub').textContent=`🎉 ${name}, this party is all for you! 🎉`;
+  $('#partyCakeWrap').innerHTML=cakeSVG(name);$('#partyBannerWrap').innerHTML=bannerSVG();
+  // her own doll as the birthday princess
+  const base=(DB.chars[0]&&DB.chars[0].look)||defaultLook(),princess={...base,dress:{id:'gown',c:'#ff8fc8'},hat:{id:'tiara',c:'#ffd23f'},shoes:{id:'glass',c:'#cfefff'},extras:{},scene:'birthday'};
+  try{$('#partyDoll').innerHTML=`<svg viewBox="20 -50 260 640" xmlns="http://www.w3.org/2000/svg">${DEFS}${charInner(princess)}</svg>`;}catch(e){$('#partyDoll').innerHTML='';}$('#partyHint').textContent='Make a wish, then tap the candles to blow them out! 🌬️';
+  $('#party').classList.add('show');partyBig=false;partyStart();
+}
+function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add('out');try{Music.sfx();}catch(e){}
+  const left=document.querySelectorAll('#partyCake .candle:not(.out)').length;
+  if(left){$('#partyHint').textContent=`🌬️ ${left} to go!`;return;}
+  $('#partyHint').textContent='🎊 Yay! Your wish is on its way! 🎊';partyBig=true;partyNext=0;try{Music.sfx('snap');}catch(e){}
+  for(let i=0;i<6;i++)setTimeout(()=>partyLaunch(true),i*180);
+}
+$('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
+$('#partyBlow').onclick=()=>{[...document.querySelectorAll('#partyCake .candle:not(.out)')].forEach((g,i)=>setTimeout(()=>blowCandle(g),i*90));};
+$('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=true;persist();if(!DB.welcomed)showWelcome();else sparkle();};
+// fireworks on a canvas, only while the party is open and on screen
+function partyLaunch(big){const c=$('#partyFx'),w=c.width,h=c.height;partyRockets.push({x:w*(.15+Math.random()*.7),y:h,vx:(Math.random()-.5)*1.5,vy:-(h*.012+Math.random()*h*.004),t:h*(.15+Math.random()*.3),big});}
+function partyBurst(x,y,big){const cols=['#ff6fae','#ffd23f','#4fb6ff','#7ee081','#b388ff','#ffffff','#ff8a3d'],c=cols[Math.random()*cols.length|0],c2=cols[Math.random()*cols.length|0],n=big?90:60,sp=big?5:3.6;
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2,v=sp*(.5+Math.random()*.6);partyBursts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,c:i%3?c:c2});}
+  if(partyBursts.length>900)partyBursts.splice(0,partyBursts.length-900);}
+function partyFrame(ts){
+  const c=$('#partyFx'),x=c.getContext('2d'),dpr=Math.min(2,window.devicePixelRatio||1),W=c.clientWidth*dpr,H=c.clientHeight*dpr;
+  if(c.width!==W||c.height!==H){c.width=W;c.height=H;}
+  if(!document.hidden){
+    if(ts>partyNext){partyLaunch(partyBig);partyNext=ts+(partyBig?350:900)+Math.random()*400;}
+    x.globalCompositeOperation='destination-out';x.fillStyle='rgba(0,0,0,.22)';x.fillRect(0,0,W,H);x.globalCompositeOperation='lighter';
+    for(let i=partyRockets.length-1;i>=0;i--){const r=partyRockets[i];r.x+=r.vx;r.y+=r.vy;r.vy+=H*.00012;x.fillStyle='#ffe9a8';x.beginPath();x.arc(r.x,r.y,2.2*dpr,0,7);x.fill();if(r.y<=r.t||r.vy>=0){partyBurst(r.x,r.y,r.big);partyRockets.splice(i,1);}}
+    for(let i=partyBursts.length-1;i>=0;i--){const p=partyBursts[i];p.x+=p.vx*dpr;p.y+=p.vy*dpr;p.vy+=.045;p.vx*=.985;p.vy*=.985;p.life-=.012;if(p.life<=0){partyBursts.splice(i,1);continue;}x.globalAlpha=Math.max(0,p.life);x.fillStyle=p.c;x.beginPath();x.arc(p.x,p.y,2*dpr,0,7);x.fill();}
+    x.globalAlpha=1;x.globalCompositeOperation='source-over';
+  }
+  partyRaf=requestAnimationFrame(partyFrame);
+}
+function partyStart(){partyStop();partyBursts=[];partyRockets=[];partyNext=0;if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;partyRaf=requestAnimationFrame(partyFrame);}
+function partyStop(){if(partyRaf)cancelAnimationFrame(partyRaf);partyRaf=0;partyBursts=[];partyRockets=[];}
+
+$('#welcomeGo').onclick=()=>{const n=$('#welcomeName').value.trim()||'Brynny';DB.chars[0].name=n;DB.chars[0].look.scene='birthday';if(!DB.welcomed)Object.assign(DB.chars[0].look,{dress:{id:'gown',c:'#ff8fc8'},hat:{id:'tiara',c:'#ffd23f'},shoes:{id:'glass',c:'#cfefff'}});DB.welcomed=true;persist();$('#welcome').classList.remove('show');renderStage();renderPanel();sparkle();if(musicStarted)applyMusic();};
 $('#welcomeName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#welcomeGo').click();});
 
 /* ---------- music ---------- */
@@ -2171,7 +2270,8 @@ document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=
 
 renderTabs();renderStage();renderPanel();
 loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
-if(!DB.welcomed)showWelcome();
+// the party shows the first time the game opens on each device (add ?party to the address to see it again)
+if(!DB.partied||/[?&]party\b/.test(location.search))showParty();else if(!DB.welcomed)showWelcome();
 </script>
 <script type="module">
 /* ---------- cloud save + messages (Firebase, free Spark plan) ---------- */
