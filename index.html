@@ -123,6 +123,8 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .addrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .addrow input{flex:1;min-width:150px;font-size:17px;border:2px solid #eadcf0;border-radius:12px;padding:10px 12px;color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;opacity:0;transition:.3s;z-index:40;pointer-events:none;max-width:90vw;width:max-content;text-align:center}
+#updBtn{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);z-index:98;display:none;background:#2ec4b6;color:#fff;font-weight:800;font-size:16px;border-radius:999px;padding:10px 18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.ver{margin:14px 0 0;text-align:center;font-size:12.5px;color:var(--muted)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .stage .twirl{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:#fff;font-size:22px;box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:2}
 .stage.zoomed .twirl{display:none}
@@ -279,6 +281,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   </div>
   <p style="font-weight:800;margin:12px 0 4px">💡 Did you know?</p>
   <ul class="tips"><li>Tap your doll to make her strike a pose.</li><li>Swipe across your doll to spin her around.</li><li>In 🏆 Contest you can send a challenge link to a friend.</li><li>In 💇‍♀️ Hair, the salon lets you cut, curl, braid and color.</li><li>Add friends and family above to dress them up too.</li></ul>
+  <p class="ver" id="verLine"></p>
 </div></div>
 
 <div class="modal" id="cropModal"><div class="sheet" style="max-width:380px;text-align:center">
@@ -406,6 +409,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 </div></div>
 
 <div class="toast" id="toast"></div>
+<button id="updBtn">✨ New version! Tap to update</button>
 
 <script>
 /* ---------- errors: save what went wrong (snake game's Firebase, list dressup_errors) and keep playing ---------- */
@@ -2892,6 +2896,13 @@ document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=
   const k=ART_KINDS.find(x=>x.id===ART[w.id].kind),f=+e.target.value/100,cx=w.x+w.w/2,cy=w.y+w.h/2;
   w.w=Math.round(k.box[2]*f);w.h=Math.round(k.box[3]*f);w.x=Math.round(cx-w.w/2);w.y=Math.round(cy-w.h/2);persist();salonRender();});
 
+// bump APP_VERSION and APP_BUILT with every update; open copies check for a newer one
+const APP_VERSION='34',APP_BUILT='2026-10-30T22:09:00Z';
+$('#verLine').textContent=`Version ${APP_VERSION} · updated ${new Date(APP_BUILT).toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}`;
+async function checkUpdate(){try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text(),m=t.match(/APP_VERSION='([^']+)'/);
+  if(m&&m[1]!==APP_VERSION)$('#updBtn').style.display='block';}catch(e){}}
+$('#updBtn').onclick=()=>location.reload();
+setTimeout(checkUpdate,4000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});
 renderTabs();renderStage();renderPanel();
 loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
 // the party shows the first time the game opens on each device (add ?party to the address to see it again)
