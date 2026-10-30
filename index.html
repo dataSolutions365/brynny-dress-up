@@ -786,10 +786,12 @@ function salonShapes(S){
     }else{
       const ends={straight:`L${X(97)} ${len-10} Q${X(100)} ${len+4} ${X(124)} ${len+2} L${X(150)} ${len}`,
         layers:`L${X(97)} ${len-12} L${X(101)} ${len+2} L${X(108)} ${len-9} L${X(116)} ${len+4} L${X(124)} ${len-7} L${X(133)} ${len+3} L${X(141)} ${len-6} L${X(150)} ${len+2}`,
-        v:`L${X(97)} ${len-24} Q${X(103)} ${len-8} ${X(124)} ${len+8} L${X(150)} ${len+26}`,
+        frame:`L${X(97)} ${len-10} Q${X(100)} ${len+4} ${X(124)} ${len+2} L${X(150)} ${len}`,
         angled:`L${X(97)} ${len+14} Q${X(104)} ${len+18} ${X(124)} ${len-4} L${X(150)} ${len-16}`};
       back.push(`<path d="M${X(150)} 27 Q${X(102)} 27 ${X(104)} 80 ${ends[cut]||ends.straight} Z"/>`);
-      if(len>130){const sl=Math.min(cut==='layers'?len-34:cut==='angled'?len+12:len,200);front.push(`<path d="M${X(109)} 88 Q${X(101)} 140 ${X(103)} ${sl} L${X(116)} ${sl-6} Q${X(112)} 140 ${X(115)} 96 Z"/>`);}
+      if(cut==='frame'&&len>150){// face-framing: short pieces at the chin, the rest stays long
+        front.push(`<path d="M${X(109)} 86 Q${X(98)} 120 ${X(101)} 158 L${X(106)} 150 L${X(110)} 160 L${X(115)} 150 L${X(119)} 156 Q${X(115)} 120 ${X(117)} 94 Z"/>`);}
+      else if(len>130){const sl=Math.min(cut==='layers'?len-34:cut==='angled'?len+12:len,200);front.push(`<path d="M${X(109)} 88 Q${X(101)} 140 ${X(103)} ${sl} L${X(116)} ${sl-6} Q${X(112)} 140 ${X(115)} 96 Z"/>`);}
     }
   }
   const BANGS={side:'M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z',
@@ -1601,7 +1603,7 @@ const SALON_TOOLS=[
  {id:'clips',e:'🎀',name:'Clips',hint:'Tap the hair to put clips in it.'},
 ];
 const CLIP_KINDS=[{id:'bow',name:'Bow'},{id:'pearl',name:'Pearls'},{id:'claw',name:'Claw clip'},{id:'butterfly',name:'Butterfly'},{id:'gems',name:'Sparkle pin'},{id:'crown',name:'Mini crown'},{id:'snap',name:'Snap clip'},{id:'moon',name:'Moon'},{id:'star',name:'Star'},{id:'flower',name:'Flower'},{id:'heart',name:'Heart'}];
-const CUTS=[{id:'straight',name:'Straight'},{id:'layers',name:'Layers'},{id:'v',name:'V-cut'},{id:'angled',name:'Angled bob'}];
+const CUTS=[{id:'straight',name:'Straight'},{id:'layers',name:'Layers'},{id:'frame',name:'Face frame'},{id:'angled',name:'Angled bob'}];
 function cutIcon(k){const S={len:k==='angled'?140:165,left:'loose',right:'loose',bangs:'side',cut:k};return salonShapes(S).back.map(x=>x.match(/d="([^"]+)"/)[1]).join(' ');}
 const SPRAY=['#ff6fae','#b388ff','#4fb6ff','#2ec4b6','#7ee081','#ffd23f','#ff8a3d','#ff5a5a','#ffffff'];
 let salonTool=null,salonDrag=null,salonRAF=0,salonOpt={spray:'#ff6fae',clip:'bow',clipC:'#ff4d8d'};
@@ -1632,11 +1634,12 @@ function salonMove(ev){
     if(Math.abs(D.sum)>Math.PI*3){S[D.side]='curly';salonDrag=null;persist();renderStage();Music.sfx();sparkle();toast('🌀 Curly!');}return;}
   if(salonDrag.comb){const D=salonDrag;if(q[1]-D.y0>45){D.n++;D.y0=q[1];sparkle();Music.sfx();if(D.n>=2&&S[D.side]!=='loose'){S[D.side]='loose';persist();renderStage();toast('🪮 All combed out!');}}else if(q[1]<D.y0)D.y0=q[1];return;}
   if(salonDrag.wash){const D=salonDrag;if(Math.hypot(q[0]-D.last[0],q[1]-D.last[1])<7)return;D.last=q;S.foam=(S.foam||[]);
-    for(let k=0;k<2;k++)S.foam.push([Math.round(q[0]+(Math.random()-.5)*16),Math.round(q[1]+(Math.random()-.5)*16),Math.round(4+Math.random()*6)]);
-    S.foam=S.foam.slice(-70);if(S.foam.length>=34&&!D.told){D.told=1;toast('🫧 So bubbly! Now tap 🚿 Rinse.');}if(DB.music.sfx&&Math.random()<.3)Music.sfx();salonRender();return;}
+    const onHair=(x,y)=>y>24&&y<Math.max(S.len,110)+8&&x>90&&x<210&&((x-150)/40)**2+((y-100)/46)**2>1;// not on the face
+    for(let k=0;k<2;k++){const bx=Math.round(q[0]+(Math.random()-.5)*16),by=Math.round(q[1]+(Math.random()-.5)*16);if(onHair(bx,by))S.foam.push([bx,by,Math.round(4+Math.random()*6)]);}
+    S.foam=S.foam.slice(-70);S.foamMax=Math.max(S.foamMax||0,S.foam.length);if(S.foam.length>=34&&!D.told){D.told=1;toast('🫧 So bubbly! Now tap 🚿 Rinse.');}if(DB.music.sfx&&Math.random()<.3)Music.sfx();salonRender();return;}
   if(salonDrag.rinse){const D=salonDrag;if(Math.hypot(q[0]-D.last[0],q[1]-D.last[1])<6)return;D.last=q;drip(ev);
-    const n=(S.foam||[]).length;S.foam=(S.foam||[]).filter(b=>Math.hypot(b[0]-q[0],b[1]-q[1])>24);
-    if(n&&!S.foam.length){S.wet=true;const col=(S.streaks||[]).length;S.streaks=[];persist();sparkle();toast(col?'✨ Squeaky clean! The color washed out too. Try 💨 Dry.':'✨ Squeaky clean! Now try 💨 Dry.');}
+    const n=(S.foam||[]).length;S.foam=(S.foam||[]).filter(b=>Math.hypot(b[0]-q[0],b[1]-q[1])>30);if(S.foam.length<=Math.max(6,(S.foamMax||0)*.2))S.foam=[];
+    if(n&&!S.foam.length){S.wet=true;S.foamMax=0;const col=(S.streaks||[]).length;S.streaks=[];persist();sparkle();toast(col?'✨ Squeaky clean! The color washed out too. Try 💨 Dry.':'✨ Squeaky clean! Now try 💨 Dry.');}
     salonRender();return;}
   if(salonDrag.dry){const D=salonDrag;if(!S.wet)return;if(Math.hypot(q[0]-D.last[0],q[1]-D.last[1])<14)return;D.last=q;D.n++;puff(ev);
     if(D.n>=14){S.wet=false;salonDrag=null;persist();renderStage();sparkle();toast('💨 Dry, soft and shiny!');}return;}
