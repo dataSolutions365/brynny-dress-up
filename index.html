@@ -25,7 +25,7 @@ header.top{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:
 .tbtn{background:#fff;color:var(--ink);border-radius:999px;padding:8px 13px;font-weight:600;font-size:15px;box-shadow:0 2px 0 rgba(0,0,0,.12);display:flex;gap:5px;align-items:center;white-space:nowrap}
 .tbtn:active{transform:translateY(1px)}
 @media (max-width:560px){.tbtn .lbl{display:none}.tbtn{padding:8px 11px;font-size:18px}}
-main{flex:1;display:flex;min-height:0}
+main{flex:1;display:flex;min-height:0;position:relative}
 .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;background:#fff}
 .stage{transition:background .4s}
 .stage.painting{outline:4px dashed var(--pink);outline-offset:-6px}
@@ -115,6 +115,39 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .stage .twirl{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:#fff;font-size:22px;box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:2}
 .stage.zoomed .twirl{display:none}
+#contestBar{position:absolute;left:8px;top:8px;z-index:3;display:none;align-items:center;gap:8px;background:#fff;border-radius:999px;padding:6px 8px 6px 14px;box-shadow:0 3px 12px rgba(59,35,87,.22);font-weight:700;white-space:nowrap;max-width:calc(100% - 16px)}
+#contestBar.show{display:flex}
+#contestBar .t{font-variant-numeric:tabular-nums;color:var(--pink)}
+#contestBar .pill{padding:7px 12px;font-size:14px}
+.stage.walking .doll{transform-box:fill-box;transform-origin:50% 100%;animation:walkIn 3.6s cubic-bezier(.3,.7,.4,1) both}
+.stage.walking .twirl{display:none}
+@keyframes walkIn{0%{transform:translateY(-46%) scale(.42)}12%{transform:translateY(-41%) scale(.48) rotate(-2deg)}24%{transform:translateY(-35%) scale(.55) rotate(2deg)}36%{transform:translateY(-29%) scale(.62) rotate(-2deg)}48%{transform:translateY(-22%) scale(.7) rotate(2deg)}60%{transform:translateY(-15%) scale(.79) rotate(-2deg)}72%{transform:translateY(-8%) scale(.88) rotate(1.5deg)}84%{transform:translateY(-2%) scale(.96) rotate(-1deg)}100%{transform:none}}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4;animation:flash .35s ease-out}
+@keyframes flash{0%{opacity:.85}100%{opacity:0}}
+.judges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.judge{background:#fff6fb;border-radius:16px;padding:10px 6px;text-align:center}
+.judge .face{font-size:34px}.judge .nm{font-size:12px;font-weight:700;opacity:.75}
+.judge .sc{font-size:30px;font-weight:800;color:var(--pink);opacity:0;transform:scale(.3);transition:all .35s cubic-bezier(.3,1.6,.5,1)}
+.judge .sc.in{opacity:1;transform:none}
+.judge .cm{font-size:12.5px;min-height:34px;margin-top:4px}
+.themes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.themes button{background:#fff6fb;border-radius:14px;padding:10px;font-weight:700;text-align:left}
+.themes button.lock{opacity:.45}
+.fnames{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 10px}.fnames input{min-width:0;padding:9px 10px;border-radius:12px;border:2px solid #f6cfe3;font:inherit;font-size:16px}
+.jpick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 10px}
+.jpick button{background:#fff6fb;border-radius:14px;padding:6px 4px;font-weight:700;font-size:13px;border:2px solid transparent}
+.jpick button.on{border-color:var(--pink);background:#ffe3f1}.jpick span{display:block;font-size:24px}.jpick small{display:block;font-weight:500;opacity:.65;font-size:11px}
+.votes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.votes button{background:#fff6fb;border-radius:16px;padding:6px;font-size:15px}.votes button:disabled{opacity:.35}
+.mine{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px}.mine button{background:#fff6fb;border-radius:12px;padding:8px;font-weight:700;text-align:left}.mine small{display:block;font-weight:500;opacity:.7}
+.vcard .watch{display:inline-block;margin-top:4px;font-size:12px;font-weight:700;color:var(--pink)}
+.vcard{width:100%;font:inherit;border-radius:16px;padding:6px;text-align:center}.vcard b,.vcard small{display:block}.vcard small{opacity:.7}
+.vcard svg,.votes svg{display:block;width:100%;height:150px}
+.winner svg{display:block;margin:0 auto;height:200px}
+.ranks{text-align:left;margin:8px auto;max-width:320px;line-height:1.8}
+.themes small{display:block;font-weight:500;opacity:.7}
+.poseTag{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#fff;color:var(--pink);font-weight:800;padding:6px 14px;border-radius:999px;box-shadow:0 3px 10px rgba(59,35,87,.2);pointer-events:none;z-index:3;white-space:nowrap;animation:tagPop 1.5s ease-out forwards}
+@keyframes tagPop{0%{opacity:0;transform:translateX(-50%) scale(.4)}20%{opacity:1;transform:translateX(-50%) scale(1.1)}30%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
 .spark{position:absolute;font-size:26px;pointer-events:none;animation:pop .9s ease-out forwards}
 @keyframes pop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.8) translateY(-30px)}}
 #welcome{position:fixed;inset:0;z-index:30;background:linear-gradient(160deg,#ffd1e8,#e3d6ff);display:none;align-items:center;justify-content:center;padding:16px;overflow:auto}
@@ -172,6 +205,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="spacer"></div>
   <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
   <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
+  <button class="tbtn" id="contestBtn" title="Modeling contest">🏆 <span class="lbl">Contest</span></button>
   <button class="tbtn" id="partyBtn" title="Birthday party">🎂 <span class="lbl">Party</span></button>
   <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span></button>
   <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
@@ -180,6 +214,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 </header>
 <main>
   <div class="stage" id="stage"></div>
+  <div id="contestBar"><span id="cbTheme"></span><span class="t" id="cbTime"></span><button class="pill" id="cbWalk">Walk the runway ✨</button></div>
   <div class="panel">
     <nav class="tabs" id="tabs"></nav>
     <div class="content" id="content"></div>
@@ -252,6 +287,11 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <div class="mrow"><label class="pill" style="cursor:pointer">➕ Add songs<input type="file" id="songFile" accept="audio/*,video/*" multiple hidden></label><button class="pill" id="voiceBtn" style="background:#8e6cff">🎙️ Record my voice</button></div>
 </div></div>
 <audio id="songPlayer" preload="none"></audio>
+
+<div class="modal" id="contestModal"><div class="sheet" style="max-width:460px;text-align:center">
+  <button class="close" data-close>×</button>
+  <div id="contestBody"></div>
+</div></div>
 
 <div class="modal" id="galModal"><div class="sheet">
   <button class="close" data-close>×</button>
@@ -462,7 +502,7 @@ const headT=L=>{const k=headK(L);return k===1?'translate(0 0)':`translate(150 13
 function body(L){
   const sk=L.skin,d=shade(sk,-.15);
   let s='';
-  s+=sym(`<polyline points="110,170 94,250 88,322" fill="none" stroke="${sk}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/><polyline points="106,176 91,250 86,316" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M94 250 Q98 254 102 250" stroke="${d}" stroke-width="1.5" fill="none" opacity=".5"/>`);
+  if(!RIG)s+=sym(`<polyline points="110,170 94,250 88,322" fill="none" stroke="${sk}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/><polyline points="106,176 91,250 86,316" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M94 250 Q98 254 102 250" stroke="${d}" stroke-width="1.5" fill="none" opacity=".5"/>`);
   s+=sym(`<path d="M106 290 L150 296 L148 300 L146 430 L142 556 L126 556 L118 430 Z" fill="${sk}"/><ellipse cx="134" cy="562" rx="11" ry="7" fill="${sk}"/><path d="M126 312 Q128 380 129 430 Q131 490 131 548" stroke="#fff" stroke-opacity=".2" stroke-width="6" fill="none" stroke-linecap="round"/>${nailDots(L.nails&&L.nails.feet,[[127,566],[131.5,567.5],[135.5,567.8],[139,567.2],[142,566]],1.4,1.3)}<path d="M122 430 Q132 436 142 430" stroke="${d}" stroke-width="2" fill="none" opacity=".6"/>`);
   s+=`<path d="M139 110 L161 110 L162 162 L138 162 Z" fill="${sk}"/><path d="M139 132 Q150 146 161 132 L161 146 Q150 156 139 146 Z" fill="${d}" opacity=".45"/>`;
   s+=`<path d="${TORSO_BODY}" fill="${sk}"/>`;
@@ -471,7 +511,8 @@ function body(L){
   return s;
 }
 const nailDots=(set,pts,rx,ry)=>(set||[]).map((n,i)=>n&&pts[i]?`<ellipse cx="${pts[i][0]}" cy="${pts[i][1]}" rx="${rx}" ry="${ry}" fill="${n.c}"${n.g?' stroke="#fff" stroke-width=".5"':''}/>`:'').join('');
-const hands=L=>sym(`<circle cx="88" cy="328" r="10" fill="${L.skin}"/>`+nailDots(L.nails&&L.nails.hands,[[79,331],[82,336],[87,338.5],[92,337.5],[96,334]],1.7,2.2));
+const handRaw=L=>`<circle cx="88" cy="328" r="10" fill="${L.skin}"/>`+nailDots(L.nails&&L.nails.hands,[[79,331],[82,336],[87,338.5],[92,337.5],[96,334]],1.7,2.2);
+const hands=L=>RIG?'':sym(handRaw(L));
 
 const SPOOKY=[{id:'spacepup',name:'Space pup'},{id:'vampire',name:'Vampire'},{id:'werewolf',name:'Werewolf'},{id:'mummy',name:'Mummy'},{id:'zombie',name:'Zombie'},{id:'skeleton',name:'Skeleton'},{id:'witch',name:'Witch'}];
 const SPOOK_TINT={spacepup:['#4a86e0',.92],vampire:['#f4f0fa',.55],zombie:['#8fb08a',.6],skeleton:['#f7f7f7',.88],witch:['#7ccf6a',.62]};
@@ -719,7 +760,7 @@ function salonHair(L,c,d){
 
 /* ---------- clothes ---------- */
 const TORSO=(b=268,n=168)=>`M112 156 Q150 ${n} 188 156 Q199 161 199 178 Q191 222 186 ${b} L114 ${b} Q109 222 101 178 Q101 161 112 156 Z`;
-const sleeve=(c,long,w=26)=>sym(long?`<polyline points="110,168 94,250 89,316" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:`<line x1="110" y1="168" x2="102" y2="208" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`);
+const sleeve=(c,long,w=26,op)=>RIG?(RIG.sl.push({c,long,w,op}),''):sym(op?`<polyline points="110,168 94,250 89,316" fill="none" stroke="${c}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:long?`<polyline points="110,168 94,250 89,316" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:`<line x1="110" y1="168" x2="102" y2="208" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`);
 const neck=c=>`<path d="M130 160 Q150 176 170 160" fill="none" stroke="${shade(c,-.18)}" stroke-width="3"/>`;
 function zig(y0,y1,half,n,amp){let p=`M116 ${y0} L184 ${y0} L${150+half} ${y1}`;for(let i=1;i<=n;i++){p+=` L${(150+half-i*(2*half/n)).toFixed(1)} ${i%2?y1+amp:y1}`;}return p+' Z';}
 const PANTS='M116 258 L184 258 Q198 282 196 302 L192 430 L176 552 L155 552 L151 430 L150 322 L149 430 L145 552 L124 552 L108 430 L104 302 Q102 282 116 258 Z';
@@ -805,7 +846,7 @@ const BOTTOMS=[
 const DRESSES=[
  {id:'gown',name:'Princess gown',c:'#ff8fc8',d:c=>sym(`<circle cx="107" cy="170" r="17" fill="${shade(c,.2)}"/>`)+BOD(c)+`<path d="M116 255 L184 255 Q240 400 264 556 Q150 584 36 556 Q60 400 116 255 Z" fill="${c}"/><g stroke="${shade(c,-.12)}" stroke-width="2" fill="none"><path d="M136 262 Q118 420 96 566"/><path d="M164 262 Q182 420 204 566"/><path d="M150 262 L150 572"/></g><rect x="114" y="250" width="72" height="12" rx="6" fill="${shade(c,-.15)}"/>`+sparkles([[100,470],[200,500],[150,420],[124,360,4],[178,350,4],[70,540,4],[230,540,4]])},
  {id:'party',name:'Party dress',c:'#4fc3f7',d:c=>sleeve(shade(c,.25),0,22)+BOD(c,172)+`<path d="M116 255 L184 255 Q214 320 232 390 Q150 408 68 390 Q86 320 116 255 Z" fill="${c}"/><path d="M150 258 L128 246 L128 270 Z M150 258 L172 246 L172 270 Z" fill="${shade(c,-.2)}"/><circle cx="150" cy="258" r="6" fill="${shade(c,-.3)}"/>`+sparkles([[110,350,4],[190,360,4],[150,330,4]])},
- {id:'wedding',name:'Wedding gown',c:'#ffffff',d:c=>{const o=shade(c,-.1);let s=sym(`<polyline points="110,168 94,250 89,316" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>`)+`<path d="${TORSO(262,176)}" fill="${c}" stroke="${o}" stroke-width="1.5"/><path d="M116 255 L184 255 Q250 400 274 560 Q150 590 26 560 Q50 400 116 255 Z" fill="${c}" stroke="${o}" stroke-width="1.5"/>`;
+ {id:'wedding',name:'Wedding gown',c:'#ffffff',d:c=>{const o=shade(c,-.1);let s=sleeve('#fff',1,24,.6)+`<path d="${TORSO(262,176)}" fill="${c}" stroke="${o}" stroke-width="1.5"/><path d="M116 255 L184 255 Q250 400 274 560 Q150 590 26 560 Q50 400 116 255 Z" fill="${c}" stroke="${o}" stroke-width="1.5"/>`;
    for(let r=0;r<5;r++)for(let i=0;i<7+r*2;i++){const y=330+r*48,half=40+r*28,x=150-half+i*(2*half/(6+r*2));s+=`<circle cx="${x.toFixed(1)}" cy="${y}" r="2.4" fill="${o}"/>`;}
    return s+`<rect x="114" y="250" width="72" height="11" rx="5" fill="#ffd1e6"/>`+flower(150,256,6,'#ffd1e6','#fff');}},
  {id:'witch',name:'Witch dress',c:'#5b2a86',d:c=>sym(`<path d="M110 160 L90 250 L66 332 L106 320 L106 252 L120 174 Z" fill="${shade(c,-.15)}"/>`)+BOD(c)+`<path d="${zig(255,526,84,12,24)}" fill="${c}"/><rect x="114" y="250" width="72" height="11" rx="4" fill="#ff8a1f"/><rect x="143" y="248" width="14" height="15" rx="2" fill="#ffd23f"/>`+star(122,420,6,'#ffd23f')+star(178,470,5,'#ffd23f')+`<path d="M170 380 A12 12 0 1 0 182 396 A9 9 0 1 1 170 380 Z" fill="#ffd23f"/>`},
@@ -1087,7 +1128,7 @@ function sceneSVG(id,name){
 }
 
 /* ---------- character ---------- */
-let dollBack=false;
+let dollBack=false,RIG=null;
 // height and body width: the whole doll grows from the feet; the head keeps its own width
 const bodyT=L=>{const h=L.height||1,w=L.build||1;return h===1&&w===1?'':`translate(150 580) scale(${(w*h).toFixed(3)} ${h}) translate(-150 -580)`;};
 function charInner(L){const bt=bodyT(L);return bt?`<g class="bd" transform="${bt}">${charInner0(L)}</g>`:charInner0(L);}
@@ -1107,10 +1148,37 @@ function charInner0(L){
       +`<path d="M128 52 Q150 44 172 52 M120 74 Q150 62 180 74 M118 98 Q150 88 182 98" stroke="${hd}" stroke-width="2.5" fill="none" opacity=".45" stroke-linecap="round"/>`+v(hat.back)+v(hat.front)+`</g>`;
     return b;
   }
+  if(RIG)return rigInner(L,{T,H,hat,ex,wear,A,v,vc,vh});
   let s=ex.back+`<g transform="${T}">${vh(H.back)}${hat.back||''}</g>`+v(body(L));
   if(L.dress)s+=vc(wear(DRESSES,L.dress));else s+=vc(wear(BOTTOMS,L.bottom))+vc(wear(TOPS,L.top));
   s+=A.body+vc(wear(SHOES,L.shoes))+A.feet+vc(ex.front)+v(hands(L))+vc(ex.hand)+A.hand;
   s+=`<g class="hd" transform="${T}">${face(L)}${ex.head}${vh(H.front)}<path d="M122 52 Q150 38 180 52" stroke="#fff" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round"/>${v(hat.front)}${A.head}</g>`;
+  return s;
+}
+/* posing: the same doll, drawn with each arm in two hinged pieces (shoulder, elbow) so it can move.
+   Sleeves made with sleeve() are redrawn on the arm; any other fabric near the arm is cut out and carried along. */
+const RIG_UP='78,148 112,148 100,172 102,206 110,256 70,256 74,206',RIG_LO='70,256 110,256 106,300 104,346 64,346 66,300',RIG_HAND='-40,230 150,230 150,640 -40,640';
+const mirPts=p=>p.split(' ').map(q=>{const [x,y]=q.split(',');return (300-x)+','+y;}).join(' ');
+function rigInner(L,{T,H,hat,ex,wear,A,v,vc,vh}){
+  RIG.sl=[];const top=L.dress?'':vc(wear(TOPS,L.top)),sl=RIG.sl;RIG.sl=[];
+  const dress=L.dress?vc(wear(DRESSES,L.dress)):'',slD=RIG.sl;const sleeves=[...sl,...slD];RIG.sl=[];
+  const bottom=L.dress?'':vc(wear(BOTTOMS,L.bottom)),sk=L.skin,d=shade(sk,-.15);
+  const cut=(id,pts,inner)=>`<clipPath id="${id}"><polygon points="${pts}"/></clipPath>`;
+  let defs=`<mask id="rgM1" maskUnits="userSpaceOnUse" x="-60" y="-100" width="420" height="760"><rect x="-60" y="-100" width="420" height="760" fill="#fff"/><polygon points="${RIG_UP}"/><polygon points="${mirPts(RIG_UP)}"/></mask>`
+    +`<mask id="rgM2" maskUnits="userSpaceOnUse" x="-60" y="-100" width="420" height="760"><rect x="-60" y="-100" width="420" height="760" fill="#fff"/><polygon points="${RIG_UP}"/><polygon points="${mirPts(RIG_UP)}"/><polygon points="${RIG_LO}"/><polygon points="${mirPts(RIG_LO)}"/></mask>`;
+  const arm=i=>{const m=x=>i?`<g transform="matrix(-1 0 0 1 300 0)">${x}</g>`:x,P=x=>i?mirPts(x):x,H2=i?mirPts(RIG_HAND):RIG_HAND;
+    defs+=cut(`rgU${i}`,P(RIG_UP))+cut(`rgL${i}`,P(RIG_LO))+cut(`rgH${i}`,H2);
+    const slU=sleeves.map(q=>`<line x1="110" y1="168" x2="${q.long?94:102}" y2="${q.long?250:208}" stroke="${q.c}"${q.op?` stroke-opacity="${q.op}"`:''} stroke-width="${q.w}" stroke-linecap="round"/>`).join('');
+    const slL=sleeves.filter(q=>q.long).map(q=>`<line x1="94" y1="250" x2="89" y2="316" stroke="${q.c}"${q.op?` stroke-opacity="${q.op}"`:''} stroke-width="${q.w}" stroke-linecap="round"/>`).join('');
+    const up=v(m(`<line x1="110" y1="170" x2="94" y2="250" stroke="${sk}" stroke-width="20" stroke-linecap="round"/><line x1="106" y1="176" x2="91" y2="250" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/>`))+vc(m(slU))+`<g clip-path="url(#rgU${i})">${dress}${top}</g>`;
+    const lo=v(m(`<line x1="94" y1="250" x2="88" y2="322" stroke="${sk}" stroke-width="20" stroke-linecap="round"/><line x1="91" y1="252" x2="86" y2="316" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/><path d="M94 250 Q98 254 102 250" stroke="${d}" stroke-width="1.5" fill="none" opacity=".5"/>`))
+      +vc(m(slL))+`<g clip-path="url(#rgL${i})">${top}</g>`+v(m(handRaw(L)))+`<g clip-path="url(#rgH${i})">${vc(ex.hand)}${A.hand}</g>`;
+    return `<g class="rU${i}" data-o="${i?190:110} 170">${up}<g class="rL${i}" data-o="${i?206:94} 250">${lo}</g></g>`;};
+  const arms=arm(0)+arm(1);
+  let s=`<defs>${defs}</defs><g class="rLn" data-o="150 566">`+ex.back+`<g class="rHd" data-o="150 150"><g transform="${T}">${vh(H.back)}${hat.back||''}</g></g>`+v(body(L));
+  s+=bottom+(dress?`<g mask="url(#rgM1)">${dress}</g>`:'')+(top?`<g mask="url(#rgM2)">${top}</g>`:'');
+  s+=A.body+vc(wear(SHOES,L.shoes))+A.feet+vc(ex.front)+arms;
+  s+=`<g class="rHd" data-o="150 150"><g class="hd" transform="${T}">${face(L)}${ex.head}${vh(H.front)}<path d="M122 52 Q150 38 180 52" stroke="#fff" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round"/>${v(hat.front)}${A.head}</g></g></g>`;
   return s;
 }
 const VIEW='-40 -75 380 680';
@@ -1841,7 +1909,43 @@ $('#stage').addEventListener('pointerdown',e=>{if(zoomMode()||tab==='art'||e.tar
 $('#stage').addEventListener('pointermove',e=>{if(!spinDrag||e.pointerId!==spinDrag.id)return;const dx=e.clientX-spinDrag.x;if(!spinDrag.moved&&Math.abs(dx)<8)return;
   if(!spinDrag.moved){spinDrag.moved=true;cancelAnimationFrame(spinAnim);try{$('#stage').setPointerCapture(e.pointerId);}catch(_){}}
   setSpin(spinDrag.a+dx*.9);});
-const spinUp=e=>{if(!spinDrag||e.pointerId!==spinDrag.id)return;const d=spinDrag;spinDrag=null;if(!d.moved)return;spinTo(Math.round(spinA/180)*180,300);};
+const spinUp=e=>{if(!spinDrag||e.pointerId!==spinDrag.id)return;const d=spinDrag;spinDrag=null;
+  if(!d.moved){if(e.type==='pointerup'&&!(tab==='hair'&&salonTool)&&e.target.closest&&e.target.closest('.doll'))strikePose();return;}spinTo(Math.round(spinA/180)*180,300);};
+/* tap the doll to strike a pose: arms hinge at shoulder and elbow, head tilts, body leans */
+const POSES=[
+ {n:'Hands on hips!',u:[40,40],l:[-112,-112]},
+ {n:'Hi there! 👋',u:[0,140],l:[0,18],wave:1,hd:5},
+ {n:'Superstar! 🌟',u:[150,150],l:[15,15],hop:14},
+ {n:'Mwah! 💋',u:[0,12],l:[0,-168],hd:-7,fx:'💋'},
+ {n:'Sassy! 💁‍♀️',u:[40,-4],l:[-112,0],ln:3,hd:8},
+ {n:'Strike a pose! ✨',u:[95,150],l:[0,20],ln:-4,hd:-5},
+ {n:'Cute! 🥰',u:[18,18],l:[-150,-150],hd:6,fx:'💖'},
+];
+let poseI=-1,poseRaf=0,poseNow={u0:0,u1:0,l0:0,l1:0,hd:0,ln:0,y:0},poseBack=0;
+function poseSet(q){const sv=$('#stage svg');if(!sv)return false;const g=c=>sv.querySelectorAll('.'+c);if(!g('rU0').length)return false;
+  const rot=(c,a)=>g(c).forEach(el=>el.setAttribute('transform',`rotate(${a.toFixed(1)} ${el.dataset.o})`));
+  rot('rU0',q.u0);rot('rU1',-q.u1);rot('rL0',q.l0);rot('rL1',-q.l1);rot('rHd',q.hd);
+  g('rLn').forEach(el=>el.setAttribute('transform',`translate(0 ${(-q.y).toFixed(1)}) rotate(${q.ln.toFixed(1)} ${el.dataset.o})`));return true;}
+function poseTween(to,ms,done){cancelAnimationFrame(poseRaf);const from={...poseNow},t0=performance.now();
+  const step=t=>{const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);for(const n in to)poseNow[n]=from[n]+(to[n]-from[n])*e;
+    if(!poseSet(poseNow)){poseNow={u0:0,u1:0,l0:0,l1:0,hd:0,ln:0,y:0};return;}if(k<1)poseRaf=requestAnimationFrame(step);else if(done)done();};
+  poseRaf=requestAnimationFrame(step);}
+function strikePose(i,scene,who){
+  const st=$('#stage');if(!st||st.classList.contains('walking')||zoomMode()||tab==='art')return;
+  if(Math.cos(spinA*Math.PI/180)<0){spinA=0;}
+  if(!st.querySelector('svg .rU0')||scene||who){RIG={sl:[]};
+    try{if(who)st.innerHTML=fullSVG({...who.look,scene:scene||who.look.scene},who.name);else{const l=L(),keep=l.scene;if(scene)l.scene=scene;try{renderStage();}finally{l.scene=keep;}}}finally{RIG=null;}
+    poseNow={u0:0,u1:0,l0:0,l1:0,hd:0,ln:0,y:0};}
+  poseI=i!=null?i:(poseI+1)%POSES.length;const p=POSES[poseI];clearTimeout(poseBack);
+  const to={u0:p.u[0],u1:p.u[1],l0:p.l[0],l1:p.l[1],hd:p.hd||0,ln:p.ln||0,y:0};
+  if(p.hop)poseTween({...to,y:p.hop},260,()=>poseTween({y:0},260));else poseTween(to,360);
+  if(p.wave){let n=0;const w=()=>{if(n++>5)return;poseTween({l1:p.l[1]+(n%2?-28:12)},220,w);};setTimeout(w,380);}
+  const tag=document.createElement('div');tag.className='poseTag';tag.textContent=p.n;st.appendChild(tag);setTimeout(()=>tag.remove(),1500);
+  if(p.fx)for(let k=0;k<3;k++)setTimeout(()=>{const s=document.createElement('span');s.className='spark';s.textContent=p.fx;s.style.left=(52+Math.random()*14)+'%';s.style.top=(14+Math.random()*10)+'%';st.appendChild(s);setTimeout(()=>s.remove(),900);},200+k*220);
+  try{Music.sfx();}catch(e){}
+  if(contest&&!contest.walking){contest.poses=contest.poses||new Set();contest.poses.add(poseI);}
+  poseBack=setTimeout(()=>poseTween({u0:0,u1:0,l0:0,l1:0,hd:0,ln:0,y:0},360,()=>{if(!who&&!scene&&$('#stage svg .rU0'))renderStage();}),2100);
+}
 $('#stage').addEventListener('pointerup',spinUp);$('#stage').addEventListener('pointercancel',spinUp);
 
 /* ---------- UI ---------- */
@@ -2062,6 +2166,220 @@ function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add
 }
 $('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
 $('#partyBtn').onclick=showParty;
+
+/* ---------- modeling contest: a theme, a runway walk, three judges ---------- */
+const THEMES=[
+ {id:'royal',e:'👑',name:'Royal Ball',hint:'Gowns, crowns, sparkles and fancy shoes.',need:0,cols:['#ff8fc8','#b388ff','#ffd23f','#ffffff','#c2185b'],
+  items:['gown','redcarpet','wedding','party','redtulle','tiara','crown','veil','glass','heels','platforms','laceheels','pearls','wand','cape','earrings','heartneck','bouquet']},
+ {id:'beach',e:'🏖️',name:'Beach Day',hint:'Sunny, bright and ready for the waves.',need:0,cols:['#4fc3f7','#ffd23f','#ff8a3d','#7ee081','#2ec4b6'],
+  items:['swimsuit','sundress','island','shorts','tank','sandals','sunhat','cap','hibiscus','lei','heartglasses','glasses','athshorts','flats']},
+ {id:'spooky',e:'🎃',name:'Spooky Night',hint:'Witches, vampires and monsters welcome!',need:0,cols:['#2d2d3a','#ff8a1f','#7b3fe4','#8b0016','#7ee081'],
+  items:['witch','vampire','werewolf','mummy','zombie','pumpkin','spacepup','witchhat','catears','wolfears','mummywrap','pupears','witchboots','paws','bat','vampcape','cape','candy','wand','horns','tail']},
+ {id:'sporty',e:'⚽',name:'Sporty Star',hint:'Game day! Jerseys, sneakers and a medal.',need:1,cols:['#ff6fae','#4fc3f7','#ffffff','#2d2d3a','#ff8a1f'],
+  items:['jersey','athshorts','tennis','tennisskirt','cheer','cheertop','leotard','joggers','leggings','hoodie','sneaker','cleats','hightops','cap','sweatband','headband','racket','ball','medal','pompoms']},
+ {id:'popstar',e:'🎤',name:'Pop Star Stage',hint:'Shiny, fluffy, bold. Own the stage!',need:2,cols:['#d6d9e2','#ff6fae','#2d2d3a','#b388ff','#d7263d'],
+  items:['sequin','minidress','furshrug','furcoat','corset','graphiccrop','silvermini','furskirt','cargo','catsuit','redtulle','moto','chunkyboots','platforms','laceheels','furwarmers','kneeboots','fluffyears','horns','facegems','bangles','tail','whiskers','heartglasses','earrings']},
+ {id:'winter',e:'❄️',name:'Winter Wonderland',hint:'Cozy layers for a snowy day.',need:3,cols:['#ffffff','#4fc3f7','#d62839','#b388ff','#2e8b57'],
+  items:['sweater','xmas','santa','turtleneck','jacket','military','blazer','jeans','leggings','skinny','snowboots','kneeboots','boots','beanie','santahat','antlers','scarf','skates']},
+ {id:'fairy',e:'🧚',name:'Fairy Garden',hint:'Wings, flowers and a little magic.',need:4,cols:['#bfe9ff','#ff8fc8','#7ee081','#ffd23f','#b388ff'],
+  items:['fairy','mermaid','ballerina','sundress','tutu','skirt','wings','flowers','wand','flats','pointe','glass','hibiscus','bouquet','sandals','tiara']},
+ {id:'school',e:'🎒',name:'First Day of School',hint:'Neat, comfy and ready to learn.',need:5,cols:['#5c7cfa','#ff6fae','#ffd23f','#ffffff','#7ee081'],
+  items:['tee','startee','hearttee','blouse','sweater','jacket','varsity','turtleneck','jeans','skirt','tennisskirt','flares','leggings','sneaker','maryjanes','hightops','flats','headband','bow','purse','glasses','backpack']},
+];
+// six judges: two look at the theme, two at colors, two at finishing touches
+const JUDGE_CAST=[{id:'ula',e:'🦄',n:'Ula the Unicorn',k:'theme'},{id:'bixby',e:'🐶',n:'Bixby Pup',k:'theme'},{id:'coco',e:'🐱',n:'Coco Cat',k:'style'},{id:'bella',e:'🦋',n:'Bella Butterfly',k:'style'},{id:'polly',e:'🦜',n:'Polly Parrot',k:'finish'},{id:'pip',e:'🐼',n:'Pip Panda',k:'finish'}];
+const JK={theme:'theme',style:'colors',finish:'details'};
+let contest=null,contestTimer=0;
+const CS=()=>{DB.contest=DB.contest||{stars:0,best:{}};const C=DB.contest;C.judges=(C.judges||[]).filter(id=>JUDGE_CAST.some(j=>j.id===id));if(!C.judges.length)C.judges=['ula','coco','polly'];C.opt=C.opt||{tm:0,mode:'solo',win:'vote'};return C;};
+const judgesOn=ids=>(ids||CS().judges).map(id=>JUDGE_CAST.find(j=>j.id===id)).filter(Boolean);
+const judgeTotal=(sc,js)=>js.reduce((a,j)=>a+sc[j.k],0);
+const hueOf=h=>{if(!h||h[0]!=='#')return null;const n=parseInt(h.slice(1),16),r=(n>>16)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+  if(d<.12)return {gray:true,l:(mx+mn)/2};let hh=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return {h:(hh*60+360)%360,l:(mx+mn)/2};};
+const colorNear=(a,b)=>{const x=hueOf(a),y=hueOf(b);if(!x||!y)return false;if(x.gray||y.gray)return x.gray&&y.gray&&Math.abs(x.l-y.l)<.35;return Math.min(Math.abs(x.h-y.h),360-Math.abs(x.h-y.h))<30;};
+function scoreLook(l,th){
+  const worn=[];if(l.dress)worn.push(l.dress);else{if(l.top)worn.push(l.top);if(l.bottom)worn.push(l.bottom);}
+  if(l.shoes)worn.push(l.shoes);if(l.hat)worn.push(l.hat);
+  const ex=Object.entries(l.extras||{}).map(([id,c])=>({id,c}));
+  const all=[...worn,...ex],hits=all.filter(w=>th.items.includes(w.id)).length;
+  // judge 1: does it fit the theme?
+  const theme=Math.min(10,3+hits*1.8+(l.dress&&th.items.includes(l.dress.id)?1.5:0));
+  // judge 2: colors that go together and match the theme
+  const cols=all.map(w=>w.c).filter(Boolean);let pal=cols.filter(c=>th.cols.some(t=>colorNear(c,t))).length;
+  let pairs=0,same=0;for(let i=0;i<cols.length;i++)for(let j=i+1;j<cols.length;j++){pairs++;if(colorNear(cols[i],cols[j]))same++;}
+  const style=Math.min(10,5.5+pal*.9+(pairs?same/pairs*2.5:0)+(l.style==='glam'?.5:0));
+  // judge 3: finishing touches
+  const m=l.makeup||{},nails=l.nails&&((l.nails.hands||[]).some(Boolean)||(l.nails.feet||[]).some(Boolean));
+  let fin=5+(l.shoes?1:0)+(l.hat?1:0)+Math.min(2,ex.length)*.8+((m.lips||m.shadow)?.8:0)+(m.paint?.4:0)+(nails?.6:0)+(l.hairStyle!=='long'?.6:0)+((l.salon&&(l.salon.clips||[]).length)?.4:0);
+  fin=Math.min(10,fin);
+  return {theme:Math.round(theme),style:Math.round(style),finish:Math.round(fin),hits};
+}
+function judgeSays(k,v,th,l){
+  const hi={theme:[`That is SO ${th.name}! 💯`,`Perfect for the ${th.name}!`],style:['Those colors look amazing together! 🎨','Gorgeous color choices!'],finish:['Every little detail is perfect! ✨','Love the finishing touches!']};
+  const mid={theme:['Nice! A few more theme pieces would wow me.','Ooh, getting close to the theme!'],style:['Pretty! Try colors from the same family.','Cute colors! Matching shades pop even more.'],finish:['Add shoes, a hat or jewelry for extra sparkle!','Try makeup or nails to finish the look!']};
+  if(l&&k==='finish'&&v<9){const ex=Object.keys(l.extras||{}).length,mk=l.makeup&&(l.makeup.lips||l.makeup.shadow);
+    mid.finish=!l.shoes||!l.hat?['Add shoes or a hat for extra sparkle!']:ex<2?['Some jewelry or a bag would finish the look!']:!mk?['Try a little makeup to finish the look!']:['Try painted nails for the final touch!'];}
+  const pick=a=>a[Math.floor(Math.random()*a.length)];return v>=9?pick(hi[k]):pick(mid[k]);
+}
+function contestPick(){
+  const C=CS(),st=C.stars,o=C.opt,on=(k,v)=>o[k]==v?'on':'';
+  $('#contestBody').innerHTML=`<h2>🏆 Modeling Contest</h2><p>Pick a theme, dress up, then walk the runway for the judges!</p><p style="font-weight:700">⭐ ${st} star${st===1?'':'s'}</p>
+   <div class="seg" style="justify-content:center"><button class="${on('mode','solo')}" data-mode="solo">💃 Just me</button><button class="${on('mode','friends')}" data-mode="friends">👭 Same phone</button><button class="${on('mode','online')}" data-mode="online">🌍 Send a link</button></div>
+   <div id="cOnlineHelp" style="${o.mode==='online'?'':'display:none'}"><p>Dress up and walk, then send a link to a friend. They play on their own phone with the same theme and judges, and you both see who scored best!</p>${(C.mine||[]).length?`<p style="font-weight:700;margin-bottom:4px">📬 Your challenges</p><div class="mine">${C.mine.map(m=>{const t=THEMES.find(x=>x.id===m.th)||THEMES[0];return `<button data-results="${m.code}">${t.e} ${t.name}<small>See scores</small></button>`;}).join('')}</div>`:''}</div>
+   <div id="cFriends" style="${o.mode==='friends'?'':'display:none'}"><p>Everyone dresses their own doll for the same theme, then you all vote! Type 2 to 4 names:</p><div class="fnames">${[0,1,2,3].map(i=>`<input maxlength="20" placeholder="Player ${i+1}" value="${esc((o.names||[me().name])[i]||'')}">`).join('')}</div>
+   <p style="font-weight:700;margin-bottom:4px">Who picks the winner?</p><div class="seg" style="justify-content:center"><button class="${on('win','vote')}" data-win="vote">🗳️ Friends vote</button><button class="${on('win','judges')}" data-win="judges">🦄 Judges</button><button class="${on('win','both')}" data-win="both">✨ Both</button></div></div>
+   <p style="font-weight:700;margin-bottom:4px">Judges (pick up to 3)</p><div class="jpick">${JUDGE_CAST.map(j=>`<button data-judge="${j.id}" class="${C.judges.includes(j.id)?'on':''}"><span>${j.e}</span>${j.n.split(' ')[0]}<small>${JK[j.k]}</small></button>`).join('')}</div>
+   <p style="font-weight:700;margin-bottom:4px">Timer</p>
+   <div class="themes">${THEMES.map(t=>{const lk=st<t.need*3,b=CS().best[t.id]||0;return `<button data-theme="${t.id}" class="${lk?'lock':''}">${t.e} ${t.name}<small>${lk?`🔒 ${t.need*3} stars to unlock`:(b?'⭐'.repeat(b):t.hint)}</small></button>`;}).join('')}</div>
+   <div class="seg" style="justify-content:center"><button class="${on('tm',0)}" data-tm="0">No timer</button><button class="${on('tm',120)}" data-tm="120">2 minutes</button><button class="${on('tm',60)}" data-tm="60">1 minute</button></div>`;
+  // settings first, themes last: tapping a theme starts the game
+  const b=$('#contestBody'),th=b.querySelector('.themes');b.appendChild(th);
+  $('#contestModal').classList.add('show');
+}
+$('#contestBtn').onclick=contestPick;
+$('#contestBody').addEventListener('click',e=>{
+  const C=CS(),seg=(a,el)=>{$('#contestBody').querySelectorAll(`[data-${a}]`).forEach(b=>b.classList.toggle('on',b===el));};
+  const md=e.target.closest('[data-mode]');if(md){seg('mode',md);C.opt.mode=md.dataset.mode;persist();$('#cFriends').style.display=md.dataset.mode==='friends'?'':'none';$('#cOnlineHelp').style.display=md.dataset.mode==='online'?'':'none';return;}
+  const tm=e.target.closest('[data-tm]');if(tm){seg('tm',tm);C.opt.tm=+tm.dataset.tm;persist();return;}
+  const wn=e.target.closest('[data-win]');if(wn){seg('win',wn);C.opt.win=wn.dataset.win;persist();return;}
+  const jd=e.target.closest('[data-judge]');if(jd){const id=jd.dataset.judge,i=C.judges.indexOf(id);
+    if(i>=0){if(C.judges.length===1){toast('You need at least 1 judge!');return;}C.judges.splice(i,1);}else{C.judges.push(id);if(C.judges.length>3)C.judges.shift();}
+    persist();$('#contestBody').querySelectorAll('[data-judge]').forEach(b=>b.classList.toggle('on',C.judges.includes(b.dataset.judge)));return;}
+  const t=e.target.closest('[data-theme]');if(t){const th=THEMES.find(x=>x.id===t.dataset.theme);if(t.classList.contains('lock')){toast(`🔒 Win ${th.need*3} stars to unlock ${th.name}`);return;}
+    const secs=+($('#contestBody [data-tm].on')||{dataset:{tm:0}}).dataset.tm;
+    if($('#contestBody [data-mode="friends"].on')){const names=[...$('#contestBody').querySelectorAll('.fnames input')].map(i=>i.value.trim()).filter(Boolean);
+      if(new Set(names.map(n=>n.toLowerCase())).size<2){toast('👭 Type at least 2 different names');return;}C.opt.names=names;persist();startFriends(th,secs,[...new Set(names)]);return;}
+    startContest(th,secs,$('#contestBody [data-mode="online"].on')?{host:true,judges:[...C.judges]}:null);return;}
+  if(e.target.closest('#cAgain'))contestPick();
+  const rs=e.target.closest('[data-results]');if(rs){renderStage();showResults(rs.dataset.results);}
+  const wt=e.target.closest('[data-watch]');if(wt)watchWalk(+wt.dataset.watch);
+  if(e.target.closest('#cShare'))shareChallenge(e.target.closest('#cShare').dataset.code);
+  if(e.target.closest('#cAccept'))acceptChallenge();
+  if(e.target.closest('#fReady'))friendTurn();
+  const v=e.target.closest('[data-vote]');if(v)castVote(+v.dataset.vote);
+});
+function startContest(th,secs,online){
+  contest={th,end:secs?Date.now()+secs*1000:0,online,judges:online&&online.judges};$('#contestModal').classList.remove('show');
+  $('#cbTheme').textContent=`${th.e} ${th.name}`;$('#cbWalk').textContent='Walk the runway ✨';$('#contestBar').classList.add('show');toast(`${th.e} ${th.name}: ${th.hint} Tap your model to practice poses!`);
+  clearInterval(contestTimer);contestTick();contestTimer=setInterval(contestTick,500);
+}
+function contestTick(){if(!contest)return;if(!contest.end){$('#cbTime').textContent='';return;}
+  const left=Math.max(0,Math.ceil((contest.end-Date.now())/1000));$('#cbTime').textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;
+  if(!left){if(contest.f){toast(`⏰ Time is up, ${contest.f.players[contest.f.turn].name}!`);friendDone();}else{toast('⏰ Time is up! Off to the runway!');walkRunway();}}}
+$('#cbWalk').onclick=()=>contest&&contest.f?friendDone():walkRunway();
+function walkRunway(){
+  if(!contest||contest.walking)return;contest.walking=true;clearInterval(contestTimer);$('#contestBar').classList.remove('show');
+  const l=L(),keep=l.scene;l.scene='runway';renderStage();l.scene=keep;
+  try{Music.playTrack('runway');}catch(e){}
+  const st=$('#stage');st.classList.add('walking');
+  [900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
+  setTimeout(()=>{st.classList.remove('walking');strikePose(Math.random()*POSES.length|0,'runway');setTimeout(showJudges,1700);},3900);
+}
+function showJudges(){
+  const th=contest.th,sc=scoreLook(L(),th),posed=(contest.poses&&contest.poses.size)||0;if(posed>=3)sc.finish=Math.min(10,sc.finish+1);
+  const js=judgesOn(contest.judges),max=js.length*10,total=judgeTotal(sc,js),stars=total>=max*.9?3:total>=max*.767?2:1;
+  const C=CS(),prev=C.best[th.id]||0;if(stars>prev){C.stars+=stars-prev;C.best[th.id]=stars;}persist();
+  const unlocked=THEMES.filter(t=>t.need*3>C.stars-(stars>prev?stars-prev:0)&&t.need*3<=C.stars);
+  $('#contestBody').innerHTML=`<h2>${th.e} ${th.name}</h2><p>The judges are scoring…</p><div class="judges" style="grid-template-columns:repeat(${js.length},1fr)">${js.map((j,i)=>`<div class="judge"><div class="face">${j.e}</div><div class="nm">${j.n}</div><div class="sc" id="js${i}">${sc[j.k]}</div><div class="cm" id="jc${i}"></div></div>`).join('')}</div>
+   <div id="cResult" style="opacity:0;transition:opacity .4s"><h2>${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</h2><p style="font-weight:700">${total}/${max} · ${stars===3?'🏆 Top model! You won the trophy!':stars===2?'🥈 Fabulous! So close to the top!':'🎀 Great walk! Try the judges\' tips for more stars.'}</p>${unlocked.length?`<p>🔓 New theme unlocked: ${unlocked.map(t=>t.e+' '+t.name).join(', ')}!</p>`:''}
+   ${contest.online?'<div id="cOnline"><p>🌍 Sending your look…</p></div>':''}<button class="big-btn" id="cAgain">Play again 🏆</button></div>`;
+  $('#contestModal').classList.add('show');if(contest.online)sendOnline(contest.online,th);
+  js.forEach((j,i)=>setTimeout(()=>{if(!$('#js'+i))return;$('#js'+i).classList.add('in');$('#jc'+i).textContent=j.k==='finish'&&posed>=3&&sc.finish<10?'Love your poses! 📸 '+judgeSays(j.k,sc[j.k],th,L()):judgeSays(j.k,sc[j.k],th,L());try{Music.sfx();}catch(e){}},700+i*900));
+  setTimeout(()=>{replaying=false;if(!$('#cResult'))return;$('#cResult').style.opacity=1;$('#contestBody p').textContent='The judges have spoken!';if(stars===3)sparkle();try{applyMusic();}catch(e){}},700+js.length*900);
+  contest=null;
+}
+/* online challenge: a link a friend opens on their own phone; looks are saved without photos */
+const shareLook=l=>{const c=JSON.parse(JSON.stringify(l,(k,v)=>typeof v==='string'&&v.startsWith('data:')?undefined:v));delete c.photo;delete c.photoToon;c.photoOn=false;return JSON.stringify(c);};
+const chalUrl=code=>location.origin+location.pathname+'?c='+code;
+const chalDB=async()=>{for(let i=0;i<60&&!window.ChalDB;i++)await new Promise(r=>setTimeout(r,100));if(!window.ChalDB)throw new Error('offline');return window.ChalDB.ready();};
+async function sendOnline(o,th){
+  const box=()=>$('#cOnline'),fail=()=>{if(box())box().innerHTML='<p>😕 Couldn\'t reach the internet. Try again later.</p>';};
+  try{const db=await chalDB(),look=shareLook(L());
+    if(o.host){const code=await db.create({theme:th.id,judges:o.judges,host:me().name.slice(0,20),look});const C=CS();C.mine=[{code,th:th.id,at:Date.now()},...(C.mine||[])].slice(0,8);persist();
+      if(box())box().innerHTML=`<p style="font-weight:700">🌍 Your challenge is ready! Send it to a friend:</p><button class="big-btn" id="cShare" data-code="${code}">📤 Send challenge link</button><button class="pill" data-results="${code}" style="margin-top:6px">See scores</button>`;}
+    else{await db.add(o.code,{name:me().name.slice(0,20),look});if(box())box().innerHTML=`<p style="font-weight:700">🌍 Your look was sent!</p><button class="big-btn" data-results="${o.code}">🏆 See who's winning</button>`;}
+  }catch(e){fail();}
+}
+async function shareChallenge(code){const url=chalUrl(code),text=`${me().name} challenged you to a modeling contest! 👗🏆`;
+  try{if(navigator.share){await navigator.share({title:'Dress-up challenge',text,url});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  try{await navigator.clipboard.writeText(url);toast('📋 Link copied! Paste it in a text to a friend.');}catch(e){prompt('Copy this link:',url);}}
+async function openChallenge(code){
+  $('#contestBody').innerHTML='<h2>🌍 Modeling challenge</h2><p>Loading…</p>';$('#contestModal').classList.add('show');
+  let ch=null;try{ch=await (await chalDB()).get(code);}catch(e){}
+  if(!ch){$('#contestBody').innerHTML='<h2>🌍 Modeling challenge</h2><p>😕 We couldn\'t find that challenge. Check the link, or try again when you\'re online.</p>';return;}
+  const th=THEMES.find(t=>t.id===ch.theme)||THEMES[0],js=judgesOn(ch.judges);pendingChal={code,ch,th};
+  $('#contestBody').innerHTML=`<h2>${th.e} ${th.name}</h2><p style="font-size:19px;font-weight:800">👋 ${esc(ch.host)} challenged you!</p><p>${th.hint} Then walk the runway for the judges: ${js.map(j=>j.e+' '+j.n).join(', ')}.</p>
+   <p style="font-weight:700;margin-bottom:4px">What's your name?</p><input id="cName" maxlength="20" placeholder="Your name" value="${me().name.toLowerCase()===String(ch.host).toLowerCase()?'':esc(me().name)}" style="width:100%;padding:10px;border-radius:12px;border:2px solid #f6cfe3;font:inherit;font-size:16px">
+   <button class="big-btn" id="cAccept" style="margin-top:10px">Accept the challenge 💃</button><button class="pill" data-results="${code}" style="margin-top:6px">See scores</button>`;
+}
+let pendingChal=null;
+function acceptChallenge(){const p=pendingChal;if(!p)return;const n=($('#cName').value||'').trim().slice(0,20);if(!n){toast('Type your name first!');return;}
+  let c=DB.chars.find(x=>x.name.toLowerCase()===n.toLowerCase());if(!c){c={id:uid(),name:n,look:randomLook()};DB.chars.push(c);}
+  DB.cur=c.id;persist();renderStage();renderPanel();pendingChal=null;startContest(p.th,0,{code:p.code,judges:p.ch.judges});}
+async function showResults(code){
+  $('#contestBody').innerHTML='<h2>🏆 Challenge scores</h2><p>Loading…</p>';$('#contestModal').classList.add('show');
+  let ch=null,list=[];try{const db=await chalDB();[ch,list]=await Promise.all([db.get(code),db.list(code)]);}catch(e){}
+  if(!ch){$('#contestBody').innerHTML='<h2>🏆 Challenge scores</h2><p>😕 Couldn\'t load the scores. Try again when you\'re online.</p>';return;}
+  const th=THEMES.find(t=>t.id===ch.theme)||THEMES[0],js=judgesOn(ch.judges),max=js.length*10;
+  lastRes={code,th,js};
+  const rows=lastRes.rows=[{name:ch.host,look:ch.look,host:true},...list].map(r=>{let lk=null;try{lk=JSON.parse(r.look);}catch(e){}return lk&&{name:String(r.name||'?').slice(0,20),look:lk,host:r.host,score:judgeTotal(scoreLook(lk,th),js)};}).filter(Boolean).sort((a,b)=>b.score-a.score);
+  $('#contestBody').innerHTML=`<h2>${th.e} ${th.name}</h2><p>${rows.length<2?'Nobody has played yet. Send the link to a friend!':`👑 ${esc(rows[0].name)} is winning!`}</p>
+   <p style="opacity:.75;margin:0">Tap a model to watch their runway walk ▶️</p><div class="votes">${rows.map((r,i)=>`<button class="vcard" data-watch="${i}">${miniDoll(r.look)}<b>${['🥇','🥈','🥉'][i]||'🎀'} ${esc(r.name)}</b><small>${r.score}/${max}${r.host?' · started it':''}</small><span class="watch">▶️ Watch</span></button>`).join('')}</div>
+   <button class="big-btn" id="cShare" data-code="${code}">📤 Send challenge link</button><button class="pill" id="cAgain" style="margin-top:6px">Back to contests</button>`;
+}
+// replay: someone else's walk and judging, shown on this phone without touching its own dolls
+let lastRes=null,replaying=false;
+function watchWalk(i){const R=lastRes,r=R&&R.rows[i];if(!r||replaying)return;replaying=true;$('#contestModal').classList.remove('show');
+  const st=$('#stage');st.innerHTML=fullSVG({...r.look,scene:'runway'},r.name);st.style.background=STAGEBG.runway||'#fff';
+  try{Music.playTrack('runway');}catch(e){}toast(`✨ Now on the runway: ${r.name}!`);
+  st.classList.add('walking');[900,1500,2100,2600,3100,3500].forEach(t=>setTimeout(()=>{const f=document.createElement('div');f.className='flash';st.appendChild(f);setTimeout(()=>f.remove(),400);},t));
+  setTimeout(()=>{st.classList.remove('walking');strikePose(Math.random()*POSES.length|0,'runway',r);},3900);
+  setTimeout(()=>{
+    const sc=scoreLook(r.look,R.th),max=R.js.length*10,total=judgeTotal(sc,R.js);
+    $('#contestBody').innerHTML=`<h2>${R.th.e} ${esc(r.name)}'s walk</h2><p>The judges are scoring…</p><div class="judges" style="grid-template-columns:repeat(${R.js.length},1fr)">${R.js.map((j,k)=>`<div class="judge"><div class="face">${j.e}</div><div class="nm">${j.n}</div><div class="sc" id="js${k}">${sc[j.k]}</div><div class="cm" id="jc${k}"></div></div>`).join('')}</div>
+     <div id="cResult" style="opacity:0;transition:opacity .4s"><p style="font-weight:800;font-size:19px">${total}/${max}</p><button class="big-btn" data-results="${R.code}">🏆 Back to scores</button></div>`;
+    $('#contestModal').classList.add('show');
+    R.js.forEach((j,k)=>setTimeout(()=>{if(!$('#js'+k))return;$('#js'+k).classList.add('in');$('#jc'+k).textContent=judgeSays(j.k,sc[j.k],R.th,r.look);try{Music.sfx();}catch(e){}},700+k*900));
+    setTimeout(()=>{replaying=false;if(!$('#cResult'))return;$('#cResult').style.opacity=1;$('#contestBody p').textContent='The judges have spoken!';replaying=false;try{applyMusic();}catch(e){}},700+R.js.length*900);
+  },5600);}
+/* pass-the-phone: each friend dresses their own doll, everyone walks, everyone votes */
+function startFriends(th,secs,names){
+  const players=names.map(n=>{let c=DB.chars.find(x=>x.name.toLowerCase()===n.toLowerCase());if(!c){c={id:uid(),name:n,look:randomLook()};DB.chars.push(c);}return {id:c.id,name:c.name,votes:0};});
+  contest={th,secs,f:{players,turn:0,phase:'pass',orig:DB.cur,voter:0,win:CS().opt.win||'vote'}};persist();$('#contestBar').classList.remove('show');friendPass();
+}
+function friendPass(){const f=contest.f,p=f.players[f.turn];f.phase='pass';
+  $('#contestBody').innerHTML=`<h2>${contest.th.e} ${contest.th.name}</h2><p style="font-size:20px;font-weight:800">📱 Pass the phone to ${esc(p.name)}!</p><p>${contest.th.hint}${contest.secs?` You get ${contest.secs/60} minute${contest.secs>60?'s':''}.`:''}</p><button class="big-btn" id="fReady">I'm ${esc(p.name)}, let's go! 💃</button>`;
+  $('#contestModal').classList.add('show');}
+function friendTurn(){const f=contest.f,p=f.players[f.turn];f.phase='dress';DB.cur=p.id;persist();renderStage();renderPanel();$('#contestModal').classList.remove('show');
+  $('#cbTheme').textContent=`${contest.th.e} ${p.name}'s turn`;$('#cbWalk').textContent='Done ✓';$('#contestBar').classList.add('show');
+  contest.end=contest.secs?Date.now()+contest.secs*1000:0;clearInterval(contestTimer);contestTick();contestTimer=setInterval(contestTick,500);}
+function friendDone(){const f=contest.f;if(f.phase!=='dress')return;clearInterval(contestTimer);$('#contestBar').classList.remove('show');persist();
+  if(++f.turn<f.players.length)friendPass();else friendParade(0);}
+function friendParade(i){const f=contest.f;f.phase='parade';if(i>=f.players.length){f.voter=0;if(f.win==='judges')friendWinner();else friendVote();return;}
+  const p=f.players[i];DB.cur=p.id;const l=L(),keep=l.scene;l.scene='runway';renderStage();l.scene=keep;
+  if(!i)try{Music.playTrack('runway');}catch(e){}
+  toast(`✨ Now on the runway: ${p.name}!`);const st=$('#stage');st.classList.remove('walking');void st.offsetWidth;st.classList.add('walking');
+  [900,1700,2500].forEach(t=>setTimeout(()=>{const fl=document.createElement('div');fl.className='flash';st.appendChild(fl);setTimeout(()=>fl.remove(),400);},t));
+  setTimeout(()=>{st.classList.remove('walking');strikePose(Math.random()*POSES.length|0,'runway');setTimeout(()=>friendParade(i+1),1800);},3900);}
+const miniDoll=look=>`<svg viewBox="40 -40 220 640" xmlns="http://www.w3.org/2000/svg">${DEFS}${charInner(look)}</svg>`;
+function friendVote(){const f=contest.f,v=f.players[f.voter];f.phase='vote';
+  $('#contestBody').innerHTML=`<h2>🗳️ Time to vote!</h2><p style="font-weight:800">${esc(v.name)}, tap your favorite look (not your own!) 🤫</p>
+   <div class="votes">${f.players.map((p,i)=>{const c=DB.chars.find(x=>x.id===p.id);return `<button data-vote="${i}" ${i===f.voter?'disabled':''}>${c?miniDoll(c.look):''}<b>${esc(p.name)}</b></button>`;}).join('')}</div>`;
+  $('#contestModal').classList.add('show');}
+function castVote(i){const f=contest.f;if(f.phase!=='vote'||i===f.voter)return;f.players[i].votes++;try{Music.sfx();}catch(e){}
+  if(++f.voter<f.players.length){$('#contestBody').innerHTML=`<h2>🗳️ Vote saved!</h2><p style="font-size:20px;font-weight:800">📱 Pass the phone to ${esc(f.players[f.voter].name)}</p><button class="big-btn" id="fNext">I'm ${esc(f.players[f.voter].name)} ✋</button>`;$('#fNext').onclick=friendVote;}
+  else friendWinner();}
+function friendWinner(){const f=contest.f,th=contest.th,js=judgesOn(),max=js.length*10;
+  f.players.forEach(p=>{const c=DB.chars.find(x=>x.id===p.id),s=c?scoreLook(c.look,th):{theme:0,style:0,finish:0};p.judge=judgeTotal(s,js);p.pts=f.win==='judges'?p.judge:f.win==='both'?Math.round(p.judge/max*30)+p.votes*5:p.votes;});
+  const rank=[...f.players].sort((a,b)=>b.pts-a.pts||b.judge-a.judge),w=rank[0],wc=DB.chars.find(x=>x.id===w.id);
+  const tie=f.win==='vote'&&rank[1]&&rank[1].votes===w.votes;
+  $('#contestBody').innerHTML=`<h2>🏆 And the winner is…</h2><div class="winner">${wc?miniDoll(wc.look):''}</div><h2>👑 ${esc(w.name)}! 👑</h2>
+   <p>${tie?'It was a tie, so the judges picked the winner! ':''}${th.e} ${th.name} · ${f.win==='judges'?'picked by the judges':f.win==='both'?'votes + judges':'friends vote'}</p>
+   <div class="ranks">${rank.map((p,i)=>`<div>${['🥇','🥈','🥉','🎀'][i]} <b>${esc(p.name)}</b>${f.win==='judges'?'':` · ${p.votes} vote${p.votes===1?'':'s'}`} · judges ${p.judge}/${max}${f.win==='both'?` · ${p.pts} pts`:''}</div>`).join('')}</div>
+   <button class="big-btn" id="cAgain">Play again 🏆</button>`;
+  $('#contestModal').classList.add('show');endFriends();sparkle();try{applyMusic();}catch(e){}}
+function endFriends(){if(!contest||!contest.f)return;clearInterval(contestTimer);$('#contestBar').classList.remove('show');
+  if(DB.chars.some(c=>c.id===contest.f.orig))DB.cur=contest.f.orig;contest=null;persist();renderStage();renderPanel();}
+$('#contestModal').addEventListener('click',e=>{if(e.target.closest('[data-close]')){if(contest&&contest.f&&contest.f.phase==='pass')friendTurn();else if(contest&&contest.f&&contest.f.phase==='vote')endFriends();renderStage();}});
 $('#partyBlow').onclick=()=>{[...document.querySelectorAll('#partyCake .candle:not(.out)')].forEach((g,i)=>setTimeout(()=>blowCandle(g),i*90));};
 $('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=true;persist();if(!DB.welcomed)showWelcome();else sparkle();};
 // fireworks on a canvas, only while the party is open and on screen
@@ -2288,7 +2606,9 @@ document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=
 renderTabs();renderStage();renderPanel();
 loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
 // the party shows the first time the game opens on each device (add ?party to the address to see it again)
-if(!DB.partied||/[?&]party\b/.test(location.search))showParty();else if(!DB.welcomed)showWelcome();
+{const cm=location.search.match(/[?&]c=([a-z0-9]{6})\b/);
+  if(cm){try{history.replaceState(null,'',location.pathname);}catch(e){}DB.welcomed=true;persist();openChallenge(cm[1]);}
+  else if(!DB.partied||/[?&]party\b/.test(location.search))showParty();else if(!DB.welcomed)showWelcome();}
 </script>
 <script type="module">
 /* ---------- cloud save + messages (Firebase, free Spark plan) ---------- */
@@ -2339,6 +2659,15 @@ let statsFs=null;const statsQueue=[];
 function startStats(){try{statsFs=F.getFirestore(F.initializeApp(STATS_CONFIG,'stats'));statsQueue.splice(0).forEach(n=>countStat(...n));
   window.sendError=e=>{try{F.addDoc(F.collection(statsFs,'dressup_errors'),{...e,at:F.serverTimestamp()}).catch(()=>{});}catch(x){}};
   errorQueue.splice(0).forEach(window.sendError);}catch(e){}}
+// online challenges live next to the play counts: dressup_challenges/{code} and its entries
+window.ChalDB={ready:async()=>{if(!statsFs){await loadSDK();if(!statsFs)throw new Error('no db');}return CHAL;}};
+const CHAL={
+  async create(d){const abc='abcdefghjkmnpqrstuvwxyz23456789';for(let n=0;n<4;n++){let code='';for(let i=0;i<6;i++)code+=abc[Math.random()*abc.length|0];
+    try{await F.setDoc(F.doc(statsFs,'dressup_challenges',code),{...d,createdAt:F.serverTimestamp()});return code;}catch(e){if(n===3)throw e;}}},
+  async get(code){const s=await F.getDoc(F.doc(statsFs,'dressup_challenges',code));return s.exists()?s.data():null;},
+  add:(code,d)=>F.addDoc(F.collection(statsFs,'dressup_challenges',code,'entries'),{...d,createdAt:F.serverTimestamp()}),
+  async list(code){const q=await F.getDocs(F.query(F.collection(statsFs,'dressup_challenges',code,'entries'),F.limit(40)));return q.docs.map(d=>d.data());}
+};
 function countStat(...names){
   names=names.filter(n=>STAT_NAMES.includes(n));if(!names.length)return;
   if(!statsFs){if(statsQueue.length<50)statsQueue.push(names);return;}
@@ -2346,7 +2675,7 @@ function countStat(...names){
     F.setDoc(F.doc(statsFs,'dressup_stats',new Date().toISOString().slice(0,10)),add,{merge:true}).catch(()=>{});}catch(e){}
 }
 {const phone=matchMedia('(pointer: coarse)').matches&&!matchMedia('(any-pointer: fine)').matches;countStat('visits',phone?'phone_visits':'computer_visits');}
-const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',partyBtn:'party',msgSend:'send_message'};
+const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',partyBtn:'party',contestBtn:'contest',cbWalk:'contest_walk',msgSend:'send_message'};
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-tab]');if(!b)return;
   if(TAPS[b.id])track(TAPS[b.id]);else if(b.dataset.tab)track('open_tab',{tab:b.dataset.tab});},true);
 
