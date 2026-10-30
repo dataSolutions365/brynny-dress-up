@@ -404,13 +404,13 @@ function spookyTop(id){
   return '';
 }
 function face(L){
-  const F=L.feat||{},es=F.eye||1,gx=F.gap||0;
+  const F=L.feat||{},es=F.eye||1,gx=F.gap||0,frx=40*(F.fw||1),fry=46*(F.chin||1),fcy=42+fry;
   const toon=L.style==='cartoon',rx=9,ry=(toon?10:5.6)*(F.open||1),ir=toon?7:4.6,ey=92;
   const sk=L.skin,d=shade(sk,-.18),bc=L.hairColor==='rainbow'?'#6b4a8a':shade(L.hairColor,-.35);
   const m=L.makeup||{};
   let s='<g filter="url(#vol)">'+sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
-  s+=`<ellipse cx="150" cy="88" rx="40" ry="46" fill="${sk}"/></g><path d="M111 96 Q116 128 150 134 Q184 128 189 96 Q186 122 150 128 Q114 122 111 96 Z" fill="${d}" opacity=".35"/><ellipse cx="136" cy="66" rx="20" ry="14" fill="url(#sheen)" opacity=".55"/>`;
-  if(!(L.photo&&L.photoOn))s+=`<ellipse cx="150" cy="88" rx="40" ry="46" fill="url(#faceShade)"/>`;
+  s+=`<ellipse cx="150" cy="${fcy}" rx="${frx}" ry="${fry}" fill="${sk}"/></g><path d="M${150-frx+1} 96 Q${150-frx*.85} ${fcy+fry-6} 150 ${fcy+fry} Q${150+frx*.85} ${fcy+fry-6} ${150+frx-1} 96 Q${150+frx*.9} ${fcy+fry-12} 150 ${fcy+fry-6} Q${150-frx*.9} ${fcy+fry-12} ${150-frx+1} 96 Z" fill="${d}" opacity=".35"/><ellipse cx="136" cy="66" rx="20" ry="14" fill="url(#sheen)" opacity=".55"/>`;
+  if(!(L.photo&&L.photoOn))s+=`<ellipse cx="150" cy="${fcy}" rx="${frx}" ry="${fry}" fill="url(#faceShade)"/>`;
   if(!(L.photo&&L.photoOn))s+=spookyBase(m.spooky);
   if(L.photo&&L.photoOn){
     s+=`<image href="${L.photoMode==='toon'&&L.photoToon?L.photoToon:L.photo}" x="110" y="42" width="80" height="92" preserveAspectRatio="xMidYMid slice" clip-path="url(#faceClip)"/>`;
@@ -433,8 +433,8 @@ function face(L){
       one+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x-len*.8).toFixed(1)}" y2="${(y-len*.75).toFixed(1)}" stroke="#2b1a2e" stroke-width="${lw*.7}" stroke-linecap="round"/>`;}
   }
   one+='</g>';
-  one=`<g transform="translate(${134-gx} ${ey}) scale(${es}) translate(-134 ${-ey})">${one}</g>`;
-  one+=`<path d="M123 ${ey-ry-8} Q134 ${ey-ry-14} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="${(2.8*(F.bw||1)).toFixed(1)}" stroke-linecap="round" transform="translate(${-gx} ${(-ry*(es-1)-(F.brow||0)).toFixed(1)})"/>`;
+  one=`<g transform="translate(${134-gx} ${ey}) rotate(${F.tilt||0}) scale(${es}) translate(-134 ${-ey})">${one}</g>`;
+  const bs=F.bshape||'soft',arch=(F.arch||0)+(bs==='high'?4:bs==='straight'?-5:0);one+=`<path d="M123 ${ey-ry-8} Q${bs==='high'?138:134} ${ey-ry-14-arch} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="${(2.8*(F.bw||1)*(bs=='thick'?1.5:1)).toFixed(1)}" stroke-linecap="round" transform="translate(${-gx} ${(-ry*(es-1)-(F.brow||0)).toFixed(1)})"/>`;
   if(m.blush) one+=`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".5"/>`;
   s+=sym(one);
   s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
@@ -443,6 +443,8 @@ function face(L){
   else s+=`<path d="M141 117 Q150 128 159 117 Q150 122 141 117 Z" fill="#e08a92" opacity=".7"/><path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="147" cy="121" rx="2.5" ry=".9" fill="#fff" opacity=".45"/>`;
   s+='</g>';
   if(F.freckles)s+=sym([[124,104],[129,107],[121,109],[127,111],[133,105],[138,108],[131,101]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1" fill="${shade(sk,-.4)}" opacity=".55"/>`).join(''))+`<circle cx="145" cy="98" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/><circle cx="155" cy="97" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/>`;
+  if(F.mole)s+=`<circle cx="163" cy="112" r="1.3" fill="${shade(sk,-.55)}"/>`;
+  if(F.dimples)s+=sym(`<path d="M133 120 q-1.5 3 0 5" stroke="${d}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".7"/>`);
   if(F.stud)s+=`<g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><circle cx="156.5" cy="106" r="1.6" fill="#e8e8f0" stroke="#9a9ab0" stroke-width=".5"/><circle cx="156" cy="105.5" r=".6" fill="#fff"/></g>`;
   s+=spookyTop(m.spooky);
   s+=facePaint(m.paint);
@@ -1020,14 +1022,14 @@ function cartoonize(src){
   x.putImageData(id,0,0);return c.toDataURL('image/jpeg',.85);
 }
 // "anything else?" card after a selfie: the little things that make the doll look like her
-const DETAILS=[{id:'glasses',e:'👓',n:'Glasses'},{id:'stud',e:'💎',n:'Nose stud'},{id:'freckles',e:'🌟',n:'Freckles'},{id:'earrings',e:'✨',n:'Earrings'}];
+const DETAILS=[{id:'glasses',e:'👓',n:'Glasses'},{id:'stud',e:'💎',n:'Nose stud'},{id:'freckles',e:'🌟',n:'Freckles'},{id:'earrings',e:'✨',n:'Earrings'},{id:'mole',e:'⚫',n:'Beauty mark'},{id:'dimples',e:'😊',n:'Dimples'}];
 const hasDetail=(l,id)=>id==='glasses'||id==='earrings'?!!(l.extras&&l.extras[id]):!!(l.feat&&l.feat[id]);
 function toggleDetail(l,id){
   if(id==='glasses'||id==='earrings'){l.extras=l.extras||{};if(l.extras[id])delete l.extras[id];else l.extras[id]=id==='glasses'?'#2d2d3a':'#e8e8f0';}
   else{l.feat=l.feat||{};l.feat[id]=!l.feat[id];}
 }
 const detailTiles=l=>DETAILS.map(x=>`<button class="item ${hasDetail(l,x.id)?'on':''}" data-act="detail" data-id="${x.id}"><span class="big">${x.e}</span><span>${x.n}</span></button>`).join('');
-const FEAT_SLIDERS=[{k:'eye',n:'👁️ Eye size',a:.7,b:1.3,d:1},{k:'gap',n:'↔️ Eye gap',a:-4,b:4,d:0},{k:'open',n:'😮 Eye shape',a:.6,b:1.4,d:1},{k:'brow',n:'〰️ Brows',a:-3,b:3,d:0},{k:'nose',n:'👃 Nose',a:.8,b:1.3,d:1},{k:'mouth',n:'👄 Mouth',a:.8,b:1.25,d:1},{k:'lips',n:'💋 Lips',a:.7,b:1.4,d:1}];
+const FEAT_SLIDERS=[{k:'fw',n:'🙂 Face width',a:.92,b:1.06,d:1},{k:'chin',n:'🫥 Chin',a:.94,b:1.08,d:1},{k:'eye',n:'👁️ Eye size',a:.7,b:1.3,d:1},{k:'gap',n:'↔️ Eye gap',a:-4,b:4,d:0},{k:'open',n:'😮 Eye shape',a:.6,b:1.4,d:1},{k:'tilt',n:'🐱 Eye tilt',a:-8,b:10,d:0},{k:'brow',n:'〰️ Brow height',a:-3,b:3,d:0},{k:'arch',n:'🌈 Brow arch',a:-4,b:6,d:0},{k:'bw',n:'✏️ Brow thick',a:.6,b:1.6,d:1},{k:'nose',n:'👃 Nose',a:.8,b:1.3,d:1},{k:'mouth',n:'👄 Mouth',a:.8,b:1.25,d:1},{k:'lips',n:'💋 Lips',a:.7,b:1.4,d:1}];
 const CMP_HAIR=['long','wavy','curly','ponytail','bob','pixie','braids','buns'];
 // just the head, so it sits next to the selfie at the same size
 function dollHead(l){
@@ -1038,19 +1040,20 @@ function dollHead(l){
 function detailEditor(l){
   const F=l.feat||{};let h=`<h3>Skin</h3>`+swatches('dskin',SKIN,l.skin)+`<h3>Hair</h3>`+swatches('dhairc',HAIRC,l.hairColor);
   h+=`<div class="chips" style="margin-top:8px">`+CMP_HAIR.map(id=>{const it=find(HAIR,id);return it?`<button class="${l.hairStyle===id?'on':''}" data-hs="${id}">${it.name}</button>`:'';}).join('')+`</div>`;
-  h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Face</h3>`;
-  h+=FEAT_SLIDERS.map(x=>`<div class="fs"><label for="fs_${x.k}">${x.n}</label><input type="range" id="fs_${x.k}" data-fk="${x.k}" min="${x.a}" max="${x.b}" step=".05" value="${F[x.k]??x.d}"></div>`).join('');
+  h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Brows</h3><div class="chips">`+[['soft','Soft'],['straight','Straight'],['high','Arched'],['thick','Bold']].map(([id,n])=>`<button class="${(F.bshape||'soft')===id?'on':''}" data-bs="${id}">${n}</button>`).join('')+`</div><h3>Face</h3>`;
+  h+=FEAT_SLIDERS.map(x=>`<div class="fs"><label for="fs_${x.k}">${x.n}</label><input type="range" id="fs_${x.k}" data-fk="${x.k}" min="${x.a}" max="${x.b}" step="${((x.b-x.a)/40).toFixed(4)}" value="${F[x.k]??x.d}"></div>`).join('');
   return h+`<h3>Little details</h3><div class="grid" id="detailGrid">${detailTiles(l)}</div>`;
 }
 const drawCmp=()=>{$('#cmpDoll').innerHTML=dollHead(L());};
 function openDetails(guess,found){
-  $('#detailGuess').textContent=(found?'I copied your face shape, skin, hair and eyes. Does it look like you? Fix anything below. ':'I couldn\'t find your face, so I only copied colors. Fix anything below, or try a closer, brighter selfie. ')+(guess?'It looks like you wear glasses, so I added them.':'');
-  $('#cmpPhoto').src=L().photo||'';$('#detailEdit').innerHTML=detailEditor(L());drawCmp();$('#detailModal').classList.add('show');
+  $('#detailGuess').textContent=found===null?'Make the doll look just like you! Tap and slide anything below.':(found?'I copied your face shape, skin, hair and eyes. Does it look like you? Fix anything below. ':'I couldn\'t find your face, so I only copied colors. Fix anything below, or try a closer, brighter selfie. ')+(guess?'It looks like you wear glasses, so I added them.':'');
+  const ph=L().photo;$('#cmpPhoto').src=ph||'';$('#cmpPhoto').parentNode.style.display=ph?'':'none';$('#detailEdit').innerHTML=detailEditor(L());drawCmp();$('#detailModal').classList.add('show');
 }
 $('#detailEdit').addEventListener('click',e=>{
-  const sw=e.target.closest('[data-c]'),hs=e.target.closest('[data-hs]'),dt=e.target.closest('[data-id]');
+  const sw=e.target.closest('[data-c]'),hs=e.target.closest('[data-hs]'),dt=e.target.closest('[data-id]'),bs=e.target.closest('[data-bs]');
   if(sw){const k={dskin:'skin',dhairc:'hairColor',deyes:'eyes'}[sw.dataset.act];if(!k)return;update(l=>{l[k]=sw.dataset.c;});}
   else if(hs)update(l=>{l.hairStyle=hs.dataset.hs;});
+  else if(bs)update(l=>{l.feat=l.feat||{};l.feat.bshape=bs.dataset.bs;});
   else if(dt)update(l=>toggleDetail(l,dt.dataset.id));
   else return;
   $('#detailEdit').innerHTML=detailEditor(L());drawCmp();
@@ -1570,7 +1573,7 @@ function renderPanel(){
     }else{
       h+=`<div class="addrow" style="margin-top:0"><button class="pill" data-act="camera" style="font-size:16px;padding:12px 16px">🤳 Take a selfie</button><label class="pill soft" style="cursor:pointer;font-size:16px;padding:12px 16px">📁 Use a picture<input type="file" accept="image/*" hidden data-selfie></label></div>`;
     }
-    h+=`<h3>Little details</h3><div class="grid">`+detailTiles(l)+`</div>${l.feat&&(l.feat.eye||l.feat.nose)?`<div class="addrow"><button class="pill soft" data-act="compare">🪞 Compare &amp; fix</button><button class="pill soft" data-act="plainFace">↩️ Plain doll face</button></div>`:''}<p class="hint">Take a selfie and the doll copies your face shape and colors. Tap 📷 Photo to wear your real face. The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
+    h+=`<h3>Little details</h3><div class="grid">`+detailTiles(l)+`</div><div class="addrow"><button class="pill" data-act="compare">🎨 Face designer</button>${l.feat&&(l.feat.eye||l.feat.nose||l.feat.fw)?`<button class="pill soft" data-act="plainFace">↩️ Plain doll face</button>`:''}</div><p class="hint">Take a selfie and the doll copies your face shape and colors. Tap 📷 Photo to wear your real face. The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
     h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
@@ -1616,7 +1619,7 @@ $('#content').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const {act,arg,id,c}=b.dataset;
   if(act==='camera'||act==='cameraVideo'){openCamera();return;}
   if(act==='nailspa'){openNails(c);return;}
-  if(act==='compare'){openDetails(false,true);return;}
+  if(act==='compare'){openDetails(false,null);return;}
   if(act==='artDel'&&!b.dataset.sure){b.dataset.sure=1;b.textContent='Sure?';b.classList.add('warn');return;}
   update(l=>{
     switch(act){
@@ -1648,7 +1651,7 @@ $('#content').addEventListener('click',e=>{
       case 'washFace':l.makeup.strokes=[];break;
       case 'photoOn':l.photoOn=!!c;if(c)l.photoMode=c;break;
       case 'detail':toggleDetail(l,id);break;
-      case 'plainFace':l.feat={freckles:l.feat.freckles,stud:l.feat.stud};break;
+      case 'plainFace':l.feat={bshape:l.feat.bshape,freckles:l.feat.freckles,stud:l.feat.stud,mole:l.feat.mole,dimples:l.feat.dimples};break;
       case 'photoDel':delete l.photo;delete l.photoToon;l.photoOn=false;break;
       case 'extra':if(id in l.extras){delete l.extras[id];}else{l.extras[id]=find(EXTRAS,id).c;lastExtra=id;}break;
       case 'wear':{const k=KEY[arg];if(!id){l[k]=null;}else{const it=find(CATS[arg],id);l[k]={id,c:l[k]&&l[k].id===id?l[k].c:it.c};}
