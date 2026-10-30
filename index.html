@@ -22,11 +22,12 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:n
 input{font-family:inherit}
 header.top{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:linear-gradient(90deg,#ff8fc1,#b79cff);color:#fff}
 .who{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.28);padding:6px 12px;border-radius:999px;font-weight:600;font-size:17px;min-width:0;color:#fff}
+#whoName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}#whoName::after{content:" ▾"}
 .who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:38vw}
 .spacer{flex:1}
 .tbtn{background:#fff;color:var(--ink);border-radius:999px;padding:8px 13px;font-weight:600;font-size:15px;box-shadow:0 2px 0 rgba(0,0,0,.12);display:flex;gap:5px;align-items:center;white-space:nowrap}
 .tbtn:active{transform:translateY(1px)}
-@media (max-width:560px){.tbtn .lbl{display:none}.tbtn{padding:8px 11px;font-size:18px}}
+@media (max-width:560px){header.top{gap:6px;padding-left:8px;padding-right:8px}.who{flex:0 0 auto;width:72px;flex-direction:column;gap:0;padding:6px 4px;border-radius:16px;font-size:13px;line-height:1.15}.who span{max-width:100%}.who>:first-child{font-size:22px}.acts{min-width:0;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.acts .tbtn{position:relative;min-width:0;gap:3px;padding:7px 4px;font-size:15px;border-radius:14px}.acts .tbtn .lbl{font-size:12px;font-weight:800}.acts .tbtn .badge{position:absolute;top:-5px;right:-3px}}
 main{flex:1;display:flex;min-height:0;position:relative}
 .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;background:#fff}
 .stage{transition:background .4s}
@@ -66,6 +67,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 .seg button.on{background:#fff;box-shadow:0 2px 0 rgba(0,0,0,.08)}
 .hint{font-size:13px;color:var(--muted);margin:6px 2px}
 @media (min-width:761px){.tabs{flex-wrap:wrap;justify-content:center}}
+@media (max-width:760px){.tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;padding:6px;overflow:visible}.tab{padding:4px 1px;min-width:0;font-size:11px}.tab .ico{font-size:22px}}
 @media (max-width:760px){
   main{flex-direction:column}
   .stage{flex:0 0 47%}
@@ -99,6 +101,13 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 #nailOpts .stk button.on{box-shadow:0 0 0 3px var(--pink) inset}
 @keyframes bub{from{opacity:.9;transform:translateY(0)}to{opacity:0;transform:translateY(-30px)}}
 #nailSvg .fx{animation:bub 1s ease-out forwards}
+.acts{flex:1;display:grid;grid-template-columns:repeat(3,auto);justify-content:end;gap:6px}
+.acts .tbtn{justify-content:center;padding:6px 12px}
+.setrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:2px 40px 10px 0}
+.setrow .tbtn{background:#fff6fb;font-size:16px}.setrow .tbtn .lbl{display:inline!important}
+.setrow .tbtn.playing{animation:none;outline:3px solid var(--pink)}
+.guide{display:grid;gap:5px;text-align:left;font-size:14.5px}.guide div{background:#fff6fb;border-radius:12px;padding:7px 10px;line-height:1.3}.guide b{display:block;font-size:15px}
+.tips{margin:0;padding-left:20px;text-align:left;line-height:1.5;font-size:14.5px}
 .tbtn .badge{background:#ff3b6b;color:#fff;border-radius:999px;font-size:11px;padding:1px 6px;margin-left:-2px}
 .msg{background:#fff4fa;border-radius:16px;padding:10px 12px;margin:8px 0;text-align:left}
 .msg.new{background:#ffe2f0;box-shadow:0 0 0 2px #ff8fc8 inset}
@@ -205,16 +214,15 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 </head>
 <body>
 <header class="top">
-  <button class="who" id="whoBtn" aria-label="Choose who is playing">👧 <span id="whoName">Brynny</span> ▾</button>
-  <div class="spacer"></div>
-  <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
-  <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
-  <button class="tbtn" id="contestBtn" title="Modeling contest">🏆 <span class="lbl">Contest</span></button>
-  <button class="tbtn" id="partyBtn" title="Birthday party">🎂 <span class="lbl">Party</span></button>
-  <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span></button>
-  <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
-  <button class="tbtn" id="msgBtn" title="Messages" style="display:none">💌 <span class="lbl">Messages</span><span class="badge" id="msgBadge" style="display:none"></span></button>
-  <button class="tbtn" id="cloudBtn" title="Cloud save">☁️ <span class="lbl" id="cloudLbl">Sign in</span></button>
+  <button class="who" id="whoBtn" aria-label="Choose who is playing, music and sign in"><span>👧</span><span id="whoName">Brynny</span></button>
+  <div class="acts">
+    <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
+    <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
+    <button class="tbtn" id="contestBtn" title="Modeling contest">🏆 <span class="lbl">Contest</span></button>
+    <button class="tbtn" id="partyBtn" title="Birthday party">🎂 <span class="lbl">Party</span></button>
+    <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
+    <button class="tbtn" id="msgBtn" title="Messages" style="display:none">💌 <span class="lbl">Notes</span><span class="badge" id="msgBadge" style="display:none"></span></button>
+  </div>
 </header>
 <main>
   <div class="stage" id="stage"></div>
@@ -227,12 +235,45 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 
 <div class="modal" id="whoModal"><div class="sheet">
   <button class="close" data-close>×</button>
+  <div class="setrow">
+    <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music &amp; sounds</span></button>
+    <button class="tbtn" id="cloudBtn" title="Cloud save">☁️ <span class="lbl" id="cloudLbl">Sign in</span></button>
+  </div>
   <h2>Who's getting dressed up?</h2>
   <div class="cards" id="whoCards"></div>
   <div class="addrow">
     <input id="newName" maxlength="20" placeholder="Add someone: Mom, Ava, Grandma...">
     <button class="pill" id="addWho">➕ Add</button>
   </div>
+  <p style="font-weight:800;margin:14px 0 6px">🧭 What the buttons do</p>
+  <div class="guide">
+    <div><b>🎲 Surprise</b>Picks a random outfit for you.</div>
+    <div><b>📸 Save</b>Saves your look so you can see it later.</div>
+    <div><b>🏆 Contest</b>Walk the runway, get judged, or challenge a friend.</div>
+    <div><b>🎂 Party</b>Cake, candles, fireworks and the birthday song.</div>
+    <div><b>🖼️ Gallery</b>All the looks you saved.</div>
+    <div><b>💌 Notes</b>Messages from family (after you sign in).</div>
+    <div><b>🎵 Music</b>Pick songs, background sounds and volume.</div>
+    <div><b>☁️ Sign in</b>Keeps your dolls safe so they're never lost.</div>
+    <div><b>👧 This panel</b>Switch dolls or add friends and family.</div>
+  </div>
+  <p style="font-weight:800;margin:14px 0 6px">👗 The icons under your doll</p>
+  <div class="guide">
+    <div><b>🙂 Me</b>Name, skin, eyes, face, body and look style.</div>
+    <div><b>💇‍♀️ Hair</b>Hairstyles, plus the salon to cut, curl, braid and color.</div>
+    <div><b>💄 Makeup</b>Lips, blush, eyeshadow and lashes.</div>
+    <div><b>💅 Nails</b>The nail spa for fingernails and toenails.</div>
+    <div><b>👚 Tops</b>Shirts, sweaters and jackets.</div>
+    <div><b>👖 Bottoms</b>Pants, skirts and shorts.</div>
+    <div><b>👗 Dresses</b>Dresses and gowns for any party.</div>
+    <div><b>👠 Shoes</b>Sneakers, boots, heels and more.</div>
+    <div><b>👑 Hats</b>Crowns, tiaras, ears, bows and hats.</div>
+    <div><b>👜 Extras</b>Jewelry, glasses, purses, wings and more. Wear lots at once!</div>
+    <div><b>🖍️ My Art</b>Draw on paper, take a picture, and put it on your doll.</div>
+    <div><b>🎃 Places</b>Pick where to go, like the beach, a party or the runway.</div>
+  </div>
+  <p style="font-weight:800;margin:12px 0 4px">💡 Did you know?</p>
+  <ul class="tips"><li>Tap your doll to make her strike a pose.</li><li>Swipe across your doll to spin her around.</li><li>In 🏆 Contest you can send a challenge link to a friend.</li><li>In 💇‍♀️ Hair, the salon lets you cut, curl, braid and color.</li><li>Add friends and family above to dress them up too.</li></ul>
 </div></div>
 
 <div class="modal" id="cropModal"><div class="sheet" style="max-width:380px;text-align:center">
@@ -2174,6 +2215,8 @@ function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add
 }
 $('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
 $('#partyBtn').onclick=showParty;
+// the extra buttons live in the More sheet; picking one closes it, and a new message shows a dot on More
+$('#whoModal').addEventListener('click',e=>{if(e.target.closest('.setrow .tbtn'))$('#whoModal').classList.remove('show');});
 /* if the page gets pinched or double-tapped bigger, offer a button that snaps it back to normal size */
 (()=>{const vv=window.visualViewport,b=$('#unzoom'),meta=document.querySelector('meta[name=viewport]');if(!vv||!b||!meta)return;
   const place=()=>{const z=vv.scale>1.05;b.style.display=z?'block':'none';if(z)b.style.transform=`translate(${vv.offsetLeft+10}px,${vv.offsetTop+10}px) scale(${1/vv.scale})`;};
@@ -2910,7 +2953,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- header button + cloud sheet ---------- */
 function updateBtn(){
-  $('#cloudBtn').innerHTML=user?'✅ <span class="lbl">Saved</span>':'☁️ <span class="lbl">Sign in</span>';
+  $('#cloudBtn').innerHTML=user?'✅ <span class="lbl">Cloud saved</span>':'☁️ <span class="lbl">Sign in</span>';
   $('#msgBtn').style.display=user?'':'none';
   renderBadge();
 }
