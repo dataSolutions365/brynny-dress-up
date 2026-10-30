@@ -352,7 +352,7 @@ function flower(x,y,r,c,center='#ffd84d'){
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- palettes ---------- */
-const SKIN=['#ffe3cc','#f7cfae','#eab38c','#d49a6a','#b97a4f','#8d5a3b','#6b4128','#4a2c1c'];
+const SKIN=['#ffe3cc','#f7cfae','#e6c49a','#eab38c','#c8a072','#d49a6a','#b97a4f','#8d5a3b','#6b4128','#4a2c1c','#3a2216'];
 const EYES=['#6b4423','#2f6fb5','#3c8d5a','#9a6a3a','#6b7b8c','#8a4fbf','#1f1a24'];
 const HAIRC=['#2b1d16','#4a2c1a','#7a4a2a','#a0441f','#d9a35a','#f3e2a9','#ff7eb6','#b388ff','#4fb6ff','#2ec4b6','#ff5a5a','rainbow'];
 const CLOTHC=['#ff6fae','#ff4d6d','#ff8a3d','#ffd23f','#7ee081','#2ec4b6','#4fc3f7','#5c7cfa','#b388ff','#8e44ad','#ffd1e6','#ffffff','#bfe9ff','#e8d9b5','#a0522d','#2d2d3a','#e0b04a','#c68642','#6b7d3a','#1f2a5a'];
@@ -392,6 +392,25 @@ const DEFS=`<defs>
  <feFlood flood-color="#fff6e8" flood-opacity=".38"/><feComposite in2="him" operator="in" result="rim"/>
  <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="shade"/><feMergeNode in="rim"/></feMerge>
 </filter>
+<filter id="volG" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+ <feGaussianBlur in="SourceAlpha" stdDeviation="3.6" result="b"/>
+ <feSpecularLighting in="b" surfaceScale="4.5" specularConstant="1" specularExponent="24" lighting-color="#ffffff" result="sp"><fePointLight x="-40" y="-120" z="200"/></feSpecularLighting>
+ <feComposite in="sp" in2="SourceAlpha" operator="in" result="spi"/>
+ <feDiffuseLighting in="b" surfaceScale="4.5" diffuseConstant="1" lighting-color="#ffffff" result="df"><feDistantLight azimuth="235" elevation="50"/></feDiffuseLighting>
+ <feComponentTransfer in="df" result="dfs"><feFuncR type="linear" slope=".6" intercept=".45"/><feFuncG type="linear" slope=".6" intercept=".45"/><feFuncB type="linear" slope=".6" intercept=".45"/></feComponentTransfer>
+ <feComposite in="dfs" in2="SourceAlpha" operator="in" result="dfi"/>
+ <feBlend in="SourceGraphic" in2="dfi" mode="multiply" result="shaded"/>
+ <feComposite in="shaded" in2="SourceAlpha" operator="in" result="sh2"/>
+ <feComposite in="sh2" in2="spi" operator="arithmetic" k1="0" k2="1" k3=".8" k4="0"/>
+</filter>
+<filter id="silk" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+ <feTurbulence type="fractalNoise" baseFrequency=".45 .012" numOctaves="2" seed="7" result="n"/>
+ <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 -.45" result="dk"/>
+ <feComposite in="dk" in2="SourceAlpha" operator="in" result="dki"/>
+ <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -.7 0 0 0 .3" result="lt"/>
+ <feComposite in="lt" in2="SourceAlpha" operator="in" result="lti"/>
+ <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="dki"/><feMergeNode in="lti"/></feMerge>
+</filter>
 <radialGradient id="faceShade" cx=".4" cy=".36" r=".72"><stop offset=".55" stop-color="#5a2a3a" stop-opacity="0"/><stop offset="1" stop-color="#5a2a3a" stop-opacity=".26"/></radialGradient>
 <radialGradient id="irisShade" cx=".5" cy=".7" r=".62"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset=".86" stop-color="#000" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
 <linearGradient id="lidShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3a4a" stop-opacity=".38"/><stop offset=".5" stop-color="#5a3a4a" stop-opacity="0"/></linearGradient>
@@ -402,7 +421,8 @@ const DEFS=`<defs>
 
 /* ---------- body ---------- */
 const TORSO_BODY='M112 158 Q150 148 188 158 Q198 162 198 178 Q190 220 182 258 Q196 280 196 300 L104 300 Q104 280 118 258 Q110 220 102 178 Q102 162 112 158 Z';
-const headT=L=>L.style==='cartoon'?'translate(150 135) scale(1.3) translate(-150 -135)':'translate(0 0)';
+const headK=L=>L.style==='cartoon'?1.3:L.style==='glam'?1.16:1;
+const headT=L=>{const k=headK(L);return k===1?'translate(0 0)':`translate(150 135) scale(${k}) translate(-150 -135)`;};
 
 function body(L){
   const sk=L.skin,d=shade(sk,-.15);
@@ -449,9 +469,12 @@ function spookyTop(id){
   }
   return '';
 }
+// eye and nose shapes from the face designer: real features to mix and match
+const ESHAPE={none:{rx:1,ry:1,tilt:0},almond:{rx:1.05,ry:.85,tilt:3},round:{rx:.95,ry:1.2,tilt:0},monolid:{rx:1.05,ry:.75,tilt:4},hooded:{rx:1,ry:1,tilt:0},upturned:{rx:1,ry:.92,tilt:8}};
+const NSHAPE={button:[.92,.82],wide:[1.3,.96],narrow:[.8,1.08]};
 function face(L){
-  const F=L.feat||{},es=F.eye||1,gx=F.gap||0,frx=40*(F.fw||1),fry=46*(F.chin||1),fcy=42+fry;
-  const toon=L.style==='cartoon',rx=9,ry=(toon?10:5.6)*(F.open||1),ir=toon?7:4.6,ey=92;
+  const F=L.feat||{},es=F.eye||1,gx=F.gap||0,frx=(L.style==='glam'?38:40)*(F.fw||1),fry=(L.style==='glam'?47:46)*(F.chin||1),fcy=42+fry;
+  const toon=L.style==='cartoon',glam=L.style==='glam',rx=(glam?11:9)*(ESHAPE[F.eshape]||ESHAPE.none).rx,ry=(toon?10:glam?8.4:5.6)*(F.open||1)*(ESHAPE[F.eshape]||ESHAPE.none).ry,ir=toon?7:glam?6.8:4.6,ey=92,esh=F.eshape;
   const sk=L.skin,d=shade(sk,-.18),bc=L.hairColor==='rainbow'?'#6b4a8a':shade(L.hairColor,-.35);
   const m=L.makeup||{};
   let s='<g filter="url(#vol)">'+sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
@@ -466,32 +489,42 @@ function face(L){
     return s;
   }
   let one='';
-  if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
+  if(glam){const sh=m.shadow||'#b98a9a';one+=`<path d="M${134-rx-5} ${ey+1} Q134 ${ey-ry-13} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.15} ${134-rx-5} ${ey+1} Z" fill="${sh}" opacity="${m.shadow?.8:.45}"/>`;}
+  else if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
   const iy=ey+(toon?1:0);
   one+=`<g class="eye"><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="#fff"/><circle cx="134" cy="${iy}" r="${ir}" fill="${L.eyes}"/><circle cx="134" cy="${iy}" r="${ir}" fill="url(#irisShade)"/><circle cx="134" cy="${iy}" r="${ir*.5}" fill="#1e1424"/><circle cx="${134+ir*.38}" cy="${iy-ir*.38}" r="${ir*.3}" fill="#fff"/><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="url(#lidShade)"/>`;
   if(toon) one+=`<circle cx="${134-ir*.4}" cy="${iy+ir*.4}" r="${ir*.15}" fill="#fff"/>`;
-  const lash=m.lashes||'natural',lw=lash==='bold'?3.4:lash==='long'?2.5:1.9;
-  const P0=[134-rx-1,ey],P1=[134,ey-ry*1.65],P2=[134+rx+1,ey];
+  if(glam) one+=`<circle cx="134" cy="${iy}" r="${ir}" fill="none" stroke="${shade(L.eyes,-.45)}" stroke-width="1.1"/><circle cx="${134-ir*.35}" cy="${iy+ir*.45}" r="${ir*.17}" fill="#fff" opacity=".85"/><path d="M${134-rx-1} ${ey+1} Q134 ${ey+ry*1.05} ${134+rx} ${ey+1}" stroke="#6a4a5a" stroke-width=".9" fill="none" opacity=".7"/>`;
+  const lash=m.lashes||(glam?'long':'natural'),lw=(lash==='bold'?3.4:lash==='long'?2.5:1.9)+(glam?.9:0);
+  const P0=[134-rx-1,ey],P1=[134,ey-ry*(esh==='monolid'?1.2:esh==='hooded'?.95:1.65)],P2=[134+rx+1,ey];
+  // hooded: skin-colored lid comes down over the top of the eye, crease sits above it
+  if(esh==='hooded')one+=`<path d="M${P0[0]-1} ${ey} Q134 ${ey-ry*2.1} ${P2[0]+1} ${ey} Q134 ${ey-ry*.95} ${P0[0]-1} ${ey} Z" fill="${sk}"/><path d="M${P0[0]+1} ${ey-ry*.5} Q134 ${ey-ry*1.75} ${P2[0]-1} ${ey-ry*.5}" stroke="${d}" stroke-width="1.1" fill="none" opacity=".4"/>`;
   one+=`<path d="M${P0[0]} ${P0[1]} Q${P1[0]} ${P1[1]} ${P2[0]} ${P2[1]}" fill="none" stroke="#2b1a2e" stroke-width="${lw}" stroke-linecap="round"/>`;
+  if(glam)one+=`<path d="M${P0[0]+1} ${P0[1]-1} L${P0[0]-6} ${P0[1]-6} L${P0[0]+3} ${P0[1]-3.5} Z" fill="#2b1a2e" stroke="#2b1a2e" stroke-width="1.2" stroke-linejoin="round"/>`;
   if(lash!=='natural'){
     const n=lash==='bold'?4:3,len=lash==='bold'?7:5.5;
     for(let i=0;i<n;i++){const t=.06+i*.12,x=(1-t)**2*P0[0]+2*t*(1-t)*P1[0]+t*t*P2[0],y=(1-t)**2*P0[1]+2*t*(1-t)*P1[1]+t*t*P2[1];
       one+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x-len*.8).toFixed(1)}" y2="${(y-len*.75).toFixed(1)}" stroke="#2b1a2e" stroke-width="${lw*.7}" stroke-linecap="round"/>`;}
   }
   one+='</g>';
-  one=`<g transform="translate(${134-gx} ${ey}) rotate(${F.tilt||0}) scale(${es}) translate(-134 ${-ey})">${one}</g>`;
-  const bs=F.bshape||'soft',arch=(F.arch||0)+(bs==='high'?4:bs==='straight'?-5:0);one+=`<path d="M123 ${ey-ry-8} Q${bs==='high'?138:134} ${ey-ry-14-arch} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="${(2.8*(F.bw||1)*(bs=='thick'?1.5:1)).toFixed(1)}" stroke-linecap="round" transform="translate(${-gx} ${(-ry*(es-1)-(F.brow||0)).toFixed(1)})"/>`;
+  one=`<g transform="translate(${134-gx} ${ey}) rotate(${(F.tilt||0)+(ESHAPE[F.eshape]||ESHAPE.none).tilt}) scale(${es}) translate(-134 ${-ey})">${one}</g>`;
+  const bs=F.bshape||(glam?'high':'soft'),arch=(F.arch||0)+(bs==='high'?4:bs==='straight'?-5:0);one+=`<path d="M123 ${ey-ry-8} Q${bs==='high'?138:134} ${ey-ry-14-arch} 145 ${ey-ry-9}" fill="none" stroke="${bc}" stroke-width="${(2.8*(F.bw||1)*(bs=='thick'?1.5:1)).toFixed(1)}" stroke-linecap="round" transform="translate(${-gx} ${(-ry*(es-1)-(F.brow||0)).toFixed(1)})"/>`;
   if(m.blush) one+=`<ellipse cx="124" cy="109" rx="8.5" ry="4.8" fill="${m.blush}" opacity=".5"/>`;
+  if(glam) one+=`<path d="M114 104 Q120 118 132 124" stroke="${shade(sk,-.35)}" stroke-width="5" fill="none" opacity=".18" stroke-linecap="round"/><ellipse cx="125" cy="102" rx="6" ry="2.2" fill="#fff" opacity=".13" transform="rotate(-12 125 102)"/>`;
   s+=sym(one);
-  s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
+  s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[0]} ${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[1]}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
   s+=`<g transform="translate(150 118) scale(${F.mouth||1} ${F.lips||1}) translate(-150 -118)">`;
-  if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
+  const lsh=F.lshape||(glam?'full':'');
+  if(lsh==='full'){const lc=m.lips||(glam?'#d4737f':'#d98a92');s+=`<path d="M138 117 Q144 110.5 150 113.8 Q156 110.5 162 117 Q156 119.5 150 119.2 Q144 119.5 138 117 Z" fill="${shade(lc,-.12)}"/><path d="M138.5 117.6 Q150 121 161.5 117.6 Q157 127.5 150 127.8 Q143 127.5 138.5 117.6 Z" fill="${lc}"/><path d="M139 117.8 Q150 120.2 161 117.8" stroke="${shade(lc,-.45)}" stroke-width="1" fill="none"/><ellipse cx="147" cy="122.8" rx="4" ry="1.5" fill="#fff" opacity=".65"/><ellipse cx="154" cy="123.4" rx="1.6" ry=".8" fill="#fff" opacity=".5"/>`;}
+  else if(lsh==='heart'){const lc=m.lips||'#d98a92';s+=`<path d="M141 117.5 Q145 111.5 150 114.8 Q155 111.5 159 117.5 Q155 119 150 118.6 Q145 119 141 117.5 Z" fill="${shade(lc,-.12)}"/><path d="M142 118 Q150 120 158 118 Q156 125.5 150 125.8 Q144 125.5 142 118 Z" fill="${lc}"/><path d="M142 118.2 Q150 119.8 158 118.2" stroke="${shade(lc,-.45)}" stroke-width=".9" fill="none"/><ellipse cx="148" cy="122" rx="2.6" ry="1.1" fill="#fff" opacity=".6"/>`;}
+  else if(lsh==='thin'){const lc=m.lips||'#d08a90';s+=`<path d="M139 117.5 Q150 114.5 161 117.5 Q150 121.5 139 117.5 Z" fill="${lc}"/><path d="M139 117.6 Q150 119 161 117.6" stroke="${shade(lc,-.4)}" stroke-width="1" fill="none"/><ellipse cx="147" cy="119.3" rx="2.2" ry=".6" fill="#fff" opacity=".5"/>`;}
+  else if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
   else s+=`<path d="M141 117 Q150 128 159 117 Q150 122 141 117 Z" fill="#e08a92" opacity=".7"/><path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="147" cy="121" rx="2.5" ry=".9" fill="#fff" opacity=".45"/>`;
   s+='</g>';
   if(F.freckles)s+=sym([[124,104],[129,107],[121,109],[127,111],[133,105],[138,108],[131,101]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1" fill="${shade(sk,-.4)}" opacity=".55"/>`).join(''))+`<circle cx="145" cy="98" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/><circle cx="155" cy="97" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/>`;
   if(F.mole)s+=`<circle cx="163" cy="112" r="1.3" fill="${shade(sk,-.55)}"/>`;
   if(F.dimples)s+=sym(`<path d="M133 120 q-1.5 3 0 5" stroke="${d}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".7"/>`);
-  if(F.stud)s+=`<g transform="translate(150 104) scale(${F.nose||1}) translate(-150 -104)"><circle cx="156.5" cy="106" r="1.6" fill="#e8e8f0" stroke="#9a9ab0" stroke-width=".5"/><circle cx="156" cy="105.5" r=".6" fill="#fff"/></g>`;
+  if(F.stud)s+=`<g transform="translate(150 104) scale(${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[0]} ${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[1]}) translate(-150 -104)"><circle cx="156.5" cy="106" r="1.6" fill="#e8e8f0" stroke="#9a9ab0" stroke-width=".5"/><circle cx="156" cy="105.5" r=".6" fill="#fff"/></g>`;
   s+=spookyTop(m.spooky);
   s+=facePaint(m.paint);
   s+=`<g clip-path="url(#faceClip)" class="paintLayer">${(m.strokes||[]).map(strokeSVG).join('')}</g>`;
@@ -520,8 +553,22 @@ function myHairParts(m,c,d){
 }
 const hairParts=l=>l.hairStyle==='mine'&&l.myHair?myHairParts(l.myHair,hf(l.hairColor),hs(l.hairColor)):(find(HAIR,l.hairStyle)||HAIR[0]).d(hf(l.hairColor),hs(l.hairColor));
 const PART='M108 98 Q103 33 150 32 Q197 33 192 98 Q186 58 153 50 L150 60 L147 50 Q114 58 108 98 Z';
-const braid=(x,c,d)=>{let s='';for(let i=0;i<8;i++){const y=112+i*17;s+=`<ellipse cx="${x}" cy="${y}" rx="${(11-i*.4).toFixed(1)}" ry="11" fill="${c}" stroke="${d}" stroke-width="1.5"/>`;}
-  return s+`<path d="M${x-6} 250 L${x-10} 272 L${x} 264 L${x+10} 272 L${x+6} 250 Z" fill="${c}"/><rect x="${x-7}" y="245" width="14" height="8" rx="4" fill="#ff6fae"/>`;};
+// a woven braid: solid underlay so there are no gaps, then overlapping strands that lean left and right
+function wbraid(x0,y0,x1,y1,c,d,w=22){
+  const len=Math.hypot(x1-x0,y1-y0),n=Math.max(3,Math.round(len/14)),ang=Math.atan2(x1-x0,y1-y0);
+  const px=Math.cos(ang),py=-Math.sin(ang);let s='',L=[],R=[];
+  for(let i=0;i<=n;i++){const t=i/n,cx=x0+(x1-x0)*t,cy=y0+(y1-y0)*t,hw=w*(.5-t*.14);L.push(`${(cx-px*hw).toFixed(1)},${(cy-py*hw).toFixed(1)}`);R.unshift(`${(cx+px*hw).toFixed(1)},${(cy+py*hw).toFixed(1)}`);}
+  s+=`<polygon points="${L.join(' ')} ${R.join(' ')}" fill="${c}"/>`;
+  const deg=-ang*180/Math.PI;
+  for(let i=0;i<n;i++){const t=(i+.5)/n,cx=x0+(x1-x0)*t,cy=y0+(y1-y0)*t,hw=w*(.5-t*.14),side=i%2?1:-1,ox=cx+px*hw*.42*side,oy=cy+py*hw*.42*side;
+    s+=`<ellipse cx="${ox.toFixed(1)}" cy="${oy.toFixed(1)}" rx="${(hw*.62).toFixed(1)}" ry="${(len/n*.78).toFixed(1)}" fill="${c}" stroke="${d}" stroke-width="1.3" transform="rotate(${(deg+side*-32).toFixed(1)} ${ox.toFixed(1)} ${oy.toFixed(1)})"/>`;
+    s+=`<path d="M${(ox-2).toFixed(1)} ${(oy-3).toFixed(1)} q${side*3} 3 0 6" stroke="#fff" stroke-width="1.2" opacity=".25" fill="none"/>`;}
+  return s;
+}
+// hair gathered from the side of the head down into the top of the braid
+const braidRoot=(xa,xb,ya,x,y,w,c,d)=>`<path d="M${xa} ${ya} Q${(xa+x-w/2)/2-4} ${(ya+y)/2} ${x-w/2} ${y+4} L${x+w/2} ${y+4} Q${(xb+x+w/2)/2+4} ${(ya+y)/2} ${xb} ${ya} Z" fill="${c}"/><path d="M${(xa+xb)/2} ${ya+2} Q${(xa+xb)/2-2} ${(ya+y)/2} ${x} ${y}" stroke="${d}" stroke-width="1.4" fill="none" opacity=".4"/>`;
+const braidTail=(x,y,c)=>`<path d="M${x-6} ${y} L${x-10} ${y+22} L${x} ${y+14} L${x+10} ${y+22} L${x+6} ${y} Z" fill="${c}"/><rect x="${x-7}" y="${y-5}" width="14" height="8" rx="4" fill="#ff6fae"/>`;
+const braid=(x,c,d)=>braidRoot(x<150?104:180,x<150?120:196,78,x,104,22,c,d)+wbraid(x,104,x,250,c,d)+braidTail(x,250,c);
 const HAIR=[
  {id:'long',name:'Long',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L204 246 Q150 262 96 246 Z" fill="${c}"/>`,
    front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/>`+sym(`<path d="M109 88 Q101 140 103 196 L116 190 Q112 140 115 96 Z" fill="${c}"/>`)})},
@@ -542,6 +589,37 @@ const HAIR=[
  {id:'highbun',name:'Ballerina bun',d:(c,d)=>({back:`<circle cx="150" cy="24" r="24" fill="${c}"/><path d="M134 24 Q150 6 166 24 Q150 38 140 26" stroke="${d}" stroke-width="2" fill="none"/>`,front:`<path d="${CAP}" fill="${c}"/>`})},
  {id:'pixie',name:'Short',d:(c,d)=>({back:`<path d="M106 80 Q102 30 150 30 Q198 30 194 80 L192 104 L108 104 Z" fill="${c}"/>`,
    front:`<path d="M108 94 Q104 32 150 32 Q196 32 192 94 L186 64 L174 72 L166 58 L152 70 L142 56 L130 70 L120 60 L112 74 Z" fill="${c}"/>`})},
+ {id:'superlong',name:'Extra long',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L206 396 Q150 410 94 396 Z" fill="${c}"/><path d="M124 120 L118 380 M176 120 L182 380 M150 130 L150 396" stroke="${d}" stroke-width="2" opacity=".35"/>`,
+   front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/>`+sym(`<path d="M109 88 Q101 160 104 300 L117 292 Q112 160 115 96 Z" fill="${c}"/>`)})},
+ {id:'hime',name:'Blunt bangs',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L200 300 L100 300 Z" fill="${c}"/>`,
+   front:`<path d="M106 100 Q102 30 150 30 Q198 30 194 100 L192 75 L108 75 Z" fill="${c}"/><path d="M114 75 L186 75" stroke="${d}" stroke-width="1.5" opacity=".4"/>`+sym(`<path d="M107 74 L104 156 L119 156 L117 78 Z" fill="${c}"/>`)})},
+ {id:'streaks',name:'Pink streaks',d:(c,d)=>{const k=['#ff7eb6','#ff8fc8','#ff6fae'].includes(c)?'#b388ff':'#ff8fc8';
+   return {back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L204 270 Q150 284 96 270 Z" fill="${c}"/><path d="M110 90 L104 266 L118 270 L120 96 Z M180 96 L182 270 L196 266 L190 90 Z" fill="${k}"/>`,
+   front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/><path d="M118 70 Q130 40 152 33 Q138 50 132 72 Z" fill="${k}"/>`+sym(`<path d="M109 88 Q101 160 104 230 L117 224 Q112 160 115 96 Z" fill="${k}"/>`)};}},
+ {id:'boxbraids',name:'Long braids',d:(c,d)=>{let b=`<path d="M104 82 Q100 28 150 28 Q200 28 196 82 Z" fill="${c}"/>`,f='';
+   for(let x=102;x<=198;x+=8){const w=Math.sin(x)*4;b+=`<path d="M${x} 70 Q${x-(150-x)*.12+w} 200 ${x-(150-x)*.1} 330" stroke="${c}" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M${x} 70 Q${x-(150-x)*.12+w} 200 ${x-(150-x)*.1} 330" stroke="${d}" stroke-width="8" fill="none" stroke-dasharray="2 5" opacity=".55"/>`;}
+   for(const x of [108,114,186,192]){f+=`<path d="M${x} 80 Q${x<150?x-8:x+8} 200 ${x<150?x-4:x+4} 310" stroke="${c}" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M${x} 80 Q${x<150?x-8:x+8} 200 ${x<150?x-4:x+4} 310" stroke="${d}" stroke-width="7" fill="none" stroke-dasharray="2 5" opacity=".55"/>`;}
+   return {back:b,front:`<path d="${PART}" fill="${c}"/>`+f+sym(`<circle cx="110" cy="312" r="3" fill="#e0b04a"/>`)};}},
+ {id:'bigcurls',name:'Big curls',d:(c,d)=>{const B=[[100,70],[200,70],[86,100],[214,100],[80,135],[220,135],[78,170],[222,170],[82,205],[218,205],[90,240],[210,240],[104,268],[196,268],[128,282],[172,282],[150,286]];
+   const F=[[110,62],[124,48],[176,48],[190,62],[106,86],[194,86],[104,112],[196,112]];
+   return {back:`<path d="M96 70 Q150 20 204 70 L214 270 L86 270 Z" fill="${c}"/>`+B.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="24" fill="${c}"/><path d="M${p[0]-10} ${p[1]} Q${p[0]} ${p[1]-12} ${p[0]+10} ${p[1]}" stroke="${d}" stroke-width="2" fill="none" opacity=".45"/>`).join(''),
+     front:`<path d="${CAP}" fill="${c}"/><circle cx="150" cy="22" r="20" fill="${c}"/><path d="M138 22 Q150 8 162 22" stroke="${d}" stroke-width="2" fill="none" opacity=".5"/>`+F.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="12" fill="${c}"/><circle cx="${p[0]-3}" cy="${p[1]-3}" r="4" fill="#fff" opacity=".12"/>`).join('')};}},
+ {id:'afro',name:'Afro',d:(c,d)=>{let b=`<ellipse cx="150" cy="70" rx="78" ry="70" fill="${c}"/>`;for(let a=0;a<24;a++){const t=a/24*Math.PI*2;b+=`<circle cx="${(150+76*Math.cos(t)).toFixed(1)}" cy="${(70+68*Math.sin(t)).toFixed(1)}" r="9" fill="${c}"/>`;}
+   for(let k=0;k<40;k++){const x=84+(k*37)%132,y=12+(k*53)%110;b+=`<path d="M${x} ${y} q3 -4 6 0" stroke="${d}" stroke-width="1.6" fill="none" opacity=".45"/>`;}
+   return {back:b,front:`<path d="M106 92 Q100 26 150 24 Q200 26 194 92 Q190 62 150 56 Q110 62 106 92 Z" fill="${c}"/>`+[110,124,138,150,162,176,190].map((x,i)=>`<circle cx="${x}" cy="${i%2?44:50}" r="9" fill="${c}"/>`).join('')};}},
+ {id:'afropuff',name:'Afro puff',d:(c,d)=>{let b=`<circle cx="150" cy="6" r="34" fill="${c}"/>`;for(let a=0;a<16;a++){const t=a/16*Math.PI*2;b+=`<circle cx="${(150+33*Math.cos(t)).toFixed(1)}" cy="${(6+33*Math.sin(t)).toFixed(1)}" r="7" fill="${c}"/>`;}
+   for(let k=0;k<14;k++)b+=`<path d="M${130+(k*13)%42} ${-14+(k*17)%40} q3 -4 6 0" stroke="${d}" stroke-width="1.5" fill="none" opacity=".45"/>`;
+   return {back:b,front:`<path d="${CAP}" fill="${c}"/><path d="M118 62 Q150 44 182 62" stroke="${d}" stroke-width="2" fill="none" opacity=".35"/><rect x="134" y="30" width="32" height="8" rx="4" fill="#ff6fae"/>`};}},
+ {id:'halfup',name:'Half-up',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 Q210 140 200 250 Q150 264 100 250 Q90 140 104 80 Z" fill="${c}"/><circle cx="150" cy="22" r="15" fill="${c}"/><path d="M140 22 Q150 12 160 22" stroke="${d}" stroke-width="2" fill="none"/>`,
+   front:`<path d="M108 100 Q102 30 150 30 Q198 30 192 100 Q186 62 150 58 Q114 62 108 100 Z" fill="${c}"/><path d="M120 46 Q150 34 180 46" stroke="${d}" stroke-width="2" fill="none" opacity=".4"/>`+sym(`<path d="M108 94 Q98 150 104 220 Q110 232 116 220 Q110 150 116 100 Z" fill="${c}"/>`)})},
+ {id:'sidebraid',name:'Side braid',d:(c,d)=>({back:`<path d="M104 82 Q100 28 150 28 Q200 28 196 82 Z" fill="${c}"/>`,
+   front:`<path d="M108 100 Q101 32 150 31 Q199 32 194 100 Q190 70 176 58 Q150 60 120 72 Q110 82 108 100 Z" fill="${c}"/>`+braidRoot(172,198,70,188,104,24,c,d)+wbraid(188,104,197,252,c,d,24)+braidTail(197,252,c)})},
+ {id:'locs',name:'Locs',d:(c,d)=>{let b=`<path d="M104 82 Q100 28 150 28 Q200 28 196 82 Z" fill="${c}"/>`,f='';
+   for(let x=100;x<=200;x+=10){const e=x-(150-x)*.18;b+=`<path d="M${x} 66 Q${(x+e)/2+(x%20?3:-3)} 160 ${e} 250" stroke="${c}" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M${x} 66 Q${(x+e)/2+(x%20?3:-3)} 160 ${e} 250" stroke="${d}" stroke-width="10" fill="none" stroke-dasharray="1 9" opacity=".5"/>`;}
+   for(const x of [110,190])f+=`<path d="M${x} 74 Q${x<150?x-10:x+10} 160 ${x<150?x-6:x+6} 236" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M${x} 74 Q${x<150?x-10:x+10} 160 ${x<150?x-6:x+6} 236" stroke="${d}" stroke-width="9" fill="none" stroke-dasharray="1 9" opacity=".5"/>`;
+   return {back:b,front:`<path d="${PART}" fill="${c}"/>`+f+sym(`<rect x="100" y="180" width="8" height="5" rx="2" fill="#e0b04a"/>`)};}},
+ {id:'highpony',name:'High ponytail',d:(c,d)=>({back:`<path d="M138 14 Q150 0 162 14 Q196 40 194 120 Q192 190 206 250 Q172 236 168 170 Q164 100 150 40 Z" fill="${c}"/><path d="M160 30 Q182 90 186 220" stroke="${d}" stroke-width="2" fill="none" opacity=".4"/>`,
+   front:`<path d="M108 98 Q103 33 150 26 Q197 33 192 98 Q187 60 150 54 Q113 60 108 98 Z" fill="${c}"/><path d="M116 70 Q136 34 150 26 M184 70 Q164 34 150 26" stroke="${d}" stroke-width="2" fill="none" opacity=".35"/><rect x="140" y="16" width="20" height="9" rx="4" fill="#ff6fae"/>`})},
 ];
 
 /* ---------- hair salon (build-your-own hair) ---------- */
@@ -554,7 +632,11 @@ function salonShapes(S){
     const X=x=>side==='left'?x:300-x,st=S[side];
     if(st==='braid'){
       const bl=Math.max(len,170);let y=110,i=0;
-      while(y<bl-6){front.push(`<ellipse cx="${X(111+i*.25).toFixed(1)}" cy="${y}" rx="${Math.max(7,11-i*.3).toFixed(1)}" ry="10.5" data-braid="1"/>`);y+=16;i++;}
+      // root from the side of the head, a solid underlay, then strands leaning left and right so it reads as one braid
+      front.push(`<path d="M${X(104)} 80 Q${X(102)} 96 ${X(101)} 106 L${X(122)} 106 Q${X(122)} 92 ${X(120)} 80 Z"/>`);
+      let ye=110;while(ye<bl-6)ye+=16;
+      front.push(`<path d="M${X(100)} 104 L${X(102+ (ye-110)*.0)} ${ye} L${X(120)} ${ye} L${X(123)} 104 Z"/>`);
+      while(y<bl-6){const cx=111+i*.25,sd=i%2?1:-1,ox=X(cx+sd*4.5);front.push(`<ellipse cx="${ox.toFixed(1)}" cy="${y}" rx="${Math.max(5.5,7.5-i*.2).toFixed(1)}" ry="10" transform="rotate(${(side==='left'?1:-1)*sd*-32} ${ox.toFixed(1)} ${y})" data-braid="1"/>`);y+=16;i++;}
       front.push(`<path d="M${X(105)} ${y} L${X(100)} ${y+18} L${X(110)} ${y+10} L${X(120)} ${y+18} L${X(115)} ${y} Z"/>`);
       front.push(`<rect x="${Math.min(X(103),X(119))}" y="${y-6}" width="16" height="8" rx="4" data-tie="1"/>`);
     }else if(st==='curly'){
@@ -629,6 +711,23 @@ const TOPS=[
    return s+`<circle cx="136" cy="296" r="3.2" fill="#d4af37"/><circle cx="164" cy="296" r="3.2" fill="#d4af37"/>`;}},
  {id:'jacket',name:'Jean jacket',c:'#5c7cfa',d:c=>{const dk=shade(c,-.18);return sleeve(c,1,27)+`<path d="${TORSO(270,172)}" fill="#ffffff"/>`+
    sym(`<path d="M112 156 Q128 160 140 174 L145 270 L114 270 Q109 222 101 178 Q101 161 112 156 Z" fill="${c}"/><path d="M120 196 L138 196 L138 212 L120 212 Z" fill="${dk}"/><path d="M128 158 L140 174 L132 186 Z" fill="${dk}"/><line x1="145" y1="176" x2="145" y2="270" stroke="${dk}" stroke-width="2"/>`)+heart(150,214,8,'#ff6fae');}},
+ {id:'furshrug',name:'Fur shrug top',c:'#ffffff',d:c=>{const o=shade(c,-.12);let s=`<path d="M118 168 Q150 180 182 168 L190 186 Q188 212 186 236 L114 236 Q112 212 110 186 Z" fill="#d6d9e2"/>`;
+   for(let y=176;y<236;y+=12)s+=`<path d="M114 ${y} Q132 ${y+8} 150 ${y} Q168 ${y+8} 186 ${y}" stroke="#9aa0b0" stroke-width="2.5" fill="none" opacity=".6"/>`;
+   s+=`<path d="M124 186 Q150 196 176 186" stroke="#fff" stroke-width="3" opacity=".6" fill="none"/>`;
+   return s+sym([[106,166,15],[98,184,14],[93,204,13],[90,222,12],[118,160,11],[95,240,10]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${o}" stroke-width="1"/>`).join(''));}},
+ {id:'furcoat',name:'Fuzzy coat',c:'#a8e6d9',d:c=>{const o=shade(c,-.12);let s=sleeve(c,1,32)+`<path d="${TORSO(262)}" fill="#e9d5f7"/>`;
+   for(let i=0;i<4;i++)s+=`<path d="M${118+i*16} 180 L${126+i*16} 200 L${118+i*16} 220 L${110+i*16} 200 Z" fill="none" stroke="#b388ff" stroke-width="1.5" opacity=".6"/>`;
+   s+=sym(`<path d="M112 156 Q100 162 100 180 L94 300 L128 304 Q128 230 136 168 Z" fill="${c}"/>`);
+   const fuzz=[];for(let y=164;y<304;y+=10)fuzz.push([132-(y-164)*.03,y],[97-(y-164)*.02,y+5]);
+   return s+sym(fuzz.map(([x,y])=>`<circle cx="${x.toFixed(1)}" cy="${y}" r="6" fill="${c}" stroke="${o}" stroke-width=".8"/>`).join('')+[[94,304],[89,316]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="15" fill="${c}"/>`).join(''));}},
+ {id:'graphiccrop',name:'Graphic crop tee',c:'#ff9ccf',d:c=>sleeve(c,0)+`<path d="M112 156 Q150 168 188 156 Q199 161 199 178 Q192 210 188 236 L112 236 Q108 210 101 178 Q101 161 112 156 Z" fill="${c}"/>`+neck(c)+
+   `<path d="M128 214 Q128 186 150 186 Q172 186 172 214 Z" fill="#2d2d3a"/><path d="M130 192 L132 176 L142 186 Z M170 192 L168 176 L158 186 Z" fill="#2d2d3a"/><circle cx="142" cy="200" r="3" fill="${c}"/><circle cx="158" cy="200" r="3" fill="${c}"/><rect x="112" y="226" width="76" height="8" fill="${shade(c,-.15)}"/>`},
+ {id:'corset',name:'Silver corset',c:'#d6d9e2',d:c=>{const o=shade(c,-.25);let s=sym(`<line x1="122" y1="176" x2="121" y2="158" stroke="${o}" stroke-width="2.5"/>`)+`<path d="M112 178 Q132 168 150 180 Q168 168 188 178 L189 210 Q187 236 185 260 L115 260 Q113 236 111 210 Z" fill="${c}"/>`;
+   for(const x of [126,138,162,174])s+=`<path d="M${x} ${178-(x%2)} Q${x+(x<150?-2:2)} 220 ${x} 260" stroke="${o}" stroke-width="1.5" fill="none"/>`;
+   for(let y=190;y<256;y+=10)s+=`<path d="M146 ${y} L154 ${y+6} M154 ${y} L146 ${y+6}" stroke="#ff8fc8" stroke-width="1.5"/>`;
+   s+=`<path d="M118 196 Q122 230 120 256" stroke="#fff" stroke-width="4" opacity=".5" fill="none"/>`;
+   for(let i=0;i<12;i++){const t=i/11;s+=`<circle cx="${(113+74*t).toFixed(1)}" cy="${(178+Math.sin(t*Math.PI*2)*-4+(Math.abs(t-.5)<.1?2:0)).toFixed(1)}" r="2.4" fill="#fff" stroke="#c9c9d6" stroke-width=".6"/>`;}
+   return s;}},
 ];
 const BOTTOMS=[
  {id:'jeans',name:'Jeans',c:'#5c7cfa',d:c=>`<path d="${PANTS}" fill="${c}"/><path d="M150 264 L150 322" stroke="${shade(c,-.2)}" stroke-width="2"/><rect x="113" y="255" width="74" height="10" rx="3" fill="${shade(c,-.15)}"/>`},
@@ -645,6 +744,19 @@ const BOTTOMS=[
    return s+`<rect x="113" y="252" width="74" height="10" rx="3" fill="#3b2314"/><rect x="141" y="250" width="14" height="14" rx="6" fill="none" stroke="#e0b04a" stroke-width="2.5"/>`;}},
  {id:'skinny',name:'White jeans',c:'#ffffff',d:c=>{const o=shade(c,-.14);return `<path d="${LEGGINGS}" fill="${c}" stroke="${o}" stroke-width="1.2"/><rect x="113" y="255" width="74" height="10" rx="3" fill="${shade(c,-.06)}" stroke="${o}" stroke-width="1"/><path d="M150 264 L150 322" stroke="${o}" stroke-width="1.5"/>`+sym(`<path d="M106 280 Q120 286 128 276" stroke="${o}" stroke-width="1.5" fill="none"/>`)+`<rect x="146" y="257" width="8" height="6" rx="1" fill="#e0b04a"/>`;}},
  {id:'maxi',name:'Long skirt',c:'#b388ff',d:c=>`<path d="M116 256 L184 256 Q206 400 220 548 Q150 564 80 548 Q94 400 116 256 Z" fill="${c}"/>`+flower(120,480,7,'#fff')+flower(178,430,7,'#fff')+flower(150,520,6,'#ffd1e6')+flower(130,380,6,'#ffd1e6')+`<rect x="114" y="252" width="72" height="10" rx="4" fill="${shade(c,-.15)}"/>`},
+ {id:'silvermini',name:'Metallic mini',c:'#d6d9e2',d:c=>{const o=shade(c,-.3);let s=`<path d="M116 256 L184 256 L198 330 Q150 340 102 330 Z" fill="${c}"/>`;
+   for(let i=0;i<6;i++){const y=270+i*11;s+=`<path d="M${108+i*2} ${y} Q${125} ${y-6} ${140} ${y+2} M${160} ${y+2} Q${176} ${y-6} ${192-i*2} ${y}" stroke="${o}" stroke-width="2.5" fill="none" opacity=".6"/>`;}
+   return s+`<path d="M124 262 Q118 300 112 328" stroke="#fff" stroke-width="5" opacity=".55" fill="none"/><rect x="114" y="252" width="72" height="9" rx="4" fill="${shade(c,-.12)}"/>`;}},
+ {id:'furskirt',name:'Fluffy skirt',c:'#ffb3d1',d:c=>{let s=`<path d="M116 256 L184 256 L212 332 Q150 344 88 332 Z" fill="${c}"/>`;
+   for(let x=90;x<=210;x+=10)s+=`<circle cx="${x}" cy="${336-Math.abs(x-150)*.04}" r="8" fill="#2d2d3a"/>`;
+   for(let y=270;y<330;y+=14)for(let x=118-(y-256)*.35;x<=182+(y-256)*.35;x+=12)s+=`<circle cx="${x.toFixed(1)}" cy="${y}" r="7" fill="${shade(c,(x+y)%3?.12:-.06)}" opacity=".9"/>`;
+   return s+`<rect x="114" y="250" width="72" height="11" rx="5" fill="${shade(c,-.15)}"/>`;}},
+ {id:'cargo',name:'Chain cargo pants',c:'#5b4a8a',d:c=>{const dk=shade(c,-.25);let s=`<path d="M114 256 L186 256 Q204 282 204 310 L200 430 L190 556 L155 556 L151 430 L150 322 L149 430 L145 556 L110 556 L100 430 L96 310 Q96 282 114 256 Z" fill="${c}"/>`;
+   for(let y=300;y<550;y+=28)s+=`<path d="M100 ${y} L200 ${y}" stroke="${dk}" stroke-width="3" opacity=".35"/>`;
+   s+=sym(`<path d="M104 330 L114 486" stroke="${shade(c,.25)}" stroke-width="3" opacity=".5"/><rect x="98" y="380" width="26" height="30" rx="4" fill="${dk}"/><path d="M98 388 L124 388" stroke="${c}" stroke-width="2"/>`);
+   s+=`<rect x="112" y="253" width="76" height="10" rx="3" fill="${dk}"/>`;
+   for(const [a,b,y] of [[114,186,284],[118,170,300],[140,196,272]])s+=`<path d="M${a} 262 Q${(a+b)/2} ${y} ${b} 262" stroke="#e0b04a" stroke-width="3" stroke-dasharray="4 3" fill="none"/>`;
+   return s+`<path d="M170 290 L172 322" stroke="#e0b04a" stroke-width="3" stroke-dasharray="4 3"/><circle cx="172" cy="326" r="4" fill="#e0b04a"/>`;}},
 ];
 const DRESSES=[
  {id:'gown',name:'Princess gown',c:'#ff8fc8',d:c=>sym(`<circle cx="107" cy="170" r="17" fill="${shade(c,.2)}"/>`)+BOD(c)+`<path d="M116 255 L184 255 Q240 400 264 556 Q150 584 36 556 Q60 400 116 255 Z" fill="${c}"/><g stroke="${shade(c,-.12)}" stroke-width="2" fill="none"><path d="M136 262 Q118 420 96 566"/><path d="M164 262 Q182 420 204 566"/><path d="M150 262 L150 572"/></g><rect x="114" y="250" width="72" height="12" rx="6" fill="${shade(c,-.15)}"/>`+sparkles([[100,470],[200,500],[150,420],[124,360,4],[178,350,4],[70,540,4],[230,540,4]])},
@@ -702,6 +814,17 @@ const DRESSES=[
    s+=sleeve(c,0,24)+`<path d="M112 156 Q150 168 188 156 Q199 161 199 178 Q191 222 190 280 L178 268 L170 290 L158 272 L148 296 L138 274 L126 292 L118 270 L110 286 Q109 222 101 178 Q101 161 112 156 Z" fill="${c}"/>`;
    s+=`<rect x="160" y="200" width="18" height="16" fill="#a0522d" transform="rotate(8 169 208)"/><path d="M160 200 L178 216 M178 200 L160 216" stroke="#2d2d3a" stroke-width="1" opacity=".4"/><path d="M124 196 L132 214 L126 226" stroke="${dk}" stroke-width="2.5" fill="none"/><path d="M168 380 L176 392 L170 404" stroke="#3b4652" stroke-width="2.5" fill="none"/><rect x="114" y="390" width="16" height="14" fill="#8e44ad" transform="rotate(-6 122 397)"/>`;
    return s;}},
+ {id:'redtulle',name:'Red tulle gown',c:'#d7263d',d:c=>{const dk=shade(c,-.25);
+   return `<path d="M116 258 Q56 420 34 568 Q150 594 266 568 Q244 420 184 258 Z" fill="${c}" opacity=".35"/><path d="M116 258 Q80 420 66 566 M184 258 Q220 420 234 566" stroke="${shade(c,.3)}" stroke-width="2" opacity=".5" fill="none"/>`+
+   `<path d="M120 168 Q150 182 180 168 L190 186 Q188 222 186 262 L114 262 Q111 222 110 186 Z" fill="${c}"/><path d="M120 168 L144 152 M180 168 L156 152" stroke="${c}" stroke-width="7" stroke-linecap="round"/>`+
+   `<path d="M150 158 L136 148 L136 168 Z M150 158 L164 148 L164 168 Z" fill="${dk}"/><circle cx="150" cy="158" r="4" fill="${c}"/>`+
+   `<path d="M116 256 L184 256 L196 334 Q150 344 104 334 Z" fill="${dk}"/>`+[0,1,2,3,4].map(i=>`<path d="M${108+i*21} 260 Q${116+i*21} 290 ${104+i*23} 334" stroke="${c}" stroke-width="3" fill="none" opacity=".7"/>`).join('')+
+   `<path d="M110 258 Q150 272 190 258" stroke="${shade(c,.2)}" stroke-width="8" fill="none"/>`+flower(176,262,7,shade(c,.15),dk);}},
+ {id:'catsuit',name:'Denim catsuit',c:'#2d2d3a',d:c=>{const hi=shade(c,.35);
+   return sleeve(c,1,27)+`<path d="M116 258 L184 258 Q198 282 196 302 L196 430 L210 556 L155 556 L151 430 L150 322 L149 430 L145 556 L90 556 L104 430 L104 302 Q102 282 116 258 Z" fill="${c}"/><path d="${TORSO(266,174)}" fill="${c}"/>`+
+   `<path d="M150 176 L150 300" stroke="#c0c4cf" stroke-width="2.5"/><rect x="112" y="252" width="76" height="9" rx="3" fill="${shade(c,-.2)}"/><rect x="144" y="250" width="12" height="13" rx="2" fill="#c0c4cf"/>`+
+   [[110,340,96,380],[176,420,190,470],[120,470,108,520],[160,500,172,540],[96,220,90,270]].map(([a,b,x,y])=>`<path d="M${a} ${b} L${x} ${y}" stroke="${hi}" stroke-width="4" stroke-linecap="round" opacity=".8"/>`).join('')+
+   [[118,158],[130,166],[150,170],[170,166],[182,158],[110,150],[190,150],[124,152],[176,152]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="#8e6cff"/>`).join('')+`<rect x="168" y="196" width="12" height="9" rx="2" fill="#c0c4cf"/>`;}},
 ];
 const SHOES=[
  {id:'sneaker',name:'Sneakers',c:'#ffffff',d:c=>{const lc=c==='#ffffff'?'#ff6fae':'#ffffff';return sym(`<path d="M118 546 L146 546 Q151 556 151 568 L113 568 Q113 556 118 546 Z" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1.2"/><path d="M114 560 Q132 552 150 560 L151 568 L113 568 Z" fill="${shade(c,-.06)}"/><rect x="111" y="566" width="42" height="11" rx="5.5" fill="#fff" stroke="#d9d9e3" stroke-width="1.2"/><path d="M112 573 L152 573" stroke="${lc}" stroke-width="2"/><path d="M122 551 L142 549 M121 556 L143 554" stroke="${lc}" stroke-width="2.4" stroke-linecap="round"/><path d="M117 562 Q130 556 148 563" stroke="${lc}" stroke-width="3" fill="none"/><ellipse cx="125" cy="552" rx="3" ry="2" fill="#fff" opacity=".6"/>`);}},
@@ -720,6 +843,18 @@ const SHOES=[
  {id:'glass',name:'Glass slippers',c:'#bfe9ff',d:c=>sym(`<path d="M123 552 L145 552 L147 571 Q141 578 134 578 Q125 578 122 571 Z" fill="${c}" opacity=".85" stroke="#fff" stroke-width="1.5"/><rect x="141" y="570" width="4" height="10" fill="${c}"/>`+star(132,563,4,'#fff'))},
  {id:'skates',name:'Roller skates',c:'#b388ff',d:c=>sym(`<path d="M118 520 L148 520 L149 568 L116 568 Q114 540 118 520 Z" fill="${c}"/><rect x="113" y="566" width="38" height="8" rx="3" fill="#fff"/><circle cx="121" cy="582" r="6" fill="#ffd23f"/><circle cx="144" cy="582" r="6" fill="#ffd23f"/><path d="M124 530 L142 530 M124 540 L142 540" stroke="#fff" stroke-width="2"/>`)},
  {id:'paws',name:'Monster paws',c:'#7a5230',d:c=>sym(`<path d="M116 520 L150 520 L150 566 Q150 580 134 580 L108 578 Q96 574 100 562 Q106 540 116 520 Z" fill="${c}"/><path d="M114 520 L119 508 L124 520 L130 506 L136 520 L142 508 L148 520 L152 510 L152 524 L114 524 Z" fill="${shade(c,-.2)}"/><path d="M100 572 L94 580 M110 576 L106 584 M120 578 L118 586" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`)},
+ {id:'furwarmers',name:'Fluffy leg warmers',c:'#ffffff',d:c=>{const o=shade(c,-.12);let s=`<path d="M112 436 L154 436 L156 570 Q150 584 134 584 Q112 584 110 570 Z" fill="${c}" stroke="${o}" stroke-width="1"/>`;
+   for(let y=440;y<580;y+=12)s+=`<circle cx="${110+(y%3)}" cy="${y}" r="7" fill="${c}"/><circle cx="${155-(y%2)}" cy="${y+5}" r="7" fill="${c}"/><path d="M${120+(y%7)} ${y} q4 6 0 12" stroke="${o}" stroke-width="1.5" fill="none"/>`;
+   return sym(s+`<ellipse cx="133" cy="436" rx="23" ry="7" fill="${shade(c,-.05)}"/>`);}},
+ {id:'chunkyboots',name:'Chunky boots',c:'#ff6fae',d:c=>{const dk=shade(c,-.2);let s='';
+   for(let y=436;y<556;y+=20)s+=`<rect x="113" y="${y}" width="40" height="22" rx="10" fill="${y%40?c:shade(c,.1)}" stroke="${dk}" stroke-width="1.5"/>`;
+   s+=`<path d="M112 552 L154 552 L156 572 L110 572 Z" fill="${c}"/><rect x="106" y="570" width="54" height="18" rx="5" fill="${dk}"/><circle cx="133" cy="500" r="4" fill="#7ee081"/>`;
+   return sym(s);}},
+ {id:'platforms',name:'Platform heels',c:'#ffc93c',d:c=>{const dk=shade(c,-.25);
+   return sym(`<path d="M122 548 Q134 544 146 548 L148 566 L120 566 Z" fill="${c}"/><path d="M120 538 Q134 546 148 538" stroke="${c}" stroke-width="5" fill="none"/><rect x="116" y="566" width="36" height="12" rx="3" fill="${dk}"/><rect x="138" y="566" width="14" height="24" rx="2" fill="${dk}"/><path d="M118 570 L150 570" stroke="#fff" stroke-width="1.5" opacity=".5"/>`);}},
+ {id:'laceheels',name:'Lace-up heels',c:'#d6d9e2',d:c=>{const dk=shade(c,-.3);let s=`<path d="M122 552 Q134 546 146 552 L148 568 Q145 578 134 580 Q124 578 121 568 Z" fill="${c}"/><path d="M143 568 L148 568 L147 588 L144 588 Z" fill="${dk}"/>`;
+   for(let y=450;y<550;y+=18)s+=`<path d="M119 ${y} L148 ${y+14} M148 ${y} L119 ${y+14}" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>`;
+   return sym(s+`<path d="M118 448 L150 448" stroke="${c}" stroke-width="3"/>`);}},
 ];
 const HATS=[
  {id:'tiara',name:'Tiara',c:'#ffd23f',d:c=>`<path d="M118 52 L126 34 L136 46 L150 20 L164 46 L174 34 L182 52 Q150 42 118 52 Z" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1.5"/><circle cx="150" cy="36" r="4.5" fill="#ff4d8d"/><circle cx="126" cy="44" r="3" fill="#4fc3f7"/><circle cx="174" cy="44" r="3" fill="#4fc3f7"/>`},
@@ -743,6 +878,8 @@ const HATS=[
  {id:'wolfears',name:'Wolf ears',c:'#7a5230',d:c=>sym(`<path d="M108 60 L112 6 L146 40 Z" fill="${c}"/><path d="M116 48 L117 22 L136 40 Z" fill="${shade(c,.45)}"/><path d="M112 6 L108 0 L116 10 Z" fill="${shade(c,-.25)}"/>`)+`<path d="M138 38 L144 26 L150 36 L156 26 L162 38 Z" fill="${c}"/>`},
  {id:'mummywrap',name:'Mummy wrap',c:'#efe6cf',d:c=>{const dk=shade(c,-.2);return `<path d="M106 58 Q150 30 194 58 L196 72 Q150 46 104 72 Z" fill="${c}" stroke="${dk}" stroke-width="1.2"/><path d="M110 40 Q150 20 190 40 L192 52 Q150 32 108 52 Z" fill="${c}" stroke="${dk}" stroke-width="1.2"/><path d="M190 64 Q214 76 210 104 L202 102 Q204 80 186 72 Z" fill="${c}" stroke="${dk}" stroke-width="1.2"/>`;}},
  {id:'hibiscus',name:'Hibiscus flower',c:'#ff4d6d',d:c=>{let s='';for(let i=0;i<5;i++){const a=i*72-90;s+=`<ellipse cx="124" cy="40" rx="8" ry="13" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1" transform="rotate(${a} 124 52)"/>`;}return s+`<circle cx="124" cy="52" r="4" fill="${shade(c,-.3)}"/><path d="M124 52 L134 44" stroke="#ffd23f" stroke-width="2"/><circle cx="135" cy="43" r="2.5" fill="#ffd23f"/>`;}},
+ {id:'fluffyears',name:'Fluffy kitty ears',c:'#7a4a2a',d:c=>sym(`<path d="M108 58 Q106 22 116 10 Q132 22 146 36 Z" fill="${c}"/><path d="M114 48 Q114 26 119 20 Q130 30 138 38 Z" fill="#ffd1e6"/><path d="M115 44 l3 -6 M120 46 l2 -7 M125 44 l1 -6" stroke="#fff" stroke-width="1.5"/>`)},
+ {id:'horns',name:'Horn clips',c:'#e0b04a',d:c=>sym(`<path d="M120 46 Q110 26 116 12 Q122 26 130 40 Z" fill="${c}" stroke="${shade(c,-.25)}" stroke-width="1.2"/><path d="M116 20 Q119 30 126 38" stroke="#fff" stroke-width="1.5" opacity=".6" fill="none"/>`)},
 ];
 const EXTRAS=[
  {id:'pearls',name:'Pearls',c:'#ffffff',vb:'110 140 80 60',d:c=>{let s='';for(let i=0;i<11;i++){const a=Math.PI*(.05+i*.09);s+=`<circle cx="${(150-24*Math.cos(a)).toFixed(1)}" cy="${(158+18*Math.sin(a)).toFixed(1)}" r="3.6" fill="${c}" stroke="${shade(c,-.2)}" stroke-width=".8"/>`;}return {front:s};}},
@@ -770,6 +907,10 @@ const EXTRAS=[
  {id:'bat',name:'Bat wings',c:'#2d2d3a',vb:'0 120 300 200',d:c=>({back:sym(`<path d="M120 190 Q80 130 20 150 Q40 170 36 190 Q56 186 64 206 Q80 196 92 214 Q100 200 120 214 Z" fill="${c}"/>`)})},
  {id:'vampcape',name:'Vampire cape',c:'#2d2d3a',vb:'20 80 260 480',d:c=>({back:`<path d="M100 156 Q150 144 200 156 Q244 300 288 540 Q150 576 12 540 Q56 300 100 156 Z" fill="${c}"/><path d="M106 164 Q150 152 194 164 Q236 300 276 534 Q150 566 24 534 Q64 300 106 164 Z" fill="#b3001b"/>`+sym(`<path d="M128 162 Q86 130 70 78 Q104 104 142 150 Z" fill="${c}"/><path d="M128 156 Q94 128 82 94 Q110 116 138 150 Z" fill="#b3001b"/>`)})},
  {id:'lei',name:'Flower lei',c:'#ff8fc8',vb:'100 140 100 90',d:c=>{let s='';const cols=[c,'#ffd23f','#ffffff','#ff4d6d'];for(let i=0;i<11;i++){const a=Math.PI*(.04+i*.092);s+=flower(+(150-30*Math.cos(a)).toFixed(1),+(160+30*Math.sin(a)).toFixed(1),5,cols[i%4]);}return {front:s};}},
+ {id:'tail',name:'Kitty tail',c:'#ffffff',vb:'140 120 160 200',d:c=>({back:`<path d="M168 262 Q240 270 250 200 Q258 150 232 128" stroke="${shade(c,-.15)}" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M168 262 Q240 270 250 200 Q258 150 232 128" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M236 132 Q228 124 232 128" stroke="#7a4a2a" stroke-width="11" stroke-linecap="round"/>`})},
+ {id:'whiskers',name:'Kitty face paint',c:'#ffffff',vb:'105 85 90 45',d:c=>({head:sym(`<g stroke="${shade(c,-.3)}" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"><path d="M112 104 L128 107 M111 111 L128 111 M112 118 L128 115"/></g><g stroke="${c}" stroke-width="2" stroke-linecap="round"><path d="M112 104 L128 107 M111 111 L128 111 M112 118 L128 115"/></g>`)+`<path d="M147 104 L150 107 L153 104 Z" fill="${c}" stroke="${shade(c,-.3)}" stroke-opacity=".4" stroke-width=".8"/>`})},
+ {id:'facegems',name:'Face gems',c:'#4fc3f7',vb:'110 55 80 65',d:c=>({head:`<path d="M150 64 L154 69 L150 74 L146 69 Z" fill="${c}" stroke="#fff" stroke-width="1"/>`+sym(`<circle cx="126" cy="104" r="1.8" fill="${c}"/><circle cx="131" cy="106" r="1.4" fill="#fff"/><circle cx="121" cy="102" r="1.3" fill="${c}"/>`)})},
+ {id:'bangles',name:'Gold bangles',c:'#e0b04a',vb:'70 270 160 60',d:c=>({hand:sym(`<ellipse cx="90" cy="296" rx="12" ry="4" fill="none" stroke="${c}" stroke-width="3"/><ellipse cx="90" cy="303" rx="12" ry="4" fill="none" stroke="${shade(c,.2)}" stroke-width="2.5"/><ellipse cx="90" cy="290" rx="12" ry="4" fill="none" stroke="${shade(c,-.15)}" stroke-width="2.5"/>`)})},
 ];
 const SCENES=[
  {id:'studio',name:'Sparkle studio'},{id:'bedroom',name:'My room'},{id:'birthday',name:'Birthday party'},{id:'halloween',name:'Halloween'},
@@ -903,14 +1044,17 @@ function sceneSVG(id,name){
 
 /* ---------- character ---------- */
 let dollBack=false;
-function charInner(L){
-  const T=headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):hairParts(L);
+// height and body width: the whole doll grows from the feet; the head keeps its own width
+const bodyT=L=>{const h=L.height||1,w=L.build||1;return h===1&&w===1?'':`translate(150 580) scale(${(w*h).toFixed(3)} ${h}) translate(-150 -580)`;};
+function charInner(L){const bt=bodyT(L);return bt?`<g class="bd" transform="${bt}">${charInner0(L)}</g>`:charInner0(L);}
+function charInner0(L){
+  const T=(L.build&&L.build!==1?`translate(150 0) scale(${(1/L.build).toFixed(4)} 1) translate(-150 0) `:'')+headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):hairParts(L);
   const hat=L.hat&&find(HATS,L.hat.id)?parts(find(HATS,L.hat.id).d(L.hat.c)):{};
   const ex={back:'',front:'',hand:'',head:''};
   for(const [id,c] of Object.entries(L.extras||{})){const it=find(EXTRAS,id);if(!it)continue;const p=parts(it.d(c));for(const k in ex)ex[k]+=p[k]||'';}
   const wear=(list,v)=>v&&find(list,v.id)?allParts(parts(find(list,v.id).d(v.c))):'';
   const A=artLayers(L);
-  const v=x=>x?`<g filter="url(#vol)">${x}</g>`:'';
+  const glam=L.style==='glam',v=x=>x?`<g filter="url(#vol)">${x}</g>`:'',vc=glam?x=>x?`<g filter="url(#volG)">${x}</g>`:'':v,vh=(L.hairShine??glam)&&!['curly','bigcurls','boxbraids','afro','afropuff','locs'].includes(L.hairStyle)?x=>x?`<g filter="url(#silk)">${v(x)}</g>`:'':v;
   if(dollBack){
     // seen from behind: no face or makeup, hair covers the whole head
     const hc=hf(L.hairColor),hd=hs(L.hairColor);
@@ -919,10 +1063,10 @@ function charInner(L){
       +`<path d="M128 52 Q150 44 172 52 M120 74 Q150 62 180 74 M118 98 Q150 88 182 98" stroke="${hd}" stroke-width="2.5" fill="none" opacity=".45" stroke-linecap="round"/>`+v(hat.back)+v(hat.front)+`</g>`;
     return b;
   }
-  let s=ex.back+`<g transform="${T}">${v(H.back)}${hat.back||''}</g>`+v(body(L));
-  if(L.dress)s+=v(wear(DRESSES,L.dress));else s+=v(wear(BOTTOMS,L.bottom))+v(wear(TOPS,L.top));
-  s+=A.body+v(wear(SHOES,L.shoes))+A.feet+v(ex.front)+v(hands(L))+v(ex.hand)+A.hand;
-  s+=`<g transform="${T}">${face(L)}${ex.head}${v(H.front)}<path d="M122 52 Q150 38 180 52" stroke="#fff" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round"/>${v(hat.front)}${A.head}</g>`;
+  let s=ex.back+`<g transform="${T}">${vh(H.back)}${hat.back||''}</g>`+v(body(L));
+  if(L.dress)s+=vc(wear(DRESSES,L.dress));else s+=vc(wear(BOTTOMS,L.bottom))+vc(wear(TOPS,L.top));
+  s+=A.body+vc(wear(SHOES,L.shoes))+A.feet+vc(ex.front)+v(hands(L))+vc(ex.hand)+A.hand;
+  s+=`<g class="hd" transform="${T}">${face(L)}${ex.head}${vh(H.front)}<path d="M122 52 Q150 38 180 52" stroke="#fff" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round"/>${v(hat.front)}${A.head}</g>`;
   return s;
 }
 const VIEW='-40 -75 380 680';
@@ -935,7 +1079,7 @@ function defaultLook(){return {style:'cartoon',skin:SKIN[1],eyes:EYES[0],hairSty
   top:{id:'startee',c:'#b388ff'},bottom:{id:'skirt',c:'#ff6fae'},dress:null,shoes:{id:'sneaker',c:'#ffffff'},hat:null,extras:{},
   makeup:{shadow:null,lips:null,blush:'#ff7aa8',lashes:'natural',paint:null},scene:'studio'};}
 function randomLook(base){
-  const L=defaultLook();L.style=base?base.style:rnd(['cartoon','fashion']);L.skin=base?base.skin:rnd(SKIN);L.eyes=base?base.eyes:rnd(EYES);
+  const L=defaultLook();L.style=base?base.style:rnd(['cartoon','fashion','glam']);L.skin=base?base.skin:rnd(SKIN);L.eyes=base?base.eyes:rnd(EYES);
   L.hairStyle=rnd(HAIR).id;L.hairColor=rnd(HAIRC);
   const pick=list=>{const it=rnd(list);return {id:it.id,c:Math.random()<.5?it.c:rnd(CLOTHC)};};
   if(Math.random()<.45){L.dress=pick(DRESSES);}else{L.top=pick(TOPS);L.bottom=pick(BOTTOMS);}
@@ -974,8 +1118,8 @@ function strokeSVG(st){
 }
 const curBrush=()=>BRUSHES.find(b=>b.id===brushState.id);
 const brushColor=b=>brushState.c[b.id]||b.colors[0];
-function faceZoomVB(l){const cart=l.style==='cartoon',cy=cart?74:88,r=cart?62:48;const w=r*2.4,h=w*680/380;return `${150-w/2} ${cy-h*.36} ${w} ${h}`;}
-function hairZoomVB(l){const top=l.style==='cartoon'?-75:-40,w=250;return `${150-w/2} ${top} ${w} ${w*680/380}`;}
+function faceZoomVB(l){const cart=l.style==='cartoon',gl=l.style==='glam',cy=cart?74:gl?80:88,r=cart?62:gl?56:48;const w=r*2.4,h=w*680/380;return `${150-w/2} ${cy-h*.36} ${w} ${h}`;}
+function hairZoomVB(l){const top=l.style==='cartoon'?-75:l.style==='glam'?-60:-40,w=250;return `${150-w/2} ${top} ${w} ${w*680/380}`;}
 const zoomMode=()=>tab==='makeup'&&brushState.id?'face':tab==='hair'&&salonTool?'hair':tab==='art'&&artSel?'art':null;
 function applyZoom(){
   const sv=$('#stage svg');if(!sv)return;
@@ -986,10 +1130,9 @@ function applyZoom(){
   $('#stage').classList.toggle('painting',!!mode);
 }
 function toFace(ev){
-  const sv=$('#stage svg');const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
-  const q=pt.matrixTransform(sv.getScreenCTM().inverse());
-  let x=q.x,y=q.y;if(L().style==='cartoon'){x=150+(x-150)/1.3;y=135+(y-135)/1.3;}
-  return [Math.round(x*2)/2,Math.round(y*2)/2];
+  const sv=$('#stage svg'),g=sv.querySelector('.hd')||sv;const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
+  const q=pt.matrixTransform(g.getScreenCTM().inverse());
+  return [Math.round(q.x*2)/2,Math.round(q.y*2)/2];
 }
 let drawing=null;
 $('#stage').addEventListener('pointerdown',ev=>{
@@ -1086,7 +1229,7 @@ function toggleDetail(l,id){
   else{l.feat=l.feat||{};l.feat[id]=!l.feat[id];}
 }
 const detailTiles=l=>DETAILS.map(x=>`<button class="item ${hasDetail(l,x.id)?'on':''}" data-act="detail" data-id="${x.id}"><span class="big">${x.e}</span><span>${x.n}</span></button>`).join('');
-const FEAT_SLIDERS=[{k:'fw',n:'🙂 Face width',a:.92,b:1.06,d:1},{k:'chin',n:'🫥 Chin',a:.94,b:1.08,d:1},{k:'eye',n:'👁️ Eye size',a:.7,b:1.3,d:1},{k:'gap',n:'↔️ Eye gap',a:-4,b:4,d:0},{k:'open',n:'😮 Eye shape',a:.6,b:1.4,d:1},{k:'tilt',n:'🐱 Eye tilt',a:-8,b:10,d:0},{k:'brow',n:'〰️ Brow height',a:-3,b:3,d:0},{k:'arch',n:'🌈 Brow arch',a:-4,b:6,d:0},{k:'bw',n:'✏️ Brow thick',a:.6,b:1.6,d:1},{k:'nose',n:'👃 Nose',a:.8,b:1.3,d:1},{k:'mouth',n:'👄 Mouth',a:.8,b:1.25,d:1},{k:'lips',n:'💋 Lips',a:.7,b:1.4,d:1}];
+const FEAT_SLIDERS=[{k:'fw',n:'🙂 Face width',a:.92,b:1.06,d:1},{k:'chin',n:'🫥 Chin',a:.94,b:1.08,d:1},{k:'eye',n:'👁️ Eye size',a:.7,b:1.3,d:1},{k:'gap',n:'↔️ Eye gap',a:-4,b:4,d:0},{k:'open',n:'😮 Eye opening',a:.6,b:1.4,d:1},{k:'tilt',n:'🐱 Eye tilt',a:-8,b:10,d:0},{k:'brow',n:'〰️ Brow height',a:-3,b:3,d:0},{k:'arch',n:'🌈 Brow arch',a:-4,b:6,d:0},{k:'bw',n:'✏️ Brow thick',a:.6,b:1.6,d:1},{k:'nose',n:'👃 Nose',a:.8,b:1.3,d:1},{k:'mouth',n:'👄 Mouth',a:.8,b:1.25,d:1},{k:'lips',n:'💋 Lip fullness',a:.6,b:1.6,d:1}];
 const CMP_HAIR=['long','wavy','curly','ponytail','bob','pixie','braids','buns'];
 // just the head, so it sits next to the selfie at the same size
 function dollHead(l){
@@ -1096,8 +1239,12 @@ function dollHead(l){
 }
 function detailEditor(l){
   const F=l.feat||{};let h=`<h3>Skin</h3>`+swatches('dskin',SKIN,l.skin)+`<h3>Hair</h3>`+swatches('dhairc',HAIRC,l.hairColor);
-  h+=`<div class="chips" style="margin-top:8px">`+(l.myHair?['mine',...CMP_HAIR]:CMP_HAIR).map(id=>{const it=id==='mine'?{name:'My hair'}:find(HAIR,id);return it?`<button class="${l.hairStyle===id?'on':''}" data-hs="${id}">${it.name}</button>`:'';}).join('')+`</div>`;
-  h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Brows</h3><div class="chips">`+[['soft','Soft'],['straight','Straight'],['high','Arched'],['thick','Bold']].map(([id,n])=>`<button class="${(F.bshape||'soft')===id?'on':''}" data-bs="${id}">${n}</button>`).join('')+`</div><h3>Face</h3>`;
+  h+=`<div class="chips" style="margin-top:8px">`+(l.myHair?['mine',...HAIR.map(h=>h.id)]:HAIR.map(h=>h.id)).map(id=>{const it=id==='mine'?{name:'My hair'}:find(HAIR,id);return it?`<button class="${l.hairStyle===id?'on':''}" data-hs="${id}">${it.name}</button>`:'';}).join('')+`</div>`+
+    (on=>`<div class="chips" style="margin-top:6px"><button class="${on?'on':''}" data-shine="${on?0:1}">✨ Silky shine ${on?'on':'off'}</button></div>`)(l.hairShine??l.style==='glam');
+  h+=`<h3>Eyes</h3>`+swatches('deyes',EYES,l.eyes)+`<h3>Brows</h3><div class="chips">`+[['soft','Soft'],['straight','Straight'],['high','Arched'],['thick','Bold']].map(([id,n])=>`<button class="${(F.bshape||'soft')===id?'on':''}" data-bs="${id}">${n}</button>`).join('')+`</div>`;
+  h+=`<h3>Eye shape</h3><div class="chips">`+[['','Classic'],['almond','Almond'],['round','Round'],['monolid','Monolid'],['hooded','Hooded'],['upturned','Upturned']].map(([id,n])=>`<button class="${(F.eshape||'')===id?'on':''}" data-es="${id}">${n}</button>`).join('')+`</div>`;
+  h+=`<h3>Lips</h3><div class="chips">`+[['','Classic'],['full','Full & glossy'],['heart','Heart'],['thin','Thin']].map(([id,n])=>`<button class="${(F.lshape||'')===id?'on':''}" data-ls="${id}">${n}</button>`).join('')+`</div>`;
+  h+=`<h3>Nose shape</h3><div class="chips">`+[['','Classic'],['button','Button'],['wide','Wide'],['narrow','Narrow']].map(([id,n])=>`<button class="${(F.nshape||'')===id?'on':''}" data-ns="${id}">${n}</button>`).join('')+`</div><h3>Face</h3>`;
   h+=FEAT_SLIDERS.map(x=>`<div class="fs"><label for="fs_${x.k}">${x.n}</label><input type="range" id="fs_${x.k}" data-fk="${x.k}" min="${x.a}" max="${x.b}" step="${((x.b-x.a)/40).toFixed(4)}" value="${F[x.k]??x.d}"></div>`).join('');
   return h+`<h3>Little details</h3><div class="grid" id="detailGrid">${detailTiles(l)}</div>`;
 }
@@ -1107,10 +1254,14 @@ function openDetails(guess,found){
   const ph=L().photo;$('#cmpPhoto').src=ph||'';$('#cmpPhoto').parentNode.style.display=ph?'':'none';$('#detailEdit').innerHTML=detailEditor(L());drawCmp();$('#detailModal').classList.add('show');
 }
 $('#detailEdit').addEventListener('click',e=>{
-  const sw=e.target.closest('[data-c]'),hs=e.target.closest('[data-hs]'),dt=e.target.closest('[data-id]'),bs=e.target.closest('[data-bs]');
+  const sw=e.target.closest('[data-c]'),hs=e.target.closest('[data-hs]'),dt=e.target.closest('[data-id]'),bs=e.target.closest('[data-bs]'),es=e.target.closest('[data-es]'),ns=e.target.closest('[data-ns]'),ls=e.target.closest('[data-ls]'),hz=e.target.closest('[data-shine]');
   if(sw){const k={dskin:'skin',dhairc:'hairColor',deyes:'eyes'}[sw.dataset.act];if(!k)return;update(l=>{l[k]=sw.dataset.c;});}
   else if(hs)update(l=>{l.hairStyle=hs.dataset.hs;});
   else if(bs)update(l=>{l.feat=l.feat||{};l.feat.bshape=bs.dataset.bs;});
+  else if(es)update(l=>{l.feat=l.feat||{};l.feat.eshape=es.dataset.es||undefined;});
+  else if(ns)update(l=>{l.feat=l.feat||{};l.feat.nshape=ns.dataset.ns||undefined;});
+  else if(ls)update(l=>{l.feat=l.feat||{};l.feat.lshape=ls.dataset.ls||undefined;});
+  else if(hz)update(l=>{l.hairShine=hz.dataset.shine==='1';});
   else if(dt)update(l=>toggleDetail(l,dt.dataset.id));
   else return;
   $('#detailEdit').innerHTML=detailEditor(L());drawCmp();
@@ -1388,7 +1539,7 @@ function artPanel(l){
   return h;
 }
 function toSvgPt(ev){const sv=$('#stage svg');const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(sv.getScreenCTM().inverse());return [q.x,q.y];}
-function artPt(ev,w){const a=ART[w.id],k=ART_KINDS.find(x=>x.id===a.kind);let [x,y]=toSvgPt(ev);if(k.layer==='head'&&L().style==='cartoon'){x=150+(x-150)/1.3;y=135+(y-135)/1.3;}return [x,y];}
+function artPt(ev,w){const a=ART[w.id],k=ART_KINDS.find(x=>x.id===a.kind),sv=$('#stage svg');const g=(k.layer==='head'?sv.querySelector('.hd'):sv.querySelector('.bd'))||sv;const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(g.getScreenCTM().inverse());return [q.x,q.y];}
 let artDrag=null;
 function artDown(ev){
   const l=L();let w=(l.art||[]).find(x=>x.u===artSel);
@@ -1668,7 +1819,8 @@ function renderPanel(){
   const l=L();let h='';
   const faceOnly=(extra={})=>{const F={...l,style:'fashion',...extra};return mini('100 38 100 96',`<g>${face(F)}</g>`);};
   if(tab==='me'){
-    h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button></div>`;
+    h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button><button class="${l.style==='glam'?'on':''}" data-act="style" data-c="glam">💎 Glam</button></div>`;
+    h+=`<h3>Body</h3><div class="fs"><label for="bodyH">📏 Height</label><input type="range" id="bodyH" data-body="height" min=".86" max="1.08" step=".005" value="${l.height||1}"></div><div class="fs"><label for="bodyW">↔️ Body width</label><input type="range" id="bodyW" data-body="build" min=".85" max="1.25" step=".005" value="${l.build||1}"></div>`;
     h+=`<h3>Skin</h3>`+swatches('skin',SKIN,l.skin)+`<h3>Eyes</h3>`+swatches('eyes',EYES,l.eyes);
     h+=`<h3>📷 My face</h3>`;
     if(l.photo){
@@ -2011,6 +2163,8 @@ $('#artKinds').addEventListener('click',async e=>{
   try{await ArtDB.put(a);}catch(err){toast('😕 Could not save the drawing');}
   ART[a.id]=a;update(l=>wearArt(l,a));toast('🎨 Your drawing is on!');
 });
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.body;if(!k)return;L()[k]=+e.target.value;renderStage();});
+document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.body)persist();});
 document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=(L().art||[]).find(x=>x.u===artSel);if(!w)return;
   const k=ART_KINDS.find(x=>x.id===ART[w.id].kind),f=+e.target.value/100,cx=w.x+w.w/2,cy=w.y+w.h/2;
   w.w=Math.round(k.box[2]*f);w.h=Math.round(k.box[3]*f);w.x=Math.round(cx-w.w/2);w.y=Math.round(cy-w.h/2);persist();salonRender();});
