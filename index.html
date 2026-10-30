@@ -1767,6 +1767,9 @@ if(!DB.welcomed)showWelcome();
 /* ---------- cloud save + messages (Firebase, free Spark plan) ---------- */
 const FB_CONFIG={apiKey:"AIzaSyCz20IcwmqTfaUR6N2Ik8YUliZkvi_ICCw",authDomain:"brynny-dress-up.firebaseapp.com",projectId:"brynny-dress-up",storageBucket:"brynny-dress-up.firebasestorage.app",messagingSenderId:"76439287191",appId:"1:76439287191:web:83a94aed952e8711ccc0d2",measurementId:"G-38E5337GL0"};
 const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
+/* daily play counts for the owner area on datasolutions365.com: numbers only, kept in the snake game's Firebase project so one sign-in sees both games */
+const STATS_CONFIG={apiKey:'AIzaSyAA8sqDROwZoVvcy8MoJ1cTmGlg0GCP_nY',authDomain:'snake-game-2e23b.firebaseapp.com',projectId:'snake-game-2e23b',appId:'1:185426735320:web:84d5c2b47233711dd527ad'};
+const STAT_NAMES=['visits','phone_visits','computer_visits','start_playing','surprise','save_look','open_gallery','open_music','open_messages','send_message'];
 const SENT_KEY='brynny-cloud-sent',MSG_SENT_KEY='brynny-msgs-sent-here',FROM_KEY='brynny-msg-from';
 let F=null,loading=null,auth=null,fs=null,user=null,ready=false,failed=false,unsubs=[],lastSent={},syncTimer=null,syncing=false,again=false,busy=false,pendingRender=false,warnedBig=false;
 let msgs=[],player=null,recAudio=null,recState=null;
@@ -1788,6 +1791,7 @@ function loadSDK(){
     F.getRedirectResult(auth).catch(()=>{});
     finishEmailLink();
     startAnalytics(app);
+    startStats();
     F.onAuthStateChanged(auth,onUser);
     failed=false;return F;
   })();
@@ -1802,7 +1806,17 @@ async function startAnalytics(app){
     const a=an.initializeAnalytics(app,{config:{allow_google_signals:false,allow_ad_personalization_signals:false}});
     GA=(n,p)=>an.logEvent(a,n,p);gaQueue.splice(0).forEach(([n,p])=>GA(n,p));}catch(e){}
 }
-const track=(n,p)=>{if(GA)GA(n,p);else if(gaQueue.length<50)gaQueue.push([n,p]);};
+const track=(n,p)=>{countStat(n);if(GA)GA(n,p);else if(gaQueue.length<50)gaQueue.push([n,p]);};
+
+let statsFs=null;const statsQueue=[];
+function startStats(){try{statsFs=F.getFirestore(F.initializeApp(STATS_CONFIG,'stats'));statsQueue.splice(0).forEach(n=>countStat(...n));}catch(e){}}
+function countStat(...names){
+  names=names.filter(n=>STAT_NAMES.includes(n));if(!names.length)return;
+  if(!statsFs){if(statsQueue.length<50)statsQueue.push(names);return;}
+  try{const add={};names.forEach(n=>add[n]=F.increment(1));
+    F.setDoc(F.doc(statsFs,'dressup_stats',new Date().toISOString().slice(0,10)),add,{merge:true}).catch(()=>{});}catch(e){}
+}
+{const phone=matchMedia('(pointer: coarse)').matches&&!matchMedia('(any-pointer: fine)').matches;countStat('visits',phone?'phone_visits':'computer_visits');}
 const TAPS={randBtn:'surprise',saveBtn:'save_look',musicBtn:'open_music',galBtn:'open_gallery',msgBtn:'open_messages',cloudBtn:'open_cloud',welcomeGo:'start_playing',msgSend:'send_message'};
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-tab]');if(!b)return;
   if(TAPS[b.id])track(TAPS[b.id]);else if(b.dataset.tab)track('open_tab',{tab:b.dataset.tab});},true);
