@@ -282,6 +282,52 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 <div class="toast" id="toast"></div>
 
 <script>
+/* ---------- errors: save what went wrong (snake game's Firebase, list dressup_errors) and keep playing ---------- */
+const DRESSUP_VERSION='2026-10-30';
+const MAX_ERRORS_SAVED=5;
+let errorsSaved=0;const errorQueue=[];window.sendError=null;
+function errorWhere(where){
+  let s=where||'';
+  try{s+=' | tab: '+tab;const m=[...document.querySelectorAll('.modal.show')].map(x=>x.id);if(m.length)s+=' | open: '+m.join(',');s+=' | scene: '+L().scene;}catch(e){}
+  return s;
+}
+function reportError(error,where,showBox){
+  try{
+    if(errorsSaved>=MAX_ERRORS_SAVED)return;errorsSaved++;
+    const cut=(v,n)=>String(v==null?'':v).slice(0,n);
+    const e={message:cut(error&&error.message||error,500),stack:cut(error&&error.stack,1500),where:cut(errorWhere(where),200),version:DRESSUP_VERSION,device:cut(navigator.userAgent,300)};
+    if(window.sendError)window.sendError(e);else errorQueue.push(e);
+  }catch(x){}
+  if(showBox)showErrorBox();
+}
+function showErrorBox(){
+  if(document.getElementById('errorBox'))return;
+  const b=document.createElement('div');b.id='errorBox';b.className='modal show';b.style.zIndex=99;
+  b.innerHTML='<div class="sheet" style="max-width:340px;text-align:center"><h2>Oops, something went wrong 😕</h2><p>Your looks are saved. You can keep playing, or start again.</p><button class="big-btn" id="errKeep">Keep playing ✨</button><p><button class="pill" id="errReload">Start again</button></p></div>';
+  document.body.appendChild(b);
+  b.querySelector('#errKeep').onclick=()=>{b.remove();recover();};
+  b.querySelector('#errReload').onclick=()=>location.reload();
+}
+// put the game back in a working state: close stuck windows, unstick buttons, draw again
+function recover(){
+  try{document.querySelectorAll('#cropModal.show,#camModal.show,#artModal.show,#nailModal.show,#braidModal.show').forEach(m=>m.classList.remove('show'));}catch(e){}
+  try{const b=$('#cropUse');if(b){b.disabled=false;b.textContent='Put it on! ✨';}}catch(e){}
+  try{window.unstick&&window.unstick();}catch(e){}
+  try{renderStage();}catch(e){}
+  try{renderPanel();}catch(e){}
+}
+window.addEventListener('error',ev=>{
+  // only our own code gets the box; a hiccup in someone else's script (fonts, Firebase, face finder) is just saved
+  const ours=!ev.filename||ev.filename.startsWith(location.origin);
+  reportError(ev.error||ev.message,'window: '+(ev.filename||'').split('/').pop()+':'+ev.lineno,ours);
+});
+window.addEventListener('unhandledrejection',ev=>{const r=ev.reason;reportError(r,'promise: '+(r&&r.name||typeof r),false);});
+// freeze watchdog: if the page stopped answering for a while (while on screen), save it and tidy up
+{let last=Date.now(),shownAt=0;
+  document.addEventListener('visibilitychange',()=>{last=Date.now();if(!document.hidden)shownAt=last;});
+  setInterval(()=>{const now=Date.now(),gap=now-last;last=now;
+    if(gap>5000&&!document.hidden&&now-shownAt>gap){reportError({message:'freeze '+Math.round(gap/1000)+'s',stack:''},'watchdog',false);recover();}},1000);}
+
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1200,7 +1246,7 @@ $('#cropUse').onclick=async()=>{
   const k=W/(2*OV.rx),im=crop.img;
   x.drawImage(im,(crop.ox-(OV.cx-OV.rx))*k,(crop.oy-(OV.cy-OV.ry))*k,im.width*crop.s*k,im.height*crop.s*k);
   const btn=$('#cropUse');btn.disabled=true;btn.textContent='🔍 Looking at your face…';
-  let look={};try{look=await readFace();}catch(e){}
+  let look={};try{look=await Promise.race([readFace(),new Promise((_,no)=>setTimeout(()=>no(new Error('face reading took too long')),25000))]);}catch(e){if(/too long/.test(e.message))reportError(e,'readFace',false);}
   btn.disabled=false;btn.textContent='Put it on! ✨';
   const data=out.toDataURL('image/jpeg',.82),toon=cartoonize(out);
   $('#cropModal').classList.remove('show');
@@ -1849,8 +1895,12 @@ const Music=(()=>{
     if(ch==='h'||ch==='x')hit(7000,.05,.04);
   }
   function tick(){
+    if(!cur||!ctx)return;
     const e=60/cur.bpm/2;
-    while(nextTime<ctx.currentTime+.15){
+    // after the phone pauses timers (tab switch, lock, slow page) don't try to play every missed note at once: skip ahead
+    if(nextTime<ctx.currentTime-.2)nextTime=ctx.currentTime+.05;
+    let n=0;
+    while(nextTime<ctx.currentTime+.15&&n++<16){
       (cur.m.map[step]||[]).forEach(n=>lead(cur.lead,n.f,nextTime,n.len*e));
       (cur.b.map[step]||[]).forEach(n=>tone(n.f,nextTime,n.len*e*.9,'triangle',.18));
       if(cur.drums){const k=step-(cur.off||0);if(k>=0){const ch=cur.drums[k%cur.drums.length];if(ch!=='.')drum(ch,nextTime);}}
@@ -1861,6 +1911,9 @@ const Music=(()=>{
     stopAll();const tr=TRACKS.find(t=>t.id===id);if(!tr||!ensure())return;
     cur={...tr,m:parse(tr.mel),b:parse(tr.bass)};step=0;nextTime=ctx.currentTime+.1;tick();timer=setInterval(tick,40);
   }
+  // quiet and idle while the game is hidden, back where it was when it comes back
+  function pause(){if(timer){clearInterval(timer);timer=null;}if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});}
+  function resume(){if(cur&&!timer&&ensure()){nextTime=ctx.currentTime+.1;timer=setInterval(tick,40);}}
   function stopSynth(){if(timer)clearInterval(timer);timer=null;cur=null;}
   function stopAll(){stopSynth();const a=$('#songPlayer');a.pause();}
   function sfx(kind){
@@ -1868,7 +1921,7 @@ const Music=(()=>{
     if(kind==='snap'){const s=ctx.createBufferSource(),v=ctx.createGain();s.buffer=noise;v.gain.setValueAtTime(.25,t);v.gain.exponentialRampToValueAtTime(.001,t+.12);s.connect(v);v.connect(master);s.start(t);s.stop(t+.15);tone(1568,t+.05,.25,'sine',.15);return;}
     const sc=[1047,1175,1319,1568,1760,2093];const a=rnd(sc);tone(a,t,.12,'sine',.12);tone(a*1.5,t+.07,.18,'sine',.09);
   }
-  return {parse,playTrack,stopAll,stopSynth,setVol,sfx,ensure,get playing(){return !!cur;}};
+  return {parse,playTrack,stopAll,stopSynth,pause,resume,setVol,sfx,ensure,get playing(){return !!cur;}};
 })();
 
 /* songs stored in IndexedDB */
@@ -1940,7 +1993,7 @@ document.addEventListener('pointerdown',()=>{
   if(!String(wantedTrack()).startsWith('song:'))applyMusic();
   loadSongs().then(()=>{if(String(wantedTrack()).startsWith('song:'))applyMusic();});
 },{capture:true});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&musicStarted)Music.ensure();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)Music.pause();else if(musicStarted){Music.ensure();Music.resume();}});
 
 $('#content').addEventListener('change',async e=>{
   const i=e.target.closest('[data-artfile]');if(!i||!i.files[0])return;const f=i.files[0];i.value='';
@@ -2012,7 +2065,9 @@ async function startAnalytics(app){
 const track=(n,p)=>{countStat(n);if(GA)GA(n,p);else if(gaQueue.length<50)gaQueue.push([n,p]);};
 
 let statsFs=null;const statsQueue=[];
-function startStats(){try{statsFs=F.getFirestore(F.initializeApp(STATS_CONFIG,'stats'));statsQueue.splice(0).forEach(n=>countStat(...n));}catch(e){}}
+function startStats(){try{statsFs=F.getFirestore(F.initializeApp(STATS_CONFIG,'stats'));statsQueue.splice(0).forEach(n=>countStat(...n));
+  window.sendError=e=>{try{F.addDoc(F.collection(statsFs,'dressup_errors'),{...e,at:F.serverTimestamp()}).catch(()=>{});}catch(x){}};
+  errorQueue.splice(0).forEach(window.sendError);}catch(e){}}
 function countStat(...names){
   names=names.filter(n=>STAT_NAMES.includes(n));if(!names.length)return;
   if(!statsFs){if(statsQueue.length<50)statsQueue.push(names);return;}
@@ -2078,6 +2133,7 @@ function refresh(){
   if($('#whoModal').classList.contains('show'))renderWho();
 }
 document.addEventListener('pointerdown',()=>{busy=true;},true);
+window.unstick=()=>{busy=false;refresh();};
 const done=()=>{busy=false;if(pendingRender)setTimeout(refresh,50);};
 document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',done,true);
 document.addEventListener('click',e=>{if(pendingRender&&e.target.closest('[data-close]'))setTimeout(refresh,50);},true);
