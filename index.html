@@ -99,6 +99,11 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 #nailOpts .stk button.on{box-shadow:0 0 0 3px var(--pink) inset}
 @keyframes bub{from{opacity:.9;transform:translateY(0)}to{opacity:0;transform:translateY(-30px)}}
 #nailSvg .fx{animation:bub 1s ease-out forwards}
+.hub{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.hub .tbtn{flex-direction:column;align-items:center;gap:2px;border-radius:18px;padding:12px 8px;font-size:30px;background:#fff6fb;white-space:normal;text-align:center}
+.hub .tbtn .lbl{display:block!important;font-size:16px;font-weight:800}.hub .tbtn small{font-size:12px;font-weight:500;opacity:.7}
+.hub .tbtn.playing{animation:none;outline:3px solid var(--pink)}
+.tips{margin:0;padding-left:20px;text-align:left;line-height:1.5;font-size:14.5px}
 .tbtn .badge{background:#ff3b6b;color:#fff;border-radius:999px;font-size:11px;padding:1px 6px;margin-left:-2px}
 .msg{background:#fff4fa;border-radius:16px;padding:10px 12px;margin:8px 0;text-align:left}
 .msg.new{background:#ffe2f0;box-shadow:0 0 0 2px #ff8fc8 inset}
@@ -210,12 +215,21 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
   <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
   <button class="tbtn" id="contestBtn" title="Modeling contest">🏆 <span class="lbl">Contest</span></button>
-  <button class="tbtn" id="partyBtn" title="Birthday party">🎂 <span class="lbl">Party</span></button>
-  <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span></button>
-  <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span></button>
-  <button class="tbtn" id="msgBtn" title="Messages" style="display:none">💌 <span class="lbl">Messages</span><span class="badge" id="msgBadge" style="display:none"></span></button>
-  <button class="tbtn" id="cloudBtn" title="Cloud save">☁️ <span class="lbl" id="cloudLbl">Sign in</span></button>
+  <button class="tbtn" id="moreBtn" title="More">✨ <span class="lbl">More</span><span class="badge" id="moreBadge" style="display:none">!</span></button>
 </header>
+<div class="modal" id="hubModal"><div class="sheet" style="max-width:440px">
+  <button class="close" data-close>×</button>
+  <h2>✨ More fun</h2>
+  <div class="hub">
+    <button class="tbtn" id="partyBtn" title="Birthday party">🎂 <span class="lbl">Party</span><small>Cake, candles and fireworks</small></button>
+    <button class="tbtn" id="musicBtn" title="Music">🎵 <span class="lbl">Music</span><small>Songs, sounds and volume</small></button>
+    <button class="tbtn" id="galBtn" title="My gallery">🖼️ <span class="lbl">Gallery</span><small>Looks you saved</small></button>
+    <button class="tbtn" id="msgBtn" title="Messages" style="display:none">💌 <span class="lbl">Messages</span><span class="badge" id="msgBadge" style="display:none"></span><small>Notes from family</small></button>
+    <button class="tbtn" id="cloudBtn" title="Cloud save">☁️ <span class="lbl" id="cloudLbl">Sign in</span><small>Keep your dolls safe</small></button>
+  </div>
+  <p style="font-weight:800;margin:12px 0 4px">💡 Did you know?</p>
+  <ul class="tips"><li>Tap your doll to make her strike a pose.</li><li>Swipe across your doll to spin her around.</li><li>In 🏆 Contest you can send a challenge link to a friend.</li><li>In 💇‍♀️ Hair, the salon lets you cut, curl, braid and color.</li><li>Tap 👧 at the top to add friends and family as dolls.</li></ul>
+</div></div>
 <main>
   <div class="stage" id="stage"></div>
   <div id="contestBar"><span id="cbTheme"></span><span class="t" id="cbTime"></span><button class="pill" id="cbWalk">Walk the runway ✨</button></div>
@@ -2174,6 +2188,10 @@ function blowCandle(g){if(!g||g.classList.contains('out'))return;g.classList.add
 }
 $('#partyCakeWrap').addEventListener('pointerdown',e=>blowCandle(e.target.closest('.candle')));
 $('#partyBtn').onclick=showParty;
+// the extra buttons live in the More sheet; picking one closes it, and a new message shows a dot on More
+$('#moreBtn').onclick=()=>$('#hubModal').classList.add('show');
+$('#hubModal').addEventListener('click',e=>{if(e.target.closest('.hub .tbtn'))$('#hubModal').classList.remove('show');});
+new MutationObserver(()=>{$('#moreBadge').style.display=$('#msgBadge').style.display==='none'?'none':'';}).observe($('#msgBadge'),{attributes:true,attributeFilter:['style']});
 /* if the page gets pinched or double-tapped bigger, offer a button that snaps it back to normal size */
 (()=>{const vv=window.visualViewport,b=$('#unzoom'),meta=document.querySelector('meta[name=viewport]');if(!vv||!b||!meta)return;
   const place=()=>{const z=vv.scale>1.05;b.style.display=z?'block':'none';if(z)b.style.transform=`translate(${vv.offsetLeft+10}px,${vv.offsetTop+10}px) scale(${1/vv.scale})`;};
@@ -2910,7 +2928,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- header button + cloud sheet ---------- */
 function updateBtn(){
-  $('#cloudBtn').innerHTML=user?'✅ <span class="lbl">Saved</span>':'☁️ <span class="lbl">Sign in</span>';
+  $('#cloudBtn').innerHTML=user?'✅ <span class="lbl">Saved</span><small>Your dolls are backed up</small>':'☁️ <span class="lbl">Sign in</span><small>Keep your dolls safe</small>';
   $('#msgBtn').style.display=user?'':'none';
   renderBadge();
 }
