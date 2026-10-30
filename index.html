@@ -2201,7 +2201,7 @@ function showParty(){
   const name=(DB.chars[0]&&DB.chars[0].name)||'Brynny';
   $('#partyTitle').textContent=`Happy ${PARTY_AGE}th Birthday!`;$('#partySub').textContent=`🎉 ${name}, this party is all for you! 🎉`;
   $('#partySound').style.display=typeof musicStarted!=='undefined'&&musicStarted?'none':'';
-  setTimeout(()=>{try{if(musicStarted&&DB.music.track==='auto')applyMusic();}catch(e){}},0);
+  setTimeout(()=>{try{syncMusic();}catch(e){}},0);
   $('#partyCakeWrap').innerHTML=cakeSVG(name);$('#partyBannerWrap').innerHTML=bannerSVG();
   // her own doll as the birthday princess
   const base=(DB.chars[0]&&DB.chars[0].look)||defaultLook(),princess={...base,dress:{id:'gown',c:'#ff8fc8'},hat:{id:'tiara',c:'#ffd23f'},shoes:{id:'glass',c:'#cfefff'},extras:{},scene:'birthday'};
@@ -2689,8 +2689,13 @@ function playSong(id){
 $('#songPlayer').addEventListener('ended',()=>{const i=songs.findIndex(x=>'song:'+x.id===DB.music.track);const nx=songs[(i+1)%songs.length];if(nx){DB.music.track='song:'+nx.id;persist();playSong(nx.id);renderMusic();}});
 // on Brynny's birthday (October 30) her song is the music everywhere unless a track is picked
 const isBirthday=()=>{const d=new Date();return d.getMonth()===9&&d.getDate()===30;};
-// her song always plays first; once she picks a new place the music follows it (unless that switch is off)
-function wantedTrack(){let t=DB.music.track;if(t==='auto')t=$('#party').classList.contains('show')||!window.__sceneMoved||!DB.music.follow?'suno':SCENE_TRACK[L().scene];return t==='suno'&&sunoFailed?'bday':t;}
+// her song always plays first. A song she picks keeps playing; with "follows the place" on, a new place switches to that place's music
+function wantedTrack(){const m=DB.music;let t;
+  if(m.track==='off')t='off';
+  else if($('#party').classList.contains('show'))t='suno';
+  else if(window.__sceneMoved&&m.follow)t=SCENE_TRACK[L().scene];
+  else if(window.__picked)t=m.track==='auto'?SCENE_TRACK[L().scene]:m.track;
+  else t='suno';return t==='suno'&&sunoFailed?'bday':t;}
 function applyMusic(){
   const t=wantedTrack();
   if(!t||t==='off'){Music.stopAll();}
@@ -2702,7 +2707,7 @@ function applyMusic(){
   $('#musicBtn').classList.toggle('playing',!!t&&t!=='off');
 }
 let musicPlayingTrack=null;
-function syncMusic(){if(DB.music.track==='auto'&&musicStarted&&musicPlayingTrack!==wantedTrack())applyMusic();}
+function syncMusic(){if(musicStarted&&musicPlayingTrack!==wantedTrack())applyMusic();}
 function renderMusic(){
   const m=DB.music;
   const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...FILE_TRACKS,...TRACKS];
@@ -2712,16 +2717,20 @@ function renderMusic(){
   $('#songList').innerHTML=songs.length?songs.map(sg=>`<div class="song ${m.track==='song:'+sg.id?'on':''}"><button class="pill" data-song="${sg.id}">${m.track==='song:'+sg.id?'⏸':'▶'}</button><span class="t">${esc(sg.name)}</span><button class="pill soft" data-songdl="${sg.id}" title="Download">⬇️</button><button class="pill soft" data-songdel="${sg.id}">🗑️</button></div>`).join(''):`<div class="small">No songs added yet.</div>`;
 }
 $('#musicBtn').onclick=async()=>{Music.ensure();await loadSongs();renderMusic();$('#musicModal').classList.add('show');};
-$('#trackList').addEventListener('click',e=>{const b=e.target.closest('[data-track]');if(!b)return;DB.music.track=b.dataset.track;persist();applyMusic();renderMusic();});
+const pickTrack=id=>{DB.music.track=id;window.__picked=true;window.__sceneMoved=false;};
+$('#trackList').addEventListener('click',e=>{const b=e.target.closest('[data-track]');if(!b)return;pickTrack(b.dataset.track);persist();applyMusic();renderMusic();});
 $('#vol').addEventListener('input',e=>{DB.music.vol=+e.target.value;Music.setVol();$('#songPlayer').volume=DB.music.vol/100;persist();});
-$('#followBtn').onclick=()=>{DB.music.follow=!DB.music.follow;if(DB.music.follow&&DB.music.track!=='auto'&&!String(DB.music.track).startsWith('song:'))DB.music.track='auto';persist();renderMusic();applyMusic();};
+$('#followBtn').onclick=()=>{const m=DB.music;m.follow=!m.follow;
+  if(m.follow)window.__sceneMoved=true;// switch to this place's music now
+  else if(musicPlayingTrack&&musicPlayingTrack!=='off')pickTrack(musicPlayingTrack);// keep whatever is playing
+  persist();renderMusic();applyMusic();};
 $('#sfxBtn').onclick=()=>{DB.music.sfx=!DB.music.sfx;persist();renderMusic();Music.sfx();};
 $('#ambBtn').onclick=()=>{DB.music.amb=!DB.music.amb;persist();renderMusic();Music.ambSet(null);applyAmbient($('#stage').dataset.scene);};
 $('#songList').addEventListener('click',async e=>{
   const dl=e.target.closest('[data-songdl]');
   if(dl){const sg=songs.find(x=>x.id===dl.dataset.songdl);if(sg){const u=URL.createObjectURL(sg.blob),a=document.createElement('a');a.href=u;a.download=sg.name.replace(/[^\w-]+/g,'_')+'.'+extFor(sg.blob.type||'audio/webm');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);}return;}
   const p=e.target.closest('[data-song]'),d=e.target.closest('[data-songdel]');
-  if(p){const id='song:'+p.dataset.song;DB.music.track=DB.music.track===id?'off':id;persist();applyMusic();renderMusic();}
+  if(p){const id='song:'+p.dataset.song;pickTrack(DB.music.track===id?'off':id);persist();applyMusic();renderMusic();}
   if(d){if(!d.dataset.sure){d.dataset.sure=1;d.textContent='Sure?';d.classList.add('warn');return;}
     const id=d.dataset.songdel;if(DB.music.track==='song:'+id){DB.music.track='off';applyMusic();}await SongDB.del(id);await loadSongs();persist();renderMusic();}
 });
