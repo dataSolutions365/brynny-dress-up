@@ -324,6 +324,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
   <h2>🎵 Music</h2>
   <div class="tracks" id="trackList"></div>
   <div class="mrow"><span>🔈</span><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span>🔊</span></div>
+  <div class="mrow"><button class="pill soft" id="followBtn"></button></div>
   <div class="mrow"><button class="pill soft" id="sfxBtn"></button><button class="pill soft" id="ambBtn"></button></div>
   <p class="hint">🎤 Brynny's Song plays at the birthday party.</p>
   <h3>My songs</h3>
@@ -2000,7 +2001,7 @@ const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'
   {id:'dresses',ico:'👗',name:'Dresses'},{id:'shoes',ico:'👠',name:'Shoes'},{id:'hats',ico:'👑',name:'Hats'},{id:'extras',ico:'👜',name:'Extras'},{id:'art',ico:'🖍️',name:'My Art'},{id:'scenes',ico:'🎃',name:'Places'}];
 
 const STAGEBG={studio:'#f6e6fb',bedroom:'#ecd9f7',birthday:'#ffeaf0',halloween:'#2a1440',christmas:'#1d3a63',wedding:'#fff0f5',beach:'#c9eeff',runway:'#1a1028',soccer:'#cfeec9',ballet:'#2a0f2a',pool:'#cdefff',icerink:'#e3f4ff',school:'#fff3d6',sleepover:'#3b2a63',valentine:'#ffe0ec',spring:'#e3f8d9',fireworks:'#0d1440',fall:'#ffe3c2',city:'#ffe3ee'};
-function renderStage(){artHighlight=tab==='art';if(zoomMode())spinA=0;dollBack=Math.cos(spinA*Math.PI/180)<0;$('#stage').innerHTML=fullSVG(L(),me().name)+`<button class="twirl" id="twirlBtn" aria-label="Twirl" title="Twirl">🔄</button>`;dollBack=false;artHighlight=false;setSpin(spinA,true);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();$('#stage').dataset.scene=L().scene;if(window.__audioOk)applyAmbient(L().scene);}
+function renderStage(){const prevScene=$('#stage').dataset.scene;artHighlight=tab==='art';if(zoomMode())spinA=0;dollBack=Math.cos(spinA*Math.PI/180)<0;$('#stage').innerHTML=fullSVG(L(),me().name)+`<button class="twirl" id="twirlBtn" aria-label="Twirl" title="Twirl">🔄</button>`;dollBack=false;artHighlight=false;setSpin(spinA,true);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();$('#stage').dataset.scene=L().scene;if(prevScene&&prevScene!==L().scene&&window.__audioOk)window.__sceneMoved=true;if(window.__audioOk)applyAmbient(L().scene);}
 function renderTabs(){$('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
 function swatches(act,list,sel,{none=false,arg=''}={}){
   let h='<div class="swatches">';if(none)h+=`<button class="sw none ${!sel?'on':''}" data-act="${act}" data-arg="${arg}" data-c="" aria-label="none"></button>`;
@@ -2062,7 +2063,7 @@ function renderPanel(){
   $('#content').innerHTML=h;
   const ne=$('#nameEdit');if(ne)ne.addEventListener('input',()=>{me().name=ne.value.trim()||'Me';persist();renderStage();});
 }
-function update(fn,{panel=true}={}){fn(L());persist();renderStage();if(typeof Music!=='undefined'){Music.sfx();if(DB.music.track==='auto'&&musicStarted&&musicPlayingTrack!==wantedTrack())applyMusic();}if(panel){const sc=$('#content').scrollTop;renderPanel();$('#content').scrollTop=sc;}sparkle();}
+function update(fn,{panel=true}={}){fn(L());persist();renderStage();if(typeof Music!=='undefined'){Music.sfx();syncMusic();}if(panel){const sc=$('#content').scrollTop;renderPanel();$('#content').scrollTop=sc;}sparkle();}
 function sparkle(){const st=$('#stage');for(let i=0;i<4;i++){const s=document.createElement('span');s.className='spark';s.textContent=rnd(['✨','💖','⭐','✨']);s.style.left=(20+Math.random()*60)+'%';s.style.top=(10+Math.random()*70)+'%';st.appendChild(s);setTimeout(()=>s.remove(),900);}}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1800);}
 
@@ -2115,7 +2116,7 @@ $('#content').addEventListener('click',e=>{
 });
 
 /* header buttons */
-$('#randBtn').onclick=()=>{const keep=L();me().look=randomLook(keep);persist();renderStage();renderPanel();sparkle();};
+$('#randBtn').onclick=()=>{const keep=L();me().look=randomLook(keep);persist();renderStage();renderPanel();sparkle();syncMusic();};
 $('#saveBtn').onclick=()=>{DB.gallery.unshift({id:uid(),name:me().name,look:JSON.parse(JSON.stringify(L())),at:Date.now()});DB.gallery=DB.gallery.slice(0,80);persist();toast('📸 Saved to your Gallery!');sparkle();Music.sfx('snap');};
 $('#galBtn').onclick=()=>{renderGallery();$('#galModal').classList.add('show');};
 $('#whoBtn').onclick=()=>{renderWho();$('#whoModal').classList.add('show');};
@@ -2200,7 +2201,7 @@ function showParty(){
   const name=(DB.chars[0]&&DB.chars[0].name)||'Brynny';
   $('#partyTitle').textContent=`Happy ${PARTY_AGE}th Birthday!`;$('#partySub').textContent=`🎉 ${name}, this party is all for you! 🎉`;
   $('#partySound').style.display=typeof musicStarted!=='undefined'&&musicStarted?'none':'';
-  setTimeout(()=>{try{if(musicStarted&&DB.music.track==='auto')applyMusic();}catch(e){}},0);
+  setTimeout(()=>{try{syncMusic();}catch(e){}},0);
   $('#partyCakeWrap').innerHTML=cakeSVG(name);$('#partyBannerWrap').innerHTML=bannerSVG();
   // her own doll as the birthday princess
   const base=(DB.chars[0]&&DB.chars[0].look)||defaultLook(),princess={...base,dress:{id:'gown',c:'#ff8fc8'},hat:{id:'tiara',c:'#ffd23f'},shoes:{id:'glass',c:'#cfefff'},extras:{},scene:'birthday'};
@@ -2437,7 +2438,7 @@ function endFriends(){if(!contest||!contest.f)return;clearInterval(contestTimer)
   if(DB.chars.some(c=>c.id===contest.f.orig))DB.cur=contest.f.orig;contest=null;persist();renderStage();renderPanel();}
 $('#contestModal').addEventListener('click',e=>{if(e.target.closest('[data-close]')){if(contest&&contest.f&&contest.f.phase==='pass')friendTurn();else if(contest&&contest.f&&contest.f.phase==='vote')endFriends();renderStage();}});
 $('#partyBlow').onclick=()=>{[...document.querySelectorAll('#partyCake .candle:not(.out)')].forEach((g,i)=>setTimeout(()=>blowCandle(g),i*90));};
-$('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=PARTY_AGE;persist();if(!DB.welcomed)showWelcome();else sparkle();};
+$('#partyGo').onclick=()=>{$('#party').classList.remove('show');partyStop();DB.partied=PARTY_AGE;persist();syncMusic();if(!DB.welcomed)showWelcome();else sparkle();};
 // fireworks on a canvas, only while the party is open and on screen
 function partyLaunch(big){const c=$('#partyFx'),w=c.width,h=c.height;partyRockets.push({x:w*(.15+Math.random()*.7),y:h,vx:(Math.random()-.5)*1.5,vy:-(h*.012+Math.random()*h*.004),t:h*(.15+Math.random()*.3),big});}
 function partyBurst(x,y,big){const cols=['#ff6fae','#ffd23f','#4fb6ff','#7ee081','#b388ff','#ffffff','#ff8a3d'],c=cols[Math.random()*cols.length|0],c2=cols[Math.random()*cols.length|0],n=big?90:60,sp=big?5:3.6;
@@ -2510,12 +2511,16 @@ const FILE_TRACKS=[
  {id:'creepy',e:'🕸️',name:'Creepy and Simple',url:'audio/creepy-simple.mp3',fb:'spooky'},
  {id:'pumpkin',e:'👻',name:'Pumpkin Spooks',url:'audio/pumpkin-horror.mp3',fb:'skeleton'},
  {id:'weddingmusic',e:'💐',name:'Wedding Song',url:'audio/wedding-music.mp3',fb:'wedding'},
+ {id:'weddingday',e:'💒',name:'Wedding Day',url:'audio/wedding-day.mp3',fb:'wedding'},
+ {id:'balletrecital',e:'🩰',name:'Ballet Recital',url:'audio/ballet-recital.mp3',fb:'dreamy'},
+ {id:'valentineday',e:'💘',name:'Valentine Day',url:'audio/valentine-day.mp3',fb:'dreamy'},
+ {id:'sparkleroom',e:'✨',name:'Sparkle Room',url:'audio/sparkle-room.mp3',fb:'dreamy'},
 ];
 const isFileTrack=t=>!!t&&(t==='suno'||t.startsWith('song:')||FILE_TRACKS.some(x=>x.id===t));
 const SUNO={id:'suno',e:'🎤',name:"Brynny's Song",
   urls:['brynny-song-11.mp3']};
 let sunoFailed=false,sunoGen=0;
-const SCENE_TRACK={studio:'clouds',bedroom:'dreamy',birthday:'suno',halloween:'hwaltz',christmas:'winterdays',wedding:'weddingmusic',beach:'pop',runway:'fashionwalk',soccer:'pop',ballet:'dreamy',pool:'pop',icerink:'xmasbox',school:'pop',sleepover:'dreamy',valentine:'dreamy',spring:'dreamy',fireworks:'runway',fall:'pop',city:'runway'};
+const SCENE_TRACK={studio:'sparkleroom',bedroom:'clouds',birthday:'ukulele',halloween:'hwaltz',christmas:'winterdays',wedding:'weddingday',beach:'pop',runway:'fashionwalk',soccer:'pop',ballet:'balletrecital',pool:'pop',icerink:'xmasbox',school:'pop',sleepover:'dreamy',valentine:'valentineday',spring:'dreamy',fireworks:'runway',fall:'pop',city:'runway'};
 const Music=(()=>{
   let ctx=null,master=null,timer=null,cur=null,nextTime=0,step=0,noise=null;
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
@@ -2613,7 +2618,7 @@ const Music=(()=>{
   function shot(n,g=.8,dest){if(!ensure())return;loadBuf(n).then(b=>{const s=ctx.createBufferSource(),v=ctx.createGain();s.buffer=b;v.gain.value=g;s.connect(v);v.connect(dest||master);s.start();}).catch(()=>{});}
   const REAL={ocean:{loop:'sea-waves',g:4},city:{loop:'city-park'},spring:{loop:'spring-birds'},fall:{loop:'autumn-wind'},rink:{loop:'ice-rink',g:.9},fireworks:{loop:'fireworks',g:.9},
     spooky:{loop:'spooky-wind',keep:1},stadium:{loop:'stadium',shots:['stadium-cheer'],every:22},pool:{shots:['pool-splash'],every:16},crickets:{shots:['kids-giggle'],every:20},
-    school:{enter:'school-bell'},fire:{enter:'merry-xmas'}};
+    school:{enter:'school-bell'},fire:{enter:'merry-xmas'},runway:{enter:'camera',shots:['camera'],every:6},party:{shots:['kids-giggle'],every:24}};
   const SYN={city:'birds',spring:'birds',fall:'wind',rink:'wind',fireworks:'crickets',stadium:'crowd'};
   function ambSet(kind){
     if(!DB.music.amb)kind=null;if(kind===ambKind)return;ambKind=kind;ambStop();if(!kind||!ensure())return;
@@ -2684,7 +2689,13 @@ function playSong(id){
 $('#songPlayer').addEventListener('ended',()=>{const i=songs.findIndex(x=>'song:'+x.id===DB.music.track);const nx=songs[(i+1)%songs.length];if(nx){DB.music.track='song:'+nx.id;persist();playSong(nx.id);renderMusic();}});
 // on Brynny's birthday (October 30) her song is the music everywhere unless a track is picked
 const isBirthday=()=>{const d=new Date();return d.getMonth()===9&&d.getDate()===30;};
-function wantedTrack(){let t=DB.music.track;if(t==='auto')t=$('#party').classList.contains('show')||isBirthday()?'suno':SCENE_TRACK[L().scene];return t==='suno'&&sunoFailed?'bday':t;}
+// her song always plays first. A song she picks keeps playing; with "follows the place" on, a new place switches to that place's music
+function wantedTrack(){const m=DB.music;let t;
+  if(m.track==='off')t='off';
+  else if($('#party').classList.contains('show'))t='suno';
+  else if(window.__sceneMoved&&m.follow)t=SCENE_TRACK[L().scene];
+  else if(window.__picked)t=m.track==='auto'?SCENE_TRACK[L().scene]:m.track;
+  else t='suno';return t==='suno'&&sunoFailed?'bday':t;}
 function applyMusic(){
   const t=wantedTrack();
   if(!t||t==='off'){Music.stopAll();}
@@ -2696,24 +2707,30 @@ function applyMusic(){
   $('#musicBtn').classList.toggle('playing',!!t&&t!=='off');
 }
 let musicPlayingTrack=null;
+function syncMusic(){if(musicStarted&&musicPlayingTrack!==wantedTrack())applyMusic();}
 function renderMusic(){
   const m=DB.music;
   const opts=[{id:'off',e:'🔇',name:'No music'},{id:'auto',e:'🪄',name:'Match the place'},SUNO,...FILE_TRACKS,...TRACKS];
   $('#trackList').innerHTML=opts.map(o=>`<button class="track ${m.track===o.id?'on':''}" data-track="${o.id}"><span class="e">${o.e}</span>${o.name}</button>`).join('');
   $('#vol').value=m.vol;
-  $('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';$('#ambBtn').textContent=m.amb?'🌊 Background sounds: ON':'🌊 Background sounds: OFF';
+  $('#followBtn').textContent=m.follow?'🪄 Music follows the place: ON':'🪄 Music follows the place: OFF';$('#sfxBtn').textContent=m.sfx?'✨ Tap sounds: ON':'✨ Tap sounds: OFF';$('#ambBtn').textContent=m.amb?'🌊 Background sounds: ON':'🌊 Background sounds: OFF';
   $('#songList').innerHTML=songs.length?songs.map(sg=>`<div class="song ${m.track==='song:'+sg.id?'on':''}"><button class="pill" data-song="${sg.id}">${m.track==='song:'+sg.id?'⏸':'▶'}</button><span class="t">${esc(sg.name)}</span><button class="pill soft" data-songdl="${sg.id}" title="Download">⬇️</button><button class="pill soft" data-songdel="${sg.id}">🗑️</button></div>`).join(''):`<div class="small">No songs added yet.</div>`;
 }
 $('#musicBtn').onclick=async()=>{Music.ensure();await loadSongs();renderMusic();$('#musicModal').classList.add('show');};
-$('#trackList').addEventListener('click',e=>{const b=e.target.closest('[data-track]');if(!b)return;DB.music.track=b.dataset.track;persist();applyMusic();renderMusic();});
+const pickTrack=id=>{DB.music.track=id;window.__picked=true;window.__sceneMoved=false;};
+$('#trackList').addEventListener('click',e=>{const b=e.target.closest('[data-track]');if(!b)return;pickTrack(b.dataset.track);persist();applyMusic();renderMusic();});
 $('#vol').addEventListener('input',e=>{DB.music.vol=+e.target.value;Music.setVol();$('#songPlayer').volume=DB.music.vol/100;persist();});
+$('#followBtn').onclick=()=>{const m=DB.music;m.follow=!m.follow;
+  if(m.follow)window.__sceneMoved=true;// switch to this place's music now
+  else if(musicPlayingTrack&&musicPlayingTrack!=='off')pickTrack(musicPlayingTrack);// keep whatever is playing
+  persist();renderMusic();applyMusic();};
 $('#sfxBtn').onclick=()=>{DB.music.sfx=!DB.music.sfx;persist();renderMusic();Music.sfx();};
 $('#ambBtn').onclick=()=>{DB.music.amb=!DB.music.amb;persist();renderMusic();Music.ambSet(null);applyAmbient($('#stage').dataset.scene);};
 $('#songList').addEventListener('click',async e=>{
   const dl=e.target.closest('[data-songdl]');
   if(dl){const sg=songs.find(x=>x.id===dl.dataset.songdl);if(sg){const u=URL.createObjectURL(sg.blob),a=document.createElement('a');a.href=u;a.download=sg.name.replace(/[^\w-]+/g,'_')+'.'+extFor(sg.blob.type||'audio/webm');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);}return;}
   const p=e.target.closest('[data-song]'),d=e.target.closest('[data-songdel]');
-  if(p){const id='song:'+p.dataset.song;DB.music.track=DB.music.track===id?'off':id;persist();applyMusic();renderMusic();}
+  if(p){const id='song:'+p.dataset.song;pickTrack(DB.music.track===id?'off':id);persist();applyMusic();renderMusic();}
   if(d){if(!d.dataset.sure){d.dataset.sure=1;d.textContent='Sure?';d.classList.add('warn');return;}
     const id=d.dataset.songdel;if(DB.music.track==='song:'+id){DB.music.track='off';applyMusic();}await SongDB.del(id);await loadSongs();persist();renderMusic();}
 });
@@ -2722,8 +2739,8 @@ $('#songFile').addEventListener('change',async e=>{
   for(const f of files){try{await SongDB.add({id:uid(),name:f.name.replace(/\.[^.]+$/,''),blob:f,at:Date.now()});added++;}catch(err){toast('😕 Could not save that song');}}
   await loadSongs();renderMusic();if(added)toast(`🎶 Added ${added} song${added>1?'s':''}!`);
 });
-DB.music=Object.assign({track:'auto',vol:60,sfx:true,amb:true},DB.music||{});
-const SCENE_AMB={beach:'ocean',pool:'pool',city:'city',spring:'spring',wedding:'birds',fall:'fall',icerink:'rink',sleepover:'crickets',fireworks:'fireworks',halloween:'spooky',christmas:'fire',runway:'crowd',soccer:'stadium',birthday:'party',school:'school'};
+DB.music=Object.assign({track:'auto',vol:60,sfx:true,amb:true,follow:true},DB.music||{});
+const SCENE_AMB={beach:'ocean',pool:'pool',city:'city',spring:'spring',wedding:'birds',fall:'fall',icerink:'rink',sleepover:'crickets',fireworks:'fireworks',halloween:'spooky',christmas:'fire',runway:'runway',soccer:'stadium',birthday:'party',school:'school'};
 function applyAmbient(scene){if(!window.__audioOk)return;try{Music.ambSet(SCENE_AMB[scene||L().scene]||null);}catch(e){}}
 let musicStarted=false;
 document.addEventListener('pointerdown',()=>{
