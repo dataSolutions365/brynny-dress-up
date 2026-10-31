@@ -26,6 +26,7 @@ In the 3D world you can also:
 - Do close-up makeup in the closet's 💄 Makeup tab: zoom to the eyes or lips, draw on the face with your finger, and pick eyeshadow, eyeliner, lashes, face gems, lipstick, lip liner, gloss, and blush.
 - Pick your look: a glam fashion-doll girl (the default) or a cute cartoon, on the welcome screen or in the closet's Face tab.
 - Adopt a pet. Walk up to a kitty, puppy, squirrel, or bunny and tap Adopt, and it follows you everywhere.
+- Visit the Star Model Agency. Sit at the glam mirror in the dressing room for makeup, salon hair (updo, beach waves, side braid, high pony, glossy blow-dry), a manicure, and a pedicure; then enter the model contest: 3 themed rounds, a runway walk with a pose mini-game, 3 judges, 3 rival models, and coin prizes.
 
 ## Play it
 Open `index.html` in a browser, or visit the GitHub Pages link for this repository.
