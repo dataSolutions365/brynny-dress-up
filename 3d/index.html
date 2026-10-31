@@ -132,6 +132,22 @@ body.talking #actions,body.talking #jump,body.talking #petBtn,body.talking #pose
 .binput{width:100%;font-size:18px;padding:10px 14px;border-radius:14px;border:3px solid var(--pink2);color:var(--ink);outline:none;user-select:text;-webkit-user-select:text}
 .binput:focus{border-color:var(--pink)}
 #bcontent .btn{font-size:17px;padding:11px 20px}
+/* map */
+#mini{left:calc(env(safe-area-inset-left) + 12px);top:calc(env(safe-area-inset-top) + 60px);width:108px;height:108px;padding:0;border-radius:50%;background:#2ab0d4;border:4px solid rgba(255,255,255,.95);box-shadow:0 4px 14px rgba(59,35,87,.25);overflow:visible}
+#mini canvas{width:100%;height:100%;border-radius:50%;display:block}
+#mini small{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55);white-space:nowrap}
+#mini:active{transform:scale(.95)}
+#mini.going{border-color:#ffd23f}
+#hint{top:calc(env(safe-area-inset-top) + 196px)}
+@media (max-height:520px){#mini{width:88px;height:88px;top:calc(env(safe-area-inset-top) + 54px)}#mini small{display:none}#hint{top:calc(env(safe-area-inset-top) + 54px);left:calc(env(safe-area-inset-left) + 112px)}}
+body.dressing #mini,body.shopping #mini{display:none!important}
+#map .card{max-width:560px;padding:14px 14px 16px}
+#map h2{margin:0 0 4px;font-size:22px}
+#map p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+#mapCv{width:min(100%,calc(100vh - 210px));aspect-ratio:1;display:block;margin:0 auto 8px;border-radius:50%;touch-action:none;cursor:pointer}
+#map .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+@media (max-height:520px){#map .card{display:flex;gap:12px;align-items:center;text-align:left;max-width:640px}#mapCv{width:calc(100vh - 70px);margin:0;flex:none}#map .row{flex-direction:column}}
+#mini{pointer-events:auto}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -157,6 +173,7 @@ body.talking #actions,body.talking #jump,body.talking #petBtn,body.talking #pose
 <div class="hud" id="banner"></div>
 <div class="hud pill" id="toast"></div>
 <div id="flash"></div>
+<button class="hud" id="mini" aria-label="Open the map"><canvas id="miniCv" width="216" height="216"></canvas><small>🗺️ Map</small></button>
 
 <div id="closet" aria-label="Closet">
   <div class="chead"><h2>👗 My closet</h2><button id="done">Done</button></div>
@@ -218,6 +235,11 @@ body.shopping #jump,body.shopping #hint,body.shopping #side,body.shopping #poseB
 
 <div class="modal" id="photo"><div class="card"><img id="photoImg" alt="Your picture"><a class="btn" id="photoSave" download="dress-up-world.png">💾 Save</a><button class="btn ghost" id="photoClose">Close</button></div></div>
 
+<div class="modal" id="map"><div class="card">
+  <div><h2>🗺️ Map</h2><p id="mapTip">Tap a place and a sparkly arrow will show you the way!</p></div>
+  <canvas id="mapCv" width="640" height="640" aria-label="Map of the island"></canvas>
+  <div class="row"><button class="btn ghost" id="mapStop" style="display:none">🚫 Stop guiding</button><button class="btn ghost" id="mapClose">Close</button></div>
+</div></div>
 <div class="modal" id="settings"><div class="card">
   <h2 style="margin:0 0 14px">⚙️ Settings</h2>
   <a class="btn" href="../" style="display:block">🏠 Go back to the 2D studio</a>
@@ -2049,7 +2071,87 @@ addEventListener('resize',resize);resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)music.pause();else if(musicOn&&started&&music.src)music.play().catch(()=>{});});
 renderer.setAnimationLoop(tick);
 $('#loading').remove();$('#welcome').classList.add('show');
-window.__game={FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp};
+/* ================= MAP ================= */
+const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066'};
+const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
+let mapDest=null,mapOthers=null;
+const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
+// shared drawing of the island; w2s maps world (x,z) to canvas px, k = px per world unit
+function drawWorld(x,w2s,k,size){
+  x.fillStyle='#2ab0d4';x.fillRect(0,0,size,size);
+  const [cx,cy]=w2s(0,0);
+  x.beginPath();x.arc(cx,cy,(R+2.4)*k,0,Math.PI*2);x.fillStyle='#f1d9a6';x.fill();
+  x.beginPath();x.arc(cx,cy,R*k,0,Math.PI*2);x.fillStyle='#8fd36f';x.fill();
+  // beach dock
+  {const b=Z.beach;if(b.dock){const [a1,a2]=[b.toWorld(b.dock.lx,b.dock.lz0),b.toWorld(b.dock.lx,b.dock.lz1)];const p1=w2s(...a1),p2=w2s(...a2);x.strokeStyle='#9a6a43';x.lineWidth=Math.max(2,1.6*k);x.lineCap='butt';x.beginPath();x.moveTo(...p1);x.lineTo(...p2);x.stroke();}}
+  // paths
+  x.strokeStyle='#efe6da';x.lineCap='round';x.lineWidth=Math.max(2,2.6*k);
+  x.beginPath();x.arc(cx,cy,7.15*k,0,Math.PI*2);x.stroke();
+  for(const z of ZONES){if(!z.d)continue;const [px,py]=w2s(z.x,z.z);x.beginPath();x.moveTo(cx+(px-cx)*7/z.d,cy+(py-cy)*7/z.d);x.lineTo(px,py);x.stroke();}
+  // zones
+  for(const z of ZONES){const [px,py]=w2s(z.x,z.z);x.beginPath();x.arc(px,py,z.r*k,0,Math.PI*2);x.fillStyle=MAPC[z.id]||'#fff3b0';x.fill();
+    x.lineWidth=Math.max(1.5,.35*k);x.strokeStyle=mapDest===z?'#ff4d8d':'rgba(255,255,255,.9)';x.stroke();}
+}
+function drawArrow(x,px,py,ang,s,fill){x.save();x.translate(px,py);x.rotate(ang);x.beginPath();x.moveTo(0,-s);x.lineTo(s*.72,s*.7);x.lineTo(0,s*.32);x.lineTo(-s*.72,s*.7);x.closePath();
+  x.fillStyle=fill;x.fill();x.lineWidth=s*.22;x.strokeStyle='#fff';x.lineJoin='round';x.stroke();x.restore();}
+function drawMini(){const S=miniCv.width,h=S/2,k=S/44;// ~44 world units across
+  const p=player.pos,fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;
+  // heading-up: what's ahead on screen is up on the map
+  const w2s=(wx,wz)=>{const dx=wx-p.x,dz=wz-p.z;return [h+(dx*rx+dz*rz)*k,h-(dx*fx+dz*fz)*k];};
+  const x=miniX;x.save();drawWorld(x,w2s,k,S);
+  for(const s of STARS){if(s.got)continue;const [sx,sy]=w2s(s.x,s.z);if(Math.hypot(sx-h,sy-h)>h)continue;x.beginPath();x.arc(sx,sy,4,0,Math.PI*2);x.fillStyle='#ffd23f';x.fill();x.lineWidth=1.5;x.strokeStyle='#fff';x.stroke();}
+  x.font=`${Math.round(S*.12)}px serif`;x.textAlign='center';x.textBaseline='middle';
+  for(const z of ZONES){const [zx,zy]=w2s(z.x,z.z);if(Math.hypot(zx-h,zy-h)<h+10)x.fillText(zEmoji(z),zx,zy);}
+  if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=w2s(o.pos.x,o.pos.z);if(Math.hypot(ox-h,oy-h)>h-6)continue;x.beginPath();x.arc(ox,oy,7,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=2.5;x.strokeStyle='#fff';x.stroke();}
+  if(mapDest){let [dx,dy]=w2s(mapDest.x,mapDest.z);const ddx=dx-h,ddy=dy-h,dd=Math.hypot(ddx,ddy),edge=h-16;
+    x.setLineDash([10,9]);x.lineDashOffset=-performance.now()/40;x.lineWidth=5;x.strokeStyle='#ff4d8d';x.beginPath();x.moveTo(h,h);
+    const end=Math.min(dd,edge);x.lineTo(h+ddx/dd*end,h+ddy/dd*end);x.stroke();x.setLineDash([]);
+    if(dd>edge){drawArrow(x,h+ddx/dd*edge,h+ddy/dd*edge,Math.atan2(ddx,-ddy),15,'#ff4d8d');}
+    else{x.beginPath();x.arc(dx,dy,9+Math.sin(performance.now()/180)*2,0,Math.PI*2);x.lineWidth=4;x.strokeStyle='#ff4d8d';x.stroke();}}
+  // player: facing relative to the camera
+  const pa=Math.atan2(Math.sin(player.face)*rx+Math.cos(player.face)*rz,Math.sin(player.face)*fx+Math.cos(player.face)*fz);
+  drawArrow(x,h,h,pa,15,'#8e6cff');x.restore();}
+// full map is fixed (start view: the plaza is "up"), so places never move around
+const MAPW=R+5;
+const mapW2s=(wx,wz)=>{const S=mapCv.width,k=S/(MAPW*2);return [S/2+wx*k,S/2+wz*k];};
+function drawMap(){const S=mapCv.width,k=S/(MAPW*2),x=mapX;drawWorld(x,mapW2s,k,S);
+  x.textAlign='center';x.textBaseline='middle';
+  for(const z of ZONES){const [px,py]=mapW2s(z.x,z.z);x.font=`${Math.round(S*.065)}px serif`;x.fillText(zEmoji(z),px,py-S*.018);
+    x.font=`700 ${Math.round(S*.03)}px system-ui,-apple-system,sans-serif`;const t=zLabel(z),tw=x.measureText(t).width,ty=py+S*.042;
+    x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.82)';x.beginPath();x.roundRect?x.roundRect(px-tw/2-8,ty-S*.022,tw+16,S*.044,S*.022):x.rect(px-tw/2-8,ty-S*.022,tw+16,S*.044);x.fill();
+    x.fillStyle='#fff';x.fillText(t,px,ty+1);}
+  if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=mapW2s(o.pos.x,o.pos.z);x.beginPath();x.arc(ox,oy,S*.016,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
+  const [px,py]=mapW2s(player.pos.x,player.pos.z);
+  x.beginPath();x.arc(px,py,S*.045+Math.sin(performance.now()/200)*S*.006,0,Math.PI*2);x.fillStyle='rgba(142,108,255,.25)';x.fill();
+  x.beginPath();x.arc(px,py,S*.03,0,Math.PI*2);x.fillStyle='#fff';x.fill();drawArrow(x,px,py,Math.atan2(Math.sin(player.face),-Math.cos(player.face)),S*.026,'#8e6cff');
+  x.font=`700 ${Math.round(S*.03)}px system-ui,-apple-system,sans-serif`;const yw=x.measureText('You').width+S*.03,yy=py-S*.075;
+  x.fillStyle='#8e6cff';x.beginPath();x.roundRect?x.roundRect(px-yw/2,yy-S*.024,yw,S*.048,S*.024):x.rect(px-yw/2,yy-S*.024,yw,S*.048);x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();
+  x.fillStyle='#fff';x.fillText('You',px,yy+1);}
+let mapOpen=false;
+function openMap(){if(closetOpen)return;mapOpen=true;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#mapStop').style.display=mapDest?'inline-block':'none';
+  $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:'Tap a place and a sparkly arrow will show you the way!';
+  $('#map').classList.add('show');sfx('pop');(function loop(){if(!mapOpen)return;drawMap();requestAnimationFrame(loop);})();}
+function closeMap(){mapOpen=false;$('#map').classList.remove('show');}
+// 3D guide beam over the place you're going to
+const beam=new THREE.Group();beam.visible=false;scene.add(beam);
+{const bm=new THREE.MeshBasicMaterial({color:'#ff6fae',transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending});
+ M(new THREE.CylinderGeometry(.55,.9,40,24,1,true),bm,0,20,0,beam,false,false);
+ const st=M(new THREE.OctahedronGeometry(.8),new THREE.MeshBasicMaterial({color:'#ffd23f'}),0,6,0,beam,false,false);
+ anims.push(t=>{if(!beam.visible)return;st.position.y=6+Math.sin(t*2.5)*.5;st.rotation.y=t*2;bm.opacity=.28+Math.sin(t*4)*.08;});}
+function setDest(z){mapDest=z;$('#mini').classList.toggle('going',!!z);if(z){beam.position.set(z.x,0,z.z);beam.visible=true;}else beam.visible=false;}
+mapCv.addEventListener('click',e=>{const r=mapCv.getBoundingClientRect(),sx=(e.clientX-r.left)/r.width*mapCv.width,sy=(e.clientY-r.top)/r.height*mapCv.height;
+  const k=mapCv.width/(MAPW*2);let best=null,bd=1e9;for(const z of ZONES){const [px,py]=mapW2s(z.x,z.z),d=Math.hypot(sx-px,sy-(py+mapCv.width*.012));if(d<Math.max(z.r*k,mapCv.width*.09)&&d<bd){bd=d;best=z;}}
+  if(!best)return;if(curZone===best){toast(`You're already at ${zLabel(best)}! ✨`);return;}
+  setDest(best);sfx('star');closeMap();toast(`Follow the pink arrow on the map to ${zLabel(best)} 💗`);});
+$('#mini').addEventListener('click',openMap);
+$('#mapClose').onclick=closeMap;
+$('#mapStop').onclick=()=>{setDest(null);closeMap();};
+$('#map').addEventListener('click',e=>{if(e.target.id==='map')closeMap();});
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='KeyM'){mapOpen?closeMap():started&&openMap();}else if(e.code==='Escape'&&mapOpen)closeMap();});
+let miniT=0;
+onTick.push(dt=>{if(mapDest&&curZone===mapDest){sfx('tada');banner(`🎉 You made it!`);burst(player.pos.clone().add(new THREE.Vector3(0,1.5,0)),'#ff8fc8',40,3);setDest(null);}
+  if((miniT+=dt)>1/30){miniT=0;drawMini();}});
+window.__game={setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp};
 </script>
 <script>
 // show a friendly message if the 3D engine can't load (old phone or no internet)

@@ -20,6 +20,7 @@ const peerOpts = () => {
 
 let peer = null, host = null /* conn to host (guest) */, conns = new Map() /* host: id -> conn */, code = '', role = null, myId = '';
 const others = new Map(); // id -> {name, look, a: Avatar, tgt, face, sp, air}
+if (G && G.setMapOthers) G.setMapOthers(others); // friends show up on the map
 let lastLook = '', lastEmote = null, sendT = 0;
 
 /* ---------- UI ---------- */
