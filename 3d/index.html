@@ -23,7 +23,7 @@ input{font-family:inherit}
 #top{left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) 0 calc(env(safe-area-inset-left) + 12px)}
 .pill{background:rgba(255,255,255,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:999px;padding:7px 14px;font-weight:600;font-size:16px;box-shadow:0 4px 14px rgba(59,35,87,.16);white-space:nowrap}
 #place{max-width:56vw;overflow:hidden;text-overflow:ellipsis}
-#side{right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 60px);display:flex;flex-direction:column;gap:20px}
+#side{right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 106px);display:flex;flex-direction:column;gap:20px}
 .rb{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.9);font-size:26px;box-shadow:0 4px 14px rgba(59,35,87,.2);display:grid;place-items:center;position:relative}
 .rb:active{transform:scale(.93)}
 .rb small{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);white-space:nowrap}
@@ -139,7 +139,7 @@ body.talking #actions,body.talking #jump,body.talking #petBtn,body.talking #pose
 <div id="loading">Loading the world… ✨</div>
 <canvas id="c" tabindex="0"></canvas>
 
-<div class="hud" id="top"><div class="pill" id="place">✨ Sparkle Studio</div><div class="pill" id="stars">⭐ 0</div></div>
+<div class="hud" id="top"><div class="pill" id="place">✨ Sparkle Studio</div><div id="topr"><div class="pill" id="stars">⭐ 0</div><button class="pill" id="coins" aria-label="My coins and the shop">🪙 <b id="coinN">0</b> <span>🛍️</span></button></div></div>
 <div class="hud" id="side">
   <button class="rb" id="dressBtn" aria-label="Dress up">👗<small>Dress</small></button>
   <button class="rb" id="photoBtn" aria-label="Take a picture">📸<small>Photo</small></button>
@@ -176,6 +176,45 @@ body.talking #actions,body.talking #jump,body.talking #petBtn,body.talking #pose
   <div class="tabs" id="btabs"></div>
   <div class="ccontent" id="bcontent"></div>
 </div>
+<style>
+/* coins + shop */
+#topr{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#coins{display:flex;align-items:center;gap:4px;color:var(--ink);background:linear-gradient(90deg,rgba(255,243,176,.95),rgba(255,214,234,.95));border:2px solid #fff}
+#coins span{font-size:15px;margin-left:2px}
+#coins:active{transform:scale(.94)}
+#coins.bump{animation:cbump .45s}
+@keyframes cbump{30%{transform:scale(1.18)}}
+@media (min-width:640px),(max-height:520px){#topr{flex-direction:row}#side{top:calc(env(safe-area-inset-top) + 60px)}}
+.coinpop{position:fixed;z-index:12;pointer-events:none;font-weight:700;font-size:18px;color:#b8860b;text-shadow:0 2px 0 #fff,0 0 8px #fff;white-space:nowrap;animation:cpop 1.4s ease-out forwards}
+@keyframes cpop{0%{opacity:0;transform:translate(-50%,6px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.1)}100%{opacity:0;transform:translate(-50%,46px) scale(1)}}
+#shop{position:fixed;z-index:8;left:0;right:0;bottom:0;height:min(52vh,460px);background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(59,35,87,.25);display:flex;flex-direction:column;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1);padding-bottom:env(safe-area-inset-bottom)}
+#shop.show{transform:none}
+@media (orientation:landscape) and (min-aspect-ratio:5/4){#shop{left:auto;top:0;width:min(48vw,460px);height:auto;border-radius:26px 0 0 26px;transform:translateX(105%);padding-right:env(safe-area-inset-right)}}
+#shopCoins{box-shadow:none;background:#fff3c4;font-size:15px;padding:6px 12px}
+#sdone{background:var(--pink);color:#fff;font-weight:700;padding:9px 18px;border-radius:999px;font-size:16px;box-shadow:0 3px 0 #e04a8d}
+.item em{font-style:normal;font-size:12px;font-weight:700;color:#b8860b;background:#fff3c4;border-radius:999px;padding:1px 7px;margin-top:2px}
+.item em.got{color:#2e9b5a;background:#e3f8ea}
+.item.lock{background:#f7f2ff;border-style:dashed;border-color:#dccff5}
+.item.lock b{filter:saturate(.75)}
+.item.lock span{color:#9a7a20}
+.item i.dots{display:flex;gap:2px;margin-top:1px}.item i.dots u{width:9px;height:9px;border-radius:50%;display:block}
+.earn{display:flex;flex-direction:column;gap:6px}
+.earn div{display:flex;align-items:center;gap:10px;background:#fff7fb;border-radius:14px;padding:8px 12px;font-weight:600;font-size:15px}
+.earn div b{font-size:22px;font-weight:400}.earn div span{flex:1}.earn div em{font-style:normal;color:#b8860b;font-weight:700;white-space:nowrap}
+.gift{width:100%;margin:4px 0 10px;padding:12px;border-radius:16px;background:linear-gradient(90deg,#ffb347,#ff6fae);color:#fff;font-weight:700;font-size:17px;box-shadow:0 4px 0 #e04a8d}
+.gift[disabled]{background:#f3eaf8;color:var(--muted);box-shadow:none}
+#buyCard .bigE{font-size:64px;line-height:1.1}
+#buyCard h2{margin:4px 0 2px;font-size:24px}
+#buyCard p{color:var(--muted);margin:6px 0 14px}
+#buyCard .bneed b{color:var(--pink)}
+body.shopping #jump,body.shopping #hint,body.shopping #side,body.shopping #poseBtn,body.shopping #actions,body.shopping #petBtn{display:none!important}
+</style>
+<div id="shop" aria-label="Shop">
+  <div class="chead"><h2>🛍️ Shop</h2><div class="pill" id="shopCoins">🪙 0</div><button id="sdone">Done</button></div>
+  <div class="tabs" id="stabs"></div>
+  <div class="ccontent" id="scontent"></div>
+</div>
+<div class="modal" id="buy"><div class="card" id="buyCard"></div></div>
 
 <div class="modal" id="photo"><div class="card"><img id="photoImg" alt="Your picture"><a class="btn" id="photoSave" download="dress-up-world.png">💾 Save</a><button class="btn ghost" id="photoClose">Close</button></div></div>
 
@@ -216,12 +255,36 @@ const COLORS=['#ff6fae','#ff3b6b','#c2185b','#ffb3d1','#ff8a1f','#ffd23f','#7ee0
 const HAIRS=[['long','💁‍♀️','Long'],['ponytail','🎀','Ponytail'],['buns','🍡','Space buns'],['bob','👧','Bob'],['pigtails','👯','Pigtails'],['curly','🌀','Big curls'],['braids','🪢','Braids'],['afropuff','☁️','Afro puff'],['pixie','✂️','Short']];
 const TOPS=[['tee','👕','T-shirt','#ff6fae'],['startee','⭐','Star tee','#4fb6ff'],['hearttee','💖','Heart tee','#ffffff'],['tank','🎽','Tank top','#7ee081'],['sweater','🧶','Sweater','#ffb3d1'],['hoodie','🧥','Hoodie','#8e6cff'],['jacket','🧥','Jean jacket','#5b8fd6'],['sequin','✨','Sparkle top','#d4af37'],['furcoat','🧸','Fluffy coat','#f2e6d8']];
 const BOTTOMS=[['jeans','👖','Jeans','#3a5bd9'],['leggings','🦵','Leggings','#2d2d3a'],['shorts','🩳','Shorts','#5b8fd6'],['skirt','🌸','Skirt','#ff6fae'],['tutu','🩰','Tutu','#ffb3d1'],['maxi','🌷','Long skirt','#b388ff']];
-const DRESSES=[['gown','👸','Princess gown','#ff8fc8'],['party','🎉','Party dress','#4fb6ff'],['wedding','💍','Wedding gown','#ffffff'],['mermaid','🧜‍♀️','Mermaid gown','#2fd1c5'],['sundress','🌻','Sundress','#ffd23f'],['witch','🧙‍♀️','Witch dress','#5b2a86'],['santa','🎅','Santa dress','#e0263b'],['fairy','🧚','Fairy dress','#7ee081'],['ballerina','🩰','Ballerina','#ffb3d1']];
+const DRESSES=[['gown','👸','Princess gown','#ff8fc8'],['party','🎉','Party dress','#4fb6ff'],['wedding','💍','Wedding gown','#ffffff'],['stargown','🌌','Starry gown','#3b2fa0'],['mermaid','🧜‍♀️','Mermaid gown','#2fd1c5'],['sundress','🌻','Sundress','#ffd23f'],['witch','🧙‍♀️','Witch dress','#5b2a86'],['santa','🎅','Santa dress','#e0263b'],['fairy','🧚','Fairy dress','#7ee081'],['ballerina','🩰','Ballerina','#ffb3d1']];
 const SHOES=[['sneaker','👟','Sneakers','#ffffff'],['boots','👢','Boots','#8a5a3b'],['heels','👠','Heels','#ff3b6b'],['glass','💎','Glass slippers','#cfefff'],['rain','☔','Rain boots','#ffd23f'],['skates','🛼','Roller skates','#ff6fae'],['flats','🥿','Ballet flats','#ffb3d1'],['platforms','👡','Platform heels','#1d1a1f'],['furboots','☁️','Fluffy boots','#f4eadf']];
 const HATS=[['tiara','💎','Tiara','#ffd23f'],['crown','👑','Crown','#d4af37'],['witchhat','🧙','Witch hat','#2d2d3a'],['catears','🐱','Cat ears','#2d2d3a'],['bunny','🐰','Bunny ears','#ffffff'],['santahat','🎅','Santa hat','#e0263b'],['party','🥳','Party hat','#4fb6ff'],['cap','🧢','Ball cap','#ff3b6b'],['flowers','🌼','Flower crown','#ff6fae'],['bow','🎀','Big bow','#ff3b6b']];
-const EXTRAS=[['wings','🧚','Fairy wings','#b388ff'],['cape','🦸','Cape','#e0263b'],['purse','👛','Purse','#ff6fae'],['wand','🪄','Magic wand','#ffd23f'],['glasses','👓','Glasses','#2d2d3a'],['pearls','📿','Pearls','#ffffff'],['scarf','🧣','Scarf','#ff3b6b']];
+const EXTRAS=[['wings','🧚','Fairy wings','#b388ff'],['cape','🦸','Cape','#e0263b'],['purse','👛','Purse','#ff6fae'],['wand','🪄','Magic wand','#ffd23f'],['glasses','👓','Glasses','#2d2d3a'],['pearls','📿','Pearls','#ffffff'],['scarf','🧣','Scarf','#ff3b6b'],['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['balloon','🎈','Balloon','#ff3b6b']];
 const CAT={tops:TOPS,bottoms:BOTTOMS,dresses:DRESSES,shoes:SHOES,hats:HATS,extras:EXTRAS};
 const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'};
+// things you can buy in the shop with coins (everything else stays free)
+const SHOP=[
+  {k:'look:stargown',tab:'outfits',e:'🌌',n:'Starry gown',p:120,d:'A night-sky gown that sparkles with little stars.'},
+  {k:'look:unicorn',tab:'outfits',e:'🦄',n:'Unicorn horn',p:60,d:'A sparkly horn. Find it in Extras.'},
+  {k:'look:halo',tab:'outfits',e:'😇',n:'Halo',p:40,d:'A glowing halo that floats over your head. Find it in Extras.'},
+  {k:'look:balloon',tab:'outfits',e:'🎈',n:'Balloon',p:30,d:'A shiny balloon to carry around town. Find it in Extras.'},
+  {k:'pet:unicorn',tab:'pets',e:'🦄',n:'Pet unicorn horn',p:60,d:'Turn your pet into a unicorn! Find it in the Pet Parlor hats.'},
+  {k:'pet:halo',tab:'pets',e:'😇',n:'Pet halo',p:40,d:'A little glowing halo for your pet.'},
+  {k:'treat:🧁',tab:'pets',e:'🧁',n:'Cupcake',p:25,d:'A super yummy treat for your pet. Buy it once, feed it forever!'},
+  {k:'treat:🍦',tab:'pets',e:'🍦',n:'Ice cream',p:25,d:'A cold, sweet treat for your pet. Buy it once, feed it forever!'},
+  {k:'treat:🎂',tab:'pets',e:'🎂',n:'Party cake',p:40,d:'Fills the tummy all the way! Buy it once, feed it forever.'},
+  {k:'colors:pastel',tab:'colors',e:'🍬',n:'Pastel colors',p:50,d:'Soft candy colors for clothes, hair and pet outfits.',c:['#ffd1dc','#ffe5b4','#fffacd','#d4f5d4','#cdeffd','#e6d6ff','#ffd8f0']},
+  {k:'colors:neon',tab:'colors',e:'⚡',n:'Neon colors',p:50,d:'Super bright colors that pop!',c:['#ff00a8','#ff5e00','#e6ff00','#39ff14','#00f0ff','#7a00ff']},
+  {k:'colors:jewel',tab:'colors',e:'💎',n:'Jewel colors',p:60,d:'Deep fancy colors like gems.',c:['#9b111e','#0f52ba','#50c878','#9966cc','#e0115f','#0b6e6e','#b76e79']},
+  {k:'move:fireworks',tab:'moves',e:'🎆',n:'Fireworks',lab:'Boom',p:40,d:'A new move: fireworks pop in the sky!'},
+  {k:'move:hearts',tab:'moves',e:'💕',n:'Heart shower',lab:'Hearts',p:30,d:'A new move: hearts float all around you.'},
+  {k:'move:rainbow',tab:'moves',e:'🌈',n:'Rainbow spin',lab:'Rainbow',p:50,d:'A new move: spin in a swirl of rainbow sparkles.'},
+  {k:'move:bubbles',tab:'moves',e:'🫧',n:'Bubble dance',lab:'Bubbles',p:30,d:'A new move: dance in a cloud of bubbles.'}];
+const shopItem=k=>SHOP.find(s=>s.k===k);
+const owns=k=>!!(SAVE.owned&&SAVE.owned[k]);
+const locked=k=>!!shopItem(k)&&!owns(k);
+const myColors=base=>base.concat(...SHOP.filter(s=>s.c&&owns(s.k)).map(s=>s.c));
+const TREATS=[['🧁','Cupcake'],['🍦','Ice cream'],['🎂','Party cake']],TREAT_FOOD={'🧁':40,'🍦':40,'🎂':100};
+let shopOpen=false;
 const defaultLook=()=>({style:'glam',skin:'#f7cfae',eyes:'#6b4a2b',hair:{id:'long',c:'#7a4a2a'},top:null,bottom:null,dress:{id:'gown',c:'#ff8fc8'},shoes:{id:'glass',c:'#cfefff'},hat:{id:'tiara',c:'#ffd23f'},extras:{}});
 
 /* ---------- seeded random ---------- */
@@ -715,6 +778,9 @@ function lookMat(color,kind='fabric'){const c=new THREE.Color(color);
     case 'hair':return new THREE.MeshPhysicalMaterial({color:c,roughness:.38,sheen:1,sheenColor:c.clone().offsetHSL(0,0,.25),sheenRoughness:.3});
     case 'shiny':return new THREE.MeshPhysicalMaterial({color:c,roughness:.22,clearcoat:1,clearcoatRoughness:.08});
     case 'sparkle':return new THREE.MeshPhysicalMaterial({color:c,map:TEX.glitter,metalness:.55,roughness:.28,iridescence:.4,sheen:.5});
+    case 'galaxy':{if(!TEX.galaxy){TEX.galaxy=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#000';x.fillRect(0,0,w,h);for(let i=0;i<260;i++){const r=Math.random();x.fillStyle=r<.15?'#ffe27a':r<.3?'#ffb3e6':'#ffffff';x.globalAlpha=.4+Math.random()*.6;const z=Math.random()<.9?1+Math.random()*1.6:3;x.beginPath();x.arc(Math.random()*w,Math.random()*h,z,0,7);x.fill();}
+        x.globalAlpha=1;x.font='16px serif';x.textAlign='center';for(let i=0;i<10;i++){x.fillStyle='#fff3b0';x.fillText('★',Math.random()*w,Math.random()*h);}},3);}
+      return new THREE.MeshPhysicalMaterial({color:c,roughness:.45,sheen:.8,sheenColor:new THREE.Color('#b9a6ff'),emissive:new THREE.Color('#ffffff'),emissiveMap:TEX.galaxy,emissiveIntensity:1.1,clearcoat:.3});}
     case 'metal':return new THREE.MeshStandardMaterial({color:c,metalness:1,roughness:.2});
     case 'glass':return new THREE.MeshPhysicalMaterial({color:c,roughness:0,metalness:.1,transparent:true,opacity:.55,clearcoat:1,iridescence:.6});
     case 'gem':return new THREE.MeshPhysicalMaterial({color:c,roughness:.05,metalness:.2,clearcoat:1,emissive:c,emissiveIntensity:.35});
@@ -871,6 +937,7 @@ class Avatar{
       if(d.id==='santa'){topShell(m,'long');skirt(m,.42,.3,{curve:.8});const fur=mat('#ffffff','fabric');P(new THREE.TorusGeometry(.31,.035,10,48),fur,hips,0,-.32,0).rotation.x=Math.PI/2;
         P(new THREE.TorusGeometry(.142,.022,8,32),mat('#1a1a1a','shiny'),hips,0,.1,0).rotation.x=Math.PI/2;for(const a of arms)P(new THREE.TorusGeometry(.046,.016,8,20),fur,a.el,0,-.19,0).rotation.x=Math.PI/2;}
       if(d.id==='fairy'){topShell(m,'strap');skirt(m,.3,.26);const pet=skirt(mat(c,'tulle'),.36,.36,{r0:.145,curve:.6,folds:.25,k:6,seg:36});}
+      if(d.id==='stargown'){const sm=mat(c,'galaxy');topShell(sm,'strap');skirt(sm,.92,.56,{curve:.65,folds:.07,k:12});P(new THREE.TorusGeometry(.14,.016,8,32),mat('#e8e8ff','metal'),hips,0,.1,0).rotation.x=Math.PI/2;}
       if(d.id==='ballerina'){topShell(mat(c,'shiny'),'strap');waist(m);for(let i=0;i<3;i++)P(skirtGeo(.14,.36-i*.02,.02-i*.025,-.04-i*.03,{curve:.4,folds:.06,k:16}),mat(c,'tulle'),hips);legsShell(mat('#ffe3ee','fabric'),.064,true);}
     }else{
       if(look.top){const t=look.top,c=t.c;
@@ -933,6 +1000,11 @@ class Avatar{
       if(ex.wand){const a=arms[0];const w=P(cyl(.006,.006,.26,8),mat('#ffffff','shiny'),a.hand,0,-.03,.08);w.rotation.x=Math.PI/2-.3;const st=P(starGeo,mat(ex.wand,'gem'),a.hand,0,.0,.22);st.scale.setScalar(.22);}
       if(ex.glasses){const m=mat(ex.glasses,'shiny');for(const s of [-1,1])P(new THREE.TorusGeometry(.03,.005,8,24),m,head,s*.046,.005,.133);P(box(.03,.005,.005),m,head,0,.01,.136);
         for(const s of [-1,1]){const arm=P(box(.005,.005,.13),m,head,s*.078,.008,.07);}}
+      if(ex.halo){const h=P(new THREE.TorusGeometry(.085,.011,10,36),mat(ex.halo,'gem'),head,0,.3,-.01);h.rotation.x=Math.PI/2;h.castShadow=false;}
+      if(ex.unicorn){const hg=new THREE.Group();hg.position.set(0,.125,.092);hg.rotation.x=.55;head.add(hg);this.parts.push(hg);hg.geometry={dispose(){}};
+        P(new THREE.ConeGeometry(.024,.14,18),mat(ex.unicorn,'sparkle'),hg,0,.07,0);for(let i=0;i<3;i++){const r=P(new THREE.TorusGeometry(.021-i*.006,.0045,6,16),mat('#ffffff','shiny'),hg,0,.018+i*.033,0);r.rotation.x=Math.PI/2+.25;}}
+      if(ex.balloon){const bm=mat(ex.balloon,'shiny');const bg=new THREE.Group();bg.position.set(-.3,.8,-.02);spine.add(bg);this.parts.push(bg);bg.geometry={dispose(){}};
+        P(sph(.11,24,18),bm,bg).scale.set(1,1.15,1);P(new THREE.ConeGeometry(.016,.03,10),bm,bg,0,-.135,0).rotation.x=Math.PI;P(cyl(.002,.002,.72,6),mat('#ffffff'),bg,0,-.5,0);}
       if(ex.pearls){const m=mat(ex.pearls,'shiny');for(let i=0;i<14;i++){const a=i/14*Math.PI*2;P(sph(.012,8,6),m,spine,Math.sin(a)*.065,.45-Math.max(0,Math.cos(a))*.03,Math.cos(a)*.055);}}
       if(ex.scarf){const m=mat(ex.scarf);P(new THREE.TorusGeometry(.065,.03,10,24),m,spine,0,.46,0).rotation.x=Math.PI/2;const tail=P(capTop(.03,.16),m,spine,.04,.46,.07);tail.scale.z=.4;tail.rotation.x=-.15;}}
     /* makeup */
@@ -1115,7 +1187,7 @@ class Pet{
 const PETS=[['cat','#f4a259','Pumpkin','spring'],['cat','#3a3540','Midnight','halloween'],['dog','#d9a35b','Biscuit','beach'],['dog','#8b5a2b','Cocoa','birthday'],['squirrel','#9a9a9a','Nutmeg','christmas'],['bunny','#f5efe6','Snowball','spring'],['dog','#f3ece2','Marshmallow','studio'],['cat','#9aa0a6','Smokey','runway']].map(([k,c,n,h],i)=>{
   const pt=new Pet(k,c,n,Z[h]);const a=i*2.3,r=Z[h].r*.6;pt.pos.set(Z[h].x+Math.sin(a)*r,0,Z[h].z+Math.cos(a)*r);collide(pt.pos,.3);scene.add(pt.g);return pt;});
 const myPet=()=>PETS.find(p=>p.owned);
-function adopt(pt){const old=myPet();if(old&&old!==pt){old.owned=false;old.setTag();}pt.owned=true;pt.setTag();SAVE.pet=PETS.indexOf(pt);persist();pt.happy=2;pt.speak(rnd(PET_SAY[pt.kind]));
+function adopt(pt){if(!SAVE.adoptPaid){SAVE.adoptPaid=1;setTimeout(()=>earn(10,'New pet'),900);}const old=myPet();if(old&&old!==pt){old.owned=false;old.setTag();}pt.owned=true;pt.setTag();SAVE.pet=PETS.indexOf(pt);persist();pt.happy=2;pt.speak(rnd(PET_SAY[pt.kind]));
   floaties(pt.g.position.clone().add(new THREE.Vector3(0,pt.tagH,0)),'💖',8);sfx('tada');toast(`${pt.name} is your pet now! 💖 Take them to the 🐾 Pet Parlor for food, a bath, nails and outfits.`);}
 function stepPet(pt,dt){if(pt.inParlor){parlorPet(pt,dt);return;}let spd=0;const P=player.pos;
   if(pt.owned){const side=new THREE.Vector3(Math.sin(player.face+2.3)*.9,0,Math.cos(player.face+2.3)*.9).add(P);const d=Math.hypot(side.x-pt.pos.x,side.z-pt.pos.z);
@@ -1148,7 +1220,7 @@ function paintAt(uv){const cv=av.paintCv,W=cv.width,x=cv.getContext('2d');const 
   x.beginPath();if(brush.last){x.moveTo(brush.last[0],brush.last[1]);x.lineTo(px,py);x.stroke();}else{x.arc(px,py,x.lineWidth/2,0,Math.PI*2);x.fill();}
   x.globalAlpha=1;x.globalCompositeOperation='source-over';brush.last=[px,py];av.renderFace();}
 function savePaint(){try{SAVE.facePaint=av.paintCv.toDataURL('image/png');}catch(e){}persist();}
-const drawing=()=>closetOpen&&!parlorOpen&&ctab==='makeup';
+const drawing=()=>closetOpen&&!parlorOpen&&!shopOpen&&ctab==='makeup';
 canvas.addEventListener('pointerdown',e=>{e.preventDefault();
   if(parlorOpen){parlorDown(e);return;}
   if(bakeryOpen){bakeryDown(e);return;}
@@ -1189,11 +1261,12 @@ let bannerT;function banner(t){const el=$('#banner');el.textContent=t;el.classLi
 /* action buttons around the jump button */
 const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','Twirl'],['kiss','😘','Kiss'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♀️','Sit'],['pose','✨','Pose'],['bow','👑','Curtsy'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-function renderActions(){const el=$('#actions');const pages=Math.ceil(ACTIONS.length/PER);const list=ACTIONS.slice(actPage*PER,actPage*PER+PER);
+const allActs=()=>ACTIONS.concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
    `<button class="act more" data-more="1" style="${pos(196,22)}" aria-label="More moves">⋯<span>${actPage+1}/${pages}</span></button>`;}
-$('#actions').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.more){actPage=(actPage+1)%Math.ceil(ACTIONS.length/PER);renderActions();sfx('pop');return;}doAction(b.dataset.act);});
+$('#actions').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.more){actPage=(actPage+1)%Math.ceil(allActs().length/PER);renderActions();sfx('pop');return;}if(owns('move:'+b.dataset.act))doMove(b.dataset.act);else doAction(b.dataset.act);});
 const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[emoji]=canvasTex(64,64,(x)=>{x.font='52px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,32,36);});
   for(let i=0;i<n;i++){const s=sprite(heartTex[emoji],.2,.2);s.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*.4,Math.random()*.2,(Math.random()-.5)*.4));scene.add(s);const v=new THREE.Vector3((Math.random()-.5)*.6,.9+Math.random()*.6,(Math.random()-.5)*.6);let life=1.4+Math.random()*.5;
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
@@ -1234,7 +1307,7 @@ const MK_BRUSH=['#2b1d16','#000000','#ffffff','#ff3b6b','#c2185b','#ff6fae','#b3
 function renderCloset(){const L=SAVE.look;
   $('#tabs').innerHTML=TABS.map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';const sw=(list,cur,kind)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
-  if(ctab==='hair'){h+=`<h3>Hair style</h3><div class="grid">${HAIRS.map(([id,ico,n])=>`<button class="item${L.hair.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div><h3>Hair color</h3>`+sw(HAIRC,L.hair.c,'hair');}
+  if(ctab==='hair'){h+=`<h3>Hair style</h3><div class="grid">${HAIRS.map(([id,ico,n])=>`<button class="item${L.hair.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div><h3>Hair color</h3>`+sw(myColors(HAIRC),L.hair.c,'hair');}
   else if(ctab==='makeup'){const mk=L.makeup;const swn=(list,cur,kind)=>`<div class="swatches"><button class="sw none${!cur?' on':''}" data-sw="${kind}" data-c="" aria-label="none">🚫</button>${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}"></button>`).join('')}</div>`;
     const ch=(key,opts)=>`<div class="chips">${opts.map(([v,n])=>`<button class="${String(mk[key])===String(v)?'on':''}" data-mk="${key}" data-v="${v}">${n}</button>`).join('')}</div>`;
     h+=`<div class="zoomrow">${[['eyes','👁️ Eyes'],['lips','👄 Lips'],['face','🙂 Face']].map(([z,n])=>`<button class="${czoom===z?'on':''}" data-zoom="${z}">${n}</button>`).join('')}</div>
@@ -1251,17 +1324,18 @@ function renderCloset(){const L=SAVE.look;
       `<h3>🌸 Blush</h3>`+ch('blush',[['none','None'],['pink','Pink'],['peach','Peach'],['rose','Rose']]);}
   else if(ctab==='skin'){h+=`<h3>Look style</h3><div class="grid">${[['glam','💃','Glam girl'],['cute','🧸','Cute cartoon']].map(([v,e,n])=>`<button class="item${(L.style||'glam')===v?' on':''}" data-style="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`+((L.style||'glam')!=='cute'?FACEOPT.map(([k,t,opts])=>`<h3>${t}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${((L.face||{})[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join(''):'')+`<h3>Skin tone</h3>`+sw(SKIN,L.skin,'skin')+`<h3>Eye color</h3>`+sw(EYES,L.eyes,'eyes');}
   else{const list=CAT[ctab],k=KEY[ctab];
-    if(ctab==='extras'){h+=`<h3>Tap to add or take off</h3><div class="grid">${list.map(([id,ico,n])=>`<button class="item${L.extras[id]?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
-      if(lastExtra&&L.extras[lastExtra])h+=`<h3>Color</h3>`+sw(COLORS,L.extras[lastExtra],'item');}
+    if(ctab==='extras'){h+=`<h3>Tap to add or take off</h3><div class="grid">${list.map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${L.extras[id]?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
+      if(lastExtra&&L.extras[lastExtra])h+=`<h3>Color</h3>`+sw(myColors(COLORS),L.extras[lastExtra],'item');}
     else{const cur=L[k];const none=ctab!=='shoes'&&ctab!=='dresses'?`<button class="item${!cur?' on':''}" data-item=""><b>🚫</b><span>None</span></button>`:'';
-      h+=`<div class="grid">${none}${list.map(([id,ico,n])=>`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
-      if(cur)h+=`<h3>Color</h3>`+sw(COLORS,cur.c,'item');}}
+      h+=`<div class="grid">${none}${list.map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
+      if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
   $('#ccontent').innerHTML=h;}
 function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny','#ff4d8d',true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;}
 function changed(){av.dress(SAVE.look);persist();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
 $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');renderCloset();$('#ccontent').scrollTop=0;};
 $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.lock){askBuy(b.dataset.lock);return;}
   if(b.dataset.hair){L.hair.id=b.dataset.hair;return changed();}
   if(b.dataset.face){const [k,v]=b.dataset.face.split(':');L.face=Object.assign({},L.face,{[k]:v});persist();rebuildPlayer();sfx('pop');renderCloset();return;}
   if(b.dataset.style){if(L.style!==b.dataset.style){L.style=b.dataset.style;persist();rebuildPlayer();sfx('pop');}renderCloset();return;}
@@ -1286,7 +1360,7 @@ $('#dressBtn').onclick=openCloset;$('#done').onclick=closeCloset;
 
 /* ================= PET PARLOR (feed, bath, nails, dress up) ================= */
 const PFOOD={cat:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],dog:[['🦴','Bone'],['🍖','Meat'],['🥕','Carrot']],squirrel:[['🌰','Acorn'],['🥜','Peanuts'],['🍓','Berry']],bunny:[['🥕','Carrot'],['🥬','Lettuce'],['🍎','Apple']]};
-const PHATS=[['crown','👑','Crown','#ffd23f'],['party','🥳','Party hat','#4fb6ff'],['bow','🎀','Big bow','#ff6fae'],['witch','🧙','Witch hat','#5b2a86'],['santa','🎅','Santa hat','#e0263b'],['flowers','🌸','Flower crown','#ff8fc8']];
+const PHATS=[['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['crown','👑','Crown','#ffd23f'],['party','🥳','Party hat','#4fb6ff'],['bow','🎀','Big bow','#ff6fae'],['witch','🧙','Witch hat','#5b2a86'],['santa','🎅','Santa hat','#e0263b'],['flowers','🌸','Flower crown','#ff8fc8']];
 const PNECK=[['bowtie','🎀','Bow tie','#ff3b6b'],['bandana','🧣','Bandana','#4fb6ff'],['pearls','📿','Pearls','#ffffff'],['scarf','🧶','Scarf','#7ee081']];
 const PBODY=[['sweater','🧶','Sweater','#ffb3d1'],['tutu','🩰','Tutu','#ff8fc8'],['cape','🦸','Cape','#e0263b'],['wings','🧚','Fairy wings','#b388ff']];
 const PGLASS=[['sun','🕶️','Sunglasses','#2d2d3a'],['heart','💗','Heart glasses','#ff6fae'],['star','⭐','Star glasses','#ffd23f']];
@@ -1335,6 +1409,9 @@ function dressPet(pt){const F=petCare(pt).fit||{},D=pt.D,H=D.head,r=D.r,L=D.len,
       add(cyl(H*.43,H*.43,H*.1,24,1,true),cloth('#ffd23f'),0,H*.93,-H*.05,hd);}
     if(h.id==='santa'){const a=.35,hh=H*.95,cx=H*.05,cy=H*1.3;const cn=add(new THREE.ConeGeometry(H*.45,hh,24),cloth(c),cx,cy,-H*.05,hd);cn.rotation.z=-a;
       add(new THREE.TorusGeometry(H*.45,H*.1,10,24),cloth('#ffffff'),0,H*.86,-H*.05,hd).rotation.x=Math.PI/2;add(sph(H*.13,12,10),cloth('#ffffff'),cx+Math.sin(a)*hh/2,cy+Math.cos(a)*hh/2,-H*.05,hd);}
+    if(h.id==='halo'){const t=add(new THREE.TorusGeometry(H*.42,H*.07,10,32),phys(c,{emissive:new THREE.Color(c),emissiveIntensity:.7,roughness:.2,metalness:.3}),0,H*1.3,-H*.05,hd);t.rotation.x=Math.PI/2;}
+    if(h.id==='unicorn'){const cn=add(new THREE.ConeGeometry(H*.13,H*.62,18),phys(c,{map:TEX.glitter,roughness:.3,clearcoat:1,iridescence:.6}),0,H*.98,H*.8,hd);cn.rotation.x=.45;
+      for(let i=0;i<3;i++){const r=add(new THREE.TorusGeometry(H*(.11-i*.03),H*.025,6,16),shiny('#ffffff'),0,H*(.98-.16+i*.16*Math.cos(.45)),H*(.8-.16*Math.sin(.45)+i*.16*Math.sin(.45)),hd);r.rotation.x=Math.PI/2+.45;}}
     if(h.id==='flowers'){for(let i=0;i<9;i++){const a=i/9*Math.PI*2;add(sph(H*.12,10,8),cloth(i%2?'#ffffff':c),Math.cos(a)*H*.6,H*.8,Math.sin(a)*H*.6,hd).scale.y=.7;add(sph(H*.05,8,6),shiny('#ffd23f'),Math.cos(a)*H*.66,H*.82,Math.sin(a)*H*.66,hd);}}}
   if(n){const c=n.c,y=-H*.72,zc=-H*.05;
     if(n.id==='bowtie'){for(const s of [-1,1]){const w=add(new THREE.ConeGeometry(H*.16,H*.3,12),shiny(c),s*H*.15,y,H*.62,hd);w.rotation.z=s*Math.PI/2;w.scale.z=.45;}add(sph(H*.08,10,8),shiny(c),0,y,H*.64,hd);}
@@ -1383,15 +1460,16 @@ function renderParlor(){const pt=pPet,c=petCare(pt),z=Z.parlor;$('#ptitle').text
   $('#ptabs').innerHTML=PTABS.map(([id,ico,n])=>`<button class="tab${id===ptab?' on':''}" data-ptab="${id}"><b>${ico}</b>${n}</button>`).join('');
   const sw=(list,cur,kind)=>`<div class="swatches">${list.map(col=>`<button class="sw${col===cur?' on':''}" style="background:${col}" data-sw="${kind}" data-c="${col}" aria-label="color ${col}"></button>`).join('')}</div>`;
   let h='';
-  if(ptab==='feed')h=`<h3>Snack time! What does ${pt.name} want?</h3><div class="grid">${PFOOD[pt.kind].concat([['🍪','Treat']]).map(([e,n])=>`<button class="item" data-food="${e}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><p class="drawhint">Tap a food to put it in the bowl. Watch the tummy meter fill up!</p>`;
+  if(ptab==='feed')h=`<h3>Snack time! What does ${pt.name} want?</h3><div class="grid">${PFOOD[pt.kind].concat([['🍪','Treat']],TREATS).map(([e,n])=>lockBtn('treat:'+e,e,n)||`<button class="item" data-food="${e}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><p class="drawhint">Tap a food to put it in the bowl. Watch the tummy meter fill up!</p>`;
   else if(ptab==='bath')h=`<h3 id="phint"></h3><div class="grid">${[['soap','🧼','Soap'],['rinse','🚿','Rinse'],['dry','🌬️','Blow-dry']].map(([id,e,n])=>`<button class="item${ptool===id?' on':''}" data-tool="${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><p class="drawhint">Pick a tool, then rub ${pt.name} with your finger. Drag next to ${pt.name} to spin around and find more mud.</p>`;
   else if(ptab==='nails')h=`<h3>💅 Pick a polish, then tap a paw</h3><div class="swatches">${POLISH.map(col=>`<button class="sw${col===ppol?' on':''}" style="background:${col}" data-pol="${col}" aria-label="polish ${col}"></button>`).join('')}<button class="sw fancy${ppol==='glitter'?' on':''}" style="background:linear-gradient(135deg,#fff3b0,#d4af37,#ffe27a)" data-pol="glitter" aria-label="glitter">✨</button><button class="sw fancy${ppol==='rainbow'?' on':''}" style="background:conic-gradient(#ff3b6b,#ffd23f,#7ee081,#4fb6ff,#ff3b6b)" data-pol="rainbow" aria-label="rainbow">🌈</button></div>
     <div style="height:12px"></div><div class="chips"><button data-paint="all">💅 Paint all paws</button><button data-paint="clear">🧽 Take off polish</button></div>`;
-  else{const F=c.fit;h=PSLOTS.map(([slot,title,list])=>`<h3>${title}</h3><div class="grid"><button class="item${!F[slot]?' on':''}" data-fit="${slot}:"><b>🚫</b><span>None</span></button>${list.map(([id,e,n])=>`<button class="item${F[slot]&&F[slot].id===id?' on':''}" data-fit="${slot}:${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>${F[slot]&&pslot===slot?'<div style="height:8px"></div>'+sw(COLORS,F[slot].c,'fitc'):''}`).join('');}
+  else{const F=c.fit;h=PSLOTS.map(([slot,title,list])=>`<h3>${title}</h3><div class="grid"><button class="item${!F[slot]?' on':''}" data-fit="${slot}:"><b>🚫</b><span>None</span></button>${list.map(([id,e,n])=>lockBtn('pet:'+id,e,n)||`<button class="item${F[slot]&&F[slot].id===id?' on':''}" data-fit="${slot}:${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>${F[slot]&&pslot===slot?'<div style="height:8px"></div>'+sw(myColors(COLORS),F[slot].c,'fitc'):''}`).join('');}
   $('#pcontent').innerHTML=h;renderMeters();bathHint();
   z.tub.visible=ptab==='bath';z.bowl.visible=ptab==='feed';if(ptab!=='feed')z.bowlFood.visible=false;}
 $('#ptabs').onclick=e=>{const b=e.target.closest('[data-ptab]');if(!b)return;ptab=b.dataset.ptab;pcam.dy=pcam.dp=0;sfx('pop');renderParlor();$('#pcontent').scrollTop=0;};
 $('#pcontent').onclick=e=>{const b=e.target.closest('button');if(!b||!pPet)return;const pt=pPet,c=petCare(pt);
+  if(b.dataset.lock){askBuy(b.dataset.lock);return;}
   if(b.dataset.food)return feedPet(b.dataset.food);
   if(b.dataset.tool){ptool=b.dataset.tool;sfx('pop');renderParlor();return;}
   if(b.dataset.pol){ppol=b.dataset.pol;sfx('pop');renderParlor();return;}
@@ -1405,8 +1483,9 @@ function feedPet(e){const pt=pPet,c=petCare(pt),z=Z.parlor;if(pt.eatT>0)return;
   if(c.food>=95){pt.speak("I'm full! 😋");pt.happy=1;sfx('pop');return;}
   z.bowlFood.material.map=emojiTex(e);z.bowlFood.material.needsUpdate=true;z.bowlFood.visible=true;z.bowlFood.scale.setScalar(.16);
   pt.eatT=2.2;pt.eatMax=2.2;for(let k=0;k<4;k++)setTimeout(()=>{if(pt.eatT>0)sfx('munch');},k*500);
-  setTimeout(()=>{if(!parlorOpen||pPet!==pt)return;c.food=Math.min(100,c.food+(e==='🍪'?12:30));persist();renderMeters();
-    pt.speak(c.food>=95?'Yum! All full! 💖':rnd(['Yummy! 😋','Mmm, more please!','Nom nom nom!']));pt.happy=2;pt.vy=2.5;floaties(petTop(pt),'💖',4);},2250);}
+  setTimeout(()=>{if(!parlorOpen||pPet!==pt)return;c.food=Math.min(100,c.food+(TREAT_FOOD[e]||(e==='🍪'?12:30)));persist();renderMeters();
+    if(TREAT_FOOD[e]){pt.speak(rnd(['Best treat EVER! 🎉','Wow! My favorite! 💖','Sooo yummy! ✨']));floaties(petTop(pt),'✨',6);}
+    else pt.speak(c.food>=95?'Yum! All full! 💖':rnd(['Yummy! 😋','Mmm, more please!','Nom nom nom!']));pt.happy=2;pt.vy=2.5;floaties(petTop(pt),'💖',4);earn(2,'Snack time');},2250);}
 
 function petHit(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);
   return ray.intersectObject(pPet.body,true).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return !h.object.isSprite;})||null;}
@@ -1421,11 +1500,11 @@ function rubAt(e){const pt=pPet,h=petHit(e);if(!h)return;const c=petCare(pt),P=h
   else if(ptool==='dry'){if(pt.wet>0){setWet(pt,Math.max(0,pt.wet-.025));if(Math.random()<.35)burst(P.clone(),'#ffffff',5,1.2,.06);if(now-rub.last>160){sfx('blow');rub.last=now;}}}
   checkClean(pt);}
 function checkClean(pt){const c=petCare(pt);bathHint();if(!pt.washing)return;
-  if(dirtSum(c)===0&&!pt.bubbles.length&&pt.wet<=.001){pt.washing=false;c.cleanAt=Date.now();persist();renderMeters();sfx('tada');pt.happy=2.5;pt.vy=3;pt.speak('Squeaky clean! ✨');
+  if(dirtSum(c)===0&&!pt.bubbles.length&&pt.wet<=.001){pt.washing=false;c.cleanAt=Date.now();persist();renderMeters();sfx('tada');pt.happy=2.5;pt.vy=3;pt.speak('Squeaky clean! ✨');earn(10,'Squeaky clean');
     const P=petTop(pt);for(let k=0;k<3;k++)setTimeout(()=>burst(P.clone(),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),24,1.6,.1),k*250);floaties(P,'💖',6);}}
 function paintPaw(i,col,quiet){const pt=pPet,c=petCare(pt);c.polish[i]=col==='rainbow'?RAINBOW[i]:col;paintNails(pt);persist();
   const P=pt.legs[i].paw.getWorldPosition(new THREE.Vector3());burst(P,col==='glitter'?'#ffd23f':col&&col!=='rainbow'?col:'#ffffff',12,.8,.07);
-  if(!quiet){sfx(col?'brush':'pop');if(col&&c.polish.every(Boolean)){pt.happy=2;pt.speak(rnd(['Pretty paws! 💅','Sparkly toes! ✨','I love my nails! 💖']));}}}
+  if(!quiet){sfx(col?'brush':'pop');if(col&&c.polish.every(Boolean)){pt.happy=2;pt.speak(rnd(['Pretty paws! 💅','Sparkly toes! ✨','I love my nails! 💖']));if(Date.now()-(c.nailPaid||0)>6e5){c.nailPaid=Date.now();persist();earn(5,'Pretty paws');}}}}
 function nailTap(e){const pt=pPet,h=petHit(e);if(!h)return false;let best=-1,bd=.16;
   pt.legs.forEach((l,i)=>{const d=l.paw.getWorldPosition(pw).distanceTo(h.point);if(d<bd){bd=d;best=i;}});
   if(best<0){toast('Tap a paw to paint it 🐾');return true;}paintPaw(best,ppol);return true;}
@@ -1638,9 +1717,11 @@ function openBakery(){if(closetOpen)return;closeTalk();const z=Z.bakery,S=z.stan
 function closeBakery(){if(!bakeryOpen)return;const z=Z.bakery;bakeryOpen=closetOpen=false;z.padLbl.visible=true;bk.pipe=null;bcam.id=null;
   if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
   document.body.classList.remove('dressing');$('#bakery').classList.remove('show');persist();cam.yaw=cam.cy=z.rot;player.face=z.rot;
-  toast(SAVE.cake.text?`Yum! Your cake says “${SAVE.cake.text}” 🎂`:'Yum! Your cake stays on the stand 🎂');}
+  toast(SAVE.cake.text?`Yum! Your cake says “${SAVE.cake.text}” 🎂`:'Yum! Your cake stays on the stand 🎂');
+  // coins for baking: once every 10 minutes so it can't be farmed
+  if(bk.dirty&&Date.now()-(SAVE.cakePaid||0)>6e5){SAVE.cakePaid=Date.now();persist();setTimeout(()=>earn(8,'Cake made!'),700);}bk.dirty=false;}
 $('#bdone').onclick=closeBakery;$('#bphoto').onclick=()=>{wantPhoto=true;};
-function cakeChanged(rebuild=true){if(rebuild)buildCake();persist();}
+function cakeChanged(rebuild=true){if(rebuild)buildCake();bk.dirty=true;persist();}
 function renderBakery(){const C=SAVE.cake;$('#btabs').innerHTML=BTABS.map(([id,ico,n])=>`<button class="tab${id===btab?' on':''}" data-btab="${id}"><b>${ico}</b>${n}</button>`).join('');
   const items=(list,cur,kind)=>`<div class="grid">${list.map(([id,e,n])=>`<button class="item${id===cur?' on':''}" data-${kind}="${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`;
   const chips=(list,cur,kind)=>`<div class="chips">${list.map(([id,e,n])=>`<button class="${String(id)===String(cur)?'on':''}" data-${kind}="${id}">${e?e+' ':''}${n}</button>`).join('')}</div>`;
@@ -1659,7 +1740,7 @@ function renderBakery(){const C=SAVE.cake;$('#btabs').innerHTML=BTABS.map(([id,i
   else if(btab==='write')h=`<h3>Write on top of your cake</h3><input class="binput" id="btext" maxlength="28" placeholder="Type a message" autocomplete="off" value="${(C.text||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}"><div style="height:10px"></div><div class="chips">${WRITE_IDEAS(SAVE.name||'Brynny').map(t=>`<button data-wtext="${t.replace(/"/g,'&quot;')}">${t}</button>`).join('')}<button data-wtext="">🧽 Erase</button></div><h3>Icing color</h3>${sw(['#ff3b6b','#c2185b','#ff6fae','#e0263b','#8e6cff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#ff8a1f','#4a2a17','#ffffff','#d4af37'],C.textC,'textc')}`;
   else{const lit=C.lit!==false&&C.candles>0;h=`<h3>How many candles?</h3>${chips([...Array(11)].map((_,i)=>[i,'',String(i)]),C.candles,'candles')}${C.candles?`<h3>Candle color</h3>${sw(CANDLEC.slice(1),C.candleC,'candlec',`<button class="sw fancy${C.candleC==='rainbow'?' on':''}" style="background:conic-gradient(#ff6f91,#ffe066,#7ee081,#4fb6ff,#b388ff,#ff6f91)" data-candlec="rainbow" aria-label="rainbow">🌈</button>`)}<div style="height:14px"></div>${lit?'<button class="btn" data-blow="1">🌬️ Make a wish and blow!</button><p class="drawhint">Or tap a flame to blow it out.</p>':'<button class="btn" data-light="1">🔥 Light the candles</button>'}`:'<p class="drawhint">Add some candles for a birthday cake!</p>'}`;}
   $('#bcontent').innerHTML=h;
-  const inp=$('#btext');if(inp){inp.addEventListener('input',()=>{SAVE.cake.text=inp.value;buildText();persist();});inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});}}
+  const inp=$('#btext');if(inp){inp.addEventListener('input',()=>{SAVE.cake.text=inp.value;bk.dirty=true;buildText();persist();});inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});}}
 $('#btabs').onclick=e=>{const b=e.target.closest('[data-btab]');if(!b)return;btab=b.dataset.btab;bcam.dp=0;sfx('pop');renderBakery();$('#bcontent').scrollTop=0;};
 const cakeTop=()=>{const T=bk.tiers[bk.tiers.length-1];return T?T.g.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,T.h+.15,0)):Z.bakery.cakeRoot.getWorldPosition(new THREE.Vector3());};
 function cakeCheer(){burst(cakeTop(),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#ffffff']),24,1.4,.08);}
@@ -1679,10 +1760,10 @@ $('#bcontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;const
   if(d.topc){btopC=d.topc;sfx('pop');renderBakery();return;}
   if(d.tact==='ring'){const D=cakeDims();let added=0;D.forEach((dd,t)=>{const T=bk.tiers[t];const sp=(TSPACE[btop]||.075)*1.5,f=t===D.length-1?.78:(D[t+1].R/dd.R+1)/2,n=Math.max(4,Math.min(24,Math.round(T.P.per*f/sp)));
       ringTop(btop,t,n,D,TCOLOR.has(btop)?btopC:undefined,f).forEach(r=>{if(C.top.length<260){C.top.push(r);addTopping(r);added++;}});});
-    if(added){sfx('tada');cakeCheer();}else toast('Your cake is full of toppings! Try Undo or Clear.');persist();return;}
+    if(added){bk.dirty=true;sfx('tada');cakeCheer();}else toast('Your cake is full of toppings! Try Undo or Clear.');persist();return;}
   if(d.tact==='undo'){const r=C.top.pop();if(r){const o=bk.tops.pop();o&&o.parent&&o.parent.remove(o);if(o)disposeTree(o);sfx('pop');persist();}return;}
   if(d.tact==='clear'){C.top=[];cakeChanged();sfx('pop');return;}
-  if(d.wtext!=null){C.text=d.wtext;const i=$('#btext');if(i)i.value=C.text;buildText();persist();sfx('pop');if(C.text)cakeCheer();return;}
+  if(d.wtext!=null){C.text=d.wtext;bk.dirty=true;const i=$('#btext');if(i)i.value=C.text;buildText();persist();sfx('pop');if(C.text)cakeCheer();return;}
   if(d.textc){C.textC=d.textc;buildText();persist();sfx('pop');renderBakery();return;}
   if(d.candles!=null){C.candles=+d.candles;C.lit=true;buildText();buildCandles();persist();sfx('pop');renderBakery();return;}
   if(d.candlec){C.candleC=d.candlec;buildCandles();persist();sfx('pop');renderBakery();return;}
@@ -1691,7 +1772,7 @@ $('#bcontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;const
 function blowOne(i,quiet){const f=bk.flames[i];if(!f||!f.visible)return;f.visible=false;const p=f.getWorldPosition(new THREE.Vector3());burst(p,'#cfcfd8',8,.5,.05);if(!quiet)sfx('blow');
   if(bk.flames.every(f=>!f.visible))wishMade();}
 function blowAll(){if(bk.blowing)return;bk.blowing=true;sfx('blow');bk.flames.forEach((f,i)=>setTimeout(()=>blowOne(i,true),180+i*90));setTimeout(()=>{bk.blowing=false;},400+bk.flames.length*90);}
-function wishMade(){SAVE.cake.lit=false;persist();sfx('tada');const P=cakeTop();for(let k=0;k<4;k++)setTimeout(()=>burst(P.clone().add(new THREE.Vector3((Math.random()-.5)*.6,.2,(Math.random()-.5)*.6)),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#7ee081']),30,2,.09),k*200);
+function wishMade(){SAVE.cake.lit=false;if(Date.now()-(SAVE.wishPaid||0)>3e5){SAVE.wishPaid=Date.now();setTimeout(()=>earn(5,'Birthday wish'),900);}persist();sfx('tada');const P=cakeTop();for(let k=0;k<4;k++)setTimeout(()=>burst(P.clone().add(new THREE.Vector3((Math.random()-.5)*.6,.2,(Math.random()-.5)*.6)),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#7ee081']),30,2,.09),k*200);
   floaties(P,'🎉',6);try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}av.play&&av.play('clap');banner('🎉 Make a wish! 🎉');setTimeout(()=>{if(bakeryOpen&&btab==='candles')renderBakery();},600);}
 
 /* tap the cake to decorate it */
@@ -1702,7 +1783,7 @@ function placeAt(h){const C=SAVE.cake,i=h.object.userData.tier,T=bk.tiers[i];if(
   const top=n.y>.6||lp.y>T.h-.02;let r;
   if(top){const f=Math.min(.95,Math.hypot(lp.x,lp.z)/Math.max(.01,rb));r=TREC(btop,i,'top',a,f,TCOLOR.has(btop)?btopC:undefined);}
   else r=TREC(btop,i,'side',a,Math.min(.9,Math.max(.12,lp.y/T.h)),TCOLOR.has(btop)?btopC:undefined);
-  C.top.push(r);addTopping(r);bk.lastP=h.point.clone();sfx(btop==='sprinkles'?'bubble':'pop');if(Math.random()<.35)burst(h.point.clone(),'#fff1c4',6,.6,.05);}
+  C.top.push(r);addTopping(r);bk.dirty=true;bk.lastP=h.point.clone();sfx(btop==='sprinkles'?'bubble':'pop');if(Math.random()<.35)burst(h.point.clone(),'#fff1c4',6,.6,.05);}
 function bakeryDown(e){const cap=()=>{try{canvas.setPointerCapture(e.pointerId);}catch(_){}};
   if(btab==='candles'){const i=flameNear(e);if(i>=0){blowOne(i);return;}}
   if(btab==='tops'&&bk.pipe===null){const h=cakeHit(e);if(h){bk.pipe=e.pointerId;placeAt(h);cap();return;}}
@@ -1718,6 +1799,85 @@ function bakeryCam(dt){const z=Z.bakery,S=z.stand,H=cakeH()+plateInfo()[3];const
   const [cx,cz]=z.toWorld(S.lx,S.lz);bTgt.set(cx,.84+(btab==='write'?H:H*.5),cz);bWant.set(bTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,bTgt.y+Math.sin(pitch)*d,bTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
   const a=Math.min(1,dt*5);bcam.p.lerp(bWant,a);bcam.t.lerp(bTgt,a);camera.position.copy(bcam.p);camera.lookAt(bcam.t);}
 buildCake();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>buildText());
+/* ================= COINS & SHOP ================= */
+if(SAVE.coins==null)SAVE.coins=30;// a little welcome gift to start shopping
+if(!SAVE.owned)SAVE.owned={};
+const coinEl=$('#coins');
+function showCoins(bump){$('#coinN').textContent=SAVE.coins;$('#shopCoins').textContent=`🪙 ${SAVE.coins}`;if(bump){coinEl.classList.remove('bump');void coinEl.offsetWidth;coinEl.classList.add('bump');}}
+showCoins();
+function coinSfx(){tone(1319,.08,'square',.06);tone(1976,.18,'square',.06,.07);}
+function earn(n,why){n=Math.round(n);if(!(n>0))return;SAVE.coins=(SAVE.coins||0)+n;persist();showCoins(true);coinSfx();
+  const r=coinEl.getBoundingClientRect(),el=document.createElement('div');el.className='coinpop';el.textContent=`+${n} 🪙 ${why||''}`;
+  el.style.left=Math.min(innerWidth-90,r.left+r.width/2)+'px';el.style.top=(r.bottom+4)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1500);
+  if(shopOpen)renderShop();}
+// other parts of the game (or future ones) can hand out coins with: dispatchEvent(new CustomEvent('brynny:earn',{detail:{n:5,why:'Baked a cake'}}))
+addEventListener('brynny:earn',e=>{const d=e.detail||{};earn(+d.n||0,d.why);});
+function lockBtn(k,ico,name){if(!locked(k))return '';const s=shopItem(k);return `<button class="item lock" data-lock="${k}"><b>${ico}</b><span>${name}</span><em>🔒 ${s.p} 🪙</em></button>`;}
+
+// stars and quests pay out when they happen
+let starSeen=STARS.filter(s=>s.got).length;
+setInterval(()=>{const n=STARS.filter(s=>s.got).length;if(n>starSeen){earn((n-starSeen)*5,'Star!');if(n===STARS.length)setTimeout(()=>earn(50,'Every star!'),1400);}starSeen=n;
+  const q=SAVE.townDone||0;if(SAVE.questPaid==null||q<SAVE.questPaid){SAVE.questPaid=q;persist();}else if(q>SAVE.questPaid){earn((q-SAVE.questPaid)*20,'Quest done!');SAVE.questPaid=q;persist();}},250);
+let poseT=0;$('#poseBtn').addEventListener('click',()=>{if(Date.now()-poseT>6e4){poseT=Date.now();setTimeout(()=>earn(3,'Runway star'),900);}});
+const dayKey=()=>new Date().toDateString();
+const giftReady=()=>SAVE.giftDay!==dayKey();
+function openGift(){if(!giftReady())return;SAVE.giftDay=dayKey();persist();earn(20,'Daily gift');banner('🎁 Daily gift!');sfx('tada');
+  burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',40,2.5,.16);if(shopOpen)renderShop();}
+$('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('🎁 You have a daily gift! Tap 🪙 at the top to open it.');},4500));
+
+// buying
+function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');const have=SAVE.coins||0,need=s.p-have,mine=owns(k),wear=/^(look|pet):/.test(k);
+  $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p>`+
+    (mine?(wear?`<button class="btn" data-b="wear">✨ Wear it</button>`:'')+`<button class="btn ghost" data-b="close">OK</button>`
+    :need<=0?`<button class="btn" data-b="buy">Buy for ${s.p} 🪙</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} 🪙</p>`
+    :`<p class="bneed">You need <b>${need}</b> more 🪙</p><p>Find ⭐ stars, take care of your pet, and help the townspeople to earn more!</p><button class="btn ghost" data-b="close">OK</button>`);
+  $('#buy').dataset.k=k;$('#buy').classList.add('show');}
+$('#buy').onclick=e=>{const b=e.target.closest('[data-b]'),k=$('#buy').dataset.k;if(e.target.id==='buy'||b&&b.dataset.b==='close'){$('#buy').classList.remove('show');return;}
+  if(!b)return;$('#buy').classList.remove('show');if(b.dataset.b==='buy')buy(k);if(b.dataset.b==='wear')wearIt(k);};
+function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;SAVE.coins-=s.p;SAVE.owned[k]=true;persist();showCoins(true);sfx('tada');
+  banner(`${s.e} It's yours!`);burst(new THREE.Vector3(player.pos.x,player.pos.y+1.3,player.pos.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),50,3,.18);
+  const [kind,id]=k.split(':');
+  if(kind==='look'||kind==='pet')wearIt(k);
+  if(kind==='move'){const A=allActs();actPage=Math.floor(A.findIndex(a=>a[0]===id)/PER);renderActions();toast(`New move! Look for ${s.e} ${s.lab} with your moves.`);}
+  if(kind==='colors')toast('New colors! Look for them when you pick a color 🎨');
+  if(kind==='treat')toast(`Feed the ${s.n.toLowerCase()} to your pet at the 🐾 Pet Parlor!`);
+  refreshOpen();}
+function wearIt(k){const [kind,id]=k.split(':');
+  if(kind==='look'){const L=SAVE.look;if(id==='stargown'){L.dress={id,c:'#3b2fa0'};L.top=L.bottom=null;}else{const it=EXTRAS.find(x=>x[0]===id);L.extras[id]=L.extras[id]||it[3];if(!closetOpen||ctab==='extras')lastExtra=id;}
+    av.dress(L);persist();av.play('twirl');}
+  if(kind==='pet'){const pt=pPet||myPet();if(!pt){toast('Adopt a pet first, then they can wear it! 🐾');return;}const c=petCare(pt),it=PHATS.find(x=>x[0]===id);c.fit.hat={id,c:it[3]};dressPet(pt);persist();pt.happy=2;pt.speak('So fancy! 💖');}
+  refreshOpen();}
+function refreshOpen(){if(shopOpen)renderShop();else if(parlorOpen)renderParlor();else if(closetOpen)renderCloset();}
+
+// the shop
+const STABS=[['outfits','👗','Outfits'],['pets','🐾','Pets'],['colors','🎨','Colors'],['moves','💃','Moves'],['earn','🪙','Earn']];
+const SHINT={outfits:'New outfits show up in your 👗 closet once they are yours.',pets:'Pet things show up in the 🐾 Pet Parlor.',colors:'New colors show up everywhere you pick a color.',moves:'New moves show up with your other moves.'};
+let stab='outfits';
+function renderShop(){showCoins();
+  $('#stabs').innerHTML=STABS.map(([id,ico,n])=>`<button class="tab${id===stab?' on':''}" data-stab="${id}"><b>${ico}</b>${n}</button>`).join('');
+  let h='';
+  if(stab==='earn'){const quests=!!(window.__game&&window.__game.townSave);
+    h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
+      [['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
+      .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
+  else h=`<div class="grid">${SHOP.filter(s=>s.tab===stab).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  $('#scontent').innerHTML=h;}
+$('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
+$('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};
+function openShop(tab){if(closetOpen||!started)return;const g=window.__game;if(g&&g.closeTalk)g.closeTalk();
+  shopOpen=closetOpen=true;if(tab)stab=tab;else if(giftReady())stab='earn';document.body.classList.add('dressing','shopping');
+  player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';renderShop();$('#shop').classList.add('show');$('#scontent').scrollTop=0;sfx('pop');}
+function closeShop(){if(!shopOpen)return;shopOpen=closetOpen=false;document.body.classList.remove('dressing','shopping');$('#shop').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;}
+coinEl.onclick=()=>{if(shopOpen)closeShop();else openShop();};$('#sdone').onclick=closeShop;
+
+// moves you can buy
+function doMove(id){if(closetOpen||!started)return;const P=player.pos,at=y=>new THREE.Vector3(P.x,P.y+y,P.z);
+  if(id==='fireworks'){av.play('cheer');for(let k=0;k<6;k++)setTimeout(()=>{burst(at(3+Math.random()*1.5).add(new THREE.Vector3((Math.random()-.5)*4,0,(Math.random()-.5)*4)),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#c6a6ff','#7ee081']),70,4.5,.22);tone(300+Math.random()*200,.25,'triangle',.08,0,90);},k*320);}
+  if(id==='hearts'){av.play('kiss');for(let k=0;k<5;k++)setTimeout(()=>floaties(at(.8+Math.random()*.8),rnd(['💕','💖','💗']),5),k*260);}
+  if(id==='rainbow'){av.play('twirl');['#ff3b6b','#ff8a1f','#ffd23f','#7ee081','#4fb6ff','#3a5bd9','#8e6cff'].forEach((c,i)=>setTimeout(()=>burst(at(.3+i*.22),c,26,2.2,.15),i*110));}
+  if(id==='bubbles'){av.play('dance');for(let k=0;k<6;k++)setTimeout(()=>floaties(at(.6+Math.random()*.8),'🫧',4),k*300);}
+  const pt=myPet();if(pt&&pt.pos.distanceTo(P)<5)pt.happy=1.5;}
+window.__shop={earn,openShop,closeShop,buy,askBuy,SHOP};
 
 /* welcome */
 $('#wname').value=SAVE.name||'';
