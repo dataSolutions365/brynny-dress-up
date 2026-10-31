@@ -1364,12 +1364,16 @@ TOWN.forEach((d,i)=>{const L=randLook();const f=new Avatar(L,d.n,'#8e6cff');Obje
   scene.add(f.g);FRIENDS.push(f);setFriendTag(f);});
 
 /* ================= ANIMALS / PETS ================= */
+// the family's real dogs: Titus (black and tan, orange collar) and Artemis (fluffy cream). Change these names to rename them in the game
+const FAMILY_DOGS=['Titus','Artemis'];
+// the family's squirrel friend: change this name to rename them in the game
+const FAMILY_SQUIRREL='Tiereyn';
 const PET_DIM={cat:{r:.1,len:.24,leg:.17,head:.095},dog:{r:.12,len:.28,leg:.2,head:.11},squirrel:{r:.075,len:.1,leg:.07,head:.072},bunny:{r:.1,len:.08,leg:.06,head:.085}};
 const PET_SAY={cat:['Meow! 🐱','Purrr… 💖','Mrrow?'],dog:['Woof woof! 🐶','Arf! 💖','*happy wiggle*'],squirrel:['Chitter chatter! 🌰','Squeak!','Got any acorns?'],bunny:['*nose wiggle* 🐰','Hop hop! 💖','Squeak!']};
 class Pet{
-  constructor(kind,color,name,home){
-    Object.assign(this,{kind,name,home});this.g=new THREE.Group();this.t=Math.random()*9;this.pos=new THREE.Vector3();this.face=Math.random()*6;this.speed=0;this.owned=false;this.wait=Math.random()*3;this.tgt=null;this.vy=0;this.y=0;this.phase=0;this.happy=0;this.say=null;
-    const D=PET_DIM[kind],furC=new THREE.Color(color),lightC=furC.clone().lerp(new THREE.Color('#fff8f0'),.65);
+  constructor(kind,color,name,home,o={}){
+    Object.assign(this,{kind,name,home});this.o=o;this.g=new THREE.Group();this.t=Math.random()*9;this.pos=new THREE.Vector3();this.face=Math.random()*6;this.speed=0;this.owned=false;this.wait=Math.random()*3;this.tgt=null;this.vy=0;this.y=0;this.phase=0;this.happy=0;this.say=null;
+    const D=PET_DIM[kind],furC=new THREE.Color(color),lightC=o.light?new THREE.Color(o.light):furC.clone().lerp(new THREE.Color('#fff8f0'),.65);
     const fur=phys(furC,{roughness:.95,sheen:1,sheenColor:furC.clone().lerp(new THREE.Color('#ffffff'),.6),sheenRoughness:.8}),light=phys(lightC,{roughness:.95,sheen:1,sheenColor:new THREE.Color('#ffffff')});
     const pink=phys('#ff9eb5',{roughness:.6}),eyeM=phys('#1a1210',{roughness:.05,clearcoat:1}),shine=new THREE.MeshBasicMaterial({color:'#fff'});
     const body=this.body=new THREE.Group();this.g.add(body);const up=kind==='squirrel'?.75:kind==='bunny'?.35:0;
@@ -1377,28 +1381,39 @@ class Pet{
     M(new THREE.CapsuleGeometry(D.r,D.len,8,18),fur,0,0,0,torso).rotation.x=Math.PI/2;
     M(sph(D.r*.85,18,12),light,0,-D.r*.25,D.len*.1,torso).scale.set(.9,.8,1.4);
     const head=this.head=new THREE.Group();head.position.set(0,D.r*.9+(kind==='squirrel'?D.r*.6:D.r*.4),D.len/2+D.r*.7);torso.add(head);head.rotation.x=up*.8;this.headX0=head.rotation.x;
-    const H=D.head;M(sph(H,24,18),fur,0,0,0,head);
+    const H=D.head,faceM=o.face?phys(o.face,{roughness:.95,sheen:1,sheenColor:new THREE.Color('#ffffff')}):fur;if(o.face)this.furMats.push(faceM);M(sph(H,24,18),faceM,0,0,0,head);
+    // tan eyebrow dots, like a black-and-tan dog
+    if(o.brows)for(const sx of [-1,1])M(sph(H*.1,10,8),light,sx*H*.36,H*.42,H*.86,head).scale.set(1.2,.7,.6);
     const mz=kind==='dog'?1.25:1;M(sph(H*.48,16,12),light,0,-H*.32,H*.78,head).scale.set(1.25,.85,mz);
     M(sph(H*.13,10,8),kind==='dog'?eyeM:pink,0,-H*.18,H*1.18*(kind==='dog'?1.08:.98),head).scale.set(1.3,.9,1);
     for(const sx of [-1,1]){M(sph(H*.16,14,10),eyeM,sx*H*.42,H*.12,H*.82,head);M(sph(H*.045,8,6),shine,sx*H*.42+H*.04,H*.18,H*.97,head,false);}
     for(const sx of [-1,1]){
       if(kind==='cat'){const e=M(new THREE.ConeGeometry(H*.36,H*.62,12),fur,sx*H*.55,H*.82,-H*.05,head);e.rotation.z=-sx*.3;e.scale.z=.55;const i=M(new THREE.ConeGeometry(H*.22,H*.4,12),pink,sx*H*.53,H*.78,H*.05,head);i.rotation.z=-sx*.3;i.scale.z=.3;}
-      if(kind==='dog'){const e=M(sph(H*.42,14,10),phys(furC.clone().multiplyScalar(.7),{roughness:.95,sheen:1}),sx*H*.88,-H*.05,-H*.05,head);e.scale.set(.42,1.15,.85);e.rotation.z=sx*.25;}
-      if(kind==='squirrel'){const e=M(new THREE.ConeGeometry(H*.25,H*.5,10),fur,sx*H*.5,H*.85,-H*.1,head);e.rotation.z=-sx*.2;}
+      if(kind==='dog'){const e=M(sph(H*.42,14,10),phys(o.ear||furC.clone().multiplyScalar(.7),{roughness:.95,sheen:1}),sx*H*.88,-H*.05,-H*.05,head);e.scale.set(.42,o.fluffy?1.45:1.15,.85);e.rotation.z=sx*.25;if(o.fluffy)e.position.y-=H*.12;}
+      if(kind==='squirrel'){const e=M(new THREE.ConeGeometry(H*.25,H*.5,10),o.ear?phys(o.ear,{roughness:.9}):fur,sx*H*.5,H*.85,-H*.1,head);e.rotation.z=-sx*.2;}
       if(kind==='bunny'){const e=M(new THREE.CapsuleGeometry(H*.2,H*1.3,6,12),fur,sx*H*.38,H*1.45,-H*.1,head);e.rotation.z=-sx*.15;e.scale.z=.55;const i=M(new THREE.CapsuleGeometry(H*.11,H*1.05,6,12),pink,sx*H*.38,H*1.45,-H*.02,head);i.rotation.z=-sx*.15;i.scale.z=.3;}
       if(kind==='cat'){for(const k of [-1,1]){const w=M(cyl(.0015,.0015,H*.9,4),shine,sx*H*.55,-H*.25+k*H*.06,H*.95,head,false);w.rotation.z=Math.PI/2+sx*k*.15;}}}
     this.legs=[];for(const [sx,sz] of [[-1,1],[1,1],[-1,-1],[1,-1]]){const lg=new THREE.Group();lg.position.set(sx*D.r*.55,D.leg+.02,sz*(D.len*.45+(kind==='bunny'&&sz<0?.02:0)));body.add(lg);
-      M(capTop(D.r*.32,Math.max(.01,D.leg-D.r*.5)),fur,0,0,0,lg);const paw=M(sph(D.r*.36,10,8),light,0,-D.leg+D.r*.25,D.r*.12,lg);paw.scale.set(1,.7,1.3);this.legs.push({lg,sz,sx,paw});}
+      M(capTop(D.r*.32,Math.max(.01,D.leg-D.r*.5)),fur,0,0,0,lg);const paw=M(sph(D.r*.36,10,8),light,0,-D.leg+D.r*.25,D.r*.12,lg);paw.scale.set(1,.7,1.3);this.legs.push({lg,sz,sx,paw});if(o.fluffy&&sz<0)M(sph(D.r*.3,10,8),fur,0,-D.leg*.35,-D.r*.25,lg).scale.set(.8,1.4,.9);}
     const tail=this.tail=new THREE.Group();tail.position.set(0,D.leg+D.r*1.1,-(D.len/2+D.r*.6));body.add(tail);
     if(kind==='cat'){let y=0,z=0;for(let i=0;i<6;i++){const a=.3+i*.22;M(sph(.026-i*.0015,10,8),fur,0,y,z,tail);y+=Math.cos(a)*.05;z-=Math.sin(a)*.04-.01*i;}}
-    if(kind==='dog'){const t=M(capTop(.028,.12),fur,0,0,0,tail);t.rotation.x=-2.3;}
-    if(kind==='squirrel'){for(let i=0;i<7;i++){const a=i/6*Math.PI*.95;M(sph(.055+Math.sin(a)*.02,12,10),fur,0,.02+Math.sin(a)*.2,-.05-Math.sin(a*.55)*.12+(i>4?(i-4)*.04:0),tail);}}
+    if(kind==='dog'&&!o.fluffy){const t=M(capTop(.028,.12),fur,0,0,0,tail);t.rotation.x=-2.3;}
+    // long-haired dogs: a feathery plume tail, a fluffy chest, and soft fringe on the belly and legs
+    if(kind==='dog'&&o.fluffy){for(let i=0;i<6;i++){const a=i/5;M(sph(.04+Math.sin(a*Math.PI)*.022,12,10),i>3?light:fur,0,.015+a*.11,-.02-a*.1,tail);}
+      for(let i=0;i<5;i++){const a=i/4;M(sph(D.r*.42,12,10),light,(a-.5)*D.r*1.1,-D.r*.15-Math.sin(a*Math.PI)*D.r*.25,D.len*.5+D.r*.35,torso).scale.set(1,1.2,.8);}
+      for(let i=0;i<6;i++){const a=i/5;for(const sx of [-1,1])M(sph(D.r*.3,10,8),fur,sx*D.r*.5,-D.r*.82,(a-.5)*D.len*1.1,torso).scale.set(.9,.8,1.3);}}
+    // dalmatian-style spots
+    if(o.spots){const sm=phys(o.spots,{roughness:.95,sheen:1});[[.9,.3,.2],[-.85,.4,-.15],[.2,.97,.05],[-.4,.85,.4],[.6,.6,-.45],[-.95,-.1,.35],[.95,-.05,-.3]].forEach(([x,y,zz])=>M(sph(D.r*.2,10,8),sm,x*D.r*.97,y*D.r*.97,zz*D.len,torso,false,false).scale.set(1,.5,1));
+      M(sph(H*.3,12,10),sm,H*.5,H*.4,H*.55,head,false,false).scale.set(.5,1,1);}
+    if(kind==='squirrel'){const tm=o.tail?phys(o.tail,{roughness:1,sheen:1,sheenColor:new THREE.Color('#ffffff'),sheenRoughness:.5}):fur;if(o.tail)this.furMats.push(tm);for(let i=0;i<7;i++){const a=i/6*Math.PI*.95;M(sph(.055+Math.sin(a)*.02,12,10),tm,0,.02+Math.sin(a)*.2,-.05-Math.sin(a*.55)*.12+(i>4?(i-4)*.04:0),tail);}}
     if(kind==='bunny')M(sph(.045,12,10),light,0,-.02,0,tail);
-    this.collar=M(new THREE.TorusGeometry(D.head*.68,.012,8,24),phys('#ff3b6b',{roughness:.3,clearcoat:1}),0,-D.head*.7,-D.head*.05,head);this.collar.rotation.x=Math.PI/2;this.collar.visible=false;
+    this.collar=M(new THREE.TorusGeometry(D.head*.68,o.collar?.02:.012,8,24),phys(o.collar||'#ff3b6b',{roughness:.3,clearcoat:1}),0,-D.head*.7,-D.head*.05,head);this.collar.rotation.x=Math.PI/2;this.collar.visible=false;
     this.bell=M(sph(.018,10,8),new THREE.MeshStandardMaterial({color:'#ffd23f',metalness:1,roughness:.2}),0,-D.head*.85,D.head*.6,head);this.bell.visible=false;
     body.scale.setScalar(1.3);this.tagH=(D.leg+D.r*2+D.head*2+(kind==='bunny'?.25:.12))*1.3;this.setTag();}
   setTag(){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();}this.tag=sprite(labelTex((this.owned?'💖 ':'')+this.name,{size:58,fg:this.owned?'#ff4d8d':'#8a5a3b',bg:'rgba(255,255,255,.88)',border:null}),.72,.18);this.tag.position.y=this.tagH;this.g.add(this.tag);
-    this.collar.visible=this.bell.visible=this.owned&&!this.fitNeck;}
+    this.showCollar();}
+  // pets with their own collar (like a real family dog) always wear it; others get the pink one when adopted
+  showCollar(){this.collar.visible=(this.owned||!!this.o.collar)&&!this.fitNeck;this.bell.visible=this.owned&&!this.fitNeck;}
   update(dt){this.t+=dt;const t=this.t,sp=Math.min(this.speed/3,1.6);this.phase+=dt*(6+sp*8)*(sp>.03?1:0);
     const hopper=this.kind==='bunny'||this.kind==='squirrel';
     this.legs.forEach(l=>{l.lg.rotation.x=hopper?(sp>.05?Math.sin(this.phase)*.6*(l.sz>0?1:-1):0):Math.sin(this.phase+(l.sz>0?0:Math.PI)+(l.sx>0?Math.PI:0))*.7*sp;});
@@ -1410,8 +1425,16 @@ class Pet{
     this.head.rotation.y=Math.sin(t*.7)*.25*(sp<.1?1:.2);this.head.rotation.z=this.happy>0?Math.sin(t*10)*.15:0;
     if(this.say){this.sayT-=dt;if(this.sayT<0){this.g.remove(this.say);this.say=null;}}}
   speak(text){if(this.say){this.g.remove(this.say);this.say.material.map.dispose();this.say.material.dispose();}const s=sprite(labelTex(text,{size:46,w:512,h:110,fg:'#3b2357',border:'#ffd6ea'}),1.1,.24);s.position.y=this.tagH+.25;this.g.add(s);this.say=s;this.sayT=2.4;}}
-const PETS=[['cat','#f4a259','Pumpkin','spring'],['cat','#3a3540','Midnight','halloween'],['dog','#d9a35b','Biscuit','beach'],['dog','#8b5a2b','Cocoa','birthday'],['squirrel','#9a9a9a','Nutmeg','christmas'],['bunny','#f5efe6','Snowball','spring'],['dog','#f3ece2','Marshmallow','studio'],['cat','#9aa0a6','Smokey','runway']].map(([k,c,n,h],i)=>{
-  const pt=new Pet(k,c,n,Z[h]);const a=i*2.3,r=Z[h].r*.6;pt.pos.set(Z[h].x+Math.sin(a)*r,0,Z[h].z+Math.cos(a)*r);collide(pt.pos,.3);scene.add(pt.g);return pt;});
+const PETS=[['cat','#f4a259','Pumpkin','spring'],['cat','#3a3540','Midnight','halloween'],['dog','#d9a35b','Biscuit','beach'],['dog','#8b5a2b','Cocoa','birthday'],['squirrel','#9a9a9a','Nutmeg','christmas'],['bunny','#f5efe6','Snowball','spring'],['dog','#f3ece2','Marshmallow','studio'],['cat','#9aa0a6','Smokey','runway'],
+  // more dogs! (new pets go at the end so saved pets keep their spot)
+  // the family's own two dogs, waiting to be adopted at the Pet Parlor
+  ['dog','#1e1714',FAMILY_DOGS[0],'parlor',{light:'#b8773d',brows:1,collar:'#ff6a1f',ear:'#17110f'}],
+  ['dog','#dcb57a',FAMILY_DOGS[1],'parlor',{fluffy:1,face:'#fbf6ec',light:'#fbf3e4',ear:'#d8ad6a'}],
+  ['squirrel','#857558',FAMILY_SQUIRREL,'parlor',{light:'#ffffff',ear:'#b08a70',tail:'#8f8a84'}],
+  ['dog','#f7f4ef','Oreo','christmas',{spots:'#1d1a1a',light:'#ffffff'}],
+  ['dog','#6f6a66','Pepper','runway',{light:'#cfc9c2'}],
+  ['dog','#d8a24e','Waffles','bakery',{fluffy:1,light:'#f3d79e'}]].map(([k,c,n,h,o],i)=>{
+  const pt=new Pet(k,c,n,Z[h],o);const a=i*2.3,r=Z[h].r*.6;pt.pos.set(Z[h].x+Math.sin(a)*r,0,Z[h].z+Math.cos(a)*r);collide(pt.pos,.3);scene.add(pt.g);return pt;});
 const myPet=()=>PETS.find(p=>p.owned);
 function adopt(pt){did('adopt');if(!SAVE.adoptPaid){SAVE.adoptPaid=1;setTimeout(()=>earn(10,'New pet'),900);}const old=myPet();if(old&&old!==pt){old.owned=false;old.setTag();}pt.owned=true;pt.setTag();SAVE.pet=PETS.indexOf(pt);persist();pt.happy=2;pt.speak(rnd(PET_SAY[pt.kind]));
   floaties(pt.g.position.clone().add(new THREE.Vector3(0,pt.tagH,0)),'💖',8);sfx('tada');toast(`${pt.name} is your pet now! 💖 Take them to the 🐾 Pet Parlor for food, a bath, nails and outfits.`);}
@@ -1648,7 +1671,7 @@ function dressPet(pt){const F=petCare(pt).fit||{},D=pt.D,H=D.head,r=D.r,L=D.len,
     if(n.id==='bandana'){add(new THREE.TorusGeometry(H*.66,H*.06,8,28),cloth(c),0,y,zc,hd).rotation.x=Math.PI/2;const t=add(new THREE.ConeGeometry(H*.42,H*.55,3),cloth(c),0,y-H*.22,H*.5,hd);t.rotation.x=Math.PI;t.scale.z=.3;}
     if(n.id==='pearls'){for(let i=0;i<16;i++){const a=i/16*Math.PI*2;add(sph(H*.075,10,8),phys(c,{roughness:.15,clearcoat:1,sheen:1,iridescence:.6}),Math.sin(a)*H*.7,y-Math.max(0,Math.cos(a))*H*.12,zc+Math.cos(a)*H*.7,hd);}}
     if(n.id==='scarf'){add(new THREE.TorusGeometry(H*.66,H*.14,10,28),cloth(c,{map:TEX.stripes}),0,y,zc,hd).rotation.x=Math.PI/2;const t=add(capTop(H*.12,H*.5),cloth(c,{map:TEX.stripes}),H*.25,y-H*.05,H*.6,hd);t.scale.z=.45;t.rotation.z=.2;}}
-  pt.fitNeck=!!n;pt.collar.visible=pt.bell.visible=pt.owned&&!n;
+  pt.fitNeck=!!n;pt.showCollar();
   if(b){const c=b.c;
     if(b.id==='sweater'){const s=add(cyl(r*1.08,r*1.08,L*.8,28,1,true),cloth(c,{map:TEX.stripes}),0,0,L*.05,ts);s.rotation.x=Math.PI/2;add(new THREE.TorusGeometry(r*1.06,r*.12,8,28),cloth(c),0,0,L*.45,ts);add(new THREE.TorusGeometry(r*1.06,r*.12,8,28),cloth(c),0,0,-L*.35,ts);}
     if(b.id==='tutu'){for(const [k,o] of [[0,1],[1,.85]]){const s=add(cyl(r*1.05,r*(1.6-k*.2),r*.42,36,1,true),cloth(c,{transparent:true,opacity:.85*o}),0,0,-L*.28-k*r*.15,ts);s.rotation.x=Math.PI/2;}}
