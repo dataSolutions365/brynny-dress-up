@@ -24,6 +24,7 @@ A 3D version lives in the `3d/` folder (open `3d/index.html`, or `/3d/` on the w
 In the 3D world you can also:
 - Do moves from the buttons around Jump: wave, dance, twirl, kiss, clap, cheer, flip, sit, pose, curtsy, magic, and star jump. Tap ⋯ for more.
 - Do close-up makeup in the closet's 💄 Makeup tab: zoom to the eyes or lips, draw on the face with your finger, and pick eyeshadow, eyeliner, lashes, face gems, lipstick, lip liner, gloss, and blush.
+- Pick your look: a glam fashion-doll girl (the default) or a cute cartoon, on the welcome screen or in the closet's Face tab.
 - Adopt a pet. Walk up to a kitty, puppy, squirrel, or bunny and tap Adopt, and it follows you everywhere.
 
 ## Play it
