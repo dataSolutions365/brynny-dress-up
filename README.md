@@ -13,6 +13,8 @@ A birthday dress-up game that runs in any web browser (phone, tablet, or compute
 - Tops, bottoms, dresses, shoes, hats, and extras, each in any color
 - Places: Sparkle studio, My room, Birthday party, Halloween, Christmas, Wedding, Beach, Runway
 - Add friends and family by name and dress them up too
+- 3D world: day and night (the sky gets dark, stars and the moon come out, street lights glow), with a choice in Settings
+- Holidays that turn on by the date: Halloween (Oct 1 to Nov 2) with jack-o'-lanterns, bats, costumes, trick-or-treating and a costume contest; Thanksgiving (Nov 3 to 30); Christmas (December) with snow; plus New Year's, Valentine's Day, St. Patrick's Day, Easter and the Fourth of July. Add more in `3d/seasons.js`
 - Save looks to a gallery and download them as pictures
 - Music: Brynny's Song (plays at the birthday party), 7 built-in songs (Sparkle Pop, Dreamy Studio, Happy Birthday, Spooky Night, Jingle Bells, Here Comes the Bride, Runway Beat), a "Match the place" mode, tap sounds, and her own songs added from the device
 
