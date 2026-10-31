@@ -132,6 +132,7 @@ body.talking #actions,body.talking #jump,body.talking #petBtn,body.talking #pose
 .binput{width:100%;font-size:18px;padding:10px 14px;border-radius:14px;border:3px solid var(--pink2);color:var(--ink);outline:none;user-select:text;-webkit-user-select:text}
 .binput:focus{border-color:var(--pink)}
 #bcontent .btn{font-size:17px;padding:11px 20px}
+.cstep{display:flex;align-items:center;gap:14px}.cstep button{width:46px;height:46px;border-radius:50%;background:#f6e3ef;font-size:26px;font-weight:700;line-height:1}.cstep button:active{transform:scale(.92)}.cstep b{min-width:48px;text-align:center;font-size:28px}
 /* map */
 #mini{left:calc(env(safe-area-inset-left) + 12px);top:calc(env(safe-area-inset-top) + 60px);width:108px;height:108px;padding:0;border-radius:50%;background:#2ab0d4;border:4px solid rgba(255,255,255,.95);box-shadow:0 4px 14px rgba(59,35,87,.25);overflow:visible}
 #mini canvas{width:100%;height:100%;border-radius:50%;display:block}
@@ -1925,13 +1926,34 @@ function buildText(){const C=SAVE.cake,T=bk.tiers[bk.tiers.length-1];if(bk.text)
   const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;const s=T.R*(C.candles>0?1.12:1.5);
   const m=new THREE.Mesh(new THREE.PlaneGeometry(s,s),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
   m.rotation.x=-Math.PI/2;m.position.y=T.h+.002;m.userData.own=true;T.g.add(m);bk.text=m;}
+/* number candles use a 3D font that loads the first time you need one */
+let candleFont=null,candleFontP=null;
+function loadCandleFont(){if(!candleFontP)candleFontP=Promise.all([import('three/addons/loaders/FontLoader.js'),import('three/addons/geometries/TextGeometry.js')]).then(([FL,TG])=>new Promise((ok,no)=>new FL.FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json',f=>{candleFont={f,TG:TG.TextGeometry};ok(candleFont);},undefined,no))).catch(e=>{candleFontP=null;throw e;});return candleFontP;}
+const MAX_STICKS=40,MAX_AGE=99;
+/* where little candles go: rings from the edge inward, as many as fit on each ring */
+function candleSpots(T,n){if(n===1)return [[0,0]];const out=[];
+  if(n<=12){for(let i=0;i<n;i++){const a=Math.PI+i/n*Math.PI*2,[rb]=edgeAt(T.P,a);const r=rb*(n>8?.78:.68);out.push([Math.sin(a)*r,Math.cos(a)*r]);}return out;}
+  const rings=[.84,.62,.4,.18].map(f=>({f,cap:Math.max(1,Math.floor(Math.PI*2*f*T.R/.06))}));let left=n;
+  for(const rg of rings){if(left<=0)break;const k=Math.min(left,rg.cap);rg.k=k;left-=k;}
+  if(left>0){const tot=rings.reduce((a,r)=>a+r.cap,0);rings.forEach(r=>r.k=Math.round(n*r.cap/tot));rings[0].k+=n-rings.reduce((a,r)=>a+r.k,0);}
+  rings.forEach((rg,j)=>{for(let i=0;i<(rg.k||0);i++){const a=Math.PI+(i+j*.5)/rg.k*Math.PI*2,[rb]=edgeAt(T.P,a);out.push([Math.sin(a)*rb*rg.f,Math.cos(a)*rb*rg.f]);}});return out;}
 function buildCandles(){const C=SAVE.cake,T=bk.tiers[bk.tiers.length-1];bk.flames=[];if(bk.light){bk.light.parent&&bk.light.parent.remove(bk.light);bk.light=null;}
-  if(bk.candleG){bk.candleG.parent&&bk.candleG.parent.remove(bk.candleG);}if(!T||!C.candles)return;const g=bk.candleG=new THREE.Group();g.position.y=T.h-.004;T.g.add(g);
-  const n=C.candles,stripe=tgeo('cand',()=>cyl(.011,.011,.13,10)),wick=tgeo('wick',()=>cyl(.002,.002,.02,4)),fl=tgeo('flame',()=>sph(.014,10,8));
-  for(let i=0;i<n;i++){const a=n===1?0:Math.PI+i/n*Math.PI*2,[rb]=edgeAt(T.P,a),r=n===1?0:rb*(n>8?.78:.68);const col=C.candleC==='rainbow'?RAINBOW6[i%6]:C.candleC;
-    const cg=new THREE.Group();cg.position.set(Math.sin(a)*r,0,Math.cos(a)*r);g.add(cg);M(stripe,cmat('cnd'+col,()=>phys(col,{map:TEX.stripes,roughness:.4,clearcoat:.5})),0,.065,0,cg,false,false);M(wick,cmat('wick',()=>std('#222')),0,.14,0,cg,false,false);
-    const f=M(fl,glow('#ffcc55',3),0,.163,0,cg,false,false);f.scale.y=1.8;f.visible=C.lit!==false;bk.flames.push(f);}
-  bk.light=new THREE.PointLight('#ffb060',C.lit!==false?6:0,3,2);bk.light.position.y=.35;g.add(bk.light);}
+  if(bk.candleG){bk.candleG.parent&&bk.candleG.parent.remove(bk.candleG);disposeTree(bk.candleG);bk.candleG=null;}if(!T||!C.candles)return;
+  const g=bk.candleG=new THREE.Group();g.position.y=T.h-.004;T.g.add(g);const lit=C.lit!==false;
+  const wick=tgeo('wick',()=>cyl(.002,.002,.02,4)),fl=tgeo('flame',()=>sph(.014,10,8)),wickM=cmat('wick',()=>std('#222'));
+  const flame=(parent,x,y,z)=>{M(wick,wickM,x,y+.008,z,parent,false,false);const f=M(fl,glow('#ffcc55',3),x,y+.031,z,parent,false,false);f.scale.y=1.8;f.visible=lit;bk.flames.push(f);};
+  if(C.candleType==='number'){
+    if(!candleFont){loadCandleFont().then(()=>{if(SAVE.cake===C&&C.candleType==='number')buildCandles();}).catch(()=>{if(SAVE.cake===C){C.candleType='sticks';persist();buildCandles();toast('Number candles need the internet. Here are little candles instead 🕯️');if(bakeryOpen&&btab==='candles')renderBakery();}});return;}
+    const digits=String(Math.min(MAX_AGE,C.candles)).split(''),size=Math.min(.2,T.R*.5),gap=size*.12;
+    const geos=digits.map(d=>{const key='num'+d+size.toFixed(3);return tgeo(key,()=>{const gg=new candleFont.TG(d,{font:candleFont.f,size,height:size*.28,curveSegments:6,bevelEnabled:true,bevelThickness:size*.04,bevelSize:size*.03,bevelSegments:3});gg.computeBoundingBox();const b=gg.boundingBox;gg.translate(-(b.min.x+b.max.x)/2,-b.min.y,-(b.min.z+b.max.z)/2);gg.computeBoundingBox();return gg;});});
+    const widths=geos.map(gg=>gg.boundingBox.max.x-gg.boundingBox.min.x);let x=-(widths.reduce((a,w)=>a+w,0)+gap*(digits.length-1))/2;
+    geos.forEach((gg,i)=>{const col=C.candleC==='rainbow'?['#ff4d8d','#8e6cff','#2fb6ff'][i%3]:C.candleC;const w=widths[i],cx=x+w/2;x+=w+gap;
+      M(gg,cmat('ncnd'+col,()=>phys(col,{roughness:.3,clearcoat:1,sheen:.4})),cx,0,-T.R*.12,g,true,false);
+      const top=gg.boundingBox.max.y;flame(g,cx,top,-T.R*.12);});}
+  else{const n=Math.min(MAX_STICKS,C.candles),spots=candleSpots(T,n),thin=n>16?.8:1,stripe=tgeo('cand'+thin,()=>cyl(.011*thin,.011*thin,.13,10));
+    spots.forEach(([x,z],i)=>{const col=C.candleC==='rainbow'?RAINBOW6[i%6]:C.candleC;const cg=new THREE.Group();cg.position.set(x,0,z);g.add(cg);
+      M(stripe,cmat('cnd'+col,()=>phys(col,{map:TEX.stripes,roughness:.4,clearcoat:.5})),0,.065,0,cg,false,false);flame(cg,0,.13,0);});}
+  bk.light=new THREE.PointLight('#ffb060',lit?6:0,3,2);bk.light.position.y=.35;g.add(bk.light);}
 anims.push((t,dt)=>{const root=Z.bakery.cakeRoot;if(!bakeryOpen)bk.spinT+=dt*.35;bk.spin+=(bk.spinT-bk.spin)*Math.min(1,dt*8);root.rotation.y=bk.spin;
   bk.flames.forEach((f,i)=>{if(f.visible)f.scale.set(1+.15*Math.sin(t*20+i),1.8+.3*Math.sin(t*15+i*2),1);});if(bk.light){const on=bk.flames.filter(f=>f.visible).length;bk.light.intensity=on?3+on*.6+Math.sin(t*17):0;}});
 
@@ -1968,7 +1990,12 @@ function renderBakery(){const C=SAVE.cake;$('#btabs').innerHTML=BTABS.map(([id,i
     if(TCOLOR.has(btop))h+=`<h3>Topping color</h3>${sw(FROST,btopC,'topc')}`;
     h+=`<div style="height:12px"></div><div class="chips"><button data-tact="ring">⭕ Add a ring</button><button data-tact="undo">↩️ Undo</button><button data-tact="clear">🧽 Clear toppings</button></div>`;}
   else if(btab==='write')h=`<h3>Write on top of your cake</h3><input class="binput" id="btext" maxlength="28" placeholder="Type a message" autocomplete="off" value="${(C.text||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}"><div style="height:10px"></div><div class="chips">${WRITE_IDEAS(SAVE.name||'Brynny').map(t=>`<button data-wtext="${t.replace(/"/g,'&quot;')}">${t}</button>`).join('')}<button data-wtext="">🧽 Erase</button></div><h3>Icing color</h3>${sw(['#ff3b6b','#c2185b','#ff6fae','#e0263b','#8e6cff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#ff8a1f','#4a2a17','#ffffff','#d4af37'],C.textC,'textc')}`;
-  else{const lit=C.lit!==false&&C.candles>0;h=`<h3>How many candles?</h3>${chips([...Array(11)].map((_,i)=>[i,'',String(i)]),C.candles,'candles')}${C.candles?`<h3>Candle color</h3>${sw(CANDLEC.slice(1),C.candleC,'candlec',`<button class="sw fancy${C.candleC==='rainbow'?' on':''}" style="background:conic-gradient(#ff6f91,#ffe066,#7ee081,#4fb6ff,#b388ff,#ff6f91)" data-candlec="rainbow" aria-label="rainbow">🌈</button>`)}<div style="height:14px"></div>${lit?'<button class="btn" data-blow="1">🌬️ Make a wish and blow!</button><p class="drawhint">Or tap a flame to blow it out.</p>':'<button class="btn" data-light="1">🔥 Light the candles</button>'}`:'<p class="drawhint">Add some candles for a birthday cake!</p>'}`;}
+  else{const lit=C.lit!==false&&C.candles>0,num=C.candleType==='number',max=num?MAX_AGE:MAX_STICKS;
+    h=`<h3>Candle type</h3>${chips([['sticks','🕯️','Little candles'],['number','🔢','Number candles']],num?'number':'sticks','ctype')}
+    <h3>${num?'How old? 🎂':'How many candles?'}</h3><div class="cstep"><button data-cstep="-1" aria-label="fewer">−</button><b>${C.candles}</b><button data-cstep="1" aria-label="more">+</button></div>
+    <div style="height:8px"></div>${chips([0,1,5,10,11,16,21,30].filter(v=>v<=max).map(v=>[v,'',String(v)]),C.candles,'candles')}
+    ${num?'<p class="drawhint">A big number candle, like 11 or 21. Up to 99!</p>':`<p class="drawhint">Up to ${MAX_STICKS} candles. Want a big number instead? Pick 🔢 Number candles.</p>`}
+    ${C.candles?`<h3>Candle color</h3>${sw(CANDLEC.slice(1),C.candleC,'candlec',`<button class="sw fancy${C.candleC==='rainbow'?' on':''}" style="background:conic-gradient(#ff6f91,#ffe066,#7ee081,#4fb6ff,#b388ff,#ff6f91)" data-candlec="rainbow" aria-label="rainbow">🌈</button>`)}<div style="height:14px"></div>${lit?'<button class="btn" data-blow="1">🌬️ Make a wish and blow!</button><p class="drawhint">Or tap a flame to blow it out.</p>':'<button class="btn" data-light="1">🔥 Light the candles</button>'}`:''}`;}
   $('#bcontent').innerHTML=h;
   const inp=$('#btext');if(inp){inp.addEventListener('input',()=>{SAVE.cake.text=inp.value;bk.dirty=true;buildText();persist();});inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});}}
 $('#btabs').onclick=e=>{const b=e.target.closest('[data-btab]');if(!b)return;btab=b.dataset.btab;bcam.dp=0;sfx('pop');renderBakery();$('#bcontent').scrollTop=0;};
@@ -1995,7 +2022,8 @@ $('#bcontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;const
   if(d.tact==='clear'){C.top=[];cakeChanged();sfx('pop');return;}
   if(d.wtext!=null){C.text=d.wtext;bk.dirty=true;const i=$('#btext');if(i)i.value=C.text;buildText();persist();sfx('pop');if(C.text)cakeCheer();return;}
   if(d.textc){C.textC=d.textc;buildText();persist();sfx('pop');renderBakery();return;}
-  if(d.candles!=null){C.candles=+d.candles;C.lit=true;buildText();buildCandles();persist();sfx('pop');renderBakery();return;}
+  if(d.candles!=null||d.cstep){const max=C.candleType==='number'?MAX_AGE:MAX_STICKS;C.candles=Math.max(0,Math.min(max,d.cstep?(C.candles||0)+(+d.cstep):+d.candles));C.lit=true;bk.dirty=true;buildText();buildCandles();persist();sfx('pop');renderBakery();return;}
+  if(d.ctype){C.candleType=d.ctype;if(d.ctype==='number'&&!C.candles)C.candles=11;if(d.ctype==='sticks')C.candles=Math.min(MAX_STICKS,C.candles);C.lit=true;bk.dirty=true;buildText();buildCandles();persist();sfx('pop');renderBakery();return;}
   if(d.candlec){C.candleC=d.candlec;buildCandles();persist();sfx('pop');renderBakery();return;}
   if(d.blow){blowAll();return;}
   if(d.light){C.lit=true;bk.flames.forEach((f,i)=>setTimeout(()=>{f.visible=true;sfx('pop');},i*120));persist();setTimeout(renderBakery,bk.flames.length*120+50);return;}};
