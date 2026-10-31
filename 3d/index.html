@@ -117,6 +117,7 @@ body.dressing #jump,body.dressing #hint,body.dressing #side,body.dressing #poseB
   <button class="rb" id="dressBtn" aria-label="Dress up">👗<small>Dress</small></button>
   <button class="rb" id="photoBtn" aria-label="Take a picture">📸<small>Photo</small></button>
   <button class="rb" id="musicBtn" aria-label="Music">🎵<small>Music</small></button>
+  <button class="rb" id="setBtn" aria-label="Settings">⚙️<small>Settings</small></button>
 </div>
 <div class="hud" id="actions"></div>
 <div class="hud pill" id="hint">Drag on the left side to walk.<br>Drag on the right side to look around.</div>
@@ -142,6 +143,12 @@ body.dressing #jump,body.dressing #hint,body.dressing #side,body.dressing #poseB
 </div>
 
 <div class="modal" id="photo"><div class="card"><img id="photoImg" alt="Your picture"><a class="btn" id="photoSave" download="dress-up-world.png">💾 Save</a><button class="btn ghost" id="photoClose">Close</button></div></div>
+
+<div class="modal" id="settings"><div class="card">
+  <h2 style="margin:0 0 14px">⚙️ Settings</h2>
+  <a class="btn" href="../" style="display:block">🏠 Go back to the 2D studio</a>
+  <button class="btn ghost" id="setClose" style="display:block;width:calc(100% - 8px);margin-top:12px">Close</button>
+</div></div>
 
 <div class="modal" id="welcome"><div class="card">
   <h1>Brynny's <em>Dress-Up World</em></h1>
@@ -1074,6 +1081,9 @@ let wantPhoto=false;$('#photoBtn').onclick=()=>{wantPhoto=true;};
 function takePhoto(){const url=canvas.toDataURL('image/png');$('#flash').style.transition='none';$('#flash').style.opacity=.9;requestAnimationFrame(()=>{$('#flash').style.transition='opacity .5s';$('#flash').style.opacity=0;});
   try{sndCam.currentTime=0;sndCam.play().catch(()=>{});}catch(e){}$('#photoImg').src=url;$('#photoSave').href=url;setTimeout(()=>$('#photo').classList.add('show'),350);}
 $('#photoClose').onclick=()=>$('#photo').classList.remove('show');
+$('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#settings').classList.add('show');};
+$('#setClose').onclick=()=>$('#settings').classList.remove('show');
+$('#settings').onclick=e=>{if(e.target.id==='settings')$('#settings').classList.remove('show');};
 
 /* runway pose */
 $('#poseBtn').onclick=()=>{av.play('pose');try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}setTimeout(()=>{wantPhoto=true;},700);burst(new THREE.Vector3(player.pos.x,player.pos.y+1.2,player.pos.z),'#ffd6f0',60,3);};
