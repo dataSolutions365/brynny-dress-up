@@ -273,6 +273,7 @@ body.contest #closet{display:none}
 import * as THREE from 'three';
 import {Reflector} from 'three/addons/objects/Reflector.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#c');
@@ -911,22 +912,33 @@ function onDock(x,z){const b=Z.beach;const [lx,lz]=b.toLocal(x,z);return Math.ab
 const LIMB={};const UP=new THREE.Vector3(0,1,0);
 function limbPart(geo,pos,dir){const q=new THREE.Quaternion().setFromUnitVectors(UP,dir.clone().normalize());geo.applyQuaternion(q);geo.translate(pos.x,pos.y,pos.z);return geo;}
 function handGeo(sx){const k='h'+sx;if(LIMB[k])return LIMB[k];const parts=[],nails=[];
-  const palm=new THREE.SphereGeometry(1,16,12);palm.scale(.025,.028,.0105);palm.translate(0,-.024,0);parts.push(palm);
-  const c=.18,d=new THREE.Vector3(0,-Math.cos(c),-Math.sin(c)),n=new THREE.Vector3(0,-Math.sin(c),Math.cos(c));
-  // index (next to the thumb) to pinky
-  [[.0165,.04,.0051],[.0055,.045,.0053],[-.0055,.042,.0051],[-.0163,.033,.0045]].forEach(([fx,L,r])=>{fx*=-sx;const b=new THREE.Vector3(fx,-.044,0);const g=new THREE.CapsuleGeometry(r,L,4,10);
-    const mid=b.clone().addScaledVector(d,L/2);parts.push(limbPart(g,mid,d.clone().negate()));const tip=b.clone().addScaledVector(d,L+r*.15);nails.push({p:tip.addScaledVector(n,r*.72),d:d.clone(),n:n.clone(),r});});
-  const td=new THREE.Vector3(-sx*.42,-1,.32).normalize(),tb=new THREE.Vector3(-sx*.021,-.017,.002),tn=new THREE.Vector3(-sx*.75,.15,.65).normalize();
-  const tg=new THREE.CapsuleGeometry(.006,.028,4,10);parts.push(limbPart(tg,tb.clone().addScaledVector(td,.016),td.clone().negate()));
-  nails.push({p:tb.clone().addScaledVector(td,.033).addScaledVector(tn,.0046),d:td.clone(),n:tn,r:.0058});
-  const g=mergeGeometries(parts.map(x=>x.toNonIndexed()));g.computeVertexNormals();return LIMB[k]={g,nails};}
-function footGeo(sx){const k='f'+sx;if(LIMB[k])return LIMB[k];const parts=[],nails=[];
-  const heel=new THREE.SphereGeometry(1,16,12);heel.scale(.042,.034,.06);heel.translate(0,-.018,.0);parts.push(heel);
-  const body=new THREE.SphereGeometry(1,16,12);body.scale(.043,.025,.058);body.translate(-sx*.004,-.03,.045);parts.push(body);
-  // big toe on the inside, then smaller toes
-  [[.019,.012,.118,.014],[.0035,.0082,.113,.011],[-.009,.0076,.107,.01],[-.0205,.007,.099,.009],[-.03,.0062,.089,.008]].forEach(([x,r,zz,L])=>{x*=-sx;const g=new THREE.CapsuleGeometry(r,L,4,10);const dd=new THREE.Vector3(0,-.08,1).normalize();
-    const pos=new THREE.Vector3(x,-.034+r*.3,zz);parts.push(limbPart(g,pos,dd));nails.push({p:new THREE.Vector3(x,-.034+r*1.36,zz+L*.3),d:dd,n:new THREE.Vector3(0,1,.08).normalize(),r});});
-  const g=mergeGeometries(parts.map(x=>x.toNonIndexed()));g.computeVertexNormals();return LIMB[k]={g,nails};}
+  const palm=new RoundedBoxGeometry(.048,.052,.0135,4,.0064);{const pp=palm.attributes.position;for(let i=0;i<pp.count;i++){const y=pp.getY(i),t=Math.min(1,Math.max(0,(y+.004)/.03));pp.setX(i,pp.getX(i)*(1-.22*t));pp.setZ(i,pp.getZ(i)*(1+.25*t));}}palm.translate(0,-.027,0);parts.push(palm);
+  // long slim fingers: index (by the thumb), middle, ring, pinky. Each tapers to a rounded tip.
+  [[.0158,.046,.0052,-.05],[.0053,.051,.0054,-.015],[-.0053,.048,.0052,.02],[-.0155,.039,.0047,.065]].forEach(([fx,L,r,fan])=>{fx*=-sx;fan*=-sx;
+    const d=new THREE.Vector3(Math.sin(fan),-Math.cos(fan),0).applyAxisAngle(new THREE.Vector3(1,0,0),.12).normalize();const n=new THREE.Vector3(0,0,1).addScaledVector(d,-d.z).normalize();
+    const b=new THREE.Vector3(fx,-.049,0);parts.push(limbPart(new THREE.CylinderGeometry(r,r*.8,L,12),b.clone().addScaledVector(d,L/2),d.clone().negate()));
+    const tip=new THREE.SphereGeometry(r*.8,12,8);tip.translate(...b.clone().addScaledVector(d,L).toArray());parts.push(tip);
+    const kn=new THREE.SphereGeometry(r*1.02,12,8);kn.translate(...b.toArray());parts.push(kn);
+    nails.push({p:b.clone().addScaledVector(d,L-r*.35).addScaledVector(n,r*.7),d,n,r:r*.95});});
+  const td=new THREE.Vector3(-sx*.6,-1,.42).normalize(),tb=new THREE.Vector3(-sx*.022,-.016,.003),tn=new THREE.Vector3(-sx*.6,.25,.75).normalize().addScaledVector(td,0).normalize();
+  const TL=.032;parts.push(limbPart(new THREE.CylinderGeometry(.0068,.0052,TL,12),tb.clone().addScaledVector(td,TL/2),td.clone().negate()));
+  const tt=new THREE.SphereGeometry(.0052,12,8);tt.translate(...tb.clone().addScaledVector(td,TL).toArray());parts.push(tt);
+  nails.push({p:tb.clone().addScaledVector(td,TL-.002).addScaledVector(tn,.0042),d:td.clone(),n:tn.clone().addScaledVector(td,-tn.dot(td)).normalize(),r:.0055});
+  const g=mergeGeometries(parts.map(x=>{x=x.index?x.toNonIndexed():x;['uv1','uv2'].forEach(a=>x.deleteAttribute(a));return x;}));g.computeVertexNormals();return LIMB[k]={g,nails};}
+function footGeo(sx){const k='f'+sx;if(LIMB[k])return LIMB[k];const parts=[],nails=[];const m=-sx;
+  // a slim footprint: round heel, narrow arch, wider ball (x>0 is the big toe side)
+  const pts=[[0,-.046],[.014,-.041],[.019,-.025],[.015,.01],[.018,.045],[.023,.07],[.02,.084],[.008,.088],[-.006,.086],[-.019,.079],[-.024,.062],[-.023,.035],[-.02,0],[-.019,-.028],[-.012,-.042]];
+  const sh=new THREE.Shape();pts.forEach(([x,y],i)=>i?sh.lineTo(x*m,y):sh.moveTo(x*m,y));
+  const body=new THREE.ExtrudeGeometry(sh,{depth:.018,bevelEnabled:true,bevelThickness:.009,bevelSize:.007,bevelSegments:4,curveSegments:8});body.rotateX(Math.PI/2);
+  body.computeBoundingBox();body.translate(0,-.062-body.boundingBox.min.y,0);
+  const bp=body.attributes.position;for(let i=0;i<bp.count;i++){const y=bp.getY(i),z=bp.getZ(i);if(y>-.05){const t=Math.min(1,Math.max(0,(.06-z)/.1)),x=bp.getX(i)/.026,dome=Math.max(0,1-x*x);bp.setY(i,y+(y+.05)*(1.6*t*t*(3-2*t)+.7*dome));}}
+  parts.push(body);
+  // tapered toes: the big toe leads, the rest get smaller and step back
+  [[.0138,.0094,.078,.034],[.0012,.0066,.08,.028],[-.0092,.0062,.077,.025],[-.0178,.0057,.072,.021],[-.025,.0052,.066,.017]].forEach(([x,r,zz,L])=>{x*=m;const d=new THREE.Vector3(x*.4,-.12,1).normalize();
+    const b=new THREE.Vector3(x,-.06+r+.006,zz);parts.push(limbPart(new THREE.CylinderGeometry(r*.92,r,L,12),b.clone().addScaledVector(d,L/2),d.clone()));
+    const tip=new THREE.SphereGeometry(r*.92,12,8);tip.translate(...b.clone().addScaledVector(d,L).toArray());parts.push(tip);
+    const n=new THREE.Vector3(0,1,0).addScaledVector(d,-d.y).normalize();nails.push({p:b.clone().addScaledVector(d,L-r*.25).addScaledVector(n,r*.78),d,n,r:r*.95});});
+  const g=mergeGeometries(parts.map(x=>{x=x.index?x.toNonIndexed():x;['uv1','uv2'].forEach(a=>x.deleteAttribute(a));return x;}));g.computeVertexNormals();return LIMB[k]={g,nails};}
 const HIP=.82;
 function lookMat(color,kind='fabric'){const c=new THREE.Color(color);
   switch(kind){
@@ -1145,7 +1157,7 @@ class Avatar{
     /* nails: manicure and pedicure polish from the glam mirror */
     {const N=look.nails||{};const nm=(c,f)=>{const m=mat(c,{glitter:'sparkle',chrome:'metal',jelly:'gem'}[f]||'shiny');if(f==='chrome')m.roughness=.12;return m;};
       const col=(c,i)=>c==='rainbow'?['#ff3b6b','#ffd23f','#7ee081','#4fb6ff','#b388ff'][i%5]:c;
-      const nailOn=(grp,spot,m,toe)=>{const r=spot.r;const n=P(sph(1,12,8),m,grp,spot.p.x,spot.p.y,spot.p.z);n.scale.set(r*(toe?.72:.82),r*(toe?.8:1.35),r*(toe?.2:.32));
+      const nailOn=(grp,spot,m,toe)=>{const r=spot.r;const n=P(sph(1,12,8),m,grp,spot.p.x,spot.p.y,spot.p.z);n.scale.set(r*(toe?.7:.8),r*(toe?.95:1.3),r*(toe?.22:.26));
         const by=spot.d.clone().negate(),bx=new THREE.Vector3().crossVectors(by,spot.n).normalize();n.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(bx,spot.d.clone().negate(),spot.n));n.castShadow=false;};
       if(N.c)for(const a of arms){const ms={};a.hand.userData.nails.forEach((sp,i)=>{const c=col(N.c,i);nailOn(a.hand,sp,ms[c]||(ms[c]=nm(c,N.f)),false);});}
       if(N.t)for(const l of legs){const ms={};l.an.userData.nails.forEach((sp,i)=>{const c=col(N.t,i);nailOn(l.an,sp,ms[c]||(ms[c]=nm(c,N.tf)),true);});}}
@@ -2209,8 +2221,8 @@ function closeGlam(){if(!glamOpen)return;glamOpen=false;closetOpen=false;czoom='
   toast('Looking fabulous! ✨ Now try the 🏆 model contest!');}
 function glamCam(dt){if(!glamOpen||ctab==='makeup')return;const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
   if(ctab==='hair'){T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=cam.closetYaw+.75;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
-  else if(ctab==='nails'){player.face=agFace(-1,0);T=av.arms[0].hand.getWorldPosition(new THREE.Vector3()).add(av.arms[1].hand.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);Pp=T.clone().addScaledVector(fwd,.22).add(new THREE.Vector3(0,.3,0));}
-  else{player.face=agFace(0,1);T=av.legs[0].an.getWorldPosition(new THREE.Vector3()).add(av.legs[1].an.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).addScaledVector(fwd,.07);Pp=T.clone().addScaledVector(fwd,.2).add(new THREE.Vector3(0,.36,0));}
+  else if(ctab==='nails'){player.face=agFace(-1,0);T=av.arms[0].hand.getWorldPosition(new THREE.Vector3()).add(av.arms[1].hand.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);Pp=T.clone().addScaledVector(fwd,.2).add(new THREE.Vector3(0,.27,0));}
+  else{player.face=agFace(0,1);T=av.legs[0].an.getWorldPosition(new THREE.Vector3()).add(av.legs[1].an.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).addScaledVector(fwd,.1);Pp=T.clone().addScaledVector(fwd,.12).add(new THREE.Vector3(0,.36,0));}
   if(!gcam.init){gcam.p.copy(Pp);gcam.t.copy(T);gcam.init=true;}const k=Math.min(1,dt*5);gcam.p.lerp(Pp,k);gcam.t.lerp(T,k);camera.position.copy(gcam.p);camera.lookAt(gcam.t);}
 function glamClick(b){const L=SAVE.look;
   if(b.dataset.nail){L.nails=Object.assign({},L.nails);L.nails[b.dataset.nail]=b.dataset.c||null;persist();glamSeat(true);sfx('pop');renderCloset();return true;}
