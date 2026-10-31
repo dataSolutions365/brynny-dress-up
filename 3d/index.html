@@ -346,6 +346,10 @@ const SHOP=[
 const shopItem=k=>SHOP.find(s=>s.k===k);
 const owns=k=>!!(SAVE.owned&&SAVE.owned[k]);
 const locked=k=>!!shopItem(k)&&!owns(k);
+// holiday things (s.hol) only show up during their holiday, unless you already bought them
+const seasonOn=h=>!!(window.__season&&window.__season.on(h));
+const offSeason=k=>{const s=shopItem(k);return !!(s&&s.hol&&!owns(k)&&!seasonOn(s.hol));};
+const inSeason=list=>list.filter(x=>!offSeason('look:'+x[0]));
 const myColors=base=>base.concat(...SHOP.filter(s=>s.c&&owns(s.k)).map(s=>s.c));
 const TREATS=[['🧁','Cupcake'],['🍦','Ice cream'],['🎂','Party cake']],TREAT_FOOD={'🧁':40,'🍦':40,'🎂':100};
 let shopOpen=false;
@@ -431,7 +435,8 @@ anims.push(t=>{if(++wTick%2)return;for(let i=0;i<wpos.count;i++){const x=wbase[i
 function patch(r,mat,x,z,y=.02){const m=M(new THREE.CircleGeometry(r,64),mat,x,y,z,scene,false,true);m.rotation.x=-Math.PI/2;mat.polygonOffset=true;mat.polygonOffsetFactor=-2;mat.polygonOffsetUnits=-2;return m;}
 
 /* clouds */
-for(let i=0;i<10;i++){const g=new THREE.Group();const cm=std('#ffffff',{roughness:1,emissive:'#ffffff',emissiveIntensity:.25});
+const CLOUD_MATS=[];
+for(let i=0;i<10;i++){const g=new THREE.Group();const cm=std('#ffffff',{roughness:1,emissive:'#ffffff',emissiveIntensity:.25});CLOUD_MATS.push(cm);
   for(let j=0;j<5;j++){const s=M(sph(3+rand()*3,14,10),cm,(j-2)*4+rand()*2,rand()*2,rand()*3,g,false,false);s.scale.y=.6;}
   const a=rand()*Math.PI*2,d=60+rand()*80;g.position.set(Math.sin(a)*d,34+rand()*16,Math.cos(a)*d);scene.add(g);
   const sp=.4+rand()*.5;anims.push((t,dt)=>{g.position.x+=dt*sp;if(g.position.x>160)g.position.x=-160;});}
@@ -462,12 +467,13 @@ const Z=Object.fromEntries(ZONES.map(z=>[z.id,z]));
 const PUSH=[];function pushable(z,m,r,h){PUSH.push({z,m,r,h,y0:m.position.y,vx:0,vz:0,vy:0,spin:0,tx:0,tz:0,ry:m.rotation.y});return m;}
 
 /* paths */
+const LAMPS=[],lampMat=glow('#fff1c4',1.6);// street lights (seasons.js turns them up at night)
 const pathMat=std('#ffffff',{map:TEX.stone,roughness:.85});pathMat.polygonOffset=true;pathMat.polygonOffsetFactor=-1;pathMat.polygonOffsetUnits=-1;
 {const ring=M(new THREE.RingGeometry(6.4,7.9,72),pathMat,0,.012,0,scene,false,true);ring.rotation.x=-Math.PI/2;
  for(const z of ZONES){if(!z.d)continue;const g=new THREE.Group();g.rotation.y=Math.atan2(z.x,z.z);scene.add(g);
   const len=z.d-z.r*.5-7;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,7+len/2,g,false,true);p.rotation.x=-Math.PI/2;
   for(const s of [-1,1]){const lx=s*1.9,lz=7+len*.55;const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
-    M(sph(.2,16,12),glow('#fff1c4',1.6),lx,2.7,lz,g,false,false);const wp=new THREE.Vector3(lx,0,lz).applyAxisAngle(new THREE.Vector3(0,1,0),g.rotation.y);obs.push({x:wp.x,z:wp.z,r:.2});}}}
+    LAMPS.push(M(sph(.2,16,12),lampMat,lx,2.7,lz,g,false,false));const wp=new THREE.Vector3(lx,0,lz).applyAxisAngle(new THREE.Vector3(0,1,0),g.rotation.y);obs.push({x:wp.x,z:wp.z,r:.2});}}}
 
 /* signposts */
 function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6);g.position.set(x,0,w);g.rotation.y=z.rot;scene.add(g);
@@ -1232,6 +1238,10 @@ class Avatar{
         P(sph(.11,24,18),bm,bg).scale.set(1,1.15,1);P(new THREE.ConeGeometry(.016,.03,10),bm,bg,0,-.135,0).rotation.x=Math.PI;P(cyl(.002,.002,.72,6),mat('#ffffff'),bg,0,-.5,0);}
       if(ex.pearls){const m=mat(ex.pearls,'shiny');for(let i=0;i<14;i++){const a=i/14*Math.PI*2;P(sph(.012,8,6),m,spine,Math.sin(a)*.065,.45-Math.max(0,Math.cos(a))*.03,Math.cos(a)*.055);}}
       if(ex.scarf){const m=mat(ex.scarf);P(new THREE.TorusGeometry(.065,.03,10,24),m,spine,0,.46,0).rotation.x=Math.PI/2;const tail=P(capTop(.03,.16),m,spine,.04,.46,.07);tail.scale.z=.4;tail.rotation.x=-.15;}}
+    /* holiday costumes: their 3D pieces live in seasons.js (window.__costumes[id](kit,color)) */
+    {const C=window.__costumes;if(C){const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,av:this};
+      for(const slot of ['dress','top','hat']){const it=look[slot];if(it&&C[it.id])C[it.id](kit,it.c);}
+      for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
       this.lipM.color.set(mk.lips||(this.glam?'#c96f7c':'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
@@ -1556,10 +1566,10 @@ function renderCloset(){const L=SAVE.look;
       `<h3>🌸 Blush</h3>`+ch('blush',[['none','None'],['pink','Pink'],['peach','Peach'],['rose','Rose']]);}
   else if(ctab==='skin'){h+=`<h3>Look style</h3><div class="grid">${[['glam','💃','Glam girl'],['cute','🧸','Cute cartoon']].map(([v,e,n])=>`<button class="item${(L.style||'glam')===v?' on':''}" data-style="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`+((L.style||'glam')!=='cute'?FACEOPT.map(([k,t,opts])=>`<h3>${t}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${((L.face||{})[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join(''):'')+`<h3>Skin tone</h3>`+sw(SKIN,L.skin,'skin')+`<h3>Eye color</h3>`+sw(EYES,L.eyes,'eyes');}
   else{const list=CAT[ctab],k=KEY[ctab];
-    if(ctab==='extras'){h+=`<h3>Tap to add or take off</h3><div class="grid">${list.map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${L.extras[id]?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
+    if(ctab==='extras'){h+=`<h3>Tap to add or take off</h3><div class="grid">${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${L.extras[id]?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
       if(lastExtra&&L.extras[lastExtra])h+=`<h3>Color</h3>`+sw(myColors(COLORS),L.extras[lastExtra],'item');}
     else{const cur=L[k];const none=ctab!=='shoes'&&ctab!=='dresses'?`<button class="item${!cur?' on':''}" data-item=""><b>🚫</b><span>None</span></button>`:'';
-      h+=`<div class="grid">${none}${list.map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
+      h+=`<div class="grid">${none}${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
       if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
   $('#ccontent').innerHTML=h;}
 function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny','#ff4d8d',true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;}
@@ -2076,7 +2086,9 @@ function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;S
   if(kind==='treat')toast(`Feed the ${s.n.toLowerCase()} to your pet at the 🐾 Pet Parlor!`);
   refreshOpen();}
 function wearIt(k){const [kind,id]=k.split(':');
-  if(kind==='look'){const L=SAVE.look;if(id==='stargown'){L.dress={id,c:'#3b2fa0'};L.top=L.bottom=null;}else{const it=EXTRAS.find(x=>x[0]===id);L.extras[id]=L.extras[id]||it[3];if(!closetOpen||ctab==='extras')lastExtra=id;}
+  if(kind==='look'){const L=SAVE.look,f=a=>a.find(x=>x[0]===id),d=f(DRESSES),h=f(HATS),t=f(TOPS);
+    if(d){L.dress={id,c:d[3]};L.top=L.bottom=null;}else if(h)L.hat={id,c:h[3]};else if(t){L.top={id,c:t[3]};L.dress=null;if(!L.bottom)L.bottom={id:'jeans',c:'#3a5bd9'};}
+    else{const it=f(EXTRAS);L.extras[id]=L.extras[id]||it[3];if(!closetOpen||ctab==='extras')lastExtra=id;}
     av.dress(L);persist();av.play('twirl');}
   if(kind==='pet'){const pt=pPet||myPet();if(!pt){toast('Adopt a pet first, then they can wear it! 🐾');return;}const c=petCare(pt),it=PHATS.find(x=>x[0]===id);c.fit.hat={id,c:it[3]};dressPet(pt);persist();pt.happy=2;pt.speak('So fancy! 💖');}
   refreshOpen();}
@@ -2085,20 +2097,22 @@ function refreshOpen(){if(shopOpen)renderShop();else if(parlorOpen)renderParlor(
 // the shop
 const STABS=[['outfits','👗','Outfits'],['pets','🐾','Pets'],['colors','🎨','Colors'],['moves','💃','Moves'],['earn','🪙','Earn']];
 const SHINT={outfits:'New outfits show up in your 👗 closet once they are yours.',pets:'Pet things show up in the 🐾 Pet Parlor.',colors:'New colors show up everywhere you pick a color.',moves:'New moves show up with your other moves.'};
-let stab='outfits';
-function renderShop(){showCoins();
-  $('#stabs').innerHTML=STABS.map(([id,ico,n])=>`<button class="tab${id===stab?' on':''}" data-stab="${id}"><b>${ico}</b>${n}</button>`).join('');
+let stab=null;
+// during a holiday the shop gets a tab of its own (window.__season comes from seasons.js)
+const seasonTab=()=>{const H=window.__season&&window.__season.now();return H&&SHOP.some(s=>s.hol===H.id)?['season',H.e,H.n]:null;};
+function renderShop(){showCoins();const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only come in the shop during ${ST[2]}. Once you buy one, it's yours forever.`;if(stab==='season'&&!ST)stab='outfits';
+  $('#stabs').innerHTML=(ST?[ST]:[]).concat(STABS).map(([id,ico,n])=>`<button class="tab${id===stab?' on':''}" data-stab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';
   if(stab==='earn'){const quests=!!(window.__game&&window.__game.townSave);
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
       [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
-  else h=`<div class="grid">${SHOP.filter(s=>s.tab===stab).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
 $('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
 $('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};
 function openShop(tab){if(closetOpen||!started)return;const g=window.__game;if(g&&g.closeTalk)g.closeTalk();
-  shopOpen=closetOpen=true;if(tab)stab=tab;else if(giftReady())stab='earn';document.body.classList.add('dressing','shopping');
+  shopOpen=closetOpen=true;if(tab)stab=tab;else if(giftReady())stab='earn';else if(!stab)stab=seasonTab()?'season':'outfits';document.body.classList.add('dressing','shopping');
   player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';renderShop();$('#shop').classList.add('show');$('#scontent').scrollTop=0;sfx('pop');}
 function closeShop(){if(!shopOpen)return;shopOpen=closetOpen=false;document.body.classList.remove('dressing','shopping');$('#shop').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;}
 coinEl.onclick=()=>{if(shopOpen)closeShop();else openShop();};$('#sdone').onclick=closeShop;
@@ -2126,6 +2140,8 @@ let started=false;
 
 /* ===== talking with townspeople ===== */
 let talkF=null,talkNear=null,talkMode='main';
+// extra talk buttons other parts of the game can add (like trick-or-treat): {id,btn:f=>[emoji,label]|null,act:f=>{}}
+const TALK_EXTRA=[];
 const hearts=f=>{const h=townSave(f).h;return '💖'.repeat(h)+'🤍'.repeat(5-h);};
 function addHeart(f,n=1){const s=townSave(f),was=s.h;s.h=Math.min(5,s.h+n);persist();if(s.h===was)return;if(talkF===f)renderTalk();
   floaties(f.g.position.clone().add(new THREE.Vector3(0,1.9,0)),'💖',4+n*2);
@@ -2149,7 +2165,8 @@ function renderTalk(){const f=talkF;if(!f)return;$('#tface').textContent=f.info.
   if(talkMode==='qa'){h=f.qa.a.map((a,i)=>b('a'+i,a[0].split(' ')[0],a[0].split(' ').slice(1).join(' '))).join('');}
   else if(talkMode==='offer'){h=b('yes','👍','Okay!','go')+b('no','🙈','Not now');}
   else{const Q=questOf(f),ready=questReady(f),s=townSave(f);
-    h=b('chat','💬','Chat')+b('nice','💖','Compliment')+b('dance','💃','Dance')+b('wave','👋','Wave')+
+    const X=TALK_EXTRA.map(x=>{const r=x.btn(f);return r&&b(x.id,r[0],r[1],'go');}).filter(Boolean).join('');
+    h=b('chat','💬','Chat')+b('nice','💖','Compliment')+b('dance','💃','Dance')+(X||b('wave','👋','Wave'))+
       (ready?b('quest','🎁','I did it!','go'):Q?b('quest','⭐','My task'):b('quest','⭐','Need help?'))+
       (s.h>=3?(f.follow?b('stay','🛑','Stop walking'):b('follow','🚶‍♀️','Walk with me')):b('bye','👋','Bye'));}
   $('#topts').innerHTML=h;}
@@ -2166,6 +2183,7 @@ function openTalk(f){if(closetOpen||!started)return;did('talk',f.name);if(talkF&
 function closeTalk(){if(!talkF)return;const f=talkF;talkF=null;document.body.classList.remove('talking');$('#talk').classList.remove('show');f.cool=8;f.wait=1+Math.random()*2;talkNear=null;talkBtn();}
 $('#tbye').onclick=()=>{if(talkF){talkF.play('wave');friendBubble(talkF,'Bye bye! 👋');}closeTalk();};
 $('#topts').addEventListener('click',e=>{const b=e.target.closest('button');const f=talkF;if(!b||!f)return;const t=b.dataset.t;sfx('pop');const s=townSave(f);
+  const X=TALK_EXTRA.find(x=>x.id===t);if(X){X.act(f);return;}
   if(t==='chat'){if(Math.random()<.4){f.qa=rnd(QA);talkMode='qa';tsay(f,f.qa.q);}else tsay(f,rnd(f.info.chat));}
   else if(t[0]==='a'&&talkMode==='qa'){const a=f.qa.a[+t.slice(1)];talkMode='main';tsay(f,a[1]);if(!f.qaHeart){f.qaHeart=true;addHeart(f);}}
   else if(t==='nice'){const line=rnd(PLAYER_COMPLIMENTS(f));av.play('kiss');friendBubble(f,'💖');$('#tsay').textContent='';
@@ -2425,7 +2443,7 @@ function glamCheck(L){const mk=L.makeup||{},N=L.nails||{};const n=[!!mk.shadow,m
   const r={mk:Math.min(3,n),nails:N.c?1:0,toes:N.t?1:0,hair:L.hair.shine||SALON.has(L.hair.id)?1:0};r.G=(r.mk+r.nails+r.toes+r.hair)/6;return r;}
 function judgeCards(T,G,W){return JUDGES.map(j=>{const v=j.w[0]*T+j.w[1]*G+j.w[2]*W;return Math.max(1,Math.min(10,Math.round(1.6+v*8.4+(Math.random()-.5)*1.2)));});}
 function themeLook(base,th,q){const l=JSON.parse(JSON.stringify(base));const yes=()=>Math.random()<q;const cols=COLORS.filter(c=>th.fams.includes(fam(c)));const tc=()=>yes()&&cols.length?rnd(cols):rnd(COLORS);
-  const pick=(arr,list)=>{const good=arr.filter(x=>list.includes(x[0]));return yes()&&good.length?rnd(good):rnd(arr);};
+  const pick=(arr,list)=>{arr=inSeason(arr);const good=arr.filter(x=>list.includes(x[0]));return yes()&&good.length?rnd(good):rnd(arr);};
   if(th.dress.length&&(!th.top.length||Math.random()<.6)){const d=pick(DRESSES,th.dress);l.dress={id:d[0],c:tc()};l.top=l.bottom=null;}
   else{const t=pick(TOPS,th.top),b=pick(BOTTOMS,th.bottom);l.dress=null;l.top={id:t[0],c:tc()};l.bottom={id:b[0],c:th.pink?tc():b[3]};}
   const s=pick(SHOES,th.shoes);l.shoes={id:s[0],c:th.pink?tc():s[3]};
@@ -2474,7 +2492,7 @@ function renderContest(){const C=SAVE.contest||{};let h='';$('#cttitle').textCon
     h+=`<div class="ctbtns">${fin?`<button class="btn" data-ct="again">🔁 Play again</button><button class="btn ghost" data-ct="leave">Done</button>`:`<button class="btn big" data-ct="next">${ct.round<2?'Next round ▶':'See who won! 🏆'}</button>`}</div>`;}
   $('#ctcontent').innerHTML=h;}
 $('#ctcontent').onclick=e=>{const b=e.target.closest('[data-ct]');if(!b)return;const k=b.dataset.ct;sfx('pop');
-  if(k==='start'||k==='again'){const pool=CT_THEMES.slice().sort(()=>Math.random()-.5);Object.assign(ct,{themes:pool.slice(0,3),round:0,you:[],riv:[[],[],[]],phase:'prep'});dressRivals();renderContest();$('#ctcontent').scrollTop=0;banner(`${themeNow().e} ${themeNow().n}`);}
+  if(k==='start'||k==='again'){const pool=CT_THEMES.filter(t=>!t.hol).sort(()=>Math.random()-.5),hol=CT_THEMES.find(t=>t.hol&&seasonOn(t.hol));Object.assign(ct,{themes:hol?[hol].concat(pool.slice(0,2)):pool.slice(0,3),round:0,you:[],riv:[[],[],[]],phase:'prep'});dressRivals();renderContest();$('#ctcontent').scrollTop=0;banner(`${themeNow().e} ${themeNow().n}`);}
   else if(k==='closet'){ct.sub='closet';$('#contest').classList.remove('show');document.body.classList.remove('contest');closetOpen=false;cam.yaw=player.face;ctab=ctab==='makeup'||GTABS.some(g=>g[0]===ctab)&&ctab!=='hair'?'dresses':ctab;openCloset();}
   else if(k==='glam'){ct.sub='glam';$('#contest').classList.remove('show');document.body.classList.remove('contest');closetOpen=false;openGlam(true);}
   else if(k==='walk')startShow();
@@ -2736,7 +2754,8 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code===
 let miniT=0;
 onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('tada');banner(`🎉 You made it!`);burst(player.pos.clone().add(new THREE.Vector3(0,1.5,0)),'#ff8fc8',40,3);setDest(null);}
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
-window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp};
+window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
+  sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
 Object.assign(window.__game,{glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
 </script>
 <script>
@@ -2745,5 +2764,6 @@ setTimeout(()=>{const l=document.getElementById('loading');if(l)l.textContent='C
 </script>
 <script type="module" src="online.js"></script>
 <script type="module" src="challenges.js"></script>
+<script type="module" src="seasons.js"></script>
 </body>
 </html>
