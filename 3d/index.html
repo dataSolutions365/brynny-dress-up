@@ -1327,6 +1327,7 @@ $('#wname').addEventListener('keydown',e=>{if(e.key==='Enter')$('#play').click()
 let started=false;
 
 /* ================= LOOP ================= */
+const onTick=[];// extra per-frame hooks (online play)
 const clock=new THREE.Clock();let curZone=null,onPad=true,onRunway=false,onPPad=false;
 const tmpV=new THREE.Vector3();
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
@@ -1374,6 +1375,7 @@ function tick(){const dt=Math.min(.05,clock.getDelta()),t=clock.elapsedTime;
   for(const f of FRIENDS)stepFriend(f,dt);
   for(const pt of PETS)stepPet(pt,dt);if(started&&!closetOpen)petButton();
   for(const a of anims)a(t,dt);tickBursts(dt);
+  for(const f of onTick)f(dt);
   // camera
   const playMode=!closetOpen;
   const ZM={eyes:[.012,.3],lips:[-.058,.26],face:[-.01,.55]}[closetOpen?czoom:'']||null;
@@ -1401,11 +1403,12 @@ addEventListener('resize',resize);resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)music.pause();else if(musicOn&&started&&music.src)music.play().catch(()=>{});});
 renderer.setAnimationLoop(tick);
 $('#loading').remove();$('#welcome').classList.add('show');
-window.__game={player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();}};
+window.__game={player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp};
 </script>
 <script>
 // show a friendly message if the 3D engine can't load (old phone or no internet)
 setTimeout(()=>{const l=document.getElementById('loading');if(l)l.textContent='Could not load the 3D world. Check the internet and try again.';},15000);
 </script>
+<script type="module" src="online.js"></script>
 </body>
 </html>
