@@ -21,6 +21,12 @@ Everything saves on the device that's playing it (browser storage).
 ## 3D world (new)
 A 3D version lives in the `3d/` folder (open `3d/index.html`, or `/3d/` on the website). Walk around an island with a Sparkle Studio, Birthday Party, Halloween Hollow, Christmas Village, Beach, Runway, and Spring Garden; change clothes in the closet; meet friends; and collect 24 stars. On a phone, drag on the left side of the screen to walk and on the right side to look around. It uses the same music files as the 2D studio.
 
+In the 3D world you can also:
+- Do moves from the buttons around Jump: wave, dance, twirl, kiss, clap, cheer, flip, sit, pose, curtsy, magic, and star jump. Tap ⋯ for more.
+- Do close-up makeup in the closet's 💄 Makeup tab: zoom to the eyes or lips, draw on the face with your finger, and pick eyeshadow, eyeliner, lashes, face gems, lipstick, lip liner, gloss, and blush.
+- Pick your look: a glam fashion-doll girl (the default) or a cute cartoon, on the welcome screen or in the closet's Face tab.
+- Adopt a pet. Walk up to a kitty, puppy, squirrel, or bunny and tap Adopt, and it follows you everywhere.
+
 ## Play it
 Open `index.html` in a browser, or visit the GitHub Pages link for this repository.
 
