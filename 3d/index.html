@@ -2264,7 +2264,7 @@ function glamClick(b){const L=SAVE.look;if(beautyClick(b))return true;
 
 /* ---------- hands-on beauty: style hair and put on makeup with your finger ---------- */
 const HTOOLS=[['brush','🪮','Brush','Brush down the hair to make it smooth, straight and shiny.'],['straight','🔥','Straightener','Glide the flat iron down the hair to make it super straight and shiny.'],['curl','🌀','Curling iron','Rub the curling iron on the hair to curl it. Rub more for big curls!'],['cut','✂️','Scissors','Drag the scissors over the hair to cut it shorter. Long hair turns into a bob, then short.'],
-  ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
+  ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['braid','🪢','Braid','Swipe back and forth across her hair, left then right, to cross the strands over. Keep going to finish the braid!'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
 const MTOOLS=[['lips','💄','Lipstick','Rub on the lips.'],['gloss','✨','Gloss','Rub on the lips to make them shiny.'],['shadow','👁️','Eyeshadow','Rub on the eyelids.'],['liner','✏️','Eyeliner','Swipe across the eyes.'],['lashes','🪶','Mascara','Brush the lashes. Each swipe makes them longer.'],
   ['blush','🌸','Blush','Rub on the cheeks.'],['gems','💎','Face gems','Tap beside the eyes.'],['paint','🖌️','Paint','Draw anything on the face.']];
 let hTool='brush',mTool='lips',sprayC='#ff7eb6',clipC='#ff6fae',hstroke=null,mstroke=null;const MKC={lips:MK_LIPS,gloss:null,shadow:MK_SHADOW,liner:['#2b1d16','#000000','#6a3df0','#3a5bd9','#2fd1c5','#d4af37','#ff3b6b'],lashes:null,blush:[['pink','#ff8fb0'],['peach','#ffab85'],['rose','#dc6080']],gems:null};
@@ -2299,14 +2299,14 @@ function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
 // hair strokes
 function hairHit(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);return ray.intersectObjects(av.hairMeshes||[],false)[0]||null;}
 let hairDirty=0;
-function hairStroke(e,first){const h=hairHit(e);if(!h)return false;if(hTool!=='clip')showHTool(h.point);const H=SAVE.look.hair,P=h.point;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
+function hairStroke(e,first){if(hTool==='braid'&&!first){braidStroke(e,false);return true;}const h=hairHit(e);if(!h)return false;if(hTool==='braid'){braidStroke(e,first,h.point);hstroke.x=e.clientX;hstroke.y=e.clientY;return true;}if(hTool!=='clip'){showHTool(h.point);hwRoot=h.point.clone();}const H=SAVE.look.hair,P=h.point;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
   const k=d*.0016,cl=v=>Math.min(1,Math.max(0,v));let fx='#ffffff';
   if(hTool==='straight'){H.curl=cl((H.curl||0)-k*2.4);H.vol=cl((H.vol||0)-k*.8);if(hstroke.go>90&&!H.shine){H.shine=true;toast('✨ Sleek and shiny!');}fx='#ffe0b0';if(d&&Math.random()<.25)tone(220,.1,'sine',.025,0,180);}
   else if(hTool==='brush'){H.curl=cl((H.curl||0)-k*1.3);H.vol=cl((H.vol||0)-k*.4);if(hstroke.go>140&&!H.shine){H.shine=true;toast('✨ So shiny!');}if(d)sfx('brush');}
   else if(hTool==='curl'){H.curl=cl((H.curl||0)+k*1.2);fx='#ffd6ea';if(d&&Math.random()<.3)tone(900,.08,'sine',.04,0,1200);}
   else if(hTool==='dry'){H.vol=cl((H.vol||0)+k*1.1);fx='#cfefff';if(d&&Math.random()<.4)tone(160,.12,'sawtooth',.02,0,200);}
   else if(hTool==='cut'||hTool==='grow'){const s=hTool==='cut'?-1:1;H.len=(H.len||1)+s*k*.9;fx=hTool==='cut'?'#d9d9e8':'#7ee081';
-    if(hTool==='cut'&&d&&hstroke.go-(hstroke.snip||0)>40){hstroke.snip=hstroke.go;tone(2400,.04,'square',.05);tone(1800,.04,'square',.05,.05);}
+    if(hTool==='cut'&&d&&hstroke.go-(hstroke.snip||0)>40){hstroke.snip=hstroke.go;tone(2400,.04,'square',.05);tone(1800,.04,'square',.05,.05);burst(P.clone(),H.c,6,.5,.04);}
     const longish=['long','waves'];if(s<0&&H.len<.42&&longish.includes(H.id)){H.id='bob';H.len=1;toast('✂️ A cute bob!');}else if(s<0&&H.len<.5&&H.id==='bob'){H.id='pixie';H.len=1;toast('✂️ A short pixie cut!');}
     else if(s>0&&H.id==='pixie'&&H.len>1.15){H.id='bob';H.len=.6;toast('🌱 It grew into a bob!');}else if(s>0&&H.id==='bob'&&H.len>1.25){H.id='long';H.len=.5;toast('🌱 Long hair!');}
     H.len=Math.min(1.3,Math.max(.35,H.len));}
@@ -2328,7 +2328,7 @@ function mkStroke(e,first){const g=mkRegion(e);if(!g)return false;const mk=SAVE.
   if(first||Math.random()<.3)burst(g.p.clone(),mTool==='lips'?mkColor.lips:mTool==='shadow'?mkColor.shadow:'#ffd6f0',first?10:4,.4,.035);return true;}
 
 /* real salon tools that follow your finger in the hair */
-const htoolG={};let htoolOn=null,htoolT=0;
+const htoolG={};let htoolOn=null,htoolT=0,htoolHide=0;
 function buildHTool(id){const g=new THREE.Group(),cyl=(a,b,h,n=14)=>new THREE.CylinderGeometry(a,b,h,n),m=(geo,mt,x=0,y=0,z=0,par=g)=>{const o=new THREE.Mesh(geo,mt);o.position.set(x,y,z);par.add(o);return o;};
   const pink=std('#ff6fae',{roughness:.35}),silver=std('#d8dbe3',{metalness:.9,roughness:.25}),black=std('#2d2d3a',{roughness:.4}),white=std('#ffffff',{roughness:.4}),gold=std('#d4af37',{metalness:.8,roughness:.3});
   if(id==='curl'){m(cyl(.016,.016,.16),silver,0,.08,0);m(new THREE.SphereGeometry(.016,12,8),silver,0,0,0);const cl=m(new THREE.BoxGeometry(.02,.13,.008),silver,0,.085,.019);g.userData.spin=m(cyl(.003,.003,.001),silver,0,0,0);
@@ -2345,20 +2345,55 @@ function buildHTool(id){const g=new THREE.Group(),cyl=(a,b,h,n=14)=>new THREE.Cy
   else if(id==='grow'){m(cyl(.026,.03,.09),std('#7ee081',{roughness:.3}),0,.08,0);m(cyl(.02,.02,.03),white,0,.14,0);m(new THREE.TorusGeometry(.02,.006,6,16),white,0,.02,0).rotation.x=Math.PI/2;}
   else return null;
   g.traverse(o=>{if(o.isMesh)o.castShadow=false;});g.visible=false;scene.add(g);return g;}
-function showHTool(P){let g=htoolG[hTool];if(g===undefined)g=htoolG[hTool]=buildHTool(hTool);for(const k in htoolG)if(htoolG[k])htoolG[k].visible=false;if(!g){htoolOn=null;return;}
-  const toCam=camera.position.clone().sub(P).normalize();g.position.copy(P).addScaledVector(toCam,hTool==='dry'?.09:hTool==='spray'?.12:.025);
-  g.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,g.position,new THREE.Vector3(0,1,0)));g.rotateY(Math.PI);g.rotateX(-.35);g.rotateZ(hTool==='curl'||hTool==='straight'?.2:-.5);
+function showHTool(P){clearTimeout(htoolHide);let g=htoolG[hTool];if(g===undefined)g=htoolG[hTool]=buildHTool(hTool);for(const k in htoolG)if(htoolG[k])htoolG[k].visible=false;if(!g){htoolOn=null;return;}
+  const toCam=camera.position.clone().sub(P).normalize();g.position.copy(P).addScaledVector(toCam,hTool==='dry'?.13:hTool==='spray'?.14:.06);
+  g.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,g.position,new THREE.Vector3(0,1,0)));g.rotateY(Math.PI);g.rotateX(-.35);g.rotateZ(hTool==='curl'||hTool==='straight'?.2:-.5);if(hTool==='straight')g.rotateY(.9);
   g.visible=true;htoolOn=g;}
 function hideHTool(){for(const k in htoolG)if(htoolG[k])htoolG[k].visible=false;htoolOn=null;}
 anims.push((t)=>{const g=htoolOn;if(!g||!g.visible)return;const u=g.userData;
   if(u.jaw){const o=u.snip?(Math.sin(t*14)*.5+.5)*.35:(Math.sin(t*6)*.5+.5)*.06;u.jaw[0].rotation.z=o;u.jaw[1].rotation.z=-o;}
   if(u.spinAxis)g.children[0].rotation.y=t*6;if(u.wob)g.rotation.z+=Math.sin(t*40)*.004;});
+
+/* real hair strands that wrap around the curling iron, slide through the straightener, catch in the brush and blow in the dryer air */
+const hwrap=new THREE.Group();scene.add(hwrap);hwrap.visible=false;const hwMat=new THREE.MeshStandardMaterial({color:'#7a4a2a',roughness:.45,metalness:.05});let hwRoot=null;
+function wrapStrands(t){hwrap.children.forEach(o=>o.geometry.dispose());hwrap.clear();const g=htoolOn;if(!g||!g.visible||!hwRoot||!hstroke){hwrap.visible=false;return;}
+  hwrap.visible=true;g.updateMatrixWorld(true);hwMat.color.set(SAVE.look.hair.c);const W=(x,y,z)=>g.localToWorld(new THREE.Vector3(x,y,z)),go=hstroke.go||0,id=hTool;
+  const tube=(pts,r)=>{const c=new THREE.CatmullRomCurve3(pts);const m=new THREE.Mesh(new THREE.TubeGeometry(c,Math.max(16,pts.length*6),r,6,false),hwMat);m.castShadow=false;hwrap.add(m);};
+  const root=hwRoot.clone(),rootIn=root.clone().lerp(av.head.getWorldPosition(new THREE.Vector3()),.06);
+  if(id==='curl'){const turns=1.5+Math.min(3,go/120),spin=t*6;for(let s=0;s<3;s++){const pts=[rootIn.clone()],off=s*.7,n=Math.round(turns*10);
+      for(let i=0;i<=n;i++){const a=spin+off+i/10*Math.PI*2,y=.025+(i/n)*.12;pts.push(W(Math.cos(a)*(.021+s*.002),y,Math.sin(a)*(.021+s*.002)));}tube(pts,.0042);}}
+  else if(id==='straight'){for(let s=-2;s<=2;s++){const z=s*.006,w=Math.sin(t*5+s)*.002;tube([rootIn.clone(),W(w,.02,z),W(0,.08,z),W(0,.16,z),W(0,.24,z),W(w*3,.29,z+w)],.0035);}}
+  else if(id==='brush'){for(let s=0;s<6;s++){const x=-.024+s*.0096,sw=Math.sin(t*4+s)*.006;tube([rootIn.clone(),W(x*.6,.005,.004),W(x,.03,.012),W(x,.06,.014),W(x+sw,.085,.008),W(x+sw*1.5,.1,-.004)],.0028);}}
+  else if(id==='dry'){const nozzle=W(0,.06,.04),dir=root.clone().sub(nozzle).normalize(),up=new THREE.Vector3(0,1,0),side=new THREE.Vector3().crossVectors(dir,up).normalize();
+    for(let s=0;s<9;s++){const a=s/9*Math.PI*2,sp=side.clone().multiplyScalar(Math.cos(a)*.03).addScaledVector(up,Math.sin(a)*.03),pts=[rootIn.clone().add(sp.clone().multiplyScalar(.3))];
+      for(let i=1;i<=6;i++){const f=i/6,fl=Math.sin(t*22+s*1.7+i*1.3)*.012*f;pts.push(root.clone().addScaledVector(dir,f*.12).addScaledVector(sp,1+f*1.4).addScaledVector(up,fl).addScaledVector(side,fl*.8));}tube(pts,.0032);}}
+  else if(id==='cut'){for(let s=0;s<4;s++){const z=(s-1.5)*.005;tube([rootIn.clone(),W(.002,.03,z),W(0,.055,z)],.003);}}
+  else {hwrap.visible=false;}}
+anims.push((t)=>wrapStrands(t));
+
+/* braid it yourself: each left/right swipe crosses one strand over */
+const braidG=new THREE.Group();braidG.matrixAutoUpdate=false;scene.add(braidG);const BRAID_N=10;let braidP=0,braidSide=1;
+function drawBraid(){braidG.children.forEach(o=>o.geometry.dispose());braidG.clear();if(!glamOpen||hTool!=='braid'||ctab!=='hair'){braidG.visible=false;return;}
+  braidG.visible=true;av.head.updateWorldMatrix(true,false);braidG.matrix.copy(av.head.matrixWorld);braidG.matrixWorldNeedsUpdate=true;
+  hwMat.color.set(SAVE.look.hair.c);const x0=braidSide*.1,y0=-.04,z0=.02,woven=braidP/BRAID_N*.34,loose=.1,step=.034;
+  for(let k=0;k<3;k++){const ph=k*Math.PI*2/3,pts=[];
+    for(let y=0;y<=woven;y+=.006){const a=y/step*Math.PI+ph;pts.push(new THREE.Vector3(x0+Math.sin(a)*.016,y0-y,z0+Math.cos(a*2)*.006+.004));}
+    const a=woven/step*Math.PI+ph,e=new THREE.Vector3(x0+Math.sin(a)*.016,y0-woven,z0+.004);pts.push(e.clone());
+    for(let i=1;i<=4;i++)pts.push(new THREE.Vector3(x0+(k-1)*.02*i/4*1.4,y0-woven-loose*i/4,z0+.004));
+    if(pts.length<2)continue;const m=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),Math.max(12,pts.length*3),.0085,6,false),hwMat);m.castShadow=false;braidG.add(m);}
+  if(braidP>0){const band=new THREE.Mesh(new THREE.TorusGeometry(.016,.005,6,14),std(clipC,{roughness:.4}));band.position.set(x0,y0-woven,z0+.004);band.rotation.x=Math.PI/2;braidG.add(band);}}
+anims.push(()=>drawBraid());
+function braidStroke(e,first,P){if(first){const lp=av.head.worldToLocal(P.clone());if(braidP===0)braidSide=lp.x<0?-1:1;hstroke.dir=0;hstroke.ax=e.clientX;return;}
+  const dx=e.clientX-hstroke.ax,dir=Math.sign(dx);if(Math.abs(dx)>28&&dir!==hstroke.dir){hstroke.dir=dir;hstroke.ax=e.clientX;braidP++;tone(500+braidP*60,.09,'triangle',.08);
+    if(braidP>=BRAID_N){const H=SAVE.look.hair;H.id='sidebraid';H.len=1;braidP=0;persist();hairDirty=1;toast('🪢 You braided it yourself!');sfx('tada');}
+    else if(braidP===1)toast('🪢 Left over middle… now right over middle!');}
+  else if(Math.abs(dx)>28)hstroke.ax=e.clientX;}
 function beautyDown(e){if(!glamOpen)return false;
   if(ctab==='hair'){hstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0};if(hairStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}hstroke=null;return false;}
   if(ctab==='makeup'&&mTool!=='paint'){mstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0,done:{}};if(mkStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}mstroke=null;return false;}
   return false;}
 function beautyMove(e){if(hstroke&&e.pointerId===hstroke.id){hairStroke(e,false);return true;}if(mstroke&&e.pointerId===mstroke.id){mkStroke(e,false);return true;}return false;}
-function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){hstroke=null;setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;renderCloset();}}
+function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){hstroke=null;clearTimeout(htoolHide);htoolHide=setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;renderCloset();}}
 let hairT=0;anims.push((t)=>{if(hairDirty&&glamOpen&&t-hairT>.12){hairDirty=0;hairT=t;av.dress(ctab==='toes'?Object.assign({},SAVE.look,{shoes:null}):SAVE.look);}});
 
 /* ---------- the model contest ---------- */
