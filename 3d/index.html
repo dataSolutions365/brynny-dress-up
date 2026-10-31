@@ -2116,8 +2116,8 @@ const MAPW=R+5;
 const mapW2s=(wx,wz)=>{const S=mapCv.width,k=S/(MAPW*2);return [S/2+wx*k,S/2+wz*k];};
 function drawMap(){const S=mapCv.width,k=S/(MAPW*2),x=mapX;drawWorld(x,mapW2s,k,S);
   x.textAlign='center';x.textBaseline='middle';
-  for(const z of ZONES){const [px,py]=mapW2s(z.x,z.z);x.font=`${Math.round(S*.065)}px serif`;x.fillText(zEmoji(z),px,py-S*.018);
-    x.font=`700 ${Math.round(S*.03)}px system-ui,-apple-system,sans-serif`;const t=zLabel(z),tw=x.measureText(t).width,ty=py+S*.042;
+  for(const z of ZONES){let [px,py]=mapW2s(z.x,z.z);x.font=`${Math.round(S*.065)}px serif`;x.fillText(zEmoji(z),px,py-S*.018);
+    x.font=`700 ${Math.round(S*.03)}px system-ui,-apple-system,sans-serif`;const t=zLabel(z),tw=x.measureText(t).width,ty=py+S*.042;px=Math.min(S*.95-tw/2-8,Math.max(S*.05+tw/2+8,px));
     x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.82)';x.beginPath();x.roundRect?x.roundRect(px-tw/2-8,ty-S*.022,tw+16,S*.044,S*.022):x.rect(px-tw/2-8,ty-S*.022,tw+16,S*.044);x.fill();
     x.fillStyle='#fff';x.fillText(t,px,ty+1);}
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=mapW2s(o.pos.x,o.pos.z);x.beginPath();x.arc(ox,oy,S*.016,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
