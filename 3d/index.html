@@ -91,6 +91,20 @@ input{font-family:inherit}
 .card img{width:100%;border-radius:16px;display:block;margin-bottom:14px}
 .btn{display:inline-block;background:var(--pink);color:#fff;font-weight:700;font-size:18px;padding:12px 24px;border-radius:999px;box-shadow:0 4px 0 #e04a8d;text-decoration:none;margin:4px}
 .btn.ghost{background:#f3eaf8;color:var(--ink);box-shadow:0 4px 0 #ddd0e6}
+#musicCard{max-height:calc(100dvh - 40px);display:flex;flex-direction:column}
+#musicCard h2{margin:0 0 12px}
+.mrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+.mchip{flex:1 1 140px;background:#f3eaf8;border-radius:16px;padding:12px 10px;font-weight:600;font-size:16px;min-height:48px}
+.mchip.on{background:var(--pink);color:#fff;box-shadow:0 3px 0 #e04a8d}
+#mNow{font-size:14px;color:var(--muted);margin:4px 0 10px;min-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mList{list-style:none;margin:0 0 8px;padding:0;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0;max-height:38vh;text-align:left}
+#mList li{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #f3eaf8}
+#mList li.playing{background:#fff0f7;border-radius:12px}
+#mList .mname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+#mList button{width:44px;height:44px;border-radius:50%;background:#f3eaf8;font-size:18px;flex:none}
+#mList .mempty{display:block;text-align:center;color:var(--muted);border:none;padding:12px 4px}
+#mUpload{position:relative;overflow:hidden}
+#mFile{display:none}
 #welcome{background:radial-gradient(circle at 50% 20%,rgba(255,214,234,.92),rgba(183,156,255,.92));z-index:30}
 #welcome .card{background:rgba(255,255,255,.95)}
 #welcome h1{margin:0 0 4px;font-size:30px;line-height:1.1}
@@ -276,6 +290,15 @@ body.contest #closet{display:none}
   <div><h2>🗺️ Map</h2><p id="mapTip">Tap a place and a sparkly arrow will show you the way!</p></div>
   <canvas id="mapCv" width="640" height="640" aria-label="Map of the island"></canvas>
   <div class="row"><button class="btn ghost" id="mapStop" style="display:none">🚫 Stop guiding</button><button class="btn ghost" id="mapClose">Close</button></div>
+</div></div>
+<div class="modal" id="musicM"><div class="card" id="musicCard">
+  <h2>🎵 Music</h2>
+  <div class="mrow"><button class="mchip" id="mOnOff"></button></div>
+  <div class="mrow"><button class="mchip" data-mmode="place">🏝️ Place songs</button><button class="mchip" data-mmode="mine">💖 My songs</button></div>
+  <div id="mNow"></div>
+  <ul id="mList"></ul>
+  <div class="row"><label class="btn" id="mUpload">➕ Upload a song<input type="file" id="mFile" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg" multiple></label></div>
+  <button class="btn ghost" id="mClose" style="display:block;width:calc(100% - 8px);margin-top:10px">Close</button>
 </div></div>
 <div class="modal" id="settings"><div class="card">
   <h2 style="margin:0 0 14px">⚙️ Settings</h2>
@@ -1476,9 +1499,45 @@ function sfx(k){if(k==='star'){tone(988,.15,'triangle',.18);tone(1319,.25,'trian
   if(k==='jump')tone(330,.18,'sine',.1,0,660);if(k==='pop')tone(660,.08,'triangle',.12);if(k==='bubble')tone(700+Math.random()*500,.07,'sine',.07,0,1500);if(k==='splash')tone(380,.14,'sine',.05,0,140);if(k==='blow')tone(200,.12,'sawtooth',.02,0,260);if(k==='munch'){tone(160,.06,'square',.05);tone(130,.06,'square',.05,.12);}if(k==='brush')tone(1300,.1,'sine',.07,0,1900);if(k==='tada'){[523,659,784,1047].forEach((f,i)=>tone(f,.4,'triangle',.15,i*.1));}}
 const music=new Audio();music.loop=true;music.volume=.45;let musicOn=SAVE.music!==false,curTrack='';
 const sndCam=new Audio('../audio/camera.mp3'),sndCheer=new Audio('../audio/stadium-cheer.mp3');sndCheer.volume=.5;
-function setTrack(t){if(t===curTrack)return;curTrack=t;if(!musicOn)return;const v0=music.volume;let k=0;const fade=setInterval(()=>{k++;music.volume=Math.max(0,v0*(1-k/8));if(k>=8){clearInterval(fade);music.src=`../audio/${t}.mp3`;music.volume=.45;music.play().catch(()=>{});}},40);}
+/* ---- your own songs: saved in this browser with IndexedDB ---- */
+let myMode=SAVE.musicMode==='mine',mySongs=[],myIdx=-1,myUrl='';
+const songDB=(()=>{let p;const open=()=>p||(p=new Promise((ok,no)=>{if(!window.indexedDB)return no(new Error('no idb'));const r=indexedDB.open('brynny3d-songs',1);r.onupgradeneeded=()=>r.result.createObjectStore('songs',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);}));
+  const tx=(mode,fn)=>open().then(db=>new Promise((ok,no)=>{const t=db.transaction('songs',mode);const st=t.objectStore('songs');const r=fn(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=t.onabort=()=>no(t.error);}));
+  return{all:()=>tx('readonly',st=>st.getAll()),put:o=>tx('readwrite',st=>st.put(o)),del:id=>tx('readwrite',st=>st.delete(id))};})();
+const playingMine=()=>myMode&&mySongs.length>0;
+function placeSrc(t){music.loop=true;music.src=`../audio/${t}.mp3`;music.play().catch(()=>{});}
+function playMine(i){if(!mySongs.length)return;myIdx=((i%mySongs.length)+mySongs.length)%mySongs.length;if(myUrl)URL.revokeObjectURL(myUrl);myUrl=URL.createObjectURL(mySongs[myIdx].blob);music.loop=mySongs.length===1;music.src=myUrl;music.volume=.45;if(musicOn)music.play().catch(()=>{});renderMusicPanel();}
+music.addEventListener('ended',()=>{if(playingMine())playMine(myIdx+1);});
+function setTrack(t){if(t===curTrack)return;curTrack=t;if(!musicOn||playingMine())return;const v0=music.volume;let k=0;const fade=setInterval(()=>{k++;music.volume=Math.max(0,v0*(1-k/8));if(k>=8){clearInterval(fade);if(playingMine())return;music.volume=.45;placeSrc(t);}},40);}
+function startMusic(){if(!musicOn)return;if(playingMine())playMine(myIdx<0?0:myIdx);else placeSrc(curTrack||'sparkle-room');}
 function renderMusicBtn(){$('#musicBtn').classList.toggle('off',!musicOn);}
-$('#musicBtn').onclick=()=>{musicOn=!musicOn;SAVE.music=musicOn;persist();renderMusicBtn();if(musicOn){const t=curTrack;curTrack='';setTrack(t||'sparkle-room');}else music.pause();};
+const escH=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function renderMusicPanel(){$('#mOnOff').textContent=musicOn?'🔊 Music is on':'🔇 Music is off';$('#mOnOff').classList.toggle('on',musicOn);
+  document.querySelectorAll('[data-mmode]').forEach(b=>b.classList.toggle('on',(b.dataset.mmode==='mine')===myMode));
+  $('#mNow').textContent=!musicOn?'Turn music on to hear it':playingMine()&&mySongs[myIdx]?'Now playing: '+mySongs[myIdx].name:myMode?'Upload a song to play it here':'Each place plays its own song';
+  $('#mList').innerHTML=mySongs.length?mySongs.map((s,i)=>`<li class="${playingMine()&&i===myIdx?'playing':''}"><button data-mplay="${i}" aria-label="Play">${playingMine()&&i===myIdx&&musicOn?'🎶':'▶'}</button><span class="mname">${escH(s.name)}</span><button data-mdel="${i}" aria-label="Delete">🗑️</button></li>`).join(''):'<li class="mempty">No songs yet. Tap ➕ to add one from your device!</li>';}
+function setMusicMode(mine){if(mine===myMode)return;myMode=mine;SAVE.musicMode=mine?'mine':'place';persist();if(!musicOn||!started)return renderMusicPanel();if(playingMine())playMine(myIdx<0?0:myIdx);else placeSrc(curTrack||'sparkle-room');renderMusicPanel();}
+songDB.all().then(a=>{mySongs=(a||[]).sort((x,y)=>x.added-y.added);if(myMode&&started&&musicOn&&mySongs.length&&!music.src.startsWith('blob:'))playMine(0);renderMusicPanel();}).catch(()=>{});
+$('#musicBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';renderMusicPanel();$('#musicM').classList.add('show');};
+$('#mClose').onclick=()=>$('#musicM').classList.remove('show');
+$('#musicM').onclick=e=>{if(e.target.id==='musicM')$('#musicM').classList.remove('show');};
+$('#mOnOff').onclick=()=>{musicOn=!musicOn;SAVE.music=musicOn;persist();renderMusicBtn();if(musicOn){if(started)startMusic();}else music.pause();renderMusicPanel();};
+document.querySelectorAll('[data-mmode]').forEach(b=>b.onclick=()=>{if(b.dataset.mmode==='mine'&&!mySongs.length)toast('Upload a song first! ➕');setMusicMode(b.dataset.mmode==='mine');});
+$('#mList').onclick=e=>{const p=e.target.closest('[data-mplay]'),d=e.target.closest('[data-mdel]');
+  if(p){const i=+p.dataset.mplay;if(!musicOn){musicOn=true;SAVE.music=true;persist();renderMusicBtn();}if(!myMode){myMode=true;SAVE.musicMode='mine';persist();}playMine(i);}
+  else if(d){const i=+d.dataset.mdel,s=mySongs[i];if(!s)return;songDB.del(s.id).catch(()=>{});mySongs.splice(i,1);
+    if(myIdx===i){if(mySongs.length)playMine(i);else{myIdx=-1;if(myUrl){URL.revokeObjectURL(myUrl);myUrl='';}if(musicOn&&started)placeSrc(curTrack||'sparkle-room');}}else if(myIdx>i)myIdx--;
+    toast('Song removed 🗑️');renderMusicPanel();}};
+$('#mFile').onchange=async e=>{const files=[...e.target.files];e.target.value='';let added=0,first=-1;
+  for(const f of files){if(f.size>40*1024*1024){toast(`"${f.name}" is too big (max 40 MB)`);continue;}
+    const o={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name:f.name.replace(/\.[^.]+$/,'').slice(0,60)||'My song',blob:f,added:Date.now()+added};
+    try{await songDB.put(o);}catch(err){toast('Could not save that song — your device may be out of space');continue;}
+    if(first<0)first=mySongs.length;mySongs.push(o);added++;}
+  if(!added)return renderMusicPanel();
+  toast(added>1?`Added ${added} songs! 💖`:'Song added! 💖');
+  if(!musicOn){musicOn=true;SAVE.music=true;persist();renderMusicBtn();}
+  if(!myMode){myMode=true;SAVE.musicMode='mine';persist();}
+  if(started)playMine(first);else renderMusicPanel();};
 renderMusicBtn();
 
 /* ================= UI ================= */
@@ -2114,7 +2173,7 @@ document.querySelector('.wstyle').onclick=e=>{const b=e.target.closest('[data-ws
 $('#play').onclick=()=>{const n=$('#wname').value.trim()||'Brynny';SAVE.name=n;persist();
   scene.remove(av.g);av=new Avatar(SAVE.look,n,'#ff4d8d',true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
-  if(musicOn){music.src='../audio/sparkle-room.mp3';curTrack='sparkle-room';music.play().catch(()=>{});}
+  curTrack='sparkle-room';startMusic();
   banner('✨ Sparkle Studio');setTimeout(()=>toast('Find all 24 stars! ⭐'),2000);};
 $('#wname').addEventListener('keydown',e=>{if(e.key==='Enter')$('#play').click();});
 let started=false;
