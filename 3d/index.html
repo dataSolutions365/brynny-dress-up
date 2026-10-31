@@ -457,6 +457,8 @@ for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;
   z.toWorld=(lx,lz)=>[z.x+lx*c+lz*s,z.z-lx*s+lz*c];
   z.ob=(lx,lz,r)=>{const [x,w]=z.toWorld(lx,lz);obs.push({x,z:w,r});};}
 const Z=Object.fromEntries(ZONES.map(z=>[z.id,z]));
+// small things on the ground (like presents) that get bumped, slide and tumble when you walk into them
+const PUSH=[];function pushable(z,m,r,h){PUSH.push({z,m,r,h,y0:m.position.y,vx:0,vz:0,vy:0,spin:0,tx:0,tz:0,ry:m.rotation.y});return m;}
 
 /* paths */
 const pathMat=std('#ffffff',{map:TEX.stone,roughness:.85});pathMat.polygonOffset=true;pathMat.polygonOffsetFactor=-1;pathMat.polygonOffsetUnits=-1;
@@ -529,7 +531,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
    const ph=rand()*6;anims.push(t=>{bg.position.y=Math.sin(t*1.2+ph)*.15;bg.rotation.z=Math.sin(t*.8+ph)*.06;});}
  // presents
  for(let i=0;i<7;i++){const a=deg(-70+i*23),lx=Math.sin(a)*3.4,lz=-1+Math.cos(a)*3.4-.2;const s=.45+rand()*.4;const c=pick(['#ff6fae','#4fb6ff','#ffd23f','#7ee081','#b388ff']),rc=pick(['#ffffff','#ff3b6b','#ffd23f']);
-   const pg=new THREE.Group();pg.position.set(lx,0,lz);pg.rotation.y=rand()*3;g.add(pg);
+   const pg=new THREE.Group();pg.position.set(lx,0,lz);pg.rotation.y=rand()*3;g.add(pg);pushable(z,pg,s*.62,s+.1);
    M(box(s,s,s),phys(c,{roughness:.35,clearcoat:.6}),0,s/2,0,pg);M(box(s+.01,s+.01,s*.16),phys(rc,{roughness:.3,sheen:1}),0,s/2,0,pg);M(box(s*.16,s+.01,s+.01),phys(rc,{roughness:.3,sheen:1}),0,s/2,0,pg);
    const bw=M(new THREE.TorusKnotGeometry(s*.12,s*.03,32,6,2,3),phys(rc,{roughness:.3}),0,s+.05,0,pg);bw.scale.y=.6;}
  // bunting ring
@@ -578,7 +580,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
  const star=M(new THREE.ExtrudeGeometry(st,{depth:.1,bevelEnabled:true,bevelSize:.03,bevelThickness:.03,bevelSegments:2}),new THREE.MeshStandardMaterial({color:'#ffd23f',metalness:.8,roughness:.2,emissive:'#ffb000',emissiveIntensity:1.2}),0,5.7,-.05,tg);
  anims.push(t=>star.rotation.y=t);z.ob(0,-1.5,2.2);
  const tl=new THREE.PointLight('#ffd9a0',25,12,2);tl.position.set(0,3,1.5);tg.add(tl);
- for(let i=0;i<6;i++){const a=deg(150+i*12),r=2.6,s=.5+rand()*.3;const c=pick(['#e0263b','#ffffff','#1f8a4a','#ffd23f']);M(box(s,s,s),phys(c,{roughness:.35,clearcoat:.6}),Math.sin(a)*r,s/2,-1.5+Math.cos(a)*r*-1,g).rotation.y=rand();}
+ for(let i=0;i<6;i++){const a=deg(150+i*12),r=2.6,s=.5+rand()*.3;const c=pick(['#e0263b','#ffffff','#1f8a4a','#ffd23f']);const pm=M(box(s,s,s),phys(c,{roughness:.35,clearcoat:.6}),Math.sin(a)*r,s/2,-1.5+Math.cos(a)*r*-1,g);pm.rotation.y=rand();pushable(z,pm,s*.62,s);}
  // snowman
  const sg=new THREE.Group();sg.position.set(4,0,1.5);sg.rotation.y=-.6;g.add(sg);const sn=phys('#ffffff',{roughness:.8,sheen:1,sheenColor:new THREE.Color('#dfe9ff')});
  M(sph(.75,24,18),sn,0,.7,0,sg);M(sph(.55,24,18),sn,0,1.75,0,sg);M(sph(.4,24,18),sn,0,2.5,0,sg);
@@ -2471,6 +2473,29 @@ function agencyCamClamp(tgt){const b=AG.box;const [plx,plz]=AG.toLocal(tgt.x,tgt
 const onTick=[];// extra per-frame hooks (online play)
 const clock=new THREE.Clock();let curZone=null,onPad=true,onRunway=false,onPPad=false;
 const tmpV=new THREE.Vector3();
+function stepPushables(p,dt){
+  for(const o of PUSH){const z=o.z,m=o.m,q=m.position;
+    // player bump: push it out ahead of you so it gets kicked along like the beach ball
+    const [px,pz]=z.toLocal(p.x,p.z);let dx=q.x-px,dz=q.z-pz,d=Math.hypot(dx,dz);const reach=o.r+.32;
+    if(d<reach&&d>1e-4&&p.y<q.y+o.h){dx/=d;dz/=d;const sp=Math.max(3.2,player.speed*1.15);
+      const slow=Math.hypot(o.vx,o.vz)<1.5;o.vx=dx*sp;o.vz=dz*sp;q.x=px+dx*reach;q.z=pz+dz*reach;
+      if(slow){if(q.y<=o.y0+.01)o.vy=1.8+Math.random()*1.2;o.spin=(Math.random()<.5?-1:1)*(3+Math.random()*4);tone(160+Math.random()*80,.09,'sine',.12);tone(330,.06,'triangle',.06,.03);}}
+    const v=Math.hypot(o.vx,o.vz);if(v<.02&&q.y<=o.y0&&Math.abs(o.tx)+Math.abs(o.tz)<.002)continue;
+    q.x+=o.vx*dt;q.z+=o.vz*dt;
+    // hop and land with a little bounce
+    o.vy-=18*dt;q.y+=o.vy*dt;if(q.y<o.y0){q.y=o.y0;o.vy=o.vy<-1.5?-o.vy*.35:0;}
+    const air=q.y>o.y0+.01,fr=air?.995:Math.pow(.06,dt);o.vx*=fr;o.vz*=fr;
+    // spin and tip over in the direction it slides, then settle flat again
+    o.ry+=o.spin*dt;o.spin*=Math.pow(.08,dt);
+    o.tx+=((o.vz*.12)-o.tx)*Math.min(1,dt*10);o.tz+=((-o.vx*.12)-o.tz)*Math.min(1,dt*10);m.rotation.set(o.tx,o.ry,o.tz);
+    // stay inside the zone and bounce off its things (trees, cake, other presents)
+    const r=Math.hypot(q.x,q.z),lim=z.r-.5;if(r>lim){q.x*=lim/r;q.z*=lim/r;const nx=q.x/lim,nz=q.z/lim,dot=o.vx*nx+o.vz*nz;if(dot>0){o.vx-=1.6*dot*nx;o.vz-=1.6*dot*nz;}}
+    const [wx,wz]=z.toWorld(q.x,q.z);
+    for(const ob of obs){const ox=wx-ob.x,oz=wz-ob.z,od=Math.hypot(ox,oz),mm=ob.r+o.r;if(od<mm&&od>1e-4){const [lx,lz]=z.toLocal(ob.x+ox/od*mm,ob.z+oz/od*mm);
+      const nx=lx-q.x,nz=lz-q.z,nl=Math.hypot(nx,nz)||1;q.x=lx;q.z=lz;const ux=nx/nl,uz=nz/nl,dot=o.vx*ux+o.vz*uz;if(dot<0){o.vx-=1.6*dot*ux;o.vz-=1.6*dot*uz;}}}
+    for(const b of PUSH){if(b===o||b.z!==z)continue;const bq=b.m.position,bx=q.x-bq.x,bz=q.z-bq.z,bd=Math.hypot(bx,bz),mm=o.r+b.r;
+      if(bd<mm&&bd>1e-4){const ux=bx/bd,uz=bz/bd,push=(mm-bd)/2;q.x+=ux*push;q.z+=uz*push;bq.x-=ux*push;bq.z-=uz*push;
+        const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
   const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?48.5:R+.9;if(d>lim){p.x*=lim/d;p.z*=lim/d;}}
 const angDamp=(a,b,k)=>{let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k;};
@@ -2524,6 +2549,7 @@ function tick(){const dt=Math.min(.05,clock.getDelta()),t=clock.elapsedTime;
   // beach ball
   {const b=Z.beach.ball,bp=b.m.getWorldPosition(tmpV);const dx=bp.x-p.x,dz=bp.z-p.z,d=Math.hypot(dx,dz);if(d<.7&&d>0){const [lvx,lvz]=[dx/d*4,dz/d*4];const c=Math.cos(Z.beach.rot),s=Math.sin(Z.beach.rot);b.vx=lvx*c-lvz*s;b.vz=lvx*s+lvz*c;}
     b.m.position.x+=b.vx*dt;b.m.position.z+=b.vz*dt;b.vx*=.985;b.vz*=.985;b.m.rotation.x+=b.vz*dt*2.5;b.m.rotation.z-=b.vx*dt*2.5;const bd=Math.hypot(b.m.position.x,b.m.position.z);if(bd>9){b.m.position.x*=9/bd;b.m.position.z*=9/bd;b.vx*=-.6;b.vz*=-.6;}}
+  stepPushables(p,dt);
   // friends
   for(const f of FRIENDS)stepFriend(f,dt);if(started)talkBtn();
   for(const pt of PETS)stepPet(pt,dt);if(started&&!closetOpen)petButton();
