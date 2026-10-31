@@ -157,7 +157,6 @@ body.dressing #mini,body.shopping #mini{display:none!important}
 
 <div class="hud" id="top"><div class="pill" id="place">✨ Sparkle Studio</div><div id="topr"><button class="pill" id="stars" aria-label="My stars and challenges">⭐ <b id="starN">0</b> <span>🏆</span></button><button class="pill" id="coins" aria-label="My coins and the shop">🪙 <b id="coinN">0</b> <span>🛍️</span></button></div></div>
 <div class="hud" id="side">
-  <button class="rb" id="dressBtn" aria-label="Dress up">👗<small>Dress</small></button>
   <button class="rb" id="photoBtn" aria-label="Take a picture">📸<small>Photo</small></button>
   <button class="rb" id="musicBtn" aria-label="Music">🎵<small>Music</small></button>
   <button class="rb" id="setBtn" aria-label="Settings">⚙️<small>Settings</small></button>
@@ -1103,7 +1102,11 @@ class Avatar{
       const id=h.id;
       const hang=(L0,amp,R1,curls)=>{const L=L0*HL,Y=-.01-L/2-(this.glam?0:0);R1*=1+HV*.35;const g=new THREE.CylinderGeometry(.148,R1,L,40,24,true,1.15,Math.PI*2-2.3);const pp=g.attributes.position;
         for(let i=0;i<pp.count;i++){const x=pp.getX(i),y=pp.getY(i),zz=pp.getZ(i);const t=(L/2-y)/L;const f=1+Math.sin(t*L*24)*amp*t+Math.sin(Math.atan2(x,zz)*9+t*6)*amp*.45*t;pp.setX(i,x*f);pp.setZ(i,zz*f);}g.computeVertexNormals();
-        P(g,m,head,0,Y,-.025);m.side=THREE.DoubleSide;if(curls){const rr=new THREE.IcosahedronGeometry(.026+amp*.08,1);for(let i=0;i<15;i++){const a=1.25+i/14*(Math.PI*2-2.5);P(rr.clone(),m,head,Math.sin(a)*R1*.98,Y-L/2+.01,Math.cos(a)*R1*.98-.025);}}
+        P(g,m,head,0,Y,-.025);m.side=THREE.DoubleSide;if(HC>.15){const rings=[],hr=.008+HC*.014,pitch=.05-HC*.012,n=16;for(let i=0;i<n;i++){const a=1.2+i/(n-1)*(Math.PI*2-2.4),y0=Y+L/2-.06-(i%2)*.03,y1=Y-L/2+.01,pts=[];
+          const cx=Math.sin(a)*R1*1.02,cz=Math.cos(a)*R1*1.02-.025,ph=i*1.7;for(let y=y0;y>=y1;y-=.006){const w=(y0-y)/pitch*Math.PI*2+ph,rr=hr*Math.min(1,(y0-y)/.04+.3);pts.push(new THREE.Vector3(cx+Math.cos(w)*rr,y,cz+Math.sin(w)*rr));}
+          if(pts.length>2)rings.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),pts.length*2,.0105,5,false));}
+        if(rings.length){const mg=mergeGeometries(rings);rings.forEach(r=>r.dispose());P(mg,m,head,0,0,0);}}
+        if(curls){const rr=new THREE.IcosahedronGeometry(.026+amp*.08,1);for(let i=0;i<15;i++){const a=1.25+i/14*(Math.PI*2-2.5);P(rr.clone(),m,head,Math.sin(a)*R1*.98,Y-L/2+.01,Math.cos(a)*R1*.98-.025);}}
         else P(sph(R1*.93,24,16),m,head,0,Y-L/2+.02,-.03).scale.set(1.08,.22,.72);};
       if(id==='long')hang(this.glam?.6:.4,HC*.11,this.glam?.172:.165,HC>.45);
       if(id==='ponytail'){P(sph(.032,12,10),m,head,0,.06,-.14);const t=P(capTop(.048*(1+HV*.4),.24*HL),m,head,0,.05,-.16);t.rotation.x=.45;}
@@ -1329,10 +1332,10 @@ const TOWN=[
 ];
 const LOOK_NAME=(arr,id)=>{const a=arr.find(x=>x[0]===id);return a?[a[2],a[1]]:null;};
 const QUESTS={
-  hat:{ask:'Can you put on a cute hat and come show me? 👒',hint:'Tap 👗 Dress and pick something from Hats.',check:()=>!!SAVE.look.hat},
-  dress:{ask:'Will you wear a fancy dress and come back to show me? 👗',hint:'Tap 👗 Dress and pick a dress.',check:()=>!!SAVE.look.dress},
-  wings:{ask:'I wish I could see fairy wings! Can you wear some? 🧚',hint:'Tap 👗 Dress, then look in Extras for wings.',check:()=>!!(SAVE.look.extras&&SAVE.look.extras.wings)},
-  shoes:{ask:'Show me your fanciest heels! 👠',hint:'Tap 👗 Dress and pick heels from Shoes.',check:()=>!!SAVE.look.shoes&&/heels|platforms|glass/.test(SAVE.look.shoes.id)},
+  hat:{ask:'Can you put on a cute hat and come show me? 👒',hint:'Go to the 👗 Dress up circle in the Sparkle Studio and pick something from Hats.',check:()=>!!SAVE.look.hat},
+  dress:{ask:'Will you wear a fancy dress and come back to show me? 👗',hint:'Go to the 👗 Dress up circle in the Sparkle Studio and pick a dress.',check:()=>!!SAVE.look.dress},
+  wings:{ask:'I wish I could see fairy wings! Can you wear some? 🧚',hint:'Go to the 👗 Dress up circle in the Sparkle Studio, then look in Extras for wings.',check:()=>!!(SAVE.look.extras&&SAVE.look.extras.wings)},
+  shoes:{ask:'Show me your fanciest heels! 👠',hint:'Go to the 👗 Dress up circle in the Sparkle Studio and pick heels from Shoes.',check:()=>!!SAVE.look.shoes&&/heels|platforms|glass/.test(SAVE.look.shoes.id)},
   pet:{ask:'I love animals! Can you bring a pet to meet me? 🐾',hint:'Adopt a pet and bring them here.',check:f=>{const p=myPet();return !!p&&p.pos.distanceTo(f.pos)<6;}},
   stars:{ask:'Can you find 3 stars ⭐ and come tell me?',hint:'Stars are hiding all over town!',n:3},
   twirl:{ask:'Do a twirl for me! 🌀',hint:'Use the 🌀 Twirl move next to me.',act:'twirl'},
@@ -1586,7 +1589,7 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
 function openCloset(){if(closetOpen)return;closeTalk();closetOpen=true;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');document.body.classList.add('dressing');renderCloset();$('#closet').classList.add('show');player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}
 function closeCloset(){if(glamOpen){closeGlam();return;}closetOpen=false;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();did('dress');}
 function closeClosetHook(){if(ct.on&&ct.sub==='closet'){ct.sub=null;backToContest();}}
-$('#dressBtn').onclick=openCloset;$('#done').onclick=closeCloset;
+$('#done').onclick=closeCloset;
 
 /* ================= PET PARLOR (feed, bath, nails, dress up) ================= */
 const PFOOD={cat:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],dog:[['🦴','Bone'],['🍖','Meat'],['🥕','Carrot']],squirrel:[['🌰','Acorn'],['🥜','Peanuts'],['🍓','Berry']],bunny:[['🥕','Carrot'],['🥬','Lettuce'],['🍎','Apple']]};
@@ -2254,7 +2257,7 @@ function closeGlam(){if(!glamOpen)return;hideHTool();glamOpen=false;closetOpen=f
   did('glam');if(Date.now()-(SAVE.glamPaid||0)>6e5){SAVE.glamPaid=Date.now();persist();setTimeout(()=>earn(5,'Glam time!'),700);}
   toast('Looking fabulous! ✨ Now try the 🏆 model contest!');}
 function glamCam(dt){if(!glamOpen||ctab==='makeup')return;const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
-  if(ctab==='hair'){T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=cam.closetYaw+.75;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
+  if(ctab==='hair'){T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=player.face+hairView;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
   else if(ctab==='nails'){player.face=agFace(-1,0);T=av.arms[0].hand.getWorldPosition(new THREE.Vector3()).add(av.arms[1].hand.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);Pp=T.clone().addScaledVector(fwd,.2).add(new THREE.Vector3(0,.27,0));}
   else{player.face=agFace(0,1);T=av.legs[0].an.getWorldPosition(new THREE.Vector3()).add(av.legs[1].an.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).addScaledVector(fwd,.1);Pp=T.clone().addScaledVector(fwd,.12).add(new THREE.Vector3(0,.36,0));}
   if(!gcam.init){gcam.p.copy(Pp);gcam.t.copy(T);gcam.init=true;}const k=Math.min(1,dt*5);gcam.p.lerp(Pp,k);gcam.t.lerp(T,k);camera.position.copy(gcam.p);camera.lookAt(gcam.t);}
@@ -2269,11 +2272,11 @@ const HTOOLS=[['brush','🪮','Brush','Brush down the hair to make it smooth, st
   ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['braid','🪢','Braid','Swipe back and forth across her hair, left then right, to cross the strands over. Keep going to finish the braid!'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
 const MTOOLS=[['lips','💄','Lipstick','Rub on the lips.'],['gloss','✨','Gloss','Rub on the lips to make them shiny.'],['shadow','👁️','Eyeshadow','Rub on the eyelids.'],['liner','✏️','Eyeliner','Swipe across the eyes.'],['lashes','🪶','Mascara','Brush the lashes. Each swipe makes them longer.'],
   ['blush','🌸','Blush','Rub on the cheeks.'],['gems','💎','Face gems','Tap beside the eyes.'],['paint','🖌️','Paint','Draw anything on the face.']];
-let hTool='brush',mTool='lips',sprayC='#ff7eb6',clipC='#ff6fae',hstroke=null,mstroke=null;const MKC={lips:MK_LIPS,gloss:null,shadow:MK_SHADOW,liner:['#2b1d16','#000000','#6a3df0','#3a5bd9','#2fd1c5','#d4af37','#ff3b6b'],lashes:null,blush:[['pink','#ff8fb0'],['peach','#ffab85'],['rose','#dc6080']],gems:null};
+let hairView=.75,hTool='brush',mTool='lips',sprayC='#ff7eb6',clipC='#ff6fae',hstroke=null,mstroke=null;const MKC={lips:MK_LIPS,gloss:null,shadow:MK_SHADOW,liner:['#2b1d16','#000000','#6a3df0','#3a5bd9','#2fd1c5','#d4af37','#ff3b6b'],lashes:null,blush:[['pink','#ff8fb0'],['peach','#ffab85'],['rose','#dc6080']],gems:null};
 let mkColor={lips:'#ff3b6b',shadow:'#b388ff',liner:'#2b1d16',blush:'pink'};
 const meter=(n,v)=>`<div class="meter"><span>${n}</span><i><b style="width:${Math.round(v*100)}%"></b></i></div>`;
 function hairHTML(){const H=SAVE.look.hair,t=HTOOLS.find(x=>x[0]===hTool);
-  let h=`<div class="chips tools">${HTOOLS.map(([id,e,n])=>`<button class="${hTool===id?'on':''}" data-htool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${t[3]}</p>`;
+  let h=`<div class="chips tools">${HTOOLS.map(([id,e,n])=>`<button class="${hTool===id?'on':''}" data-htool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${t[3]}</p><div class="chips"><button data-hview="1.2">⬅️ Her right side</button><button data-hview="0">🙂 Front</button><button data-hview="-1.2">➡️ Her left side</button><button data-hview="3.14">🔙 Back</button></div>`;
   h+=`<div class="hmeters">${meter('Length',((H.len||1)-.35)/.95)}${meter('Curls',H.curl||0)}${meter('Volume',H.vol||0)}</div>`;
   if(hTool==='spray')h+=`<h3>Spray color</h3><div class="swatches">${myColors(HAIRC.concat(['#ffd23f','#7ee081','#ff3b6b'])).map(c=>`<button class="sw${c===sprayC?' on':''}" style="background:${c}" data-spray="${c}"></button>`).join('')}</div>`;
   if(hTool==='clip')h+=`<h3>Clip color</h3><div class="swatches">${['#ff6fae','#ffd23f','#4fb6ff','#b388ff','#ffffff','#7ee081','#d4af37'].map(c=>`<button class="sw${c===clipC?' on':''}" style="background:${c}" data-clipc="${c}"></button>`).join('')}</div><div class="chips" style="margin-top:8px"><button data-hreset="clips">🧹 Take clips off</button></div>`;
@@ -2291,6 +2294,7 @@ function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute')return '';
   return FACEOPT.filter(([k])=>k!=='nose').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
 function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
   if(b.dataset.htool){hTool=b.dataset.htool;if(hTool==='clip'&&!b.classList.contains('on')){}else if(hTool==='clip'){}sfx('pop');renderCloset();return true;}
+  if(b.dataset.hview){hairView=+b.dataset.hview;sfx('pop');return true;}
   if(b.dataset.spray){sprayC=b.dataset.spray;sfx('pop');renderCloset();return true;}
   if(b.dataset.clipc){clipC=b.dataset.clipc;sfx('pop');renderCloset();return true;}
   if(b.dataset.hreset){if(b.dataset.hreset==='clips')H.clips=[];else{delete H.len;delete H.curl;delete H.vol;H.clips=[];}persist();glamSeat(true);renderCloset();return true;}
@@ -2301,7 +2305,7 @@ function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
 // hair strokes
 function hairHit(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);return ray.intersectObjects(av.hairMeshes||[],false)[0]||null;}
 let hairDirty=0;
-function hairStroke(e,first){if(hTool==='braid'&&!first){braidStroke(e,false);return true;}const h=hairHit(e);if(!h)return false;if(hTool==='braid'){braidStroke(e,first,h.point);hstroke.x=e.clientX;hstroke.y=e.clientY;return true;}if(hTool!=='clip'){showHTool(h.point);hwRoot=h.point.clone();}const H=SAVE.look.hair,P=h.point;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
+function hairStroke(e,first){if(hTool==='braid'&&!first){braidStroke(e,false);return true;}const h=hairHit(e);if(!h)return false;if(hTool==='braid'){braidStroke(e,first,h.point);hstroke.x=e.clientX;hstroke.y=e.clientY;return true;}if(hTool!=='clip'){showHTool(h.point);hwRoot=h.point.clone();}const H=SAVE.look.hair,P=h.point;if(!hstroke.ld&&['curl','straight','brush','dry','grow'].includes(hTool)&&!['long','waves'].includes(H.id)&&!(hTool==='grow'&&['bob','pixie'].includes(H.id))){H.id=H.curl>.45||hTool==='curl'?'waves':'long';H.len=1;hairDirty=1;toast('💁‍♀️ Let her hair down so you can style it!');}if(!hstroke.ld&&hTool==='cut'&&!['long','waves','bob','pixie'].includes(H.id)){H.id='long';H.len=1;hairDirty=1;}hstroke.ld=1;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
   const k=d*.0016,cl=v=>Math.min(1,Math.max(0,v));let fx='#ffffff';
   if(hTool==='straight'){H.curl=cl((H.curl||0)-k*2.4);H.vol=cl((H.vol||0)-k*.8);if(hstroke.go>90&&!H.shine){H.shine=true;toast('✨ Sleek and shiny!');}fx='#ffe0b0';if(d&&Math.random()<.25)tone(220,.1,'sine',.025,0,180);}
   else if(hTool==='brush'){H.curl=cl((H.curl||0)-k*1.3);H.vol=cl((H.vol||0)-k*.4);if(hstroke.go>140&&!H.shine){H.shine=true;toast('✨ So shiny!');}if(d)sfx('brush');}
@@ -2391,7 +2395,7 @@ function braidStroke(e,first,P){if(first){const lp=av.head.worldToLocal(P.clone(
     else if(braidP===1)toast('🪢 Left over middle… now right over middle!');}
   else if(Math.abs(dx)>28)hstroke.ax=e.clientX;}
 function beautyDown(e){if(!glamOpen)return false;
-  if(ctab==='hair'){hstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0};if(hairStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}hstroke=null;return false;}
+  if(ctab==='hair'){hstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0};hairStroke(e,true);try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}
   if(ctab==='makeup'&&mTool!=='paint'){mstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0,done:{}};if(mkStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}mstroke=null;return false;}
   return false;}
 function beautyMove(e){if(hstroke&&e.pointerId===hstroke.id){hairStroke(e,false);return true;}if(mstroke&&e.pointerId===mstroke.id){mkStroke(e,false);return true;}return false;}
