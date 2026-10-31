@@ -18,6 +18,9 @@ A birthday dress-up game that runs in any web browser (phone, tablet, or compute
 
 Everything saves on the device that's playing it (browser storage).
 
+## 3D world (new)
+A 3D version lives in the `3d/` folder (open `3d/index.html`, or `/3d/` on the website). Walk around an island with a Sparkle Studio, Birthday Party, Halloween Hollow, Christmas Village, Beach, Runway, and Spring Garden; change clothes in the closet; meet friends; and collect 24 stars. On a phone, drag on the left side of the screen to walk and on the right side to look around. It uses the same music files as the 2D studio.
+
 ## Play it
 Open `index.html` in a browser, or visit the GitHub Pages link for this repository.
 
