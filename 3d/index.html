@@ -155,7 +155,7 @@ body.dressing #mini,body.shopping #mini{display:none!important}
 <div id="loading">Loading the world… ✨</div>
 <canvas id="c" tabindex="0"></canvas>
 
-<div class="hud" id="top"><div class="pill" id="place">✨ Sparkle Studio</div><div id="topr"><div class="pill" id="stars">⭐ 0</div><button class="pill" id="coins" aria-label="My coins and the shop">🪙 <b id="coinN">0</b> <span>🛍️</span></button></div></div>
+<div class="hud" id="top"><div class="pill" id="place">✨ Sparkle Studio</div><div id="topr"><button class="pill" id="stars" aria-label="My stars and challenges">⭐ <b id="starN">0</b> <span>🏆</span></button><button class="pill" id="coins" aria-label="My coins and the shop">🪙 <b id="coinN">0</b> <span>🛍️</span></button></div></div>
 <div class="hud" id="side">
   <button class="rb" id="dressBtn" aria-label="Dress up">👗<small>Dress</small></button>
   <button class="rb" id="photoBtn" aria-label="Take a picture">📸<small>Photo</small></button>
@@ -308,6 +308,8 @@ const SAVE_KEY='brynny3d.v1';
 let SAVE={};
 try{SAVE=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}')||{};}catch(e){SAVE={};}
 const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}};
+// tell the star challenges (challenges.js) when you do something
+const did=(k,a)=>{try{dispatchEvent(new CustomEvent('brynny:did',{detail:{k,a}}));}catch(e){}};
 
 /* ---------- catalog (same ideas as the 2D studio) ---------- */
 const SKIN=['#ffe3cc','#f7cfae','#e6c49a','#eab38c','#c8a072','#d49a6a','#b97a4f','#8d5a3b','#6b4128','#4a2c1c'];
@@ -1411,7 +1413,7 @@ class Pet{
 const PETS=[['cat','#f4a259','Pumpkin','spring'],['cat','#3a3540','Midnight','halloween'],['dog','#d9a35b','Biscuit','beach'],['dog','#8b5a2b','Cocoa','birthday'],['squirrel','#9a9a9a','Nutmeg','christmas'],['bunny','#f5efe6','Snowball','spring'],['dog','#f3ece2','Marshmallow','studio'],['cat','#9aa0a6','Smokey','runway']].map(([k,c,n,h],i)=>{
   const pt=new Pet(k,c,n,Z[h]);const a=i*2.3,r=Z[h].r*.6;pt.pos.set(Z[h].x+Math.sin(a)*r,0,Z[h].z+Math.cos(a)*r);collide(pt.pos,.3);scene.add(pt.g);return pt;});
 const myPet=()=>PETS.find(p=>p.owned);
-function adopt(pt){if(!SAVE.adoptPaid){SAVE.adoptPaid=1;setTimeout(()=>earn(10,'New pet'),900);}const old=myPet();if(old&&old!==pt){old.owned=false;old.setTag();}pt.owned=true;pt.setTag();SAVE.pet=PETS.indexOf(pt);persist();pt.happy=2;pt.speak(rnd(PET_SAY[pt.kind]));
+function adopt(pt){did('adopt');if(!SAVE.adoptPaid){SAVE.adoptPaid=1;setTimeout(()=>earn(10,'New pet'),900);}const old=myPet();if(old&&old!==pt){old.owned=false;old.setTag();}pt.owned=true;pt.setTag();SAVE.pet=PETS.indexOf(pt);persist();pt.happy=2;pt.speak(rnd(PET_SAY[pt.kind]));
   floaties(pt.g.position.clone().add(new THREE.Vector3(0,pt.tagH,0)),'💖',8);sfx('tada');toast(`${pt.name} is your pet now! 💖 Take them to the 🐾 Pet Parlor for food, a bath, nails and outfits.`);}
 function stepPet(pt,dt){if(pt.inParlor){parlorPet(pt,dt);return;}let spd=0;const P=player.pos;
   if(pt.owned){const side=new THREE.Vector3(Math.sin(player.face+2.3)*.9,0,Math.cos(player.face+2.3)*.9).add(P);const d=Math.hypot(side.x-pt.pos.x,side.z-pt.pos.z);
@@ -1509,7 +1511,7 @@ function doAction(id){if(closetOpen||!started)return;const P=player.pos;questEve
   if(id==='dance'||id==='wave')for(const f of FRIENDS)if(f.pos.distanceTo(P)<6){setTimeout(()=>{f.play(id);if(id==='wave')friendBubble(f,`Hi ${SAVE.name||'friend'}! 👋`);},300+Math.random()*500);}
   if(myPet()&&myPet().pos.distanceTo(P)<5&&(id==='dance'||id==='cheer'||id==='magic'))myPet().happy=1.5;}
 renderActions();
-function updateStars(){const n=STARS.filter(s=>s.got).length;$('#stars').textContent=`⭐ ${n} / ${STARS.length}`;}
+function updateStars(){did('stars');}
 (SAVE.stars||[]).forEach(i=>{if(STARS[i]){STARS[i].got=true;STARS[i].m.visible=false;}});updateStars();
 
 /* photo */
@@ -1582,7 +1584,7 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
     if(ctab==='dresses'&&id){L.top=null;L.bottom=null;}if((ctab==='tops'||ctab==='bottoms')&&id){if(L.dress){L.dress=null;if(ctab==='tops'&&!L.bottom)L.bottom={id:'jeans',c:'#3a5bd9'};if(ctab==='bottoms'&&!L.top)L.top={id:'tee',c:'#ff6fae'};}}
     return changed();}};
 function openCloset(){if(closetOpen)return;closeTalk();closetOpen=true;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');document.body.classList.add('dressing');renderCloset();$('#closet').classList.add('show');player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}
-function closeCloset(){if(glamOpen){closeGlam();return;}closetOpen=false;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();}
+function closeCloset(){if(glamOpen){closeGlam();return;}closetOpen=false;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();did('dress');}
 function closeClosetHook(){if(ct.on&&ct.sub==='closet'){ct.sub=null;backToContest();}}
 $('#dressBtn').onclick=openCloset;$('#done').onclick=closeCloset;
 
@@ -1703,7 +1705,7 @@ $('#pcontent').onclick=e=>{const b=e.target.closest('button');if(!b||!pPet)retur
   if(b.dataset.pol){ppol=b.dataset.pol;sfx('pop');renderParlor();return;}
   if(b.dataset.paint){for(let i=0;i<4;i++)paintPaw(i,b.dataset.paint==='all'?ppol:null,i<3);return;}
   if(b.dataset.fit!=null){const [slot,id]=b.dataset.fit.split(':');const list=PSLOTS.find(s=>s[0]===slot)[2];const prev=c.fit[slot];
-    c.fit[slot]=id?{id,c:prev&&prev.id===id?prev.c:list.find(x=>x[0]===id)[3]}:null;pslot=slot;dressPet(pt);persist();sfx('pop');pt.happy=1.5;burst(petTop(pt),'#ffd6f0',20,1.2,.08);
+    c.fit[slot]=id?{id,c:prev&&prev.id===id?prev.c:list.find(x=>x[0]===id)[3]}:null;if(id)did('petdress');pslot=slot;dressPet(pt);persist();sfx('pop');pt.happy=1.5;burst(petTop(pt),'#ffd6f0',20,1.2,.08);
     if(id&&Math.random()<.6)pt.speak(rnd(['So fancy! 💖','I love it! ✨','Do I look cute?','Picture time! 📸']));renderParlor();return;}
   if(b.dataset.sw==='fitc'){const f=c.fit[pslot];if(f){f.c=b.dataset.c;dressPet(pt);persist();sfx('pop');renderParlor();}}};
 
@@ -1713,7 +1715,7 @@ function feedPet(e){const pt=pPet,c=petCare(pt),z=Z.parlor;if(pt.eatT>0)return;
   pt.eatT=2.2;pt.eatMax=2.2;for(let k=0;k<4;k++)setTimeout(()=>{if(pt.eatT>0)sfx('munch');},k*500);
   setTimeout(()=>{if(!parlorOpen||pPet!==pt)return;c.food=Math.min(100,c.food+(TREAT_FOOD[e]||(e==='🍪'?12:30)));persist();renderMeters();
     if(TREAT_FOOD[e]){pt.speak(rnd(['Best treat EVER! 🎉','Wow! My favorite! 💖','Sooo yummy! ✨']));floaties(petTop(pt),'✨',6);}
-    else pt.speak(c.food>=95?'Yum! All full! 💖':rnd(['Yummy! 😋','Mmm, more please!','Nom nom nom!']));pt.happy=2;pt.vy=2.5;floaties(petTop(pt),'💖',4);earn(2,'Snack time');},2250);}
+    else pt.speak(c.food>=95?'Yum! All full! 💖':rnd(['Yummy! 😋','Mmm, more please!','Nom nom nom!']));pt.happy=2;pt.vy=2.5;floaties(petTop(pt),'💖',4);earn(2,'Snack time');did('feed');},2250);}
 
 function petHit(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);
   return ray.intersectObject(pPet.body,true).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return !h.object.isSprite;})||null;}
@@ -1728,11 +1730,11 @@ function rubAt(e){const pt=pPet,h=petHit(e);if(!h)return;const c=petCare(pt),P=h
   else if(ptool==='dry'){if(pt.wet>0){setWet(pt,Math.max(0,pt.wet-.025));if(Math.random()<.35)burst(P.clone(),'#ffffff',5,1.2,.06);if(now-rub.last>160){sfx('blow');rub.last=now;}}}
   checkClean(pt);}
 function checkClean(pt){const c=petCare(pt);bathHint();if(!pt.washing)return;
-  if(dirtSum(c)===0&&!pt.bubbles.length&&pt.wet<=.001){pt.washing=false;c.cleanAt=Date.now();persist();renderMeters();sfx('tada');pt.happy=2.5;pt.vy=3;pt.speak('Squeaky clean! ✨');earn(10,'Squeaky clean');
+  if(dirtSum(c)===0&&!pt.bubbles.length&&pt.wet<=.001){pt.washing=false;c.cleanAt=Date.now();persist();renderMeters();sfx('tada');pt.happy=2.5;pt.vy=3;pt.speak('Squeaky clean! ✨');did('bath');earn(10,'Squeaky clean');
     const P=petTop(pt);for(let k=0;k<3;k++)setTimeout(()=>burst(P.clone(),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),24,1.6,.1),k*250);floaties(P,'💖',6);}}
 function paintPaw(i,col,quiet){const pt=pPet,c=petCare(pt);c.polish[i]=col==='rainbow'?RAINBOW[i]:col;paintNails(pt);persist();
   const P=pt.legs[i].paw.getWorldPosition(new THREE.Vector3());burst(P,col==='glitter'?'#ffd23f':col&&col!=='rainbow'?col:'#ffffff',12,.8,.07);
-  if(!quiet){sfx(col?'brush':'pop');if(col&&c.polish.every(Boolean)){pt.happy=2;pt.speak(rnd(['Pretty paws! 💅','Sparkly toes! ✨','I love my nails! 💖']));if(Date.now()-(c.nailPaid||0)>6e5){c.nailPaid=Date.now();persist();earn(5,'Pretty paws');}}}}
+  if(!quiet){sfx(col?'brush':'pop');if(col&&c.polish.every(Boolean)){pt.happy=2;pt.speak(rnd(['Pretty paws! 💅','Sparkly toes! ✨','I love my nails! 💖']));did('paws');if(Date.now()-(c.nailPaid||0)>6e5){c.nailPaid=Date.now();persist();earn(5,'Pretty paws');}}}}
 function nailTap(e){const pt=pPet,h=petHit(e);if(!h)return false;let best=-1,bd=.16;
   pt.legs.forEach((l,i)=>{const d=l.paw.getWorldPosition(pw).distanceTo(h.point);if(d<bd){bd=d;best=i;}});
   if(best<0){toast('Tap a paw to paint it 🐾');return true;}paintPaw(best,ppol);return true;}
@@ -1947,7 +1949,7 @@ function closeBakery(){if(!bakeryOpen)return;const z=Z.bakery;bakeryOpen=closetO
   document.body.classList.remove('dressing');$('#bakery').classList.remove('show');persist();cam.yaw=cam.cy=z.rot;player.face=z.rot;
   toast(SAVE.cake.text?`Yum! Your cake says “${SAVE.cake.text}” 🎂`:'Yum! Your cake stays on the stand 🎂');
   // coins for baking: once every 10 minutes so it can't be farmed
-  if(bk.dirty&&Date.now()-(SAVE.cakePaid||0)>6e5){SAVE.cakePaid=Date.now();persist();setTimeout(()=>earn(8,'Cake made!'),700);}bk.dirty=false;}
+  if(bk.dirty)did('cake',SAVE.cake.n);if(bk.dirty&&Date.now()-(SAVE.cakePaid||0)>6e5){SAVE.cakePaid=Date.now();persist();setTimeout(()=>earn(8,'Cake made!'),700);}bk.dirty=false;}
 $('#bdone').onclick=closeBakery;$('#bphoto').onclick=()=>{wantPhoto=true;};
 function cakeChanged(rebuild=true){if(rebuild)buildCake();bk.dirty=true;persist();}
 function renderBakery(){const C=SAVE.cake;$('#btabs').innerHTML=BTABS.map(([id,ico,n])=>`<button class="tab${id===btab?' on':''}" data-btab="${id}"><b>${ico}</b>${n}</button>`).join('');
@@ -2000,7 +2002,7 @@ $('#bcontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;const
 function blowOne(i,quiet){const f=bk.flames[i];if(!f||!f.visible)return;f.visible=false;const p=f.getWorldPosition(new THREE.Vector3());burst(p,'#cfcfd8',8,.5,.05);if(!quiet)sfx('blow');
   if(bk.flames.every(f=>!f.visible))wishMade();}
 function blowAll(){if(bk.blowing)return;bk.blowing=true;sfx('blow');bk.flames.forEach((f,i)=>setTimeout(()=>blowOne(i,true),180+i*90));setTimeout(()=>{bk.blowing=false;},400+bk.flames.length*90);}
-function wishMade(){SAVE.cake.lit=false;if(Date.now()-(SAVE.wishPaid||0)>3e5){SAVE.wishPaid=Date.now();setTimeout(()=>earn(5,'Birthday wish'),900);}persist();sfx('tada');const P=cakeTop();for(let k=0;k<4;k++)setTimeout(()=>burst(P.clone().add(new THREE.Vector3((Math.random()-.5)*.6,.2,(Math.random()-.5)*.6)),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#7ee081']),30,2,.09),k*200);
+function wishMade(){did('wish');SAVE.cake.lit=false;if(Date.now()-(SAVE.wishPaid||0)>3e5){SAVE.wishPaid=Date.now();setTimeout(()=>earn(5,'Birthday wish'),900);}persist();sfx('tada');const P=cakeTop();for(let k=0;k<4;k++)setTimeout(()=>burst(P.clone().add(new THREE.Vector3((Math.random()-.5)*.6,.2,(Math.random()-.5)*.6)),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#7ee081']),30,2,.09),k*200);
   floaties(P,'🎉',6);try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}av.play&&av.play('clap');banner('🎉 Make a wish! 🎉');setTimeout(()=>{if(bakeryOpen&&btab==='candles')renderBakery();},600);}
 
 /* tap the cake to decorate it */
@@ -2046,10 +2048,10 @@ function lockBtn(k,ico,name){if(!locked(k))return '';const s=shopItem(k);return 
 let starSeen=STARS.filter(s=>s.got).length;
 setInterval(()=>{const n=STARS.filter(s=>s.got).length;if(n>starSeen){earn((n-starSeen)*5,'Star!');if(n===STARS.length)setTimeout(()=>earn(50,'Every star!'),1400);}starSeen=n;
   const q=SAVE.townDone||0;if(SAVE.questPaid==null||q<SAVE.questPaid){SAVE.questPaid=q;persist();}else if(q>SAVE.questPaid){earn((q-SAVE.questPaid)*20,'Quest done!');SAVE.questPaid=q;persist();}},250);
-let poseT=0;$('#poseBtn').addEventListener('click',()=>{if(Date.now()-poseT>6e4){poseT=Date.now();setTimeout(()=>earn(3,'Runway star'),900);}});
+let poseT=0;$('#poseBtn').addEventListener('click',()=>{did('pose');if(Date.now()-poseT>6e4){poseT=Date.now();setTimeout(()=>earn(3,'Runway star'),900);}});
 const dayKey=()=>new Date().toDateString();
 const giftReady=()=>SAVE.giftDay!==dayKey();
-function openGift(){if(!giftReady())return;SAVE.giftDay=dayKey();persist();earn(20,'Daily gift');banner('🎁 Daily gift!');sfx('tada');
+function openGift(){if(!giftReady())return;did('gift');SAVE.giftDay=dayKey();persist();earn(20,'Daily gift');banner('🎁 Daily gift!');sfx('tada');
   burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',40,2.5,.16);if(shopOpen)renderShop();}
 $('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('🎁 You have a daily gift! Tap 🪙 at the top to open it.');},4500));
 
@@ -2062,7 +2064,7 @@ function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');const have=SAVE.c
   $('#buy').dataset.k=k;$('#buy').classList.add('show');}
 $('#buy').onclick=e=>{const b=e.target.closest('[data-b]'),k=$('#buy').dataset.k;if(e.target.id==='buy'||b&&b.dataset.b==='close'){$('#buy').classList.remove('show');return;}
   if(!b)return;$('#buy').classList.remove('show');if(b.dataset.b==='buy')buy(k);if(b.dataset.b==='wear')wearIt(k);};
-function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;SAVE.coins-=s.p;SAVE.owned[k]=true;persist();showCoins(true);sfx('tada');
+function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;SAVE.coins-=s.p;SAVE.owned[k]=true;did('buy',k);persist();showCoins(true);sfx('tada');
   banner(`${s.e} It's yours!`);burst(new THREE.Vector3(player.pos.x,player.pos.y+1.3,player.pos.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),50,3,.18);
   const [kind,id]=k.split(':');
   if(kind==='look'||kind==='pet')wearIt(k);
@@ -2086,7 +2088,7 @@ function renderShop(){showCoins();
   let h='';
   if(stab==='earn'){const quests=!!(window.__game&&window.__game.townSave);
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
-      [['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
+      [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
   else h=`<div class="grid">${SHOP.filter(s=>s.tab===stab).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
@@ -2124,17 +2126,17 @@ let talkF=null,talkNear=null,talkMode='main';
 const hearts=f=>{const h=townSave(f).h;return '💖'.repeat(h)+'🤍'.repeat(5-h);};
 function addHeart(f,n=1){const s=townSave(f),was=s.h;s.h=Math.min(5,s.h+n);persist();if(s.h===was)return;if(talkF===f)renderTalk();
   floaties(f.g.position.clone().add(new THREE.Vector3(0,1.9,0)),'💖',4+n*2);
-  if(s.h>=5&&was<5){setFriendTag(f);sfx('tada');banner(`💖 ${f.name} is your best friend!`);}else if(s.h>=3&&was<3)toast(`${f.name} likes you a lot! Ask ${f.name} to walk with you 🚶‍♀️`);}
+  if(s.h>=5&&was<5){did('bestie');setFriendTag(f);sfx('tada');banner(`💖 ${f.name} is your best friend!`);}else if(s.h>=3&&was<3)toast(`${f.name} likes you a lot! Ask ${f.name} to walk with you 🚶‍♀️`);}
 function questOf(f){const s=townSave(f);if(!s.q)return null;const [id,arg]=s.q.id.split(':');return {s,q:s.q,id,arg,def:QUESTS[id]};}
 function questReady(f){const Q=questOf(f);if(!Q)return false;if(Q.q.ok)return true;if(Q.def.check&&Q.def.check(f))return true;return false;}
 function questAsk(f){const s=townSave(f),id=f.info.qs[s.qi%f.info.qs.length];s.q={id,ok:false,n:0};persist();const [k,arg]=id.split(':');const a=QUESTS[k].ask;return typeof a==='function'?a(arg):a;}
 function questHint(f){const Q=questOf(f);const h=Q.def.hint;let t=typeof h==='function'?h(Q.arg):h;if(Q.id==='stars')t+=` (${Q.q.n||0} of 3 so far)`;return t;}
-function finishQuest(f){const s=townSave(f);s.q=null;s.qi++;s.done=(s.done||0)+1;SAVE.townDone=(SAVE.townDone||0)+1;persist();
+function finishQuest(f){did('quest');const s=townSave(f);s.q=null;s.qi++;s.done=(s.done||0)+1;SAVE.townDone=(SAVE.townDone||0)+1;persist();
   f.play('cheer');friendBubble(f,'You did it! Thank you! 🎉');sfx('tada');banner('🎉 Quest complete!');
   for(let k=0;k<3;k++)setTimeout(()=>burst(f.g.position.clone().add(new THREE.Vector3(0,1.6,0)),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#c6a6ff']),40,3,.2),k*300);
   setTimeout(()=>addHeart(f,2),500);if(talkF===f){talkMode='main';tsay(f,`You did it! 🎉 You're amazing, ${SAVE.name||'friend'}!`);}}
 // quest progress from things you do around town
-function questEvent(kind,arg){for(const f of FRIENDS){const Q=questOf(f);if(!Q||Q.q.ok)continue;
+function questEvent(kind,arg){did(kind,arg);for(const f of FRIENDS){const Q=questOf(f);if(!Q||Q.q.ok)continue;
   if(Q.id==='stars'&&kind==='star'){Q.q.n=(Q.q.n||0)+1;if(Q.q.n>=3){Q.q.ok=true;toast(`⭐ That's 3 stars! Go tell ${f.name}!`);}persist();}
   if(Q.id==='visit'&&kind==='zone'&&arg===Q.arg){Q.q.ok=true;persist();setTimeout(()=>toast(`📍 You made it! Go tell ${f.name} about it.`),1800);}
   if(Q.def.act&&kind==='act'&&arg===Q.def.act&&f.pos.distanceTo(player.pos)<6){Q.q.ok=true;setTimeout(()=>finishQuest(f),700);}}}
@@ -2148,7 +2150,7 @@ function renderTalk(){const f=talkF;if(!f)return;$('#tface').textContent=f.info.
       (ready?b('quest','🎁','I did it!','go'):Q?b('quest','⭐','My task'):b('quest','⭐','Need help?'))+
       (s.h>=3?(f.follow?b('stay','🛑','Stop walking'):b('follow','🚶‍♀️','Walk with me')):b('bye','👋','Bye'));}
   $('#topts').innerHTML=h;}
-function openTalk(f){if(closetOpen||!started)return;if(talkF&&talkF!==f)closeTalk();talkF=f;talkMode='main';f.tgt=null;
+function openTalk(f){if(closetOpen||!started)return;did('talk',f.name);if(talkF&&talkF!==f)closeTalk();talkF=f;talkMode='main';f.tgt=null;
   const s=townSave(f);let g;
   if(questReady(f))g=`Ooh! Did you do what I asked? 👀`;
   else if(Math.random()<.45){const L=SAVE.look,c=[];if(L.dress){const d=LOOK_NAME(DRESSES,L.dress.id);d&&c.push(`Wow, I love your ${d[0].toLowerCase()}! ${d[1]}`);}
@@ -2249,7 +2251,7 @@ function closeGlam(){if(!glamOpen)return;hideHTool();glamOpen=false;closetOpen=f
   av.dress(SAVE.look);persist();AG.gLbl.visible=true;AG.chair.rotation.y=0;const g=ag.gigi;if(g){g.pos.copy(agW(...g.home.slice(0,1),0,g.home[1]));g.face=g.home[2];}
   player.pos.copy(agW(-2.95,0,1.6));player.face=agFace(1,0);cam.yaw=cam.cy=player.face+Math.PI;av.play('twirl');
   if(ct.on&&ct.sub==='glam'){ct.sub=null;backToContest();return;}
-  if(Date.now()-(SAVE.glamPaid||0)>6e5){SAVE.glamPaid=Date.now();persist();setTimeout(()=>earn(5,'Glam time!'),700);}
+  did('glam');if(Date.now()-(SAVE.glamPaid||0)>6e5){SAVE.glamPaid=Date.now();persist();setTimeout(()=>earn(5,'Glam time!'),700);}
   toast('Looking fabulous! ✨ Now try the 🏆 model contest!');}
 function glamCam(dt){if(!glamOpen||ctab==='makeup')return;const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
   if(ctab==='hair'){T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=cam.closetYaw+.75;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
@@ -2385,7 +2387,7 @@ function drawBraid(){braidG.children.forEach(o=>o.geometry.dispose());braidG.cle
 anims.push(()=>drawBraid());
 function braidStroke(e,first,P){if(first){const lp=av.head.worldToLocal(P.clone());if(braidP===0)braidSide=lp.x<0?-1:1;hstroke.dir=0;hstroke.ax=e.clientX;return;}
   const dx=e.clientX-hstroke.ax,dir=Math.sign(dx);if(Math.abs(dx)>28&&dir!==hstroke.dir){hstroke.dir=dir;hstroke.ax=e.clientX;braidP++;tone(500+braidP*60,.09,'triangle',.08);
-    if(braidP>=BRAID_N){const H=SAVE.look.hair;H.id='sidebraid';H.len=1;braidP=0;persist();hairDirty=1;toast('🪢 You braided it yourself!');sfx('tada');}
+    if(braidP>=BRAID_N){const H=SAVE.look.hair;H.id='sidebraid';H.len=1;braidP=0;persist();hairDirty=1;toast('🪢 You braided it yourself!');did('braid');sfx('tada');}
     else if(braidP===1)toast('🪢 Left over middle… now right over middle!');}
   else if(Math.abs(dx)>28)hstroke.ax=e.clientX;}
 function beautyDown(e){if(!glamOpen)return false;
@@ -2478,7 +2480,7 @@ $('#ctdone').onclick=()=>{sfx('pop');endContest();};
 function dressRivals(){const th=themeNow();ag.rivals.forEach(o=>{o.q=.35+Math.random()*.5;o.look=themeLook(o.base,th,o.q);o.a.dress(o.look);});}
 function finishContest(){ct.phase='final';const tot=x=>x.reduce((a,b)=>a+b.sum,0);const me=tot(ct.you),place=ct.riv.filter(r=>tot(r)>me).length;
   const C=SAVE.contest=Object.assign({played:0,wins:0,cups:[]},SAVE.contest);C.played++;if(place===0)C.wins++;if(place<3){C.cups.push(place);C.cups=C.cups.slice(-10);}C.best=Math.max(C.best||0,me);persist();showTrophies();
-  renderContest();$('#ctcontent').scrollTop=0;setTimeout(()=>earn(PRIZE[place],place===0?'Contest winner!':'Contest prize'),600);
+  did('contest',place);renderContest();$('#ctcontent').scrollTop=0;setTimeout(()=>earn(PRIZE[place],place===0?'Contest winner!':'Contest prize'),600);
   if(place===0){banner('👑 Star Model! 👑');sfx('tada');try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}av.play('cheer');const P=player.pos;for(let k=0;k<5;k++)setTimeout(()=>burst(new THREE.Vector3(P.x+(Math.random()-.5)*2,P.y+2,P.z+(Math.random()-.5)*2),rnd(['#ffd23f','#ff8fc8','#8fd8ff']),50,3.5),k*220);}
   else{banner(['🥇','🥈','🥉','🎀'][place]+' Nice job!');av.play('bow');}
   ag.judges.forEach(o=>o.a.play('clap'));setTimeout(()=>ag.judges.forEach(o=>o.a.play('chair')),2100);}
@@ -2697,7 +2699,8 @@ function drawMap(){const S=mapCv.width,k=S/(MAPW*2),x=mapX;drawWorld(x,mapW2s,k,
   for(const z of ZONES){let [px,py]=mapW2s(z.x,z.z);x.font=`${Math.round(S*.065)}px serif`;x.fillText(zEmoji(z),px,py-S*.018);
     x.font=`700 ${Math.round(S*.03)}px system-ui,-apple-system,sans-serif`;const t=zLabel(z),tw=x.measureText(t).width,ty=py+S*.042;px=Math.min(S*.95-tw/2-8,Math.max(S*.05+tw/2+8,px));
     x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.82)';x.beginPath();x.roundRect?x.roundRect(px-tw/2-8,ty-S*.022,tw+16,S*.044,S*.022):x.rect(px-tw/2-8,ty-S*.022,tw+16,S*.044);x.fill();
-    x.fillStyle='#fff';x.fillText(t,px,ty+1);}
+    x.fillStyle='#fff';x.fillText(t,px,ty+1);
+    if(window.__chal&&window.__chal.left(z.id)){const [bx,by]=mapW2s(z.x,z.z);x.font=`${Math.round(S*.045)}px serif`;x.fillText('⭐',bx+S*.05,by-S*.05);}}
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=mapW2s(o.pos.x,o.pos.z);x.beginPath();x.arc(ox,oy,S*.016,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
   const [px,py]=mapW2s(player.pos.x,player.pos.z);
   x.beginPath();x.arc(px,py,S*.045+Math.sin(performance.now()/200)*S*.006,0,Math.PI*2);x.fillStyle='rgba(142,108,255,.25)';x.fill();
@@ -2727,14 +2730,16 @@ $('#mapStop').onclick=()=>{setDest(null);closeMap();};
 $('#map').addEventListener('click',e=>{if(e.target.id==='map')closeMap();});
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='KeyM'){mapOpen?closeMap():started&&openMap();}else if(e.code==='Escape'&&mapOpen)closeMap();});
 let miniT=0;
-onTick.push(dt=>{if(mapDest&&curZone===mapDest){sfx('tada');banner(`🎉 You made it!`);burst(player.pos.clone().add(new THREE.Vector3(0,1.5,0)),'#ff8fc8',40,3);setDest(null);}
+onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('tada');banner(`🎉 You made it!`);burst(player.pos.clone().add(new THREE.Vector3(0,1.5,0)),'#ff8fc8',40,3);setDest(null);}
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp};
+Object.assign(window.__game,{glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
 </script>
 <script>
 // show a friendly message if the 3D engine can't load (old phone or no internet)
 setTimeout(()=>{const l=document.getElementById('loading');if(l)l.textContent='Could not load the 3D world. Check the internet and try again.';},15000);
 </script>
 <script type="module" src="online.js"></script>
+<script type="module" src="challenges.js"></script>
 </body>
 </html>
