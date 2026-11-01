@@ -1345,6 +1345,9 @@ const FACEOPT=[['eyes','Eye shape',[['almond','👁️','Almond'],['doe','🦌',
 // shapes you pick at the barber's face chair (and in the closet's Face tab). Left unset, guys get a squarer jaw and flatter brows.
 FACEOPT.push(['brows','Eyebrows',[['arched','〰️','Arched'],['straight','➖','Straight'],['thick','🖍️','Thick'],['bushy','🐛','Bushy']]],['jaw','Jaw',[['soft','🙂','Soft'],['square','🟫','Square'],['strong','💪','Strong']]]);
 const JAWV={soft:0,square:1,strong:1.7};
+// face shape (stretches the head) and smile: on the real-look face, for guys and girls
+FACEOPT.push(['shape','Face shape',[['oval','🥚','Oval'],['round','🟠','Round'],['long','📏','Long'],['wide','↔️','Wide']]],['smile','Smile',[['calm','😐','Calm'],['smile','🙂','Smile'],['grin','😁','Big grin'],['smirk','😏','Smirk']]]);
+const FSHAPE={oval:[1,1],round:[1.05,.97],long:[.96,1.06],wide:[1.08,1]};
 const BROWS={arched:{arch:1,w0:.0046,w1:.0015},straight:{arch:.25,w0:.0055,w1:.0026},thick:{arch:.8,w0:.0075,w1:.0032},bushy:{arch:.35,w0:.0098,w1:.0052}};
 const faceVal=(L,k)=>{const f=(L.face||{})[k];if(f)return f;if(k==='jaw')return isGuy(L)?'square':'soft';if(k==='brows')return isGuy(L)?'straight':'arched';const o=FACEOPT.find(x=>x[0]===k);return o[2][0][0];};
 const NOSE={straight:{h:.18,w:.04,top:.06,tip:.035},petite:{h:.13,w:.036,top:.0,tip:.03},button:{h:.11,w:.05,top:-.04,tip:.055}};
@@ -1384,6 +1387,7 @@ class Avatar{
     B(guy?cyl(.047,.054,.16,14):this.look.style!=='cute'?cyl(.039,.047,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
     const head=this.head=new THREE.Group();head.position.y=.68;spine.add(head);
     const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?(guy?new THREE.Vector3(.93,1.05,.98):new THREE.Vector3(.9,1.06,.98)):new THREE.Vector3(1,1.08,1);
+    {const fs=glam&&FSHAPE[(this.look.face||{}).shape];if(fs){HS.x*=fs[0];HS.y*=fs[1];}}
     let surf;
     const F=this.face=Object.assign({eyes:'almond',nose:'straight',lips:'full'},this.look.face||{});const JAW=this.jaw=glam?(F.jaw in JAWV?JAWV[F.jaw]:guy?1:0):0;
     if(glam){const hg=headGeo(HS,false,0,F.nose,JAW);const hm=B(hg,head);const tmp=new THREE.Mesh(hg);tmp.updateMatrixWorld(true);
@@ -1417,7 +1421,9 @@ class Avatar{
       const LS=guy?[1.02,.62,.68]:{full:[1,1,1],heart:[.85,1.05,1.2],soft:[1.12,.8,.82],pout:[.92,1.2,1.15]}[F.lips]||[1,1,1];
       // full, glossy, sculpted lips: an upper lip with a cupid's bow and a fuller lower lip
       const W=.031*LS[0];for(const [up,h,d,cy] of [[true,.0078*LS[1],.007,-.0528],[false,.0108*LS[2],.0098,-.065]]){const geo=lipGeo(up,W,h,d,cy,(x,y)=>surf(x,y));
-        M(geo,this.lipM,0,0,0,head,false);const l=M(geo,this.linerM,0,-cy*.04,-.0012,head,false);l.scale.set(1.07,1.04,1);l.visible=false;this.lipLiner.push(l);}
+        const lm=M(geo,this.lipM,0,0,0,head,false);const l=M(geo,this.linerM,0,-cy*.04,-.0012,head,false);l.scale.set(1.07,1.04,1);l.visible=false;this.lipLiner.push(l);if(!up)this.lowLip=[lm,l];}
+      // smile: the corners of the mouth turn up (drawn on the face in renderFace); a big grin parts the lips to show teeth
+      this.mouthW=W;if(F.smile==='grin'){if(this.lowLip)this.lowLip.forEach(o=>o.position.y-=.0035);const t=M(new RoundedBoxGeometry(W*1.4,.0055,.004,2,.002),new THREE.MeshPhysicalMaterial({color:'#fbfaf5',roughness:.25,clearcoat:.5}),0,-.0585,surf(0,-.0585,.001),head,false);t.castShadow=false;}
     }else{
       this.eyeR=[.03,.034];
       B(sph(.013,10,8),head,0,-.028,.13);
@@ -1639,7 +1645,10 @@ class Avatar{
       const [nx,ny]=at(0,-.01,.13);soft(nx,ny,18*k,60*k,'255,250,240',.18);
       for(const sx of [-1,1]){let [px,py]=at(sx*.013,-.018,.12);soft(px,py,16*k,70*k,'130,80,60',.2);[px,py]=at(sx*.011,-.036,.12);soft(px,py,16*k,12*k,'110,60,50',.28);}
       let [px,py]=at(0,-.04,.12);soft(px,py,30*k,10*k,'110,60,50',.3);[px,py]=at(0,-.031,.14);soft(px,py,12*k,10*k,'255,255,250',.4);
-      [px,py]=at(0,-.072,.115);soft(px,py,40*k,12*k,'120,70,55',.22);[px,py]=at(0,-.084,.11);soft(px,py,30*k,16*k,'255,245,235',.18);}
+      [px,py]=at(0,-.072,.115);soft(px,py,40*k,12*k,'120,70,55',.22);[px,py]=at(0,-.084,.11);soft(px,py,30*k,16*k,'255,245,235',.18);
+      // smile lines: little curves turning up at the corners of the mouth (one side for a smirk)
+      const sm=this.face&&this.face.smile;if(sm&&sm!=='calm'&&this.mouthW){const w=this.mouthW;x.save();x.strokeStyle='rgba(105,52,42,.6)';x.lineWidth=(sm==='grin'?6:5)*k;x.lineCap='round';
+        for(const sx of sm==='smirk'?[1]:[-1,1]){const [ax,ay]=at(sx*(w-.002),-.0595,.12),[cx,cy]=at(sx*(w+.005),-.0595,.118),[bx,by]=at(sx*(w+.007),-.0505,.115);x.beginPath();x.moveTo(ax,ay);x.quadraticCurveTo(cx,cy,bx,by);x.stroke();}x.restore();}}
     if(mk.blush&&BLUSH[mk.blush]){const R=this.glam?115:95,A=this.glam?.5:.42;for(const sx of [-1,1]){const [cx,cy]=at(sx*.07,this.glam?-.026:-.03,.1);const g=x.createRadialGradient(cx,cy,0,cx,cy,R*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},${A})`);g.addColorStop(.6,`rgba(${BLUSH[mk.blush]},${A*.45})`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,R*k,R*.75*k,0,0,Math.PI*2);x.fill();}
       // glam blush sweeps lightly over the nose too
       if(this.glam){const [cx,cy]=at(0,-.018,.13);const g=x.createRadialGradient(cx,cy,0,cx,cy,70*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},.22)`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,70*k,35*k,0,0,Math.PI*2);x.fill();}}
@@ -1926,7 +1935,7 @@ const isGuy=L=>!!L&&L.body==='guy';
 const tagColor=L=>isGuy(L)?'#2f7be5':'#ff4d8d';
 
 const GUY_HAIRS=[['crop','💇‍♂️','Crew cut'],['buzz','🪒','Buzz cut'],['quiff','😎','Swoop'],['sidepart','👔','Side part'],['curltop','🌀','Curly top'],['spiky','⚡','Spiky'],['flow','🏄','Surfer flow'],['manbun','🥷','Man bun'],['afro','☁️','Afro']];
-const GUY_OUTFITS=[['suit','🤵','Sharp suit','#1f2a44'],['suit2','💼','Everyday suit','#6b7280'],['tux','🎩','Tuxedo','#1a1a1a'],['tracksuit','🏃','Tracksuit','#d62839'],['sweatsuit','🛋️','Sweatsuit','#8a8f99'],['coveralls','🔧','Mechanic coveralls','#2f4a7a'],['bballuni','🏀','Basketball uniform','#4f2d7f']];
+const GUY_OUTFITS=[['suit','🤵','Sharp suit','#1f2a44'],['suit2','💼','Everyday suit','#6b7280'],['tux','🎩','Tuxedo','#1a1a1a'],['tracksuit','🏃','Tracksuit','#d62839'],['sweatsuit','🛋️','Sweatsuit','#8a8f99'],['bballuni','🏀','Basketball uniform','#4f2d7f'],['coveralls','🔧','Mechanic coveralls','#2f4a7a']];
 const GUY_TOPS=[['gtee','👕','T-shirt','#4fb6ff'],['graphictee','⚡','Graphic tee','#2d2d3a'],['polo','⛳','Polo shirt','#2e9e4f'],['buttonup','👔','Button-up shirt','#cfe3ff'],['flannelover','🍁','Flannel over tee','#c0392b'],
   ['crewneck','🧶','Sweatshirt','#8a8f99'],['ghoodie','🧥','Hoodie','#2d2d3a'],['ziphoodie','🤐','Zip hoodie','#3a5bd9'],['quarterzip','⛷️','Quarter-zip','#1f2a44'],['puffer','❄️','Puffer jacket','#2d2d3a'],
   ['varsity','🏈','Varsity jacket','#d62839'],['jacket','🧥','Jean jacket','#5b8fd6'],['jersey','🏀','Jersey','#4fb6ff'],['tank','🎽','Tank top','#ffffff']];

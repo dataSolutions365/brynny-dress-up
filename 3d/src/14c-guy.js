@@ -7,7 +7,7 @@ const isGuy=L=>!!L&&L.body==='guy';
 const tagColor=L=>isGuy(L)?'#2f7be5':'#ff4d8d';
 
 const GUY_HAIRS=[['crop','💇‍♂️','Crew cut'],['buzz','🪒','Buzz cut'],['quiff','😎','Swoop'],['sidepart','👔','Side part'],['curltop','🌀','Curly top'],['spiky','⚡','Spiky'],['flow','🏄','Surfer flow'],['manbun','🥷','Man bun'],['afro','☁️','Afro']];
-const GUY_OUTFITS=[['suit','🤵','Sharp suit','#1f2a44'],['suit2','💼','Everyday suit','#6b7280'],['tux','🎩','Tuxedo','#1a1a1a'],['tracksuit','🏃','Tracksuit','#d62839'],['sweatsuit','🛋️','Sweatsuit','#8a8f99'],['coveralls','🔧','Mechanic coveralls','#2f4a7a'],['bballuni','🏀','Basketball uniform','#4f2d7f']];
+const GUY_OUTFITS=[['suit','🤵','Sharp suit','#1f2a44'],['suit2','💼','Everyday suit','#6b7280'],['tux','🎩','Tuxedo','#1a1a1a'],['tracksuit','🏃','Tracksuit','#d62839'],['sweatsuit','🛋️','Sweatsuit','#8a8f99'],['bballuni','🏀','Basketball uniform','#4f2d7f'],['coveralls','🔧','Mechanic coveralls','#2f4a7a']];
 const GUY_TOPS=[['gtee','👕','T-shirt','#4fb6ff'],['graphictee','⚡','Graphic tee','#2d2d3a'],['polo','⛳','Polo shirt','#2e9e4f'],['buttonup','👔','Button-up shirt','#cfe3ff'],['flannelover','🍁','Flannel over tee','#c0392b'],
   ['crewneck','🧶','Sweatshirt','#8a8f99'],['ghoodie','🧥','Hoodie','#2d2d3a'],['ziphoodie','🤐','Zip hoodie','#3a5bd9'],['quarterzip','⛷️','Quarter-zip','#1f2a44'],['puffer','❄️','Puffer jacket','#2d2d3a'],
   ['varsity','🏈','Varsity jacket','#d62839'],['jacket','🧥','Jean jacket','#5b8fd6'],['jersey','🏀','Jersey','#4fb6ff'],['tank','🎽','Tank top','#ffffff']];
