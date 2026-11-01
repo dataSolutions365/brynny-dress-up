@@ -536,7 +536,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
  const padMat=glow('#ff8fc8',1.4);padMat.transparent=true;
  const pad=M(new THREE.RingGeometry(.8,1.15,48),padMat,0,.17,0,g,false,false);pad.rotation.x=-Math.PI/2;
  const padIn=M(new THREE.CircleGeometry(.8,48),phys('#ffd6ea',{roughness:.2,clearcoat:1,emissive:'#ff6fae',emissiveIntensity:.2}),0,.165,0,g,false,true);padIn.rotation.x=-Math.PI/2;
- const padLbl=sprite(labelTex('👗 Dress up!',{size:56}),1.8,.45);padLbl.position.set(0,1.0,0);g.add(padLbl);
+ const padLbl=z.padLbl=sprite(labelTex('👗 Dress up!',{size:56}),1.8,.45);padLbl.position.set(0,1.0,0);g.add(padLbl);
  anims.push(t=>{padMat.opacity=.55+.45*Math.sin(t*3);padLbl.position.y=.95+Math.sin(t*2)*.08;});
  z.pad={x:0,z:0,r:.95};
  // mirrors
@@ -1746,8 +1746,8 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
     const k=KEY[ctab];if(!id){L[k]=null;}else{const prev=L[k];L[k]={id,c:prev&&prev.id===id?prev.c:(prev&&ctab!=='dresses'&&ctab!=='hats'?prev.c:it[3])};if(prev&&prev.id===id)L[k].c=prev.c;else L[k].c=it[3];}
     if(ctab==='dresses'&&id){L.top=null;L.bottom=null;}if((ctab==='tops'||ctab==='bottoms')&&id){if(L.dress){L.dress=null;if(ctab==='tops'&&!L.bottom)L.bottom={id:'jeans',c:'#3a5bd9'};if(ctab==='bottoms'&&!L.top)L.top={id:'tee',c:'#ff6fae'};}}
     return changed();}};
-function openCloset(){if(closetOpen)return;closeTalk();closetOpen=true;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');document.body.classList.add('dressing');renderCloset();$('#closet').classList.add('show');player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}
-function closeCloset(){if(glamOpen){closeGlam();return;}closetOpen=false;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();did('dress');}
+function openCloset(){if(closetOpen)return;closeTalk();closetOpen=true;Z.studio.padLbl.visible=false;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');document.body.classList.add('dressing');renderCloset();$('#closet').classList.add('show');player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}
+function closeCloset(){if(glamOpen){closeGlam();return;}closetOpen=false;Z.studio.padLbl.visible=true;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();did('dress');}
 function closeClosetHook(){if(ct.on&&ct.sub==='closet'){ct.sub=null;backToContest();}}
 $('#done').onclick=closeCloset;
 
