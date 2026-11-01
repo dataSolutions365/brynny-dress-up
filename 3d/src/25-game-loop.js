@@ -104,6 +104,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   if(ct.on)contestCam(dt);
   if(bakeryOpen)bakeryCam(dt);
   cakeContestCam(dt);
+  petContestCam(dt);
   // shift the picture so the avatar is not hidden behind the closet
   const land=innerWidth>innerHeight*1.25;const voT=closetOpen?1:0;cam.vo+=(voT-cam.vo)*Math.min(1,dt*6);
   if(cam.vo>.002){const W=innerWidth,H=innerHeight;if(land)camera.setViewOffset(W,H,W*.24*cam.vo,0,W,H);else camera.setViewOffset(W,H,0,H*.2*cam.vo,W,H);}else if(camera.view&&camera.view.enabled)camera.clearViewOffset();
