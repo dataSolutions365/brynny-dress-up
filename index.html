@@ -431,6 +431,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 <div class="toast" id="toast"></div>
 <button id="updBtn">✨ New version! Tap to update</button>
 
+<script src="family.js"></script>
 <script>
 /* ---------- errors: save what went wrong (snake game's Firebase, list dressup_errors) and keep playing ---------- */
 const DRESSUP_VERSION='2026-10-30';
@@ -2496,7 +2497,7 @@ async function sendOnline(o,th){
     if(o.host){const code=await db.create({theme:th.id,judges:o.judges,host:me().name.slice(0,20),look});const C=CS();C.mine=[{code,th:th.id,at:Date.now()},...(C.mine||[])].slice(0,8);persist();
       if(box())box().innerHTML=`<p style="font-weight:700">🌍 Your challenge is ready! Send it to a friend:</p><button class="big-btn" id="cShare" data-code="${code}">📤 Send challenge link</button><button class="pill" data-results="${code}" style="margin-top:6px">See scores</button>`;}
     else{await db.add(o.code,{name:me().name.slice(0,20),look});if(box())box().innerHTML=`<p style="font-weight:700">🌍 Your look was sent!</p><button class="big-btn" data-results="${o.code}">🏆 See who's winning</button>`;}
-  }catch(e){fail();}
+  }catch(e){if(e&&e.message==='nofam'){if(box())box().innerHTML='<p>👨‍👩‍👧 Online challenges are just for family. Ask a grown-up to set the family word.</p>';}else fail();}
 }
 async function shareChallenge(code){const url=chalUrl(code),text=`${me().name} challenged you to a modeling contest! 👗🏆`;
   try{if(navigator.share){await navigator.share({title:'Dress-up challenge',text,url});return;}}catch(e){if(e&&e.name==='AbortError')return;}
@@ -2504,7 +2505,7 @@ async function shareChallenge(code){const url=chalUrl(code),text=`${me().name} c
 async function openChallenge(code){
   $('#contestBody').innerHTML='<h2>🌍 Modeling challenge</h2><p>Loading…</p>';$('#contestModal').classList.add('show');
   let ch=null;try{ch=await (await chalDB()).get(code);}catch(e){}
-  if(!ch){$('#contestBody').innerHTML='<h2>🌍 Modeling challenge</h2><p>😕 We couldn\'t find that challenge. Check the link, or try again when you\'re online.</p>';return;}
+  if(!ch){$('#contestBody').innerHTML='<h2>🌍 Modeling challenge</h2><p>😕 We couldn\'t find that challenge. Challenges are just for family, so this phone needs the same family word. Or try again when you\'re online.</p><button class="pill" id="cFam">👨‍👩‍👧 Family word</button>';$('#cFam').onclick=async()=>{if(await Family.ask('Challenges are just for family.'))openChallenge(code);};return;}
   const th=THEMES.find(t=>t.id===ch.theme)||THEMES[0],js=judgesOn(ch.judges);pendingChal={code,ch,th};
   $('#contestBody').innerHTML=`<h2>${th.e} ${th.name}</h2><p style="font-size:19px;font-weight:800">👋 ${esc(ch.host)} challenged you!</p><p>${th.hint} Then walk the runway for the judges: ${js.map(j=>j.e+' '+j.n).join(', ')}.</p>
    <p style="font-weight:700;margin-bottom:4px">What's your name?</p><input id="cName" maxlength="20" placeholder="Your name" value="${me().name.toLowerCase()===String(ch.host).toLowerCase()?'':esc(me().name)}" style="width:100%;padding:10px;border-radius:12px;border:2px solid #f6cfe3;font:inherit;font-size:16px">
@@ -2989,14 +2990,18 @@ let statsFs=null;const statsQueue=[];
 function startStats(){try{statsFs=F.getFirestore(F.initializeApp(STATS_CONFIG,'stats'));statsQueue.splice(0).forEach(n=>countStat(...n));
   window.sendError=e=>{try{F.addDoc(F.collection(statsFs,'dressup_errors'),{...e,at:F.serverTimestamp()}).catch(()=>{});}catch(x){}};
   errorQueue.splice(0).forEach(window.sendError);}catch(e){}}
-// online challenges live next to the play counts: dressup_challenges/{code} and its entries
+// online challenges live next to the play counts: dressup_challenges/{id} and its entries.
+// Family only (family.js): the link shows a code, and the place it is saved online is made from that code AND the
+// family secret word, so a phone without the same word can't find the challenge or add to it.
+const CHAL_ABC='abcdefghjkmnpqrstuvwxyz23456789';
+const chalId=async code=>{if(!window.Family||!(await Family.ensure('Challenges are just for family.')))throw new Error('nofam');return Family.keyIn('chal',code,CHAL_ABC,6);};
 window.ChalDB={ready:async()=>{if(!statsFs){await loadSDK();if(!statsFs)throw new Error('no db');}return CHAL;}};
 const CHAL={
-  async create(d){const abc='abcdefghjkmnpqrstuvwxyz23456789';for(let n=0;n<4;n++){let code='';for(let i=0;i<6;i++)code+=abc[Math.random()*abc.length|0];
-    try{await F.setDoc(F.doc(statsFs,'dressup_challenges',code),{...d,createdAt:F.serverTimestamp()});return code;}catch(e){if(n===3)throw e;}}},
-  async get(code){const s=await F.getDoc(F.doc(statsFs,'dressup_challenges',code));return s.exists()?s.data():null;},
-  add:(code,d)=>F.addDoc(F.collection(statsFs,'dressup_challenges',code,'entries'),{...d,createdAt:F.serverTimestamp()}),
-  async list(code){const q=await F.getDocs(F.query(F.collection(statsFs,'dressup_challenges',code,'entries'),F.limit(40)));return q.docs.map(d=>d.data());}
+  async create(d){const abc=CHAL_ABC;for(let n=0;n<4;n++){let code='';for(let i=0;i<6;i++)code+=abc[Math.random()*abc.length|0];
+    try{await F.setDoc(F.doc(statsFs,'dressup_challenges',await chalId(code)),{...d,createdAt:F.serverTimestamp()});return code;}catch(e){if(n===3||e.message==='nofam')throw e;}}},
+  async get(code){const s=await F.getDoc(F.doc(statsFs,'dressup_challenges',await chalId(code)));return s.exists()?s.data():null;},
+  add:async(code,d)=>F.addDoc(F.collection(statsFs,'dressup_challenges',await chalId(code),'entries'),{...d,createdAt:F.serverTimestamp()}),
+  async list(code){const q=await F.getDocs(F.query(F.collection(statsFs,'dressup_challenges',await chalId(code),'entries'),F.limit(40)));return q.docs.map(d=>d.data());}
 };
 function countStat(...names){
   names=names.filter(n=>STAT_NAMES.includes(n));if(!names.length)return;

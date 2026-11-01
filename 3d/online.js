@@ -1,6 +1,8 @@
 // Play with friends: phones share a room code (or invite link) and see each other in the same 3D world.
 // Peer-to-peer over WebRTC (PeerJS). The free PeerJS cloud server only introduces the phones; game data goes phone to phone.
 // The phone that starts the room is the host and passes messages between everyone else.
+// Family only (../family.js): the room's online name is made from the code AND the family secret word, so a phone
+// without the word can't find the room, and the host still taps "Let in" before anyone joins.
 const G = window.__game;
 const $ = s => document.querySelector(s);
 const PEERJS = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
@@ -18,7 +20,10 @@ const peerOpts = () => {
   return o;
 };
 
-let peer = null, host = null /* conn to host (guest) */, conns = new Map() /* host: id -> conn */, code = '', role = null, myId = '';
+let peer = null, host = null /* conn to host (guest) */, conns = new Map() /* host: id -> conn */, code = '', role = null, myId = '', hostId = '', hiKey = '';
+const waiting = new Map(); // host: id -> conn, family phones waiting for the host to tap Let in
+const Fam = window.Family;
+const roomId = async c => PREFIX + (await Fam.key('room', c)).slice(0, 24);
 const others = new Map(); // id -> {name, look, a: Avatar, tgt, face, sp, air}
 if (G && G.setMapOthers) G.setMapOthers(others); // friends show up on the map
 let lastLook = '', lastEmote = null, sendT = 0;
@@ -71,7 +76,9 @@ function render() {
       <input id="nCode" maxlength="5" placeholder="CODE" autocomplete="off" autocapitalize="characters" value="${esc(urlRoom)}">
       <button class="btn" id="nJoin" style="background:#2fb8a5;box-shadow:0 4px 0 #1f8f80">🚪 Join</button>
       ${status ? `<p class="small">${esc(status)}</p>` : ''}
-      <div><button class="btn ghost" id="nClose">Close</button></div>`;
+      <p class="small">🔒 Only family phones with your family secret word can join.</p>
+      <div><button class="btn ghost" id="nFam">👨‍👩‍👧 ${Fam.has() ? 'Change' : 'Set'} family word</button> <button class="btn ghost" id="nClose">Close</button></div>`;
+    $('#nFam').onclick = async () => { await Fam.ask('Grown-ups only: this word keeps rooms just for family.'); render(); };
     $('#nHost').onclick = startRoom;
     $('#nJoin').onclick = () => { const c = $('#nCode').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length < 5) { status = 'Type the 5-letter code from your friend.'; render(); return; } joinRoom(c); };
     $('#nCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#nJoin').click(); });
@@ -114,16 +121,18 @@ const me = () => ({ name: G.SAVE.name || 'Friend', look: G.SAVE.look });
 const stateMsg = () => { const p = G.player.pos; return { t: 's', p: [+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2)], f: +G.player.face.toFixed(2), sp: +G.player.speed.toFixed(1), air: !G.player.onGround }; };
 
 async function startRoom(tries = 0) {
+  if (!(await Fam.ensure('Rooms are just for family.'))) { status = 'Ask a grown-up to set the family word first.'; render(); return; }
   status = 'Starting your room…'; render();
   let Peer; try { Peer = await loadPeer(); } catch (e) { status = 'Couldn’t load online play. Check your internet and try again.'; render(); return; }
   code = newCode(); role = 'host';
-  peer = new Peer(PREFIX + code, peerOpts());
+  try { hostId = await roomId(code); hiKey = await Fam.key('hi', code); } catch (e) { leave(true); status = 'This browser can’t do family rooms. Try Chrome or Safari.'; render(); return; }
+  peer = new Peer(hostId, peerOpts());
   peer.on('open', id => { myId = id; status = 'Send the link to a friend so they can join you!'; badge(); });
   peer.on('connection', c => {
     if (conns.size >= MAX - 1) { c.on('open', () => { c.send({ t: 'full' }); setTimeout(() => c.close(), 500); }); return; }
     c.on('data', d => fromGuest(c, d));
-    c.on('close', () => dropGuest(c.peer));
-    c.on('error', () => dropGuest(c.peer));
+    c.on('close', () => { waiting.delete(c.peer); askDone(c.peer); dropGuest(c.peer); });
+    c.on('error', () => { waiting.delete(c.peer); askDone(c.peer); dropGuest(c.peer); });
   });
   peer.on('disconnected', () => { if (role === 'host' && peer && !peer.destroyed) setTimeout(() => peer && !peer.destroyed && peer.reconnect(), 1500); });
   peer.on('error', e => {
@@ -135,18 +144,51 @@ async function startRoom(tries = 0) {
 function fromGuest(c, d) {
   if (!d || typeof d !== 'object') return;
   const id = c.peer;
-  if (d.t === 'hi') {
-    conns.set(id, c);
-    // tell the newcomer who is here already, then tell everyone about the newcomer
-    c.send({ t: 'roster', you: id, list: [{ id: myId, ...me(), st: stateMsg() }, ...[...others].map(([oid, o]) => ({ id: oid, name: o.name, look: o.look, st: o.st }))] });
-    for (const [oid, oc] of conns) if (oid !== id) oc.send({ ...d, id });
-    addOther(id, d); return;
+  if (d.t === 'hi' && !conns.has(id)) {
+    // wrong family word: say no and hang up
+    if (d.k !== hiKey) { try { c.send({ t: 'no' }); } catch (e) { } setTimeout(() => c.close(), 500); return; }
+    if (waiting.has(id)) return;
+    waiting.set(id, c);
+    askHost(id, String(d.name || 'Someone').slice(0, 16), yes => {
+      if (!waiting.has(id)) return; waiting.delete(id);
+      if (!yes || role !== 'host') { try { c.send({ t: 'no' }); } catch (e) { } setTimeout(() => c.close(), 500); return; }
+      if (conns.size >= MAX - 1) { c.send({ t: 'full' }); setTimeout(() => c.close(), 500); return; }
+      letIn(c, id, d);
+    });
+    return;
   }
   if (!conns.has(id)) return;
+  if (d.t === 'hi') return;
   if (d.t === 'bye') { dropGuest(id); return; }
   for (const [oid, oc] of conns) if (oid !== id) oc.send({ ...d, id });
   handle(id, d);
 }
+function letIn(c, id, d) {
+    delete d.k;
+    conns.set(id, c);
+    // tell the newcomer who is here already, then tell everyone about the newcomer
+    c.send({ t: 'roster', you: id, list: [{ id: myId, ...me(), st: stateMsg() }, ...[...others].map(([oid, o]) => ({ id: oid, name: o.name, look: o.look, st: o.st }))] });
+    for (const [oid, oc] of conns) if (oid !== id) oc.send({ ...d, id });
+    addOther(id, d);
+}
+
+/* ---------- the host taps Let in ---------- */
+const askBox = document.createElement('div');
+askBox.id = 'netAsk';
+askBox.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;width:min(340px,calc(100vw - 32px))';
+document.body.appendChild(askBox);
+const asks = new Map(); // id -> {el, fn, t}
+function askHost(id, name, fn) {
+  const el = document.createElement('div');
+  el.style.cssText = 'background:#fff;border-radius:18px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.25);text-align:center;font-weight:600;color:#4a2b45';
+  el.innerHTML = `<div style="font-size:17px;margin-bottom:8px">👋 <b>${esc(name)}</b> wants to join your room</div>
+    <button class="btn" data-a="yes" style="margin:2px">✅ Let in</button> <button class="btn ghost" data-a="no" style="margin:2px">❌ No thanks</button>`;
+  el.onclick = e => { const b = e.target.closest('[data-a]'); if (b) answer(id, b.dataset.a === 'yes'); };
+  asks.set(id, { el, fn, t: setTimeout(() => answer(id, false), 60000) });
+  askBox.appendChild(el); G.sfx && G.sfx('star');
+}
+function answer(id, yes) { const a = asks.get(id); if (!a) return; askDone(id); a.fn(yes); }
+function askDone(id) { const a = asks.get(id); if (!a) return; clearTimeout(a.t); a.el.remove(); asks.delete(id); }
 function dropGuest(id) {
   if (!conns.has(id)) return; conns.delete(id);
   for (const oc of conns.values()) oc.send({ t: 'bye', id });
@@ -156,29 +198,32 @@ function dropGuest(id) {
 async function joinRoom(c) {
   status = `Joining room ${c}…`; render();
   let Peer; try { Peer = await loadPeer(); } catch (e) { status = 'Couldn’t load online play. Check your internet and try again.'; render(); return; }
-  leave(true); code = c; role = 'guest'; render();
+  if (!(await Fam.ensure('Rooms are just for family.'))) { status = 'Ask a grown-up to set the family word first.'; render(); return; }
+  let hid, k; try { hid = await roomId(c); k = await Fam.key('hi', c); } catch (e) { status = 'This browser can’t do family rooms. Try Chrome or Safari.'; render(); return; }
+  leave(true); code = c; role = 'guest'; hostId = hid; render();
   peer = new Peer(undefined, peerOpts());
   let opened = false;
   peer.on('open', id => {
     myId = id;
-    host = peer.connect(PREFIX + c, { reliable: true });
-    host.on('open', () => { opened = true; host.send({ t: 'hi', ...me(), st: stateMsg() }); status = 'You’re in! Find your friends in the world.'; badge(); });
+    host = peer.connect(hid, { reliable: true });
+    host.on('open', () => { opened = true; host.send({ t: 'hi', k, ...me(), st: stateMsg() }); status = 'Waiting for your family to let you in…'; render(); badge(); });
     host.on('data', d => fromHost(d));
     host.on('close', () => { if (role !== 'guest') return; const was = opened; leave(true); status = was ? 'The room closed. Join again with the code.' : ''; G.toast(was ? 'Your friend left the room 👋' : 'Couldn’t reach that room'); render(); badge(); });
   });
   peer.on('error', e => {
     if (role !== 'guest') return;
-    const msg = e.type === 'peer-unavailable' ? `No room called ${c}. Check the code with your friend.` : 'Couldn’t connect. Check your internet and try again.';
+    const msg = e.type === 'peer-unavailable' ? `No room called ${c}. Check the code, and make sure this phone has the same family word.` : 'Couldn’t connect. Check your internet and try again.';
     leave(true); status = msg; render(); badge(); if (!modal.classList.contains('show')) G.toast(msg);
   });
   setTimeout(() => { if (role === 'guest' && code === c && !opened) { leave(true); status = 'Couldn’t connect to that room. Try again, or try on Wi-Fi.'; render(); badge(); } }, 25000);
 }
 function fromHost(d) {
   if (!d || typeof d !== 'object') return;
+  if (d.t === 'no') { leave(true); status = 'You weren’t let in this time. Check the family word, or ask again.'; G.toast('Not let in this time'); render(); badge(); return; }
   if (d.t === 'full') { leave(true); status = 'That room is full (6 friends max).'; render(); badge(); return; }
-  if (d.t === 'roster') { G.toast(`You joined ${d.list[0] ? d.list[0].name + '’s' : 'the'} room! 💖`); for (const o of d.list) addOther(o.id, o, true); nearHost(d.list[0]); return; }
+  if (d.t === 'roster') { status = 'You’re in! Find your family in the world.'; G.toast(`You joined ${d.list[0] ? d.list[0].name + '’s' : 'the'} room! 💖`); for (const o of d.list) addOther(o.id, o, true); nearHost(d.list[0]); return; }
   if (d.t === 'hi') { addOther(d.id, d); return; }
-  if (d.t === 'bye') { if (d.id === PREFIX + code) { leave(true); status = 'Your friend closed the room.'; G.toast('Your friend left the room 👋'); render(); return; } removeOther(d.id); return; }
+  if (d.t === 'bye') { if (d.id === hostId) { leave(true); status = 'Your friend closed the room.'; G.toast('Your friend left the room 👋'); render(); return; } removeOther(d.id); return; }
   handle(d.id, d);
 }
 
@@ -201,8 +246,10 @@ function leave(quiet) {
   try { if (host) host.close(); } catch (e) { }
   for (const c of conns.values()) try { c.close(); } catch (e) { }
   conns.clear(); host = null;
+  for (const [id, c] of waiting) { askDone(id); try { c.close(); } catch (e) { } }
+  waiting.clear();
   try { if (peer) peer.destroy(); } catch (e) { }
-  peer = null; role = null; myId = ''; code = '';
+  peer = null; role = null; myId = ''; code = ''; hostId = ''; hiKey = '';
   for (const id of [...others.keys()]) removeOther(id, true);
   if (q.has('room')) history.replaceState(null, '', location.pathname);
   badge();
