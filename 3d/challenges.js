@@ -38,6 +38,12 @@ const LIST = [
   { id: 'petDress', tab: 'parlor', e: '🎀', t: 'Dress up your pet', r: 1, go: 'parlor', ev: { k: 'petdress' } },
   { id: 'petContest', tab: 'parlor', e: '🏆', t: 'Enter a pet dress-up contest', r: 1, go: 'parlor', ev: { k: 'petct' } },
   { id: 'petWin', tab: 'parlor', e: '👑', t: 'Win a pet dress-up contest', r: 2, go: 'parlor', ev: { k: 'petct', a: p => p === 0 } },
+  { id: 'farm', tab: 'parlor', e: '🐴', t: 'Adopt an animal at the Happy Barn', r: 1, go: 'barn', ev: { k: 'farm' } },
+  { id: 'farmBrush', tab: 'parlor', e: '🪮', t: 'Brush a barn animal until it shines', r: 1, go: 'barn', ev: { k: 'brush' } },
+  { id: 'farmRide', tab: 'parlor', e: '🏇', t: 'Go for a ride on a barn animal', r: 1, go: 'barn', ev: { k: 'ride' } },
+  { id: 'farmRare', tab: 'parlor', e: '🦖', t: 'Adopt a rare animal with stars', r: 2, go: 'barn', ev: { k: 'farm', a: a => ['unicorn', 'trike', 'trex', 'longneck'].includes(a) } },
+  { id: 'zooFeed', tab: 'explore', e: '🦒', t: 'Feed an animal at the Safari Zoo', r: 1, go: 'zoo', ev: { k: 'zoofeed' } },
+  { id: 'zooLearn', tab: 'explore', e: '📖', t: 'Meet a zebra, a giraffe and a rhino', r: 2, goal: 3, u: true, go: 'zoo', ev: { k: 'zoolearn' } },
   // 🧁 Sweet Bakery
   { id: 'cake', tab: 'bakery', e: '🎂', t: 'Design a cake', r: 1, go: 'bakery', ev: { k: 'cake' } },
   { id: 'tallCake', tab: 'bakery', e: '🍰', t: 'Make a cake with 3 layers or more', r: 2, go: 'bakery', ev: { k: 'cake', a: n => n >= 3 } },
@@ -61,7 +67,7 @@ const LIST = [
   { id: 'bestie', tab: 'town', e: '💖', t: 'Make a best friend (5 hearts)', r: 3, poll: () => G.FRIENDS.some(f => G.townSave(f).h >= 5) ? 1 : 0 },
   // 🗺️ Explore
   { id: 'map', tab: 'explore', e: '🗺️', t: 'Use the map to walk somewhere', r: 1, ev: { k: 'arrive' } },
-  { id: 'visitAll', tab: 'explore', e: '🧭', t: 'Visit all 10 places', r: 3, goal: G.ZONES.length, u: true, ev: { k: 'zone', a: a => !!Z[a] } },
+  { id: 'visitAll', tab: 'explore', e: '🧭', t: `Visit all ${G.ZONES.length} places`, r: 3, goal: G.ZONES.length, u: true, ev: { k: 'zone', a: a => !!Z[a] } },
   { id: 'find5', tab: 'explore', e: '⭐', t: 'Find 5 hidden stars', r: 1, goal: 5, poll: () => C.found },
   { id: 'find24', tab: 'explore', e: '🌟', t: 'Find all 24 hidden stars', r: 3, goal: 24, poll: () => C.found },
   { id: 'beachJump', tab: 'explore', e: '🏖️', t: 'Do a star jump at the beach', r: 1, go: 'beach', ev: { k: 'act', a: a => a === 'jumpjack', z: 'beach' } },

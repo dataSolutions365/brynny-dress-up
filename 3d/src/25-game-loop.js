@@ -48,7 +48,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
-    const spd=5*mag;const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
+    const spd=5*mag*rideBoost();const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
     const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
     player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;}else player.speed*=.8;
   // vertical
@@ -82,6 +82,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   // friends
   for(const f of FRIENDS)stepFriend(f,dt);if(started)talkBtn();
   for(const pt of PETS)stepPet(pt,dt);if(started&&!closetOpen)petButton();
+  barnStep(p,dt);
   for(const a of anims)a(t,dt);tickBursts(dt);
   for(const f of onTick)f(dt);
   // camera
@@ -106,6 +107,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   cakeContestCam(dt);
   petContestCam(dt);
   sportsCam(dt);
+  barnCam(dt);
   // shift the picture so the avatar is not hidden behind the closet
   const land=innerWidth>innerHeight*1.25;const voT=closetOpen?1:0;cam.vo+=(voT-cam.vo)*Math.min(1,dt*6);
   if(cam.vo>.002){const W=innerWidth,H=innerHeight;if(land)camera.setViewOffset(W,H,W*.24*cam.vo,0,W,H);else camera.setViewOffset(W,H,0,H*.2*cam.vo,W,H);}else if(camera.view&&camera.view.enabled)camera.clearViewOffset();

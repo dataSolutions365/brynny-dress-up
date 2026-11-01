@@ -31,6 +31,9 @@ const ZONES=[
   {id:'agency',name:'⭐ Star Model Agency',ang:270,d:36,r:7.5,music:'fashion-show'},
   {id:'court',name:'🏀 Basketball Court',ang:90,d:36,r:7.5,music:'stadium'},
   {id:'batting',name:'⚾ Batting Cage',ang:210,d:36,r:7.5,music:'stadium-cheer'},
+  // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
+  {id:'barn',name:'🐴 Happy Barn',ang:0,d:38.5,r:6,music:'spring-birds',nopath:true},
+  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:38.5,r:6,music:'city-park',nopath:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -47,7 +50,7 @@ const PUSH=[];function pushable(z,m,r,h){PUSH.push({z,m,r,h,y0:m.position.y,vx:0
 const LAMPS=[],lampMat=glow('#fff1c4',1.6);// street lights (seasons.js turns them up at night)
 const pathMat=std('#ffffff',{map:TEX.stone,roughness:.85});pathMat.polygonOffset=true;pathMat.polygonOffsetFactor=-1;pathMat.polygonOffsetUnits=-1;
 {const ring=M(new THREE.RingGeometry(6.4,7.9,72),pathMat,0,.012,0,scene,false,true);ring.rotation.x=-Math.PI/2;
- for(const z of ZONES){if(!z.d)continue;const g=new THREE.Group();g.rotation.y=Math.atan2(z.x,z.z);scene.add(g);
+ for(const z of ZONES){if(!z.d||z.nopath)continue;const g=new THREE.Group();g.rotation.y=Math.atan2(z.x,z.z);scene.add(g);
   const len=z.d-z.r*.5-7;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,7+len/2,g,false,true);p.rotation.x=-Math.PI/2;
   for(const s of [-1,1]){const lx=s*1.9,lz=7+len*.55;const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
     LAMPS.push(M(sph(.2,16,12),lampMat,lx,2.7,lz,g,false,false));const wp=new THREE.Vector3(lx,0,lz).applyAxisAngle(new THREE.Vector3(0,1,0),g.rotation.y);obs.push({x:wp.x,z:wp.z,r:.2});}}}

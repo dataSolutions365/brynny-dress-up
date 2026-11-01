@@ -1,5 +1,5 @@
 /* ================= MAP ================= */
-const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0'};
+const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -14,7 +14,7 @@ function drawWorld(x,w2s,k,size){
   // paths
   x.strokeStyle='#efe6da';x.lineCap='round';x.lineWidth=Math.max(2,2.6*k);
   x.beginPath();x.arc(cx,cy,7.15*k,0,Math.PI*2);x.stroke();
-  for(const z of ZONES){if(!z.d)continue;const [px,py]=w2s(z.x,z.z);x.beginPath();x.moveTo(cx+(px-cx)*7/z.d,cy+(py-cy)*7/z.d);x.lineTo(px,py);x.stroke();}
+  for(const z of ZONES){if(!z.d||z.nopath)continue;const [px,py]=w2s(z.x,z.z);x.beginPath();x.moveTo(cx+(px-cx)*7/z.d,cy+(py-cy)*7/z.d);x.lineTo(px,py);x.stroke();}
   // zones
   for(const z of ZONES){const [px,py]=w2s(z.x,z.z);x.beginPath();x.arc(px,py,z.r*k,0,Math.PI*2);x.fillStyle=MAPC[z.id]||'#fff3b0';x.fill();
     x.lineWidth=Math.max(1.5,.35*k);x.strokeStyle=mapDest===z?'#ff4d8d':'rgba(255,255,255,.9)';x.stroke();}
@@ -81,4 +81,4 @@ onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('ta
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
   sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
-Object.assign(window.__game,{openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
+Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
