@@ -284,8 +284,8 @@ function handle(id, d) {
   if (d.t === 's' && Array.isArray(d.p)) { o.st = d; o.tgt.set(+d.p[0] || 0, +d.p[1] || 0, +d.p[2] || 0); o.face = +d.f || 0; o.sp = +d.sp || 0; o.air = !!d.air; }
   else if (d.t === 'look' && d.look) {
     o.look = d.look;
-    // style (glam/cute) changes the body, so rebuild; otherwise just re-dress
-    if ((d.look.style || 'glam') !== (o.a.look.style || 'glam') || JSON.stringify(d.look.face || {}) !== JSON.stringify(o.a.look.face || {})) {
+    // style (glam/cute) or girl/guy changes the body, so rebuild; otherwise just re-dress
+    if ((d.look.style || 'glam') !== (o.a.look.style || 'glam') || (d.look.body || 'girl') !== (o.a.look.body || 'girl') || JSON.stringify(d.look.face || {}) !== JSON.stringify(o.a.look.face || {})) {
       const n = new G.Avatar(d.look, o.name, o.tc);
       G.scene.remove(o.a.g); o.a = n; o.g = n.g; o.say = null; G.scene.add(n.g); n.g.position.copy(o.pos);
     } else { try { o.a.dress(d.look); } catch (e) { } }

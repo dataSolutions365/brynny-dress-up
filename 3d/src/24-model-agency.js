@@ -87,7 +87,7 @@ function hairHTML(){const H=SAVE.look.hair,t=HTOOLS.find(x=>x[0]===hTool);
   h+=`<div class="hmeters">${meter('Length',((H.len||1)-.35)/.95)}${meter('Curls',H.curl||0)}${meter('Volume',H.vol||0)}</div>`;
   if(hTool==='spray')h+=`<h3>Spray color</h3><div class="swatches">${myColors(HAIRC.concat(['#ffd23f','#7ee081','#ff3b6b'])).map(c=>`<button class="sw${c===sprayC?' on':''}" style="background:${c}" data-spray="${c}"></button>`).join('')}</div>`;
   if(hTool==='clip')h+=`<h3>Clip color</h3><div class="swatches">${['#ff6fae','#ffd23f','#4fb6ff','#b388ff','#ffffff','#7ee081','#d4af37'].map(c=>`<button class="sw${c===clipC?' on':''}" style="background:${c}" data-clipc="${c}"></button>`).join('')}</div><div class="chips" style="margin-top:8px"><button data-hreset="clips">🧹 Take clips off</button></div>`;
-  h+=`<h3>Quick styles</h3><div class="grid">${HAIRS.map(([id,ico,n])=>`<button class="item${H.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>
+  h+=`<h3>Quick styles</h3><div class="grid">${hairsOf(SAVE.look).map(([id,ico,n])=>`<button class="item${H.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>
     <div class="chips" style="margin-top:10px"><button data-hreset="all">↩️ Wash out (reset length, curls, volume)</button></div>`;
   return h;}
 function makeupHTML(){const mk=SAVE.look.makeup,t=MTOOLS.find(x=>x[0]===mTool),cols=MKC[mTool];
