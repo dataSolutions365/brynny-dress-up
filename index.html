@@ -7,6 +7,9 @@
 <meta name="description" content="A dress-up game made for Brynny's birthday.">
 <meta name="theme-color" content="#ff8fc1">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dress-Up">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👗</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -3223,6 +3226,10 @@ $('#msgSend').onclick=async()=>{
 recInfo();
 updateBtn();
 if(navigator.onLine!==false)loadSDK().catch(()=>{});
+</script>
+<script>
+// save the game for offline play (see sw.js)
+if ('serviceWorker' in navigator && location.protocol !== 'file:') addEventListener('load', () => navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {}));
 </script>
 </body>
 </html>

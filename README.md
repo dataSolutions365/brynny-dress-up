@@ -36,6 +36,13 @@ The 3D game is split into small files in `3d/src/`, one per feature (each place,
 ## Play it
 Open `index.html` in a browser, or visit the GitHub Pages link for this repository.
 
+## Put it on an iPhone like an app (works offline)
+1. On her iPhone, open the game in Safari while it can reach the internet. If Screen Time limits websites, allow `dressup.datasolutions365.com`.
+2. Tap Share, then **Add to Home Screen**.
+3. Open it once from the new home screen icon while still online, and give it a minute so it saves everything (about 11 MB, mostly music).
+
+After that it opens from the icon and plays with no internet: the 2D studio, the pet page, the 3D world, and all the music. Her looks, photos, and songs stay on the phone. Updates still arrive whenever it's online. When you add a new song, add it to the `MUSIC` list in `sw.js` so it's saved for offline play.
+
 ## Ideas for later
 - Cloud saving with Firebase so looks follow her across devices
 - More events and outfits
