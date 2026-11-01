@@ -16,7 +16,7 @@
  M(cyl(.62,.7,.66,40),white,0,.33,T.lz,g);M(cyl(.76,.76,.06,40),pinkG,0,.69,T.lz,g);
  M(new THREE.TorusGeometry(.76,.03,8,48),gold,0,.72,T.lz,g).rotation.x=Math.PI/2;z.ob(0,T.lz,.85);
  const bottleC=['#ff3b6b','#ff6fae','#8e6cff','#4fb6ff','#7ee081','#ffd23f'];
- bottleC.forEach((c,i)=>{const a=deg(150+i*12),bx=Math.sin(a)*.64,bz=T.lz+Math.cos(a)*.64;M(cyl(.035,.042,.1,12),phys(c,{roughness:.1,clearcoat:1,transmission:.2}),bx,.77,bz,g);M(cyl(.016,.02,.07,8),std('#2d2d3a'),bx,.855,bz,g);});
+ bottleC.forEach((c,i)=>{const a=deg(150+i*12),bx=Math.sin(a)*.64,bz=T.lz+Math.cos(a)*.64;M(cyl(.035,.042,.1,12),phys(c,{roughness:.1,clearcoat:1,transparent:true,opacity:.88}),bx,.77,bz,g);M(cyl(.016,.02,.07,8),std('#2d2d3a'),bx,.855,bz,g);});
  // bath tub and food bowl that show up on the table during pet care
  const tub=z.tub=new THREE.Group();tub.position.set(0,T.h,T.lz);g.add(tub);tub.visible=false;
  {const pts=[[0,0],[.36,0],[.42,.05],[.45,.2],[.47,.26],[.44,.27]].map(([a,b])=>new THREE.Vector2(a,b));const t=M(new THREE.LatheGeometry(pts,40),phys('#ffffff',{roughness:.15,clearcoat:1,side:THREE.DoubleSide}),0,0,0,tub);t.scale.z=1.35;

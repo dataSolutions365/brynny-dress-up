@@ -69,7 +69,12 @@ const rnd=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- renderer ---------- */
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.75:2));
+const PR_MAX=Math.min(devicePixelRatio,isTouch?1.75:2),PR_MIN=Math.min(PR_MAX,1);let prNow=PR_MAX,slowT=0;
+renderer.setPixelRatio(PR_MAX);
+// If the game keeps running slowly (an older phone, or one that has warmed up), draw the picture a little less sharp
+// so it stays smooth. Short hiccups don't count, only being slow for a couple of seconds in a row.
+function adaptRes(raw){if(raw>.25||prNow<=PR_MIN)return;if(raw>1/40)slowT+=raw;else slowT=Math.max(0,slowT-raw*.5);
+  if(slowT>2){prNow=Math.max(PR_MIN,prNow-.25);slowT=0;renderer.setPixelRatio(prNow);renderer.setSize(innerWidth,innerHeight,false);}}
 renderer.setSize(innerWidth,innerHeight,false);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
@@ -424,7 +429,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
  M(cyl(.62,.7,.66,40),white,0,.33,T.lz,g);M(cyl(.76,.76,.06,40),pinkG,0,.69,T.lz,g);
  M(new THREE.TorusGeometry(.76,.03,8,48),gold,0,.72,T.lz,g).rotation.x=Math.PI/2;z.ob(0,T.lz,.85);
  const bottleC=['#ff3b6b','#ff6fae','#8e6cff','#4fb6ff','#7ee081','#ffd23f'];
- bottleC.forEach((c,i)=>{const a=deg(150+i*12),bx=Math.sin(a)*.64,bz=T.lz+Math.cos(a)*.64;M(cyl(.035,.042,.1,12),phys(c,{roughness:.1,clearcoat:1,transmission:.2}),bx,.77,bz,g);M(cyl(.016,.02,.07,8),std('#2d2d3a'),bx,.855,bz,g);});
+ bottleC.forEach((c,i)=>{const a=deg(150+i*12),bx=Math.sin(a)*.64,bz=T.lz+Math.cos(a)*.64;M(cyl(.035,.042,.1,12),phys(c,{roughness:.1,clearcoat:1,transparent:true,opacity:.88}),bx,.77,bz,g);M(cyl(.016,.02,.07,8),std('#2d2d3a'),bx,.855,bz,g);});
  // bath tub and food bowl that show up on the table during pet care
  const tub=z.tub=new THREE.Group();tub.position.set(0,T.h,T.lz);g.add(tub);tub.visible=false;
  {const pts=[[0,0],[.36,0],[.42,.05],[.45,.2],[.47,.26],[.44,.27]].map(([a,b])=>new THREE.Vector2(a,b));const t=M(new THREE.LatheGeometry(pts,40),phys('#ffffff',{roughness:.15,clearcoat:1,side:THREE.DoubleSide}),0,0,0,tub);t.scale.z=1.35;
@@ -492,7 +497,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
   anims.push(t=>{cg.rotation.y=t*.25;cg.position.y=3.62+Math.sin(t*1.5)*.06;});}
  // glass display case with little cakes
  {const dg=new THREE.Group();dg.position.set(-2.55,0,-3.75);g.add(dg);M(box(2.5,.9,.85),pinkG,0,.45,0,dg);M(box(2.55,.06,.9),white,0,.92,0,dg);
-  M(box(2.45,.55,.8),phys('#ffffff',{roughness:0,transmission:.9,transparent:true,opacity:.25,clearcoat:1}),0,1.22,0,dg,false,false);
+  M(box(2.45,.55,.8),phys('#ffffff',{roughness:0,transparent:true,opacity:.25,clearcoat:1}),0,1.22,0,dg,false,false);
   [['#ffb3d1','#ff6fae'],['#6b3b22','#e8c25a'],['#fff4fa','#8fd8ff']].forEach(([c,t],i)=>{const x=-.8+i*.8;M(cyl(.2,.2,.22,28),phys(c,{roughness:.5,clearcoat:.3}),x,1.06,0,dg);M(cyl(.21,.21,.04,28),phys(t,{roughness:.3,clearcoat:1}),x,1.17,0,dg);M(sph(.035,10,8),phys('#d0102b',{roughness:.1,clearcoat:1}),x,1.22,0,dg);});
   z.ob(-2.55,-3.75,1.3);z.ob(-3.3,-3.75,.6);z.ob(-1.8,-3.75,.6);}
  // cupcake shelf
@@ -947,8 +952,20 @@ class Avatar{
       if(ex.cape){const g=new THREE.PlaneGeometry(.44,.78,6,10);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,-Math.abs(x)*x*1.5-(.39-y)*.12*0);p.setX(i,x*(1+(.39-y)*.6));}g.translate(0,-.39,0);g.computeVertexNormals();
         const m=mat(ex.cape);m.side=THREE.DoubleSide;const cg=new THREE.Group();cg.position.set(0,.47,-.11);spine.add(cg);this.parts.push(cg);cg.geometry={dispose(){}};P(g,m,cg).rotation.y=Math.PI;this.cape=cg;
         P(new THREE.TorusGeometry(.07,.012,8,20),m,spine,0,.47,0).rotation.x=Math.PI/2;}
-      if(ex.purse){const m=mat(ex.purse,'shiny'),a=arms[1];P(box(.1,.08,.04),m,a.hand,0,-.11,0);P(new THREE.TorusGeometry(.04,.006,6,16,Math.PI),m,a.hand,0,-.07,0);}
-      if(ex.wand){const a=arms[0];const w=P(cyl(.006,.006,.26,8),mat('#ffffff','shiny'),a.hand,0,-.03,.08);w.rotation.x=Math.PI/2-.3;const st=P(starGeo,mat(ex.wand,'gem'),a.hand,0,.0,.22);st.scale.setScalar(.22);}
+      if(ex.purse){// a proper handbag: rounded body, a darker flap, gold clasp, rings and a little heart charm
+        const m=mat(ex.purse,'shiny'),dk=mat('#'+new THREE.Color(ex.purse).offsetHSL(0,0,-.12).getHexString(),'shiny'),gold=mat('#e8c25a','metal'),a=arms[1];
+        const pg=new THREE.Group();pg.position.set(a.sx*.03,-.01,.01);pg.rotation.z=a.sx*.38;pg.scale.setScalar(1.35);a.hand.add(pg);this.parts.push(pg);pg.geometry={dispose(){}};
+        P(new THREE.TorusGeometry(.055,.008,8,24,Math.PI),m,pg,0,-.06,0);
+        for(const s of [-1,1])P(new THREE.TorusGeometry(.011,.003,6,14),gold,pg,s*.055,-.062,0);
+        P(new RoundedBoxGeometry(.19,.14,.07,3,.022),m,pg,0,-.135,0);
+        P(new RoundedBoxGeometry(.194,.062,.074,3,.016),dk,pg,0,-.092,.002);
+        const cl=P(new THREE.TorusGeometry(.012,.004,8,18),gold,pg,0,-.122,.038);cl.scale.y=.8;
+        P(sph(.007,10,8),mat('#ffffff','gem'),pg,0,-.122,.039);
+        const hs=new THREE.Shape();hs.moveTo(0,-.012);hs.bezierCurveTo(-.016,0,-.01,.012,0,.005);hs.bezierCurveTo(.01,.012,.016,0,0,-.012);
+        P(cyl(.0012,.0012,.026,4),gold,pg,.055,-.083,.004);
+        P(new THREE.ExtrudeGeometry(hs,{depth:.004,bevelEnabled:true,bevelSize:.0015,bevelThickness:.0015,bevelSegments:2,curveSegments:8}),gold,pg,.055,-.1,.002);}
+      if(ex.wand){const a=arms[0];const w=P(cyl(.008,.008,.34,10),mat('#ffffff','shiny'),a.hand,0,-.02,.1);w.rotation.x=Math.PI/2-.3;const st=P(starGeo,mat(ex.wand,'gem'),a.hand,0,.03,.27);st.scale.setScalar(.32);
+        for(const s of [-1,1]){const rb=P(new THREE.TorusGeometry(.012,.004,6,12),mat('#ff8fc8','shiny'),a.hand,s*.012,-.04,.04);rb.rotation.y=Math.PI/2;}}
       if(ex.glasses){const m=mat(ex.glasses,'shiny');for(const s of [-1,1])P(new THREE.TorusGeometry(.03,.005,8,24),m,head,s*.046,.005,.133);P(box(.03,.005,.005),m,head,0,.01,.136);
         for(const s of [-1,1]){const arm=P(box(.005,.005,.13),m,head,s*.078,.008,.07);}}
       if(ex.halo){const h=P(new THREE.TorusGeometry(.085,.011,10,36),mat(ex.halo,'gem'),head,0,.3,-.01);h.rotation.x=Math.PI/2;h.castShadow=false;}
@@ -956,7 +973,7 @@ class Avatar{
         P(new THREE.ConeGeometry(.024,.14,18),mat(ex.unicorn,'sparkle'),hg,0,.07,0);for(let i=0;i<3;i++){const r=P(new THREE.TorusGeometry(.021-i*.006,.0045,6,16),mat('#ffffff','shiny'),hg,0,.018+i*.033,0);r.rotation.x=Math.PI/2+.25;}}
       if(ex.balloon){const bm=mat(ex.balloon,'shiny');const bg=new THREE.Group();bg.position.set(-.3,.8,-.02);spine.add(bg);this.parts.push(bg);bg.geometry={dispose(){}};
         P(sph(.11,24,18),bm,bg).scale.set(1,1.15,1);P(new THREE.ConeGeometry(.016,.03,10),bm,bg,0,-.135,0).rotation.x=Math.PI;P(cyl(.002,.002,.72,6),mat('#ffffff'),bg,0,-.5,0);}
-      if(ex.pearls){const m=mat(ex.pearls,'shiny');for(let i=0;i<14;i++){const a=i/14*Math.PI*2;P(sph(.012,8,6),m,spine,Math.sin(a)*.065,.45-Math.max(0,Math.cos(a))*.03,Math.cos(a)*.055);}}
+      if(ex.pearls){const m=mat(ex.pearls,'shiny');for(let i=0;i<18;i++){const a=i/18*Math.PI*2;P(sph(.0145,12,8),m,spine,Math.sin(a)*.068,.45-Math.max(0,Math.cos(a))*.035,Math.cos(a)*.058);}P(sph(.021,14,10),m,spine,0,.41,.066);}
       if(ex.scarf){const m=mat(ex.scarf);P(new THREE.TorusGeometry(.065,.03,10,24),m,spine,0,.46,0).rotation.x=Math.PI/2;const tail=P(capTop(.03,.16),m,spine,.04,.46,.07);tail.scale.z=.4;tail.rotation.x=-.15;}}
     /* holiday costumes: their 3D pieces live in seasons.js (window.__costumes[id](kit,color)) */
     {const C=window.__costumes;if(C){const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,av:this};
@@ -1819,7 +1836,7 @@ function cakeH(){const D=cakeDims(),t=D[D.length-1];return t.y0+t.h;}
 function buildCake(){const C=SAVE.cake,root=Z.bakery.cakeRoot;if(bk.body){root.remove(bk.body);disposeTree(bk.body);}
   const body=bk.body=new THREE.Group();root.add(body);bk.tiers=[];bk.hits=[];bk.tops=[];
   // the plate or stand
-  const [pid,,,ph,pc]=plateInfo();const pm=pid==='glass'?phys(pc,{roughness:0,transmission:.6,transparent:true,opacity:.6,clearcoat:1}):pid==='white'?phys(pc,{roughness:.2,clearcoat:1}):pid==='gold'?std(pc,{metalness:1,roughness:.22}):phys(pc,{roughness:.25,clearcoat:1});
+  const [pid,,,ph,pc]=plateInfo();const pm=pid==='glass'?phys(pc,{roughness:0,transparent:true,opacity:.5,clearcoat:1}):pid==='white'?phys(pc,{roughness:.2,clearcoat:1}):pid==='gold'?std(pc,{metalness:1,roughness:.22}):phys(pc,{roughness:.25,clearcoat:1});
   if(ph){M(cyl(.2,.26,.03,28),pm,0,.015,0,body);M(cyl(.05,.07,ph-.03,16),pm,0,ph/2,0,body);}
   M(cyl(.62,.6,.025,48),pm,0,ph+.0125,0,body);if(pid!=='glass')M(new THREE.TorusGeometry(.61,.012,8,64),pm,0,ph+.025,0,body).rotation.x=Math.PI/2;
   const base=ph+.025,D=cakeDims();
@@ -2602,7 +2619,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
   const gy=groundAt(f.pos.x,f.pos.z);f.pos.y+=(gy-f.pos.y)*Math.min(1,dt*12);
   f.g.position.copy(f.pos);f.g.rotation.y=f.face+(f.spinY||0);f.update(dt,sp,false);}
 
-function tick(){const dt=Math.min(.05,clock.getDelta()),t=clock.elapsedTime;
+function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elapsedTime;if(started)adaptRes(rawDt);
   // movement input
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started)mag=0;
@@ -2678,9 +2695,15 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)music.pause
 // background where the browser allows it, so Tiereyn keeps running on the loading screen. Then show the world.
 function showWorld(){renderer.setAnimationLoop(tick);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=$('#loading');if(l){l.classList.add('done');setTimeout(()=>l.remove(),600);}$('#welcome').classList.add('show');}));}
-function warmUp(){scene.updateMatrixWorld(true);let c;try{c=renderer.compileAsync?renderer.compileAsync(scene,camera):null;}catch(e){c=null;}
+// The glam-room mirror draws the world a second time into its own picture, and that picture needs its own set of
+// shaders. Build those now too, or the game freezes for a few seconds the first time the mirror comes into view.
+function warmUp(){scene.updateMatrixWorld(true);let c;try{c=renderer.compileAsync?renderer.compileAsync(scene,camera):null;
+    const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=renderer.compileAsync?renderer.compileAsync(scene,camera):null;renderer.setRenderTarget(null);if(c&&c2)c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
   // never wait forever: if building the shaders takes too long, just start (the first frame finishes the job)
-  Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(showWorld);}
+  Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
+// The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
+// while thousands of them were sent over. Draw everything once, behind the loading screen, so they are all there already.
+function preUpload(){const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});renderer.render(scene,camera);}catch(e){}off.forEach(o=>o.frustumCulled=true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
 /* ================= MAP ================= */

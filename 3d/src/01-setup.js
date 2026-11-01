@@ -67,7 +67,12 @@ const rnd=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- renderer ---------- */
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.75:2));
+const PR_MAX=Math.min(devicePixelRatio,isTouch?1.75:2),PR_MIN=Math.min(PR_MAX,1);let prNow=PR_MAX,slowT=0;
+renderer.setPixelRatio(PR_MAX);
+// If the game keeps running slowly (an older phone, or one that has warmed up), draw the picture a little less sharp
+// so it stays smooth. Short hiccups don't count, only being slow for a couple of seconds in a row.
+function adaptRes(raw){if(raw>.25||prNow<=PR_MIN)return;if(raw>1/40)slowT+=raw;else slowT=Math.max(0,slowT-raw*.5);
+  if(slowT>2){prNow=Math.max(PR_MIN,prNow-.25);slowT=0;renderer.setPixelRatio(prNow);renderer.setSize(innerWidth,innerHeight,false);}}
 renderer.setSize(innerWidth,innerHeight,false);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;

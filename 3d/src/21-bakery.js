@@ -117,7 +117,7 @@ function cakeH(){const D=cakeDims(),t=D[D.length-1];return t.y0+t.h;}
 function buildCake(){const C=SAVE.cake,root=Z.bakery.cakeRoot;if(bk.body){root.remove(bk.body);disposeTree(bk.body);}
   const body=bk.body=new THREE.Group();root.add(body);bk.tiers=[];bk.hits=[];bk.tops=[];
   // the plate or stand
-  const [pid,,,ph,pc]=plateInfo();const pm=pid==='glass'?phys(pc,{roughness:0,transmission:.6,transparent:true,opacity:.6,clearcoat:1}):pid==='white'?phys(pc,{roughness:.2,clearcoat:1}):pid==='gold'?std(pc,{metalness:1,roughness:.22}):phys(pc,{roughness:.25,clearcoat:1});
+  const [pid,,,ph,pc]=plateInfo();const pm=pid==='glass'?phys(pc,{roughness:0,transparent:true,opacity:.5,clearcoat:1}):pid==='white'?phys(pc,{roughness:.2,clearcoat:1}):pid==='gold'?std(pc,{metalness:1,roughness:.22}):phys(pc,{roughness:.25,clearcoat:1});
   if(ph){M(cyl(.2,.26,.03,28),pm,0,.015,0,body);M(cyl(.05,.07,ph-.03,16),pm,0,ph/2,0,body);}
   M(cyl(.62,.6,.025,48),pm,0,ph+.0125,0,body);if(pid!=='glass')M(new THREE.TorusGeometry(.61,.012,8,64),pm,0,ph+.025,0,body).rotation.x=Math.PI/2;
   const base=ph+.025,D=cakeDims();
