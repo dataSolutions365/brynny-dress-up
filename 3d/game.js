@@ -36,9 +36,18 @@ const DRESSES=[['gown','👸','Princess gown','#ff8fc8'],['party','🎉','Party 
   ['leotard','🤸','Gymnast','#8e6cff'],['cheer','📣','Cheer outfit','#ff4d8d'],['tennis','🎾','Tennis dress','#ffffff'],['swimsuit','🩱','Swimsuit','#2fd1c5'],['minidress','✨','Sequin dress','#ffd23f'],['jumpsuit','👖','Jumpsuit','#ff6f61'],
   ['pajamas','🌙','Pajamas','#b388ff'],['redcarpet','🌹','Red carpet gown','#c2185b'],['spacepup','🐶','Space pup suit','#3f7fd9'],['island','🌺','Island dress','#d62839'],['vampire','🧛','Vampire gown','#2d2d3a'],['werewolf','🐺','Werewolf','#7a5230'],
   ['mummy','🧻','Mummy wraps','#efe6cf'],['zombie','🧟','Zombie rags','#6b7d3a'],['redtulle','💃','Red tulle gown','#d7263d'],['catsuit','🦹','Denim catsuit','#2d2d3a']];
-const SHOES=[['sneaker','👟','Sneakers','#ffffff'],['boots','👢','Boots','#8a5a3b'],['heels','👠','Heels','#ff3b6b'],['glass','💎','Glass slippers','#cfefff'],['rain','☔','Rain boots','#ffd23f'],['skates','🛼','Roller skates','#ff6fae'],['flats','🥿','Ballet flats','#ffb3d1'],['platforms','👡','Platform heels','#1d1a1f'],['furboots','☁️','Fluffy boots','#f4eadf'],['sandals','🩴','Sandals','#ffd23f']];
-const HATS=[['tiara','💎','Tiara','#ffd23f'],['crown','👑','Crown','#d4af37'],['witchhat','🧙','Witch hat','#2d2d3a'],['catears','🐱','Cat ears','#2d2d3a'],['bunny','🐰','Bunny ears','#ffffff'],['santahat','🎅','Santa hat','#e0263b'],['party','🥳','Party hat','#4fb6ff'],['cap','🧢','Ball cap','#ff3b6b'],['flowers','🌼','Flower crown','#ff6fae'],['bow','🎀','Big bow','#ff3b6b']];
-const EXTRAS=[['wings','🧚','Fairy wings','#b388ff'],['cape','🦸','Cape','#e0263b'],['purse','👛','Purse','#ff6fae'],['wand','🪄','Magic wand','#ffd23f'],['glasses','👓','Glasses','#2d2d3a'],['pearls','📿','Pearls','#ffffff'],['scarf','🧣','Scarf','#ff3b6b'],['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['balloon','🎈','Balloon','#ff3b6b']];
+const SHOES=[['sneaker','👟','Sneakers','#ffffff'],['boots','👢','Boots','#8a5a3b'],['heels','👠','Heels','#ff3b6b'],['glass','💎','Glass slippers','#cfefff'],['rain','☔','Rain boots','#ffd23f'],['skates','🛼','Roller skates','#ff6fae'],['flats','🥿','Ballet flats','#ffb3d1'],['platforms','👡','Platform heels','#1d1a1f'],['furboots','☁️','Fluffy boots','#f4eadf'],['sandals','🩴','Sandals','#ffd23f'],
+  // from the 2D game
+  ['hightops','👟','High-tops','#b388ff'],['cleats','⚽','Soccer cleats','#ff8a1f'],['maryjanes','🎀','Mary Janes','#2d2d3a'],['pointe','🩰','Ballet slippers','#ffc2d8'],['kneeboots','👢','Tall boots','#2d2d3a'],['snowboots','❄️','Snow boots','#ff6fae'],
+  ['witchboots','🧙','Witch boots','#2d2d3a'],['paws','🐾','Monster paws','#7a5230'],['furwarmers','☁️','Fluffy leg warmers','#ffffff'],['chunkyboots','💗','Chunky boots','#ff6fae'],['laceheels','👡','Lace-up heels','#d6d9e2']];
+const HATS=[['tiara','💎','Tiara','#ffd23f'],['crown','👑','Crown','#d4af37'],['witchhat','🧙','Witch hat','#2d2d3a'],['catears','🐱','Cat ears','#2d2d3a'],['bunny','🐰','Bunny ears','#ffffff'],['santahat','🎅','Santa hat','#e0263b'],['party','🥳','Party hat','#4fb6ff'],['cap','🧢','Ball cap','#ff3b6b'],['flowers','🌼','Flower crown','#ff6fae'],['bow','🎀','Big bow','#ff3b6b'],
+  // from the 2D game
+  ['veil','👰','Bridal veil','#ffffff'],['beanie','🧶','Beanie','#b388ff'],['sunhat','👒','Sun hat','#f3d9a4'],['beret','🎨','Beret','#d62839'],['sweatband','🏃','Sweatband','#ff4d8d'],['headband','🎀','Headband','#ff6fae'],['pupears','🐶','Space pup ears','#3f7fd9'],
+  ['wolfears','🐺','Wolf ears','#7a5230'],['mummywrap','🧻','Mummy wrap','#efe6cf'],['hibiscus','🌺','Hibiscus flower','#ff4d6d'],['fluffyears','🐱','Fluffy kitty ears','#7a4a2a'],['horns','😈','Horn clips','#e0b04a']];
+const EXTRAS=[['wings','🧚','Fairy wings','#b388ff'],['cape','🦸','Cape','#e0263b'],['purse','👛','Purse','#ff6fae'],['wand','🪄','Magic wand','#ffd23f'],['glasses','👓','Glasses','#2d2d3a'],['pearls','📿','Pearls','#ffffff'],['scarf','🧣','Scarf','#ff3b6b'],['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['balloon','🎈','Balloon','#ff3b6b'],
+  // from the 2D game
+  ['heartneck','💖','Heart necklace','#ff4d6d'],['earrings','✨','Earrings','#ffd23f'],['heartglasses','😍','Heart shades','#ff4d8d'],['bouquet','💐','Bouquet','#ff8fc8'],['present','🎁','Gift box','#7ee081'],['pompoms','📣','Pom-poms','#ff4d8d'],['racket','🎾','Tennis racket','#7ee081'],
+  ['ball','⚽','Soccer ball','#ffffff'],['medal','🥇','Gold medal','#ffd23f'],['vampcape','🧛','Vampire cape','#2d2d3a'],['lei','🌺','Flower lei','#ff8fc8'],['tail','🐈','Kitty tail','#ffffff'],['whiskers','🐱','Kitty face paint','#ffffff'],['bangles','🟡','Gold bangles','#e0b04a']];
 const CAT={tops:TOPS,bottoms:BOTTOMS,dresses:DRESSES,shoes:SHOES,hats:HATS,extras:EXTRAS};
 const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'};
 // things you can buy in the shop with coins (everything else stays free)
@@ -1185,6 +1194,10 @@ function frontText(k,txt,col,y=.28,size=.11){const t=canvasTex(128,128,(x)=>{x.f
   const m=new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.7,depthWrite:false});k.av.mats.push(m);k.P(new THREE.PlaneGeometry(size,size),m,k.spine,0,y,.106).castShadow=false;}
 const buttons=(k,m,parent,x,ys,z,r=.007)=>ys.forEach(y=>k.P(sph(r,8,6),m,parent,x,y,z));
 const sideStripes=(k,m,full)=>{for(const l of k.legs){const X=k.av.legX;k.P(box(.008,full?.3+X:.07,.02),m,l.hp,l.sx*.071,full?-(.3+X)/2-.03:-.06,0);if(full)k.P(box(.008,.3+X,.02),m,l.kn,l.sx*.064,-(.3+X)/2-.02,0);}};
+// a shoe shell around each foot (sy: how tall), and a boot leg up the shin (len: how high)
+const shoeShell=(k,m,sy=.82,grow=1)=>k.legs.map(l=>{const sh=k.P(sph(.057*grow,16,12),m,l.an,0,-.012,.045);sh.scale.set(1.12,sy,2.05);return sh;});
+const bootLeg=(k,m,r,len,fz=0)=>k.legs.map(l=>{const X=k.av.legX,g=new THREE.CylinderGeometry(r,r*1.04,len,32,fz?16:1);const b=k.P(fz?fuzz(g,fz,110):g,m,l.kn,0,-.37-X+len/2,0);return b;});
+const solePad=(k,m,h=.03,w=.11,d=.22)=>k.legs.forEach(l=>k.P(box(w,h,d),m,l.an,0,-.06+h/2-.005,.045));
 const OUTFITS2D={
   // 🤸 Gymnast: a long-sleeved shiny leotard with a sweep of rhinestones
   leotard(k,c){const m=k.mat(c,'shiny');k.topShell(m,'long');k.waist(m);
@@ -1291,6 +1304,93 @@ const OUTFITS2D={
   // ⛓️ Chain cargo pants: pockets on the legs and a gold chain
   cargo(k,c){const m=k.mat(c),g=k.mat('#e0b04a','metal');k.waist(m);k.legsShell(m,.074,true);for(const l of k.legs)k.P(box(.012,.07,.06),m,l.hp,l.sx*.075,-.2,0);
     for(let i=0;i<9;i++){const a=-.9+i*.225;k.P(sph(.006,6,5),g,k.hips,Math.sin(a)*.14,.04-Math.cos(a*1.2)*.03,Math.cos(a)*.115);}},
+
+  /* ---- shoes ---- */
+  // 👟 High-tops: up over the ankle with white soles and laces
+  hightops(k,c){const m=k.mat(c),w=k.mat('#ffffff','shiny');shoeShell(k,m);solePad(k,w);bootLeg(k,m,.058,.09);k.legs.forEach(l=>{for(let i=0;i<3;i++)k.P(box(.04,.005,.006),w,l.an,0,.0+i*.018,.1-i*.012);});},
+  // ⚽ Soccer cleats: bright with little studs and a white stripe
+  cleats(k,c){const m=k.mat(c,'shiny'),w=k.mat('#ffffff');shoeShell(k,m,.75);k.legs.forEach(l=>{k.P(box(.01,.03,.12),w,l.an,l.sx*.06,-.02,.05);for(const z of [-.02,.04,.1,.14])for(const x of [-.03,.03])k.P(cyl(.007,.005,.02,6),k.mat('#2d2d3a'),l.an,x,-.07,z);});},
+  // 🎀 Mary Janes: round toes with a strap and a button
+  maryjanes(k,c){const m=k.mat(c,'shiny');shoeShell(k,m,.72);k.legs.forEach(l=>{const t=k.P(new THREE.TorusGeometry(.045,.007,8,24,Math.PI),m,l.an,0,.0,.035);t.rotation.y=Math.PI/2;k.P(sph(.008,8,6),k.mat('#ffd23f','shiny'),l.an,l.sx*.045,.0,.035);});},
+  // 🩰 Ballet slippers with ribbons around the ankles
+  pointe(k,c){const m=k.mat(c,'shiny');shoeShell(k,m,.6);k.legs.forEach(l=>{for(let i=0;i<3;i++){const t=k.P(new THREE.TorusGeometry(.052-i*.002,.004,6,24),m,l.kn,0,-.33-k.av.legX+i*.035,0);t.rotation.x=Math.PI/2+(i%2?.25:-.25);}});},
+  // 👢 Tall boots up to the knee
+  kneeboots(k,c){const m=k.mat(c,'shiny');shoeShell(k,m);bootLeg(k,m,.064,.34);k.legs.forEach(l=>k.P(box(.03,.07,.01),m,l.an,0,-.04,-.05));},
+  // ❄️ Snow boots: puffy with a fluffy white cuff
+  snowboots(k,c){const m=k.mat(c,'shiny');shoeShell(k,m,.95,1.12);solePad(k,k.mat('#3a3035','shiny'),.035,.12,.24);bootLeg(k,m,.072,.18);
+    k.legs.forEach(l=>{const t=k.P(fuzz(new THREE.TorusGeometry(.074,.022,16,40),.008,90),k.mat('#ffffff','fur'),l.kn,0,-.2-k.av.legX,0);t.rotation.x=Math.PI/2;});},
+  // 🧙 Witch boots: pointy toes that curl up, with a buckle
+  witchboots(k,c){const m=k.mat(c,'shiny');shoeShell(k,m,.75);bootLeg(k,m,.062,.2);k.legs.forEach(l=>{const t=k.P(new THREE.ConeGeometry(.03,.09,12),m,l.an,0,-.025,.16);t.rotation.x=Math.PI/2-.35;k.P(box(.03,.025,.008),k.mat('#d4af37','metal'),l.an,0,.0,.1);});},
+  // 🐾 Monster paws: big furry feet with claws
+  paws(k,c){const m=k.mat(c,'fur');k.legs.forEach(l=>{k.P(fuzz(new THREE.SphereGeometry(.07,32,20),.012,90),m,l.an,0,-.015,.05).scale.set(1.15,.8,1.7);for(const x of [-.035,0,.035])k.P(new THREE.ConeGeometry(.009,.03,8),k.mat('#f4ecd8','shiny'),l.an,x,-.03,.165).rotation.x=Math.PI/2;});bootLeg(k,m,.068,.12,.01);},
+  // ☁️ Fluffy leg warmers over sneakers
+  furwarmers(k,c){shoeShell(k,k.mat('#ffffff'));solePad(k,k.mat('#ff6fae','shiny'));bootLeg(k,k.mat(c,'fur'),.078,.22,.016);},
+  // 💗 Chunky boots: a thick tread sole
+  chunkyboots(k,c){const m=k.mat(c,'shiny');shoeShell(k,m,.9);bootLeg(k,m,.066,.16);solePad(k,k.mat('#2d2d3a','shiny'),.06,.12,.23);k.av.lift=.04;},
+  // 👡 Lace-up heels: ribbons criss-crossing up the leg
+  laceheels(k,c){const m=k.mat(c,'shiny');m.metalness=.5;shoeShell(k,m,.7);k.legs.forEach(l=>{k.P(cyl(.012,.008,.05,8),m,l.an,0,-.04,-.03);for(let i=0;i<5;i++){const t=k.P(new THREE.TorusGeometry(.05,.004,6,24),m,l.kn,0,-.36-k.av.legX+i*.045,0);t.rotation.x=Math.PI/2+(i%2?.3:-.3);}});},
+
+  /* ---- hats ---- */
+  // 👰 Bridal veil: a sheer veil falling down the back from a little comb
+  veil(k,c){const m=k.mat(c,'tulle'),g=new THREE.CylinderGeometry(.13,.26,.62,32,6,true,Math.PI*.55,Math.PI*.9);k.P(g,m,k.head,0,-.2,-.05);k.P(new THREE.TorusGeometry(.1,.008,8,24,Math.PI),k.mat('#ffffff','gem'),k.head,0,.1,-.04).rotation.x=-.4;},
+  // 🧶 Beanie with a pom-pom
+  beanie(k,c){const m=k.mat(c);k.P(new THREE.SphereGeometry(.15,28,14,0,Math.PI*2,0,Math.PI/2),m,k.head,0,.03,-.01).scale.set(1.02,1,1.04);beltRing(k,k.mat(shadeC(c,-.12)),k.head,.148,.02,.035);k.P(fuzz(sph(.04,20,14),.008,90),k.mat('#ffffff','fur'),k.head,0,.19,-.01);},
+  // 👒 Sun hat: a wide straw brim with a ribbon
+  sunhat(k,c){const m=k.mat(c);k.P(cyl(.28,.28,.01,40),m,k.head,0,.1,-.01);k.P(new THREE.SphereGeometry(.13,28,14,0,Math.PI*2,0,Math.PI/2),m,k.head,0,.1,-.01).scale.set(1,.7,1);beltRing(k,k.mat('#ff6fae','shiny'),k.head,.13,.012,.115);},
+  // 🎨 Beret: a soft tilted round hat
+  beret(k,c){const b=k.P(sph(.15,28,16),k.mat(c),k.head,.03,.13,-.02);b.scale.set(1.1,.35,1.05);b.rotation.z=-.2;k.P(sph(.012,8,6),k.mat(c),k.head,.04,.19,-.02);},
+  // 🏃 Sweatband around the forehead
+  sweatband(k,c){const t=beltRing(k,k.mat(c),k.head,.142,.016,.06);t.scale.set(1,1.06,1);},
+  // 🎀 Headband with a little knot on top
+  headband(k,c){const m=k.mat(c,'shiny'),t=k.P(new THREE.TorusGeometry(.142,.011,8,40,Math.PI),m,k.head,0,.03,.0);t.rotation.y=Math.PI/2;t.rotation.z=0;k.P(sph(.02,10,8),m,k.head,0,.16,.03);},
+  // 🐶 Space pup ears: floppy ears on a band
+  pupears(k,c){const m=k.mat(c);for(const s of [-1,1]){const e=k.P(sph(.06,14,10),m,k.head,s*.13,.04,-.01);e.scale.set(.4,1.2,.8);e.rotation.z=s*.35;}k.P(new THREE.TorusGeometry(.142,.008,6,32,Math.PI),m,k.head,0,.03,0).rotation.y=Math.PI/2;},
+  // 🐺 Wolf ears: tall and furry
+  wolfears(k,c){const m=k.mat(c,'fur'),inn=k.mat(shadeC(c,.5));for(const s of [-1,1]){const e=k.P(new THREE.ConeGeometry(.045,.1,12),m,k.head,s*.08,.16,-.02);e.rotation.z=-s*.3;e.scale.z=.5;const i=k.P(new THREE.ConeGeometry(.026,.065,12),inn,k.head,s*.078,.155,-.006);i.rotation.z=-s*.3;i.scale.z=.3;}},
+  // 🧻 Mummy wrap around the head
+  mummywrap(k,c){const m=printMat(k,c,'wraps',{rep:2});for(let i=0;i<3;i++){const t=beltRing(k,m,k.head,.142-i*.004,.016,.1-i*.035);t.rotation.z=(i-1)*.15;}},
+  // 🌺 Hibiscus flower behind the ear
+  hibiscus(k,c){const m=k.mat(c,'shiny');for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const p=k.P(sph(.024,10,8),m,k.head,.13+Math.cos(a)*.022,.06+Math.sin(a)*.022,.04);p.scale.set(1,1,.4);}k.P(sph(.01,8,6),k.mat('#ffd23f','shiny'),k.head,.142,.06,.05);},
+  // 🐱 Fluffy kitty ears
+  fluffyears(k,c){const m=k.mat(c,'fur'),inn=k.mat('#ffb3d1');for(const s of [-1,1]){const e=k.P(fuzz(new THREE.ConeGeometry(.05,.085,16,6),.006,90),m,k.head,s*.08,.15,-.01);e.rotation.z=-s*.35;e.scale.z=.6;const i=k.P(new THREE.ConeGeometry(.028,.055,12),inn,k.head,s*.078,.147,.008);i.rotation.z=-s*.35;i.scale.z=.3;}},
+  // 😈 Little golden horn clips
+  horns(k,c){const m=k.mat(c,'metal');m.roughness=.3;for(const s of [-1,1]){const h=k.P(new THREE.ConeGeometry(.02,.06,12),m,k.head,s*.07,.15,.02);h.rotation.z=-s*.35;}},
+
+  /* ---- extras ---- */
+  // 💖 Heart necklace
+  heartneck(k,c){const g=k.mat('#e0b04a','metal');const t=k.P(new THREE.TorusGeometry(.06,.003,6,32),g,k.spine,0,.45,.0);t.rotation.x=Math.PI/2+.5;
+    const hs=new THREE.Shape();hs.moveTo(0,-.012);hs.bezierCurveTo(-.03,.008,-.012,.024,0,.01);hs.bezierCurveTo(.012,.024,.03,.008,0,-.012);k.P(new THREE.ExtrudeGeometry(hs,{depth:.006,bevelEnabled:false}),k.mat(c,'gem'),k.spine,0,.4,.098);},
+  // ✨ Earrings: little drops
+  earrings(k,c){const m=k.mat(c,'metal');for(const s of [-1,1]){k.P(sph(.007,8,6),m,k.head,s*.118,-.035,0);k.P(sph(.011,10,8),k.mat(c,'gem'),k.head,s*.12,-.055,0);}},
+  // 😎 Heart shades
+  heartglasses(k,c){const m=k.mat(c,'shiny');const hs=new THREE.Shape();hs.moveTo(0,-.022);hs.bezierCurveTo(-.05,.012,-.02,.04,0,.018);hs.bezierCurveTo(.02,.04,.05,.012,0,-.022);
+    for(const s of [-1,1])k.P(new THREE.ExtrudeGeometry(hs,{depth:.006,bevelEnabled:false}),m,k.head,s*.046,-.004,.132);k.P(box(.03,.005,.005),m,k.head,0,.012,.136);for(const s of [-1,1])k.P(box(.005,.005,.13),m,k.head,s*.08,.01,.07);},
+  // 💐 Bouquet of flowers to hold
+  bouquet(k,c){const a=k.arms[0],g=k.mat('#3f8f3a');k.P(cyl(.012,.006,.12,8),g,a.hand,0,-.06,.03);const fc=[c,'#ffffff','#ffd23f',c,'#b388ff',c];fc.forEach((f,i)=>{const t=i/6*Math.PI*2;k.P(sph(.022,10,8),k.mat(f,'shiny'),a.hand,Math.cos(t)*.025,.02+(i%2)*.01,.03+Math.sin(t)*.025);});},
+  // 🎁 Gift box with a bow
+  present(k,c){const a=k.arms[1],m=k.mat(c,'shiny'),r=k.mat('#ff3b6b','shiny');k.P(box(.1,.08,.1),m,a.hand,0,-.11,.03);k.P(box(.104,.084,.018),r,a.hand,0,-.11,.03);k.P(box(.018,.084,.104),r,a.hand,0,-.11,.03);for(const s of [-1,1])k.P(sph(.016,8,6),r,a.hand,s*.014,-.065,.03).scale.set(1.3,.7,.7);},
+  // 📣 Pom-poms in both hands
+  pompoms(k,c){const m=k.mat(c,'tulle');m.opacity=.95;for(const a of k.arms)k.P(fuzz(new THREE.IcosahedronGeometry(.07,3),.02,60),m,a.hand,0,-.06,.02);},
+  // 🎾 Tennis racket
+  racket(k,c){const a=k.arms[1],m=k.mat(c,'shiny'),g=new THREE.Group();g.position.set(0,-.06,.03);g.rotation.x=.3;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
+    k.P(cyl(.008,.008,.12,8),k.mat('#ffffff'),g,0,-.0,0);const r=k.P(new THREE.TorusGeometry(.065,.008,8,28),m,g,0,-.12,0);r.scale.set(.8,1,1);r.rotation.y=Math.PI/2;const net=k.P(new THREE.CircleGeometry(.062,20),k.mat('#ffffff','tulle'),g,0,-.12,0);net.scale.set(.8,1,1);net.rotation.y=Math.PI/2;},
+  // ⚽ Soccer ball held in one hand
+  ball(k,c){const t=printMat(k,c,'spots');const b=k.P(sph(.08,24,16),t,k.arms[1].hand,0,-.11,.05);},
+  // 🥇 Gold medal on a ribbon
+  medal(k,c){const r=k.mat('#3a5bd9');for(const s of [-1,1]){const b=k.P(box(.014,.14,.004),r,k.spine,s*.03,.4,.1);b.rotation.z=s*.35;}const m=k.P(cyl(.024,.024,.006,20),k.mat(c,'metal'),k.spine,0,.32,.106);m.rotation.x=Math.PI/2;},
+  // 🧛 Vampire cape with a tall red collar
+  vampcape(k,c){const m=k.mat(c),red=k.mat('#b3001b','shiny');m.side=THREE.DoubleSide;const g=new THREE.PlaneGeometry(.5,1.1,6,10),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,-Math.abs(x)*x*1.2);p.setX(i,x*(1+(.55-y)*.5));}g.translate(0,-.55,0);g.computeVertexNormals();
+    const cg=new THREE.Group();cg.position.set(0,.47,-.11);k.spine.add(cg);k.av.parts.push(cg);cg.geometry={dispose(){}};k.P(g,m,cg).rotation.y=Math.PI;k.av.cape=cg;
+    for(const s of [-1,1]){const col=k.P(new THREE.PlaneGeometry(.12,.14),red,k.spine,s*.08,.53,-.03);col.rotation.y=s*.6;col.rotation.x=-.2;col.material.side=THREE.DoubleSide;}},
+  // 🌺 Flower lei
+  lei(k,c){const fc=[c,'#ffffff','#ffd23f',c,'#b388ff'];for(let i=0;i<18;i++){const a=i/18*Math.PI*2;k.P(sph(.02,8,6),k.mat(fc[i%5],'shiny'),k.spine,Math.sin(a)*.1,.45-Math.max(0,Math.cos(a))*.07,Math.cos(a)*.105);}},
+  // 🐈 Kitty tail
+  tail(k,c){const m=k.mat(c,'fur'),cv=new THREE.CatmullRomCurve3([new THREE.Vector3(0,.0,-.11),new THREE.Vector3(0,-.1,-.2),new THREE.Vector3(.05,-.05,-.3),new THREE.Vector3(.08,.12,-.33),new THREE.Vector3(.06,.2,-.3)]);
+    const g=new THREE.TubeGeometry(cv,24,.02,10,false);k.P(fuzz(g,.004,90),m,k.hips);k.P(sph(.02,10,8),m,k.hips,.06,.2,-.3);},
+  // 🐱 Kitty face paint: whiskers and a pink nose
+  whiskers(k,c){const m=k.mat('#2d2d3a');for(const s of [-1,1])for(const dy of [-.006,.006]){const w=k.P(box(.04,.0025,.002),m,k.head,s*.06,-.035+dy,.118);w.rotation.z=s*dy*12;w.rotation.y=-s*.5;}k.P(sph(.008,8,6),k.mat('#ff6fae','shiny'),k.head,0,-.032,.142);},
+  // 🟡 Gold bangles on both wrists
+  bangles(k,c){const m=k.mat(c,'metal');m.roughness=.25;for(const a of k.arms)for(let i=0;i<3;i++)beltRing(k,m,a.el,.04,.005,-.14-i*.014);},
 };
 // ---- src/15-player-friends-townspeople.js ----
 /* ================= PLAYER ================= */
