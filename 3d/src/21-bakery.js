@@ -206,6 +206,7 @@ function openBakery(){if(closetOpen)return;closeTalk();const z=Z.bakery,S=z.stan
 function closeBakery(){if(!bakeryOpen)return;const z=Z.bakery;bakeryOpen=closetOpen=false;z.padLbl.visible=true;bk.pipe=null;bcam.id=null;
   if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
   document.body.classList.remove('dressing');$('#bakery').classList.remove('show');persist();cam.yaw=cam.cy=z.rot;player.face=z.rot;
+  if(ck.on){bk.dirty=false;ckStudioClosed();return;}// cake contest (21b-cake-contest.js)
   toast(SAVE.cake.text?`Yum! Your cake says “${SAVE.cake.text}” 🎂`:'Yum! Your cake stays on the stand 🎂');
   // coins for baking: once every 10 minutes so it can't be farmed
   if(bk.dirty)did('cake',SAVE.cake.n);if(bk.dirty&&Date.now()-(SAVE.cakePaid||0)>6e5){SAVE.cakePaid=Date.now();persist();setTimeout(()=>earn(8,'Cake made!'),700);}bk.dirty=false;}
@@ -216,7 +217,7 @@ function renderBakery(){const C=SAVE.cake;$('#btabs').innerHTML=BTABS.map(([id,i
   const chips=(list,cur,kind)=>`<div class="chips">${list.map(([id,e,n])=>`<button class="${String(id)===String(cur)?'on':''}" data-${kind}="${id}">${e?e+' ':''}${n}</button>`).join('')}</div>`;
   const sw=(list,cur,kind,extra='')=>`<div class="swatches">${list.map(col=>`<button class="sw${col===cur?' on':''}" style="background:${col}" data-${kind}="${col}" aria-label="color ${col}"></button>`).join('')}${extra}</div>`;
   let h='';
-  if(btab==='cake')h=`<h3>Pick a cake to start</h3>${items(CAKES,C.id,'preset')}<h3>Shape</h3>${chips(CSHAPES,C.shape,'shape')}<h3>Layers</h3>${chips([[1,'','1'],[2,'','2'],[3,'','3'],[4,'','4']],C.n,'layers')}<h3>Cake stand</h3>${chips(PLATES,C.plate,'plate')}`;
+  if(btab==='cake')h=`${ck.on?'':`<h3>Pick a cake to start</h3>${items(CAKES,C.id,'preset')}`}<h3>Shape</h3>${chips(CSHAPES,C.shape,'shape')}<h3>Layers</h3>${chips([[1,'','1'],[2,'','2'],[3,'','3'],[4,'','4']],C.n,'layers')}<h3>Cake stand</h3>${chips(PLATES,C.plate,'plate')}`;
   else if(btab==='frost'){const names=C.n===1?[]:[['all','🎂','All']].concat(cakeDims().map((d,i)=>[i,'',i===0?'Bottom':i===C.n-1?'Top':C.n===3?'Middle':i===1?'2nd':'3rd']));
     const curC=btier==='all'?C.tiers[0]:C.tiers[btier];
     h=`<h3>Style</h3>${items(CSTYLES,C.style,'style')}<h3>Frosting color</h3>${names.length?chips(names,btier,'btier')+'<div style="height:8px"></div>':''}${sw(FROST,curC,'frost',FANCY.map(([id,e,n,bg])=>`<button class="sw fancy${curC===id?' on':''}" style="background:${bg}" data-frost="${id}" aria-label="${n}">${e}</button>`).join(''))}`;
