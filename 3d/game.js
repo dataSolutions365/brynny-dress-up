@@ -215,6 +215,7 @@ const ZONES=[
   // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
   {id:'barn',name:'🐴 Happy Barn',ang:0,d:38.5,r:6,music:'spring-birds',nopath:true},
   {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:38.5,r:6,music:'city-park',nopath:true},
+  {id:'garage',name:'🔧 Car Garage',ang:150,d:36,r:7,music:'fireworks'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -574,6 +575,159 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
  const pl=new THREE.PointLight('#ffe0c8',18,10,2);pl.position.set(0,2.8,-1);g.add(pl);
  signpost(z);}
 
+// ---- src/11b-place-garage.js ----
+/* ===== Car Garage =====
+   The building, the lift and the car you fix up. The repair mini game itself is in 24d-garage.js.
+   Car parts the game needs are kept on CARX so the game can move, hide and repaint them. */
+const CARX={};
+{const z=Z.garage,g=z.g;
+ const tile=canvasTex(128,128,(x)=>{x.fillStyle='#f4f6fa';x.fillRect(0,0,128,128);x.fillStyle='#2d2d3a';x.fillRect(0,0,64,64);x.fillRect(64,64,64,64);},8);
+ patch(7,std('#ffffff',{map:tile,roughness:.5}),z.x,z.z);
+ const wallM=phys('#dfe7f1',{roughness:.6}),red=phys('#e0263b',{roughness:.35,clearcoat:.6}),white=phys('#ffffff',{roughness:.3,clearcoat:.6}),
+   steel=std('#c9ced8',{metalness:.9,roughness:.3}),dark=std('#2d2d3a',{roughness:.6}),rubber=std('#1d1d22',{roughness:.85}),yellow=phys('#ffd23f',{roughness:.4,clearcoat:.5});
+ // walls: back and two sides with a red racing stripe along the bottom
+ M(box(9,3.4,.3),wallM,0,1.7,-4.4,g);M(box(9.04,.5,.34),red,0,.25,-4.4,g);for(let i=-4;i<=4;i++)z.ob(i*1.05,-4.4,.6);
+ for(const sx of [-1,1]){M(box(.3,3.4,6.3),wallM,sx*4.5,1.7,-1.25,g);M(box(.34,.5,6.34),red,sx*4.5,.25,-1.25,g);for(let k=0;k<7;k++)z.ob(sx*4.5,-4.2+k*.98,.55);
+   const win=M(box(.05,.9,1.6),phys('#9fd8ff',{roughness:.05,clearcoat:1,emissive:'#bfe6ff',emissiveIntensity:.35}),sx*4.67,2.1,-1.6,g,false,false);
+   M(box(.06,1.02,1.72),white,sx*4.66,2.1,-1.6,g,false,false).scale.set(1,1,1);win.renderOrder=1;}
+ // front: a big sign over the open door, the rolled-up door, and the roof
+ M(box(9.6,1,.4),red,0,3,1.95,g);
+ M(new THREE.PlaneGeometry(5.2,.9),new THREE.MeshBasicMaterial({map:labelTex('🔧 Car Garage',{size:66,fg:'#e0263b',border:'#ffd23f'}),transparent:true}),0,3,2.16,g,false,false);
+ {const door=canvasTex(64,64,(x)=>{x.fillStyle='#d9dee8';x.fillRect(0,0,64,64);x.fillStyle='#aab2c0';for(let i=0;i<4;i++)x.fillRect(0,i*16+12,64,3);});
+  M(cyl(.28,.28,8.6,24),std('#ffffff',{map:door,metalness:.4,roughness:.4}),0,2.25,1.7,g).rotation.z=Math.PI/2;}
+ M(box(9.6,.25,6.8),phys('#3a5bd9',{roughness:.5,clearcoat:.4}),0,3.5,-1.25,g);
+ // black and yellow safety stripes at the door
+ {const st=canvasTex(128,32,(x)=>{x.fillStyle='#ffd23f';x.fillRect(0,0,128,32);x.fillStyle='#2d2d3a';for(let i=-2;i<10;i++){x.beginPath();x.moveTo(i*16,32);x.lineTo(i*16+8,32);x.lineTo(i*16+16,0);x.lineTo(i*16+8,0);x.fill();}},0);
+  st.wrapS=THREE.RepeatWrapping;st.repeat.set(6,1);const s=M(new THREE.PlaneGeometry(8.6,.3),std('#ffffff',{map:st,roughness:.7}),0,.03,1.7,g,false,true);s.rotation.x=-Math.PI/2;}
+ // a pegboard of tools on the back wall
+ {const pb=canvasTex(512,192,(x,w,h)=>{x.fillStyle='#c79a6a';x.fillRect(0,0,w,h);x.fillStyle='rgba(80,50,30,.35)';for(let i=8;i<w;i+=16)for(let j=8;j<h;j+=16){x.beginPath();x.arc(i,j,2.2,0,Math.PI*2);x.fill();}
+    x.font='70px serif';x.textAlign='center';x.textBaseline='middle';['🔧','🔨','🪛','🪚','⚙️','🔩'].forEach((e,i)=>x.fillText(e,45+i*84,h/2+4));});
+  M(new THREE.PlaneGeometry(4,1.5),std('#ffffff',{map:pb,roughness:.8}),0,2,-4.24,g,false,true);}
+ // red tool chest with drawers
+ {const tg=new THREE.Group();tg.position.set(3.4,0,-3.7);g.add(tg);M(new RoundedBoxGeometry(1.3,1.1,.7,3,.05),red,0,.6,0,tg);
+  for(let i=0;i<4;i++){M(box(1.18,.02,.02),dark,0,.33+i*.24,.36,tg);M(box(.4,.04,.04),steel,0,.42+i*.24,.37,tg);}
+  for(const sx of [-1,1])for(const sz of [-1,1])M(cyl(.05,.05,.06,10),rubber,sx*.55,.05,sz*.28,tg).rotation.x=Math.PI/2;
+  M(box(.5,.06,.12),steel,-.2,1.19,0,tg);M(cyl(.04,.04,.4,8),std('#ff8a1f'),.3,1.19,0,tg).rotation.z=Math.PI/2;z.ob(3.4,-3.7,.85);}
+ // a stack of tires
+ {const tg=new THREE.Group();tg.position.set(-3.5,0,-3.5);g.add(tg);for(let i=0;i<4;i++){const t=M(new THREE.TorusGeometry(.32,.13,12,28),rubber,0,.13+i*.25,0,tg);t.rotation.x=Math.PI/2;}z.ob(-3.5,-3.5,.55);}
+ // blue oil drums
+ for(const [dx,dz] of [[-3.7,-1.5],[-3.2,-.6]]){const dg=new THREE.Group();dg.position.set(dx,0,dz);g.add(dg);const dm=phys('#3a5bd9',{roughness:.35,clearcoat:.5});
+   M(cyl(.32,.32,.95,24),dm,0,.475,0,dg);for(const y of [.25,.7])M(new THREE.TorusGeometry(.325,.02,6,28),dm,0,y,0,dg).rotation.x=Math.PI/2;
+   const lab=M(new THREE.PlaneGeometry(.36,.3),new THREE.MeshBasicMaterial({map:labelTex('OIL',{w:128,h:96,size:50,fg:'#3a5bd9',border:'#ffd23f'}),transparent:true}),0,.5,.325,dg,false,false);z.ob(dx,dz,.42);}
+ // an orange traffic cone by the door
+ for(const sx of [-1,1]){const cg=new THREE.Group();cg.position.set(sx*3.6,0,1.2);g.add(cg);M(box(.4,.04,.4),std('#ff8a1f'),0,.02,0,cg);M(cyl(.03,.16,.55,16),std('#ff8a1f',{roughness:.5}),0,.31,0,cg);M(cyl(.09,.12,.1,16),white,0,.3,0,cg);z.ob(sx*3.6,1.2,.25);}
+
+ // ---- the scissor lift the car sits on ----
+ const CZ=-1.2;CARX.cz=CZ;
+ M(box(1.6,.06,.7),dark,0,.03,CZ,g);
+ const liftTop=CARX.liftTop=M(box(1.4,.05,.62),std('#ffd23f',{roughness:.5}),0,.2,CZ,g);
+ const arms=CARX.arms=[];for(const sz of [-.24,.24])for(const s of [-1,1]){const a=M(box(1.7,.05,.05),steel,0,.1,CZ+sz,g);a.userData.s=s;arms.push(a);}
+
+ // ---- the car ----
+ const root=CARX.root=new THREE.Group();root.position.set(0,0,CZ);g.add(root);
+ const car=CARX.g=new THREE.Group();root.add(car);
+ const paint=CARX.paint=phys('#e0263b',{roughness:.25,metalness:.3,clearcoat:1,clearcoatRoughness:.08});
+ const glass=phys('#1d2a3a',{roughness:.05,metalness:.2,clearcoat:1,transparent:true,opacity:.86});
+ const trim=std('#2d2d3a',{roughness:.5});
+ // back and middle of the car (rounded), with an open engine bay at the front under the hood
+ M(new RoundedBoxGeometry(1.5,.4,1.06,4,.1),paint,-.43,.42,0,car);
+ M(box(.85,.16,1.06),paint,.73,.3,0,car);// bay floor
+ for(const s of [-1,1])M(box(.85,.24,.05),paint,.73,.5,s*.505,car);// bay sides
+ M(box(.07,.24,1.06),paint,1.12,.5,0,car);// front
+ const bay=M(box(.74,.02,.96),std('#3a3a44',{roughness:.8}),.72,.39,0,car,false,true);
+ M(new RoundedBoxGeometry(.14,.14,1.1,2,.05),trim,1.17,.3,0,car);M(new RoundedBoxGeometry(.12,.14,1.1,2,.05),trim,-1.17,.3,0,car);
+ {const gr=canvasTex(128,48,(x,w,h)=>{x.fillStyle='#1d1d22';x.fillRect(0,0,w,h);x.strokeStyle='#8a8f9c';x.lineWidth=3;for(let i=6;i<w;i+=10){x.beginPath();x.moveTo(i,6);x.lineTo(i,h-6);x.stroke();}});
+  const gm=M(new THREE.PlaneGeometry(.5,.13),new THREE.MeshStandardMaterial({map:gr,roughness:.5}),1.157,.47,0,car,false,false);gm.rotation.y=Math.PI/2;}
+ // cabin with windows and a roof
+ M(new RoundedBoxGeometry(1.05,.32,.92,3,.1),glass,-.22,.76,0,car);
+ M(new RoundedBoxGeometry(.92,.06,.88,2,.03),paint,-.26,.92,0,car);
+ // lights
+ CARX.heads=[];for(const s of [-1,1]){const h=M(new THREE.CircleGeometry(.075,20),glow('#fff4c8',1.2),1.158,.52,s*.36,car,false,false);h.rotation.y=Math.PI/2;CARX.heads.push(h);
+   const t=M(new THREE.PlaneGeometry(.06,.16),glow('#ff2a3d',1.1),-1.181,.52,s*.36,car,false,false);t.rotation.y=-Math.PI/2;t.rotation.z=Math.PI/2;}
+ // mirrors and door handles
+ for(const s of [-1,1]){M(box(.08,.06,.1),paint,.28,.7,s*.5,car);M(box(.12,.02,.02),steel,-.2,.54,s*.533,car);}
+ // license plate (the text is drawn in 24d-garage.js)
+ CARX.plate=M(new THREE.PlaneGeometry(.32,.11),new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.5}),-1.235,.33,0,car,false,false);CARX.plate.rotation.y=-Math.PI/2;
+ // the hood opens from the windshield end
+ const hood=CARX.hood=new THREE.Group();hood.position.set(.31,.62,0);car.add(hood);
+ const hoodM=CARX.hoodM=M(new RoundedBoxGeometry(.86,.05,1.08,2,.02),paint,.43,.0,0,hood);
+ // racing stripes over the hood, roof and trunk
+ const stripeM=CARX.stripeM=phys('#ffffff',{roughness:.3,clearcoat:1});CARX.stripes=[];
+ for(const s of [-1,1]){CARX.stripes.push(M(box(.86,.004,.1),stripeM,.43,.027,s*.12,hood,false,false),M(box(.93,.004,.1),stripeM,-.26,.952,s*.12,car,false,false),M(box(.5,.004,.1),stripeM,-.93,.622,s*.12,car,false,false));}
+ // stickers along both sides (drawn in 24d-garage.js)
+ CARX.sideM=new THREE.MeshStandardMaterial({transparent:true,roughness:.4,depthWrite:false,side:THREE.DoubleSide});CARX.sides=[];
+ for(const s of [-1,1]){const p=M(new THREE.PlaneGeometry(1.7,.3),CARX.sideM,-.1,.42,s*.533,car,false,false);if(s<0){p.rotation.y=Math.PI;p.scale.x=-1;}CARX.sides.push(p);}
+ // spoilers: small and big
+ CARX.spoil={};for(const [k,h,w] of [['small',.12,.16],['big',.3,.24]]){const sg=new THREE.Group();sg.position.set(-1.02,.62,0);car.add(sg);
+   for(const s of [-1,1])M(box(.05,h,.05),trim,0,h/2,s*.32,sg);const wing=M(new RoundedBoxGeometry(w,.04,1.02,2,.015),paint,-.02,h+.02,0,sg);CARX.spoil[k]=sg;sg.visible=false;}
+ // glowing lights under the car
+ {const gt=canvasTex(128,64,(x,w,h)=>{const r=x.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.6,'rgba(255,255,255,.45)');r.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=r;x.fillRect(0,0,w,h);});
+  CARX.glow=M(new THREE.PlaneGeometry(2.8,1.6),new THREE.MeshBasicMaterial({map:gt,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:'#ff4d8d',toneMapped:false}),0,.02,0,car,false,false);CARX.glow.rotation.x=-Math.PI/2;CARX.glow.visible=false;}
+
+ // wheels: tire, rim, spokes and five lug nuts. Only the front one on your side gets changed.
+ const rimM=CARX.rimM=std('#d9d9e8',{metalness:1,roughness:.2});
+ CARX.rubber=rubber;CARX.flatM=std('#3a3a3f',{roughness:1});
+ function wheel(s,parent,nutsOn=true){const w=new THREE.Group();parent.add(w);
+   const t=M(new THREE.TorusGeometry(.205,.1,14,32),rubber,0,0,0,w);t.scale.z=.95;w.userData.tire=t;
+   const rim=M(cyl(.16,.16,.07,28),rimM,0,0,s*.035,w);rim.rotation.x=Math.PI/2;
+   for(let i=0;i<5;i++){const sp=M(box(.025,.13,.02),rimM,0,0,s*.075,w);sp.rotation.z=i*Math.PI*2/5;sp.geometry.translate(0,.075,0);}
+   M(cyl(.04,.04,.03,16),rimM,0,0,s*.08,w).rotation.x=Math.PI/2;
+   const nuts=[];for(let i=0;i<5;i++){const a=i*Math.PI*2/5+Math.PI/5;const n=M(cyl(.03,.03,.045,6),std('#4a4f5c',{metalness:.8,roughness:.3}),Math.sin(a)*.075,Math.cos(a)*.075,s*.095,w);n.rotation.x=Math.PI/2;n.visible=nutsOn;n.userData.home=n.position.clone();nuts.push(n);}
+   w.userData.nuts=nuts;return w;}
+ CARX.wheels=[];for(const wx of [.78,-.78])for(const s of [1,-1]){const w=wheel(s,car);w.position.set(wx,.305,s*.5);CARX.wheels.push(w);}
+ CARX.fix=CARX.wheels[0];CARX.fix.userData.home=CARX.fix.position.clone();
+ // the new tire waiting on the floor
+ CARX.spare=wheel(1,g,false);CARX.spare.position.set(1.95,.305,-.1);CARX.spare.rotation.y=-.5;CARX.spare.userData.tire.material=phys('#1d1d22',{roughness:.45,clearcoat:.6});
+
+ // ---- engine bay parts: engine, battery, spark plug, belt, air filter, oil cap ----
+ const block=std('#8a8f9c',{metalness:.7,roughness:.35});
+ M(box(.34,.15,.42),block,.68,.47,0,car);M(box(.28,.04,.38),std('#e0263b',{metalness:.4,roughness:.35}),.68,.565,0,car);
+ for(const pz of [-.12,-.04,.04])M(cyl(.016,.016,.06,8),white,.6,.6,pz,car);
+ const P=CARX.parts={};
+ const part=(id,x,y,zz)=>{const pg=new THREE.Group();pg.position.set(x,y,zz);car.add(pg);const good=new THREE.Group(),bad=new THREE.Group();pg.add(good,bad);P[id]={g:pg,good,bad,home:pg.position.clone()};return P[id];};
+ {const b=part('battery',.5,.47,.33);
+  M(box(.16,.14,.17),std('#2d2d3a',{roughness:.5}),0,0,0,b.g);M(box(.161,.04,.171),std('#4fb6ff',{roughness:.4}),0,.03,0,b.g);
+  M(cyl(.02,.02,.03,10),std('#e0263b'),0,.085,.05,b.good);M(cyl(.02,.02,.03,10),std('#2d2d3a'),0,.085,-.05,b.good);
+  const crust=std('#bfe8c8',{roughness:1});for(const zz of [.05,-.05])for(let i=0;i<4;i++)M(sph(.018+i*.003,8,6),crust,(i-1.5)*.012,.09+(i%2)*.01,zz+(i%2?.01:-.01),b.bad);}
+ {const p=part('plug',.6,.6,.12);
+  M(cyl(.016,.016,.06,8),white,0,0,0,p.good);M(cyl(.012,.012,.03,6),steel,0,.04,0,p.good);
+  M(cyl(.016,.016,.06,8),std('#2b2b2b',{roughness:1}),0,0,0,p.bad);const cr=M(box(.034,.004,.004),std('#ff8a1f'),0,.012,0,p.bad);cr.rotation.y=.6;}
+ {const b=part('belt',1.0,.48,0);
+  for(const [yy,zz] of [[.04,-.12],[-.03,.12]])M(cyl(.05,.05,.04,18),steel,0,yy,zz,b.g).rotation.z=Math.PI/2;
+  const t=M(new THREE.TorusGeometry(.14,.014,8,32),rubber,0,0,0,b.good);t.rotation.y=Math.PI/2;t.scale.y=.6;
+  const tb=M(new THREE.TorusGeometry(.14,.014,8,32,Math.PI*1.65),std('#7a3b2a',{roughness:1}),0,0,0,b.bad);tb.rotation.y=Math.PI/2;tb.scale.y=.6;}
+ {const f=part('filter',.6,.5,-.32);
+  M(cyl(.13,.13,.06,24),std('#4fb6ff',{roughness:.4,clearcoat:.4}),0,.04,0,f.good);M(cyl(.12,.12,.04,24),std('#f4f6fa',{roughness:.7}),0,0,0,f.good);
+  M(cyl(.13,.13,.06,24),std('#6b5a48',{roughness:1}),0,.04,0,f.bad);M(cyl(.12,.12,.04,24),std('#5a4632',{roughness:1}),0,0,0,f.bad);
+  for(let i=0;i<5;i++)M(sph(.02,6,5),std('#8a7a68',{roughness:1}),Math.sin(i*1.3)*.08,.075,Math.cos(i*1.3)*.08,f.bad);}
+ const cap=CARX.cap=new THREE.Group();cap.position.set(.78,.6,-.1);car.add(cap);M(cyl(.035,.035,.03,16),yellow,0,0,0,cap);M(box(.05,.012,.012),yellow,0,.02,0,cap);cap.userData.home=cap.position.clone();
+ // under the car: oil pan and drain plug
+ M(box(.36,.05,.32),std('#5a5f6a',{metalness:.6,roughness:.4}),.15,.2,0,car);
+ const plug=CARX.plug=M(cyl(.045,.045,.045,6),std('#ffd23f',{metalness:.8,roughness:.25,emissive:'#5a4500'}),.15,.155,0,car);plug.userData.home=plug.position.clone();
+ M(box(1.6,.04,.08),std('#5a5f6a',{metalness:.6,roughness:.4}),-.45,.2,-.3,car);// exhaust pipe line
+ CARX.pipe=M(cyl(.035,.035,.12,12),steel,-1.22,.24,-.3,car);CARX.pipe.rotation.z=Math.PI/2;
+
+ // ---- props used during the jobs ----
+ // drain bucket on the floor under the plug
+ {const bk=CARX.bucket=new THREE.Group();bk.position.set(.15,0,CZ);g.add(bk);bk.visible=false;
+  const pts=[[0,0],[.2,0],[.24,.22],[.23,.23]].map(([a,b])=>new THREE.Vector2(a,b));M(new THREE.LatheGeometry(pts,24),phys('#ff8a1f',{roughness:.4,side:THREE.DoubleSide}),0,0,0,bk);
+  CARX.bucketOil=M(cyl(.215,.2,1,24),std('#1a140e',{roughness:.15,metalness:.2}),0,.01,0,bk,false,false);CARX.bucketOil.geometry.translate(0,.5,0);CARX.bucketOil.scale.y=.001;}
+ CARX.stream=M(cyl(.014,.014,1,8),std('#1a140e',{roughness:.1}),0,0,0,g,false,false);CARX.stream.visible=false;
+ CARX.gold=M(cyl(.012,.012,1,8),phys('#e8b13a',{roughness:.05,clearcoat:1,transparent:true,opacity:.9}),0,0,0,g,false,false);CARX.gold.visible=false;
+ // a jug of new oil
+ {const j=CARX.jug=new THREE.Group();g.add(j);j.visible=false;M(new RoundedBoxGeometry(.16,.22,.09,2,.025),yellow,0,0,0,j);M(cyl(.025,.03,.07,10),dark,-.06,.13,0,j);
+  M(new THREE.PlaneGeometry(.1,.08),new THREE.MeshBasicMaterial({map:labelTex('OIL',{w:128,h:96,size:50,fg:'#2d2d3a',bg:'#ffd23f',border:'#2d2d3a'}),transparent:true}),0,0,.046,j,false,false);}
+ // glowing wrench pad: step on it to start
+ const padMat=glow('#4fb6ff',1.4);padMat.transparent=true;const PD={lx:0,lz:2.9,r:.6};z.gpad=PD;
+ const ring=M(new THREE.RingGeometry(.45,.62,40),padMat,PD.lx,.04,PD.lz,g,false,false);ring.rotation.x=-Math.PI/2;
+ const pin=M(new THREE.CircleGeometry(.45,40),phys('#cfe8ff',{roughness:.3,emissive:'#4fb6ff',emissiveIntensity:.25}),PD.lx,.035,PD.lz,g,false,true);pin.rotation.x=-Math.PI/2;
+ const wt=canvasTex(128,128,(x)=>{x.font='96px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🔧',64,70);});
+ const wm=M(new THREE.PlaneGeometry(.62,.62),new THREE.MeshBasicMaterial({map:wt,transparent:true,depthWrite:false}),PD.lx,.045,PD.lz,g,false,false);wm.rotation.x=-Math.PI/2;
+ const lbl=z.padLbl=sprite(labelTex('🔧 Fix the car!',{size:54,fg:'#3a5bd9',border:'#cfe8ff'}),1.8,.45);lbl.position.set(PD.lx,1.05,PD.lz);g.add(lbl);
+ anims.push(t=>{padMat.opacity=.55+.45*Math.sin(t*3);lbl.position.y=1+Math.sin(t*2)*.08;});
+ z.ob(-.75,CZ,.75);z.ob(.75,CZ,.75);z.ob(0,CZ,.6);
+ const pl=new THREE.PointLight('#fff3dc',18,10,2);pl.position.set(0,2.9,-1.2);g.add(pl);
+ signpost(z);}
 // ---- src/12-place-model-agency.js ----
 /* ===== Star Model Agency: a building you walk into, with a dressing room and a contest runway ===== */
 {const z=Z.agency,g=z.g;const W=6,B=-5,F=5,H=4.2;z.box={W,B,F,H};
@@ -2280,6 +2434,7 @@ canvas.addEventListener('pointerdown',e=>{e.preventDefault();
   if(pinchDown(e))return;
   if(parlorOpen){parlorDown(e);return;}
   if(bakeryOpen){bakeryDown(e);return;}
+  if(garageOpen){garageDown(e);return;}
   if(beautyDown(e))return;
   if(drawing()&&brush.id===null){const uv=faceHit(e);if(uv){brush.id=e.pointerId;brush.last=null;const x=av.paintCv.getContext('2d');undo.push(x.getImageData(0,0,av.paintCv.width,av.paintCv.height));if(undo.length>5)undo.shift();paintAt(uv);try{canvas.setPointerCapture(e.pointerId);}catch(_){}return;}}
   if(closetOpen||e.pointerType==='mouse'||e.clientX>innerWidth*.5){if(look.id===null){look.id=e.pointerId;look.x=e.clientX;look.y=e.clientY;try{canvas.setPointerCapture(e.pointerId);}catch(_){}}return;}
@@ -2288,12 +2443,13 @@ canvas.addEventListener('pointermove',e=>{
   if(pinchMove(e))return;
   if(parlorOpen){parlorMove(e);return;}
   if(bakeryOpen){bakeryMove(e);return;}
+  if(garageOpen){garageMove(e);return;}
   if(beautyMove(e))return;
   if(e.pointerId===brush.id){const uv=faceHit(e);if(uv)paintAt(uv);else brush.last=null;return;}
   if(e.pointerId===joy.id){let dx=e.clientX-joy.x0,dy=e.clientY-joy.y0;const d=Math.hypot(dx,dy),max=56;if(d>max){dx*=max/d;dy*=max/d;}joy.x=dx/max;joy.y=dy/max;knob.style.transform=`translate(${dx}px,${dy}px)`;}
   if(e.pointerId===look.id){const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;
     if(closetOpen){if(!drawing()&&!(ct.on&&!ct.sub)&&!(glamOpen&&ctab!=='hair'))player.face+=dx*.012;}else{cam.yaw-=dx*.006;cam.pitch=Math.min(1.25,Math.max(-.15,cam.pitch+dy*.004));fadeHint();}}});
-const endPtr=e=>{pinchUp(e);parlorUp(e);bakeryUp(e);beautyUp(e);if(e.pointerId===brush.id){brush.id=null;brush.last=null;savePaint();}if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}if(e.pointerId===look.id)look.id=null;};
+const endPtr=e=>{pinchUp(e);parlorUp(e);bakeryUp(e);garageUp(e);beautyUp(e);if(e.pointerId===brush.id){brush.id=null;brush.last=null;savePaint();}if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}if(e.pointerId===look.id)look.id=null;};
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);canvas.addEventListener('lostpointercapture',endPtr);
 canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -2309,7 +2465,7 @@ if(!isTouch)$('#hint').innerHTML='Walk with W A S D or the arrow keys.<br>Drag t
 // far back the close-up camera stands (ZOOM.k), so you can always back away if your pet or cake is too close.
 const ZOOM={k:Math.min(2.6,Math.max(.7,+SAVE.zoomK||1)),min:.7,max:2.6},PLAY_MIN=2.5,PLAY_MAX=14;
 const zoomEl=$('#zoomCtl');
-function zoomWhere(){if(parlorOpen||bakeryOpen)return 'station';if(!closetOpen)return 'play';return null;}
+function zoomWhere(){if(parlorOpen||bakeryOpen||garageOpen)return 'station';if(!closetOpen)return 'play';return null;}
 let zoomSaveT=0;
 function zoomBy(f){const w=zoomWhere();
   if(w==='play')cam.dist=Math.min(PLAY_MAX,Math.max(PLAY_MIN,cam.dist*f));
@@ -4946,6 +5102,282 @@ function barnCam(dt){const a=barnOpen?barnSel:zooOpen?zooSel:null;if(!a)return;c
 // your animals come back when the game starts
 for(const k of Object.keys(BS.own))if(FK[k]){const a=farmAnimal(k);a.setTag(BS.own[k].n);a.showDust(farmCare(k).shine);}
 if(BS.pal&&FA[BS.pal])palGo(BS.pal);else BS.pal=null;
+// ---- src/24d-garage.js ----
+/* ===== Car Garage mini game =====
+   Step on the glowing wrench pad in the Car Garage. Four jobs, in any order:
+   🛞 change a flat tire, 🛢️ change the oil, ⚙️ fix the engine, 🎨 paint and customize your car.
+   The car and the garage are built in 11b-place-garage.js (CARX). Your car's look is saved in SAVE.car. */
+const CAR_COLORS=['#e0263b','#ff6fae','#ff8a1f','#ffd23f','#7ee081','#0b6e3a','#2fd1c5','#4fb6ff','#3a5bd9','#8e6cff','#2d2d3a','#ffffff','#c0c0c0','#d4af37'];
+const CAR_FIN=[['shiny','✨','Shiny'],['metal','🪩','Metallic'],['matte','🧱','Matte'],['glitter','💖','Glitter']];
+const CAR_RIMS=[['silver','⚪','Silver'],['black','⚫','Black'],['gold','🟡','Gold'],['match','🎨','Match car']];
+const CAR_DECO=[['none','','None'],['racing','🏁','Racing stripes'],['flames','🔥','Flames'],['bolt','⚡','Lightning'],['stars','⭐','Stars'],['hearts','💖','Hearts']];
+const CAR_SPOIL=[['none','','None'],['small','','Small'],['big','','Big wing']];
+const CAR_GLOW=[['none','','Off'],['#ff4d8d','💗','Pink'],['#4fb6ff','💙','Blue'],['#7ee081','💚','Green'],['#b388ff','💜','Purple']];
+const CAR_PARTS=[['battery','🔋','Battery'],['plug','⚡','Spark plug'],['belt','➰','Belt'],['filter','🌬️','Air filter']];
+const carDefault=()=>({paint:'#e0263b',fin:'shiny',rims:'silver',deco:'racing',decoC:'#ffffff',spoil:'small',glow:'none',plate:''});
+SAVE.car={...carDefault(),...(SAVE.car&&typeof SAVE.car==='object'?SAVE.car:{})};
+
+/* ---------- how the car looks ---------- */
+function decoTex(kind,col){return canvasTex(512,96,(x,w,h)=>{x.fillStyle=col;x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=3;
+  if(kind==='flames'){// flames start at the front (right side of the picture) and lick back
+    for(let i=0;i<6;i++){const y=h/2+(i-2.5)*11,L=170+((i*73)%5)*40;x.beginPath();x.moveTo(w,y-16);x.quadraticCurveTo(w-L*.55,y-30,w-L,y+(i%2?-6:6));x.quadraticCurveTo(w-L*.5,y+8,w,y+16);x.closePath();x.fill();x.stroke();}
+    x.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<6;i++){const y=h/2+(i-2.5)*11,L=(170+((i*73)%5)*40)*.55;x.beginPath();x.moveTo(w,y-6);x.quadraticCurveTo(w-L*.5,y-12,w-L,y);x.quadraticCurveTo(w-L*.5,y+4,w,y+6);x.fill();}}
+  else if(kind==='bolt'){x.beginPath();const pts=[[10,52],[150,30],[140,50],[300,24],[290,46],[500,14],[330,66],[340,46],[180,74],[190,54]];x.moveTo(...pts[0]);pts.slice(1).forEach(p=>x.lineTo(...p));x.closePath();x.fill();x.stroke();}
+  else if(kind==='stars'){const star=(cx,cy,r)=>{x.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,rr=i%2?r*.45:r;x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.closePath();x.fill();x.stroke();};
+    [[60,50,26],[140,36,16],[210,56,30],[300,40,18],[380,54,28],[460,38,16]].forEach(s=>star(...s));}
+  else if(kind==='hearts'){const heart=(cx,cy,s)=>{x.beginPath();x.moveTo(cx,cy+s*.9);x.bezierCurveTo(cx-s*1.4,cy-s*.1,cx-s*.6,cy-s*1.1,cx,cy-s*.35);x.bezierCurveTo(cx+s*.6,cy-s*1.1,cx+s*1.4,cy-s*.1,cx,cy+s*.9);x.fill();x.stroke();};
+    [[60,50,26],[140,40,16],[220,52,30],[310,40,18],[390,52,28],[465,42,16]].forEach(s=>heart(...s));}});}
+function plateTex(t){return canvasTex(256,88,(x,w,h)=>{x.fillStyle='#ffffff';roundRect(x,3,3,w-6,h-6,12);x.fill();x.lineWidth=6;x.strokeStyle='#3a5bd9';x.stroke();
+  x.fillStyle='#1f2e7a';x.font='800 50px "Trebuchet MS", sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(t,w/2,h/2+3,w-24);});}
+const carPlate=()=>(SAVE.car.plate||(SAVE.name||'Brynny')).toUpperCase().slice(0,8);
+let carDecoKey='',carPlateKey='';
+function applyCar(){const C=SAVE.car,P=CARX.paint;P.color.set(C.paint);
+  const F={shiny:[.3,.25,1,null],metal:[.9,.3,.6,null],matte:[0,.85,0,null],glitter:[.5,.3,1,TEX.glitter]}[C.fin]||[.3,.25,1,null];
+  P.metalness=F[0];P.roughness=F[1];P.clearcoat=F[2];if(P.map!==F[3]){P.map=F[3];P.needsUpdate=true;}
+  const R={silver:['#d9d9e8',1,.2],black:['#2b2b33',.6,.35],gold:['#e8c25a',1,.22],match:[C.paint,.5,.3]}[C.rims]||['#d9d9e8',1,.2];
+  CARX.rimM.color.set(R[0]);CARX.rimM.metalness=R[1];CARX.rimM.roughness=R[2];
+  CARX.stripes.forEach(s=>s.visible=C.deco==='racing');CARX.stripeM.color.set(C.decoC);
+  const side=['flames','bolt','stars','hearts'].includes(C.deco);CARX.sides.forEach(s=>s.visible=side);
+  if(side&&carDecoKey!==C.deco+C.decoC){carDecoKey=C.deco+C.decoC;if(CARX.sideM.map)CARX.sideM.map.dispose();CARX.sideM.map=decoTex(C.deco,C.decoC);CARX.sideM.needsUpdate=true;}
+  for(const k in CARX.spoil)CARX.spoil[k].visible=C.spoil===k;
+  CARX.glow.visible=C.glow!=='none';if(C.glow!=='none')CARX.glow.material.color.set(C.glow);
+  const pt=carPlate();if(carPlateKey!==pt){carPlateKey=pt;const m=CARX.plate.material;if(m.map)m.map.dispose();m.map=plateTex(pt);m.needsUpdate=true;}}
+applyCar();
+
+/* ---------- the jobs, one step at a time ---------- */
+// lift: how high the car sits on that step. hood: the hood is open. cam: where the camera looks.
+const GJ={
+  tire:[{id:'lift',say:'Raise the car up on the lift.',btn:'⬆️ Raise the lift',cam:'car'},
+    {id:'loosen',lift:.35,cam:'wheel'},
+    {id:'pull',say:'Tap or swipe the flat tire to pull it off.',lift:.35,cam:'wheel'},
+    {id:'spare',say:'Tap the shiny new tire to put it on.',lift:.35,cam:'spare'},
+    {id:'tighten',lift:.35,cam:'wheel'},
+    {id:'lower',say:'All tight! Lower the car back down.',btn:'⬇️ Lower the car',lift:.35,cam:'car'}],
+  oil:[{id:'lift',say:'Raise the car up high so you can get under it.',btn:'⬆️ Raise the lift',cam:'car'},
+    {id:'plug',say:'Tap the gold drain plug under the car to unscrew it.',lift:1.45,cam:'under'},
+    {id:'drain',say:'Glug glug! The old black oil is draining out...',lift:1.45,cam:'under'},
+    {id:'plugin',say:'Tap to screw the drain plug back in.',lift:1.45,cam:'under'},
+    {id:'lower',say:'Lower the car back down.',btn:'⬇️ Lower the car',lift:1.45,cam:'car'},
+    {id:'hood',say:'Tap the hood to open it.',btn:'🔓 Open the hood',cam:'car'},
+    {id:'cap',say:'Tap the yellow oil cap to take it off.',hood:1,cam:'bay'},
+    {id:'pour',say:'Press and hold to pour in new oil. Let go when it reaches the green!',hood:1,cam:'bay'},
+    {id:'capon',say:'Tap to put the oil cap back on.',hood:1,cam:'bay'}],
+  engine:[{id:'hood',say:'Smoke is coming out! Tap the hood to open it.',btn:'🔓 Open the hood',cam:'car'},
+    {id:'fix',hood:1,cam:'bay'},
+    {id:'start',say:'Everything is fixed. Turn the key!',btn:'🔑 Start the engine',hood:1,cam:'car'}]};
+const GARTABS=[['tire','🛞','Tire'],['oil','🛢️','Oil'],['engine','⚙️','Engine'],['paint','🎨','Paint']];
+const GPAY={tire:[6,'Tire changed!'],oil:[6,'Oil changed!'],engine:[8,'Engine fixed!']};
+let garageOpen=false;
+const gar={job:'tire',s:{tire:0,oil:0,engine:0},n:0,broken:new Set(),removed:null,drain:0,fill:0,pid:null,lift:0,hood:0,tw:[],shake:0,drive:0,run:0,smokeT:0,busy:false};
+const garCam={p:new THREE.Vector3(),t:new THREE.Vector3(),dy:0,dp:0,id:null,x:0,y:0},gTgt=new THREE.Vector3(),gWant=new THREE.Vector3(),gV=new THREE.Vector3();
+const jobDone=j=>gar.s[j]>=GJ[j].length;
+const allFixed=()=>jobDone('tire')&&jobDone('oil')&&jobDone('engine');
+const curStep=(j=gar.job)=>GJ[j]?GJ[j][gar.s[j]]:null;
+const midJob=j=>gar.s[j]>0&&!jobDone(j);
+function garTw(d,f,done){gar.tw.push({t:0,d,f,done});}
+const gsnd={ratchet(){for(let i=0;i<6;i++)tone(2200,.025,'square',.03,i*.06);},clunk(){tone(140,.12,'triangle',.18);},
+  hum(){tone(110,.7,'sine',.07,0,150);},vroom(){tone(55,.6,'sawtooth',.09,0,120);tone(120,.7,'sawtooth',.08,.55,260);tone(260,.5,'sawtooth',.05,1.2,110);},
+  honk(){for(const w of [0,.25]){tone(392,.18,'square',.05,w);tone(494,.18,'square',.05,w);}},spray(){tone(5000,.25,'sawtooth',.012,0,3500);}};
+
+function resetJob(j){const X=CARX;
+  if(j==='tire'){const w=X.fix,t=w.userData.tire;w.visible=true;w.position.copy(w.userData.home);w.rotation.set(0,0,0);t.material=X.flatM;t.scale.set(1.05,.74,.95);t.position.y=-.06;
+    w.userData.nuts.forEach(n=>{n.visible=true;n.position.copy(n.userData.home);n.rotation.set(Math.PI/2,0,0);n.userData.busy=false;});
+    X.spare.visible=true;X.spare.position.set(1.95,.305,-.1);X.spare.rotation.set(0,-.5,0);}
+  if(j==='oil'){X.plug.visible=true;X.plug.position.copy(X.plug.userData.home);X.cap.visible=true;X.cap.position.copy(X.cap.userData.home);X.cap.rotation.set(0,0,0);gar.drain=0;gar.fill=0;X.bucketOil.scale.y=.001;}
+  if(j==='engine'){const ids=CAR_PARTS.map(p=>p[0]).sort(()=>Math.random()-.5);gar.broken=new Set(ids.slice(0,2+(Math.random()<.5?1:0)));gar.removed=null;
+    for(const [id] of CAR_PARTS){const p=X.parts[id];p.g.visible=true;p.g.position.copy(p.home);p.g.scale.setScalar(1);p.good.visible=!gar.broken.has(id);p.bad.visible=gar.broken.has(id);}}
+  gar.s[j]=0;gar.n=0;}
+['tire','oil','engine'].forEach(resetJob);
+
+function nextStep(){const j=gar.job;gar.s[j]++;gar.n=0;garCam.dy=garCam.dp=0;sfx('pop');if(jobDone(j))finishJob(j);renderGarage();}
+function finishJob(j){const [n,why]=GPAY[j];did('car',j);sfx('tada');banner({tire:'🛞 New tire on!',oil:'🛢️ Fresh oil!',engine:'🏁 Vroom! It runs great!'}[j]);
+  burst(carTop(),rnd(['#4fb6ff','#ffd23f','#7ee081','#ff6fae']),30,2,.09);try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}if(av.play)av.play('cheer');
+  const paid=SAVE.garPaid||(SAVE.garPaid={});if(Date.now()-(paid[j]||0)>3e5){paid[j]=Date.now();persist();setTimeout(()=>earn(n,why),700);}
+  if(allFixed()){did('carfixed');setTimeout(()=>{toast('Your car is all fixed up! Now try 🎨 Paint 🚗');if(Date.now()-(paid.all||0)>3e5){paid.all=Date.now();persist();earn(5,'Car all fixed!');}},2200);}}
+const carTop=()=>CARX.g.localToWorld(gV.set(0,1.1,0)).clone();
+
+/* ---------- open and close ---------- */
+function openGarage(){if(closetOpen)return;closeTalk();const z=Z.garage;garageOpen=closetOpen=true;z.padLbl.visible=false;
+  document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
+  if(allFixed()&&gar.wasFixed){['tire','oil','engine'].forEach(resetJob);setTimeout(()=>toast('Your car needs a tune-up again! 🔧'),500);}
+  gar.wasFixed=false;if(gar.job!=='paint'&&jobDone(gar.job))gar.job=['tire','oil','engine'].find(j=>!jobDone(j))||'paint';
+  const [px,pz]=z.toWorld(-2.3,.5),[cx,cz]=z.toWorld(0,CARX.cz);player.pos.set(px,0,pz);player.vy=0;player.speed=0;player.face=Math.atan2(cx-px,cz-pz);
+  garCam.p.copy(camera.position);garCam.t.copy(cam.fv||player.pos);garCam.dy=garCam.dp=0;
+  renderGarage();$('#garage').classList.add('show');$('#gcontent').scrollTop=0;sfx('tada');}
+function closeGarage(){if(!garageOpen)return;const z=Z.garage;garageOpen=closetOpen=false;z.padLbl.visible=true;gar.pid=null;garCam.id=null;
+  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+  document.body.classList.remove('dressing');$('#garage').classList.remove('show');persist();cam.yaw=cam.cy=z.rot;player.face=z.rot;
+  if(allFixed())gar.wasFixed=true;
+  toast(allFixed()?'Your car looks awesome! 🚗✨':'Come back to finish fixing your car 🔧');}
+$('#gdone').onclick=closeGarage;$('#gphoto').onclick=()=>{wantPhoto=true;};
+
+/* ---------- the panel ---------- */
+function garSay(st){const n=gar.n;
+  if(st.id==='loosen')return `Tap each lug nut to spin it off. (${n} of 5)`;
+  if(st.id==='tighten')return `Tap each hole to tighten a lug nut back on. (${n} of 5)`;
+  if(st.id==='fix'){if(gar.removed){const p=CAR_PARTS.find(p=>p[0]===gar.removed);return `Now tap the new ${p[1]} ${p[2].toLowerCase()} below to put it in.`;}
+    return `Find the smoking parts and tap one to take it out. (${gar.broken.size} left)`;}
+  return st.say;}
+function renderGarage(){const C=SAVE.car;
+  $('#gtabs').innerHTML=GARTABS.map(([id,ico,n])=>`<button class="tab${id===gar.job?' on':''}" data-gtab="${id}"><b>${ico}${id!=='paint'&&jobDone(id)?'<i>✅</i>':''}</b>${n}</button>`).join('');
+  let h='';const j=gar.job;
+  if(j==='paint'){const chips=(list,cur,kind)=>`<div class="chips">${list.map(([id,e,n])=>`<button class="${id===cur?'on':''}" data-${kind}="${id}">${e?e+' ':''}${n}</button>`).join('')}</div>`;
+    const sw=(list,cur,kind)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-${kind}="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
+    const cols=myColors(CAR_COLORS);
+    h=`<button class="btn" data-drive="1">🚗 Take it for a spin!</button>
+      <h3>Paint color</h3>${sw(cols,C.paint,'paint')}<h3>Shine</h3>${chips(CAR_FIN,C.fin,'fin')}<h3>Wheels</h3>${chips(CAR_RIMS,C.rims,'rims')}
+      <h3>Stickers</h3>${chips(CAR_DECO,C.deco,'deco')}${C.deco!=='none'?'<div style="height:8px"></div>'+sw(cols,C.decoC,'decoc'):''}
+      <h3>Spoiler</h3>${chips(CAR_SPOIL,C.spoil,'spoil')}<h3>Lights under the car</h3>${chips(CAR_GLOW,C.glow,'glow')}
+      <h3>License plate</h3><input class="binput" id="gplate" maxlength="8" placeholder="${carPlate()}" autocomplete="off" value="${(C.plate||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}">`;}
+  else if(jobDone(j)){const nx=['tire','oil','engine'].find(k=>!jobDone(k));
+    h=`<p class="gdone">✅ ${{tire:'The new tire is on!',oil:'Fresh oil is in!',engine:'The engine purrs like a kitty!'}[j]}</p>
+      <p class="drawhint">${nx?`Next, tap ${GARTABS.find(t=>t[0]===nx).slice(1,3).join(' ')} up top.`:'Every job is done. Now make your car look awesome in 🎨 Paint!'}</p>
+      <button class="btn" data-again="1">🔁 Do it again</button>`;}
+  else{const steps=GJ[j],i=gar.s[j],st=steps[i];
+    h=`<div class="gpips">${steps.map((_,k)=>`<span class="${k<i?'ok':k===i?'on':''}"></span>`).join('')}</div><p class="gsay">${garSay(st)}</p>`;
+    if(st.btn)h+=`<button class="btn" data-gbtn="1">${st.btn}</button>`;
+    if(st.id==='drain')h+=`<div class="gbar drain"><i id="gbarI" style="width:${(1-gar.drain)*100}%"></i></div><p class="drawhint">Old oil left in the car</p>`;
+    if(st.id==='pour')h+=`<div class="gbar"><em></em><i id="gbarI" style="width:${Math.min(100,gar.fill*100)}%"></i></div><p class="drawhint">Oil in the engine. Stop in the green part!</p>`;
+    if(st.id==='fix')h+=`<div class="gtray">${CAR_PARTS.map(([id,e,n])=>`<button data-part="${id}" class="${gar.removed===id?'want':''}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`;}
+  $('#gcontent').innerHTML=h;
+  const inp=$('#gplate');if(inp){inp.addEventListener('input',()=>{SAVE.car.plate=inp.value.replace(/[^\w !?♥-]/g,'').slice(0,8);applyCar();persist();});inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});}}
+$('#gtabs').onclick=e=>{const b=e.target.closest('[data-gtab]');if(!b)return;gar.job=b.dataset.gtab;gar.n=0;garCam.dy=garCam.dp=0;sfx('pop');renderGarage();$('#gcontent').scrollTop=0;};
+$('#gcontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset,C=SAVE.car;
+  if(d.gbtn){const st=curStep();if(!st||gar.busy)return;
+    if(st.id==='lift'||st.id==='lower'){gsnd.hum();nextStep();return;}
+    if(st.id==='hood'){gsnd.clunk();nextStep();return;}
+    if(st.id==='start'){startEngine();return;}}
+  if(d.again){resetJob(gar.job);sfx('pop');renderGarage();return;}
+  if(d.part){partPick(d.part);return;}
+  if(d.drive){driveCar();return;}
+  const set=(k,v)=>{C[k]=v;applyCar();persist();did('carpaint',k);gsnd.spray();burst(carTop(),k==='paint'?v:'#ffffff',22,1.4,.07);renderGarage();};
+  if(d.paint)return set('paint',d.paint);if(d.fin)return set('fin',d.fin);if(d.rims)return set('rims',d.rims);if(d.deco)return set('deco',d.deco);
+  if(d.decoc)return set('decoC',d.decoc);if(d.spoil)return set('spoil',d.spoil);if(d.glow)return set('glow',d.glow);};
+
+/* ---------- tapping things on the car ---------- */
+// Little things like lug nuts are hard to hit with a finger, so a tap picks whatever is closest on the screen.
+function garScr(o){o.getWorldPosition(gV).project(camera);return [(gV.x+1)/2*innerWidth,(1-gV.y)/2*innerHeight,gV.z];}
+function nearest(e,list,R){R*=isTouch?1.25:1;let best=null,bd=R;for(const o of list){const [x,y,z]=garScr(o);if(z>1)continue;const d=Math.hypot(x-e.clientX,y-e.clientY);if(d<bd){bd=d;best=o;}}return best;}
+function garTap(e){const st=curStep();if(gar.job==='paint'||!st||gar.busy)return false;const X=CARX,nuts=X.fix.userData.nuts,s=st.id;
+  if(s==='loosen'){const n=nearest(e,nuts.filter(n=>n.visible&&!n.userData.busy),40);if(!n)return false;n.userData.busy=true;gsnd.ratchet();
+    const z0=n.position.z,r0=n.rotation.y;garTw(.5,k=>{n.rotation.y=r0+k*12;n.position.z=z0+k*.14;},()=>{n.visible=false;n.userData.busy=false;gar.n++;if(gar.n>=5)nextStep();else renderGarage();});return true;}
+  if(s==='tighten'){const n=nearest(e,nuts.filter(n=>!n.visible&&!n.userData.busy),40);if(!n)return false;n.userData.busy=true;n.visible=true;gsnd.ratchet();
+    const h=n.userData.home;garTw(.5,k=>{n.rotation.y=(1-k)*12;n.position.z=h.z+(1-k)*.14;},()=>{n.userData.busy=false;gar.n++;if(gar.n>=5)nextStep();else renderGarage();});return true;}
+  if(s==='pull'){if(!nearest(e,[X.fix],90))return false;pullTire();return true;}
+  if(s==='spare'){if(!nearest(e,[X.spare],95))return false;putSpare();return true;}
+  if(s==='plug'){if(!nearest(e,[X.plug],70))return false;gar.busy=true;gsnd.ratchet();const p=X.plug,h=p.userData.home;
+    garTw(.6,k=>{p.rotation.y=k*14;p.position.y=h.y-k*.06;},()=>{garTw(.35,k=>{p.position.y=h.y-.06-k*k*(gar.lift+.1);},()=>{p.visible=false;p.position.set(h.x,h.y-.06,h.z);gsnd.clunk();gar.busy=false;nextStep();});});return true;}
+  if(s==='plugin'){if(!nearest(e,[X.plug],70))return false;gar.busy=true;const p=X.plug,h=p.userData.home;p.visible=true;gsnd.ratchet();
+    garTw(.6,k=>{p.rotation.y=(1-k)*14;p.position.y=h.y-(1-k)*.06;},()=>{gar.busy=false;nextStep();});return true;}
+  if(s==='hood'){if(!nearest(e,[X.hoodM],130))return false;gsnd.clunk();nextStep();return true;}
+  if(s==='cap'){if(!nearest(e,[X.cap],70))return false;gar.busy=true;const c=X.cap,h=c.userData.home;sfx('pop');
+    garTw(.6,k=>{c.rotation.y=k*8;c.position.set(h.x+k*.12,h.y+Math.sin(k*Math.PI)*.15+k*.02,h.z-k*.12);},()=>{gar.busy=false;nextStep();});return true;}
+  if(s==='capon'){if(!nearest(e,[X.cap],80))return false;gar.busy=true;const c=X.cap,h=c.userData.home,p0=c.position.clone();sfx('pop');
+    garTw(.6,k=>{c.rotation.y=(1-k)*8;c.position.lerpVectors(p0,h,k);c.position.y+=Math.sin(k*Math.PI)*.15;},()=>{gar.busy=false;nextStep();});return true;}
+  if(s==='fix'){const list=CAR_PARTS.map(p=>X.parts[p[0]].g).filter(g=>g.visible);const g=nearest(e,list,60);if(!g)return false;
+    const id=CAR_PARTS.map(p=>p[0]).find(id=>X.parts[id].g===g);
+    if(!gar.broken.has(id)){toast('That one looks good 👍 Find a smoking part!');return true;}
+    if(gar.removed){toast('Put the new part in first 👇');return true;}
+    gar.busy=true;gar.removed=id;gsnd.ratchet();const P=X.parts[id];
+    garTw(.6,k=>{P.g.position.set(P.home.x,P.home.y+k*.5,P.home.z+k*.4);P.g.scale.setScalar(1-k*.8);},()=>{P.g.visible=false;gar.busy=false;renderGarage();});
+    renderGarage();return true;}
+  return false;}
+function partPick(id){if(!gar.removed){toast('First tap a smoking part in the engine to take it out 💨');return;}
+  if(id!==gar.removed){const p=CAR_PARTS.find(p=>p[0]===gar.removed);toast(`Oops, that doesn't fit! You took out the ${p[2].toLowerCase()} ${p[1]}`);tone(180,.15,'square',.05);return;}
+  const P=CARX.parts[id];gar.removed=null;gar.broken.delete(id);P.g.visible=true;P.good.visible=true;P.bad.visible=false;P.g.scale.setScalar(1);gar.busy=true;
+  garTw(.45,k=>{P.g.position.set(P.home.x,P.home.y+(1-k)*(1-k)*.5,P.home.z);},()=>{gar.busy=false;gsnd.clunk();burst(P.g.getWorldPosition(new THREE.Vector3()),'#7ee081',14,.8,.05);
+    if(gar.broken.size===0)nextStep();else renderGarage();});
+  renderGarage();}
+function pullTire(){const w=CARX.fix,h=w.userData.home;gar.busy=true;sfx('pop');
+  garTw(.4,k=>{w.position.z=h.z+k*.5;},()=>garTw(.7,k=>{w.position.set(h.x+k*1.1,h.y-k*k*gar.lift,h.z+.5+k*.6);w.rotation.z=-k*6;},()=>{w.visible=false;gsnd.clunk();burst(w.getWorldPosition(new THREE.Vector3()),'#cfcfd8',12,.8,.06);gar.busy=false;nextStep();}));}
+function putSpare(){const w=CARX.fix,h=w.userData.home,t=w.userData.tire;gar.busy=true;CARX.spare.visible=false;
+  t.material=CARX.spare.userData.tire.material;t.scale.set(1,1,.95);t.position.y=0;w.userData.nuts.forEach(n=>{n.visible=false;n.position.copy(n.userData.home);n.rotation.set(Math.PI/2,0,0);});
+  w.visible=true;w.rotation.set(0,0,0);garTw(.55,k=>{w.position.set(h.x,h.y,h.z+(1-k)*.7);w.rotation.z=(1-k)*3;},()=>{gsnd.clunk();gar.busy=false;nextStep();});}
+function startEngine(){if(gar.busy)return;gar.busy=true;gsnd.vroom();gar.shake=1.8;gar.run=2.4;
+  setTimeout(()=>{gar.busy=false;if(garageOpen&&gar.job==='engine')nextStep();},1900);}
+function driveCar(){if(gar.drive||gar.busy)return;gar.drive=.001;gsnd.vroom();setTimeout(()=>gsnd.honk(),1500);did('carspin');}
+
+/* pointer: tap things, press and hold to pour oil, drag anywhere else to look around */
+function garageDown(e){const cap=()=>{try{canvas.setPointerCapture(e.pointerId);}catch(_){}};const st=curStep();
+  if(gar.job!=='paint'&&st&&st.id==='pour'&&!gar.busy){if(gar.pid===null){gar.pid=e.pointerId;cap();}return;}
+  if(garTap(e))return;
+  if(garCam.id===null){garCam.id=e.pointerId;garCam.x=e.clientX;garCam.y=e.clientY;garCam.moved=0;cap();}}
+function garageMove(e){if(e.pointerId===garCam.id){const dx=e.clientX-garCam.x,dy=e.clientY-garCam.y;garCam.dy=Math.max(-1.4,Math.min(1.4,garCam.dy-dx*.006));garCam.dp=Math.max(-.4,Math.min(.6,garCam.dp+dy*.004));garCam.x=e.clientX;garCam.y=e.clientY;garCam.moved+=Math.abs(dx)+Math.abs(dy);
+    // a swipe across the flat tire also pulls it off
+    const st=curStep();if(st&&st.id==='pull'&&!gar.busy&&garCam.moved>30&&nearest(e,[CARX.fix],120)){garCam.id=null;pullTire();}}}
+function garageUp(e){if(e.pointerId===gar.pid){gar.pid=null;const st=curStep();if(!garageOpen||!st||st.id!=='pour')return;
+    if(gar.fill>=.78)pourDone();else if(gar.fill>0)toast('A little more! Fill it up to the green 🟩');}
+  if(e.pointerId===garCam.id)garCam.id=null;}
+function pourDone(spill){gar.pid=null;CARX.gold.visible=false;CARX.jug.visible=false;
+  if(spill){toast('Oops, a little spilled! Wiped it up 🧽');gar.fill=.95;}else toast('Just right! 👍');nextStep();}
+
+/* ---------- camera ---------- */
+function garView(){const z=Z.garage,L=gar.lift,cz=CARX.cz,st=gar.job==='paint'?null:curStep(),v=gar.drive?'car':st?st.cam:'car',dx=CARX.root.position.x;
+  const at=(lx,y,lz)=>{const [x,w]=z.toWorld(lx+dx,lz);gTgt.set(x,y,w);};let yaw=.45,pitch=.28,d=3.9;
+  if(v==='wheel'){at(.78,L+.3,cz+.5);yaw=.3;pitch=.12;d=1.45;}
+  else if(v==='spare'){at(1.35,L*.5+.3,cz+.45);yaw=.15;pitch=.3;d=2.3;}
+  else if(v==='under'){at(.15,(L+.16)*.62+.05,cz);yaw=0;pitch=.02;d=2.7;}
+  else if(v==='bay'){at(.74,L+.55,cz);yaw=Math.PI/2-.55;pitch=.85;d=1.5;}
+  else{at(.1,L*.5+.55,cz);yaw=.6;pitch=.22;d=3.3;}
+  if(gar.job==='paint')d=3.5;
+  return [yaw+z.rot+garCam.dy,Math.max(-.2,Math.min(1.3,pitch+garCam.dp)),d];}
+function garageCam(dt){const [yaw,pitch,d0]=garView(),land=innerWidth>innerHeight*1.25;const d=d0*(land?1:1.3)*ZOOM.k;
+  gWant.set(gTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,gTgt.y+Math.sin(pitch)*d,gTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
+  // stay inside the garage: not behind the walls and not up behind the big sign over the door
+  {const z=Z.garage;let [lx,lz]=z.toLocal(gWant.x,gWant.z);lx=Math.max(-4.1,Math.min(4.1,lx));lz=Math.max(-4,lz);if(lz>1.4)gWant.y=Math.min(gWant.y,2.3);const [wx,wz]=z.toWorld(lx,lz);gWant.x=wx;gWant.z=wz;}
+  const a=Math.min(1,dt*5);garCam.p.lerp(gWant,a);garCam.t.lerp(gTgt,a);camera.position.copy(garCam.p);camera.lookAt(garCam.t);}
+
+/* ---------- every frame: the lift, the hood, smoke, oil, hints ---------- */
+const smokeTex=canvasTex(64,64,(x)=>{const r=x.createRadialGradient(32,32,0,32,32,30);r.addColorStop(0,'rgba(200,200,205,.9)');r.addColorStop(1,'rgba(200,200,205,0)');x.fillStyle=r;x.fillRect(0,0,64,64);});
+const SMOKE=[];for(let i=0;i<16;i++){const s=sprite(smokeTex,.2,.2);s.visible=false;s.material.depthWrite=false;scene.add(s);SMOKE.push({s,t:9,v:new THREE.Vector3()});}
+function puff(p,dark,v){const o=SMOKE.find(o=>o.t>=1.4);if(!o)return;o.t=0;o.s.position.copy(p);o.s.visible=true;o.s.material.color.set(dark?'#6a6a70':'#ffffff');o.v.copy(v||gV.set((Math.random()-.5)*.1,.45,(Math.random()-.5)*.1));}
+const hintTex=e=>canvasTex(64,64,(x)=>{x.font='52px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(e,32,36);});
+const gHint=sprite(hintTex('👇'),.2,.2),gHintUp=sprite(hintTex('👆'),.2,.2);gHint.visible=gHintUp.visible=false;gHint.renderOrder=gHintUp.renderOrder=5;
+gHint.material.depthTest=gHintUp.material.depthTest=false;scene.add(gHint,gHintUp);
+const gW=new THREE.Vector3(),gW2=new THREE.Vector3();
+function hintTarget(){if(!garageOpen||gar.job==='paint'||gar.busy)return null;const st=curStep();if(!st)return null;const X=CARX,nuts=X.fix.userData.nuts;
+  switch(st.id){case 'loosen':return nuts.find(n=>n.visible&&!n.userData.busy);case 'tighten':return nuts.find(n=>!n.visible&&!n.userData.busy);
+    case 'pull':return X.fix;case 'spare':return X.spare;case 'plug':case 'plugin':return X.plug;case 'cap':case 'capon':return X.cap;case 'hood':return X.hoodM;
+    case 'fix':return gar.removed?null:CAR_PARTS.map(p=>X.parts[p[0]]).find((P,i)=>gar.broken.has(CAR_PARTS[i][0]))?.g;}return null;}
+anims.push((t,dt)=>{const X=CARX;
+  for(let i=gar.tw.length-1;i>=0;i--){const w=gar.tw[i];w.t+=dt;const k=Math.min(1,w.t/w.d);w.f(k*k*(3-2*k));if(k>=1){gar.tw.splice(i,1);w.done&&w.done();}}
+  // how high the lift is and whether the hood is open: from the step you are on, and any job you left half done
+  let L=0,H=0;if(!gar.drive){for(const j of ['tire','oil','engine']){if(!midJob(j)&&j!==gar.job)continue;const st=curStep(j);if(!st)continue;L=Math.max(L,st.lift||0);if(st.hood)H=1;}}
+  if(gar.job==='paint')H=0;// paint with the hood shut
+  const oldL=gar.lift;gar.lift+=(L-gar.lift)*Math.min(1,dt*2.2);if(Math.abs(L-gar.lift)<.002)gar.lift=L;gar.hood+=(H-gar.hood)*Math.min(1,dt*5);
+  X.g.position.y=gar.lift;X.hood.rotation.z=gar.hood*1.15;X.liftTop.position.y=gar.lift+.195;
+  {const hh=gar.lift+.11,a=Math.asin(Math.min(.98,hh/1.7));for(const m of X.arms){m.rotation.z=m.userData.s*a;m.position.y=.06+hh/2;}}
+  // shaking and puffing when the engine starts
+  if(gar.shake>0){gar.shake-=dt;X.g.position.x=Math.sin(t*70)*.012*Math.min(1,gar.shake);X.g.rotation.x=Math.sin(t*53)*.01*Math.min(1,gar.shake);}else{X.g.position.x=0;X.g.rotation.x=0;}
+  if(gar.run>0){gar.run-=dt;X.heads.forEach(h=>h.material.color.setScalar(2.4));if(Math.random()<dt*14)puff(X.pipe.getWorldPosition(gW),true,gV.set(0,.3,0).add(gW2.set(-1.2,0,0).applyQuaternion(X.g.getWorldQuaternion(new THREE.Quaternion()))));}
+  else if(!gar.drive)X.heads.forEach(h=>h.material.color.set('#fff4c8').multiplyScalar(1.2));
+  // take it for a spin: drive forward, honk, back up
+  if(gar.drive){gar.drive+=dt;const k=gar.drive,f=k<1.3?Math.sin(k/1.3*Math.PI/2):k<1.8?1:k<3?Math.cos((k-1.8)/1.2*Math.PI/2):0;const x=f*1.6,old=X.root.position.x;X.root.position.x=x;
+    for(const w of X.wheels)w.rotation.z-=(x-old)/.305;X.heads.forEach(h=>h.material.color.setScalar(2.4));if(Math.random()<dt*10)puff(X.pipe.getWorldPosition(gW),true);
+    if(k>=3){gar.drive=0;X.root.position.x=0;}}
+  // old oil draining into the bucket
+  X.bucket.visible=gar.s.oil>=1&&gar.s.oil<=4;
+  const st=curStep(gar.job==='paint'?'':gar.job),oilSt=curStep('oil');
+  if(oilSt&&oilSt.id==='drain'&&garageOpen&&gar.job==='oil'){gar.drain=Math.min(1,gar.drain+dt/3.2);X.plug.userData.home&&X.g.localToWorld(gW.copy(X.plug.userData.home));
+    const top=.22,len=gW.y-top;X.stream.visible=len>0;X.stream.position.copy(Z.garage.g.worldToLocal(gW.clone())).setY(top+len/2);X.stream.scale.y=Math.max(.01,len);
+    if(Math.random()<dt*6)sfx('bubble');const bar=$('#gbarI');if(bar)bar.style.width=(1-gar.drain)*100+'%';if(gar.drain>=1){X.stream.visible=false;nextStep();}}
+  else X.stream.visible=false;
+  X.bucketOil.scale.y=Math.max(.001,gar.drain*.17);
+  // pouring new oil while you hold your finger down
+  if(garageOpen&&st&&st.id==='pour'){X.cap.getWorldPosition(gW);const gl=Z.garage.g.worldToLocal(gW.clone());X.jug.visible=true;X.jug.position.set(gl.x+.12,gl.y+.32,gl.z+.02);X.jug.rotation.set(0,0,gar.pid!==null?.9:.25);
+    X.gold.visible=gar.pid!==null;if(gar.pid!==null){gar.fill+=dt*.3;X.gold.position.set(gl.x,gl.y+.12,gl.z);X.gold.scale.y=.22;if(Math.random()<dt*8)tone(300+gar.fill*500,.06,'sine',.04);
+      if(gar.fill>1.06){burst(gW.clone().add(gV.set(0,.05,0)),'#e8b13a',20,1,.05);pourDone(true);}}
+    const bar=$('#gbarI');if(bar)bar.style.width=Math.min(100,gar.fill*100)+'%';}
+  else{X.jug.visible=false;X.gold.visible=false;}
+  // smoke from broken engine parts (and from the hood seams while it is closed)
+  if(gar.broken.size&&curZone===Z.garage&&!(jobDone('engine'))){gar.smokeT-=dt;if(gar.smokeT<=0){gar.smokeT=.16;const ids=[...gar.broken].filter(id=>id!==gar.removed);
+    if(ids.length){if(gar.hood<.4)X.hoodM.localToWorld(gW.set(.3*(Math.random()-.5)*2,.05,(Math.random()-.5)*.8));else X.parts[rnd(ids)].g.getWorldPosition(gW).add(gV.set(0,.08,0));puff(gW,false);}}}
+  for(const o of SMOKE){if(o.t>=1.4)continue;o.t+=dt;o.s.position.addScaledVector(o.v,dt);const k=o.t/1.4;o.s.scale.setScalar(.12+k*.35);o.s.material.opacity=(1-k)*.8;if(o.t>=1.4)o.s.visible=false;}
+  // a bouncing finger shows what to tap next
+  const ht=hintTarget();gHint.visible=gHintUp.visible=false;
+  if(ht){ht.getWorldPosition(gW);const under=ht===X.plug,s=under?gHintUp:gHint,b=Math.sin(t*6)*.025;s.visible=true;s.position.copy(gW).add(gV.set(0,under?-.16-b:(ht===X.fix||ht===X.spare?.42:ht===X.hoodM?.2:.12)+b,0));
+    const sz=ht===X.fix||ht===X.spare||ht===X.hoodM?.22:.13;s.scale.set(sz,sz,1);}});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{openGarage,closeGarage,garage:gar,garageHint:()=>{const o=hintTarget();if(!o)return null;const [x,y]=garScr(o);return {x,y};}});});
 // ---- src/24e-sports.js ----
 /* ================= SPORTS: basketball and batting practice =================
    The places are built in 12c-place-sports.js. Everything here works in each place's own local space
@@ -5332,7 +5764,7 @@ window.__sports={SP,step:(dt)=>{if(SP.mode)SP.mode==='bat'?spBatStep(dt,clock.el
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
-const clock=new THREE.Clock();let curZone=null,onPad=true,onRunway=false,onPPad=false;
+const clock=new THREE.Clock();let curZone=null,onPad=true,onRunway=false,onPPad=false,onWPad=false;
 const tmpV=new THREE.Vector3();
 function stepPushables(p,dt){
   for(const o of PUSH){const z=o.z,m=o.m,q=m.position;
@@ -5398,10 +5830,11 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
     else toast(`⭐ ${n} of ${STARS.length}!`);questEvent('star');}}
   // zones
   let z=null;for(const zz of ZONES){if(Math.hypot(p.x-zz.x,p.z-zz.z)<zz.r+(zz.d?1:1.4)){z=zz;break;}}z=z||PARK;
-  if(z!==curZone){curZone=z;$('#place').textContent=z.name;if(started)questEvent('zone',z.id);if(started){if(z!==PARK)banner(z.name);setTrack(z.music);if(z.id==='parlor'&&!closetOpen)setTimeout(()=>toast(myPet()?'Step on the glowing paw pad to start pet care 🐾':'Adopt a pet first, then bring them here! 🐾'),1600);if(z.id==='bakery'&&!closetOpen)setTimeout(()=>toast('Step on the glowing cupcake pad to design a cake 🎂'),1600);if(z.id==='agency'&&!closetOpen)setTimeout(()=>toast('Step on 🏆 for the model contest, or 💄 to sit at the glam mirror!'),1600);}}
+  if(z!==curZone){curZone=z;$('#place').textContent=z.name;if(started)questEvent('zone',z.id);if(started){if(z!==PARK)banner(z.name);setTrack(z.music);if(z.id==='parlor'&&!closetOpen)setTimeout(()=>toast(myPet()?'Step on the glowing paw pad to start pet care 🐾':'Adopt a pet first, then bring them here! 🐾'),1600);if(z.id==='bakery'&&!closetOpen)setTimeout(()=>toast('Step on the glowing cupcake pad to design a cake 🎂'),1600);if(z.id==='garage'&&!closetOpen)setTimeout(()=>toast('Step on the glowing wrench pad to fix up your car 🔧'),1600);if(z.id==='agency'&&!closetOpen)setTimeout(()=>toast('Step on 🏆 for the model contest, or 💄 to sit at the glam mirror!'),1600);}}
   const padD=Math.hypot(p.x,p.z);if(padD<Z.studio.pad.r&&player.onGround){if(!onPad&&started){onPad=true;openCloset();}}else if(padD>1.6)onPad=false;
   {const pz=Z.parlor,[lx,lz]=pz.toLocal(p.x,p.z),d=Math.hypot(lx-pz.ppad.lx,lz-pz.ppad.lz);if(d<pz.ppad.r&&player.onGround&&!closetOpen){if(!onPPad&&started){onPPad=true;tryParlor();}}else if(d>1.3)onPPad=false;}
   {const bz=Z.bakery,[lx,lz]=bz.toLocal(p.x,p.z),d=Math.hypot(lx-bz.bpad.lx,lz-bz.bpad.lz);if(d<bz.bpad.r&&player.onGround&&!closetOpen){if(!onBPad&&started){onBPad=true;openBakery();}}else if(d>1.3)onBPad=false;}
+  {const wz=Z.garage,[lx,lz]=wz.toLocal(p.x,p.z),d=Math.hypot(lx-wz.gpad.lx,lz-wz.gpad.lz);if(d<wz.gpad.r&&player.onGround&&!closetOpen){if(!onWPad&&started){onWPad=true;openGarage();}}else if(d>1.3)onWPad=false;}
   {const [lx,lz]=AG.toLocal(p.x,p.z),dc=Math.hypot(lx-AG.cpad.lx,lz-AG.cpad.lz),dg=Math.hypot(lx-AG.gpad.lx,lz-AG.gpad.lz);
     if(dc<AG.cpad.r&&player.onGround&&!closetOpen){if(!onCPad&&started){onCPad=true;openContest();}}else if(dc>1.3)onCPad=false;
     if(dg<AG.gpad.r&&player.onGround&&!closetOpen){if(!onGPad&&started){onGPad=true;openGlam();}}else if(dg>1.3)onGPad=false;}
@@ -5436,6 +5869,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   if(glamOpen)glamCam(dt);
   if(ct.on)contestCam(dt);
   if(bakeryOpen)bakeryCam(dt);
+  if(garageOpen)garageCam(dt);
   cakeContestCam(dt);
   petContestCam(dt);
   sportsCam(dt);
@@ -5469,7 +5903,7 @@ function preUpload(){const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.f
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
 /* ================= MAP ================= */
-const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a'};
+const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');

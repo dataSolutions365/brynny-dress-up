@@ -34,6 +34,7 @@ const ZONES=[
   // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
   {id:'barn',name:'🐴 Happy Barn',ang:0,d:38.5,r:6,music:'spring-birds',nopath:true},
   {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:38.5,r:6,music:'city-park',nopath:true},
+  {id:'garage',name:'🔧 Car Garage',ang:150,d:36,r:7,music:'fireworks'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
