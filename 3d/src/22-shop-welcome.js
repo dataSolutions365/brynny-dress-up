@@ -90,7 +90,7 @@ const wsRender=()=>{const G=isGuy(SAVE.look);document.querySelectorAll('[data-ws
   const gb=document.querySelector('[data-ws="glam"]');if(gb)gb.innerHTML=G?'😎<span>Real guy</span>':'💃<span>Glam girl</span>';};wsRender();
 document.querySelector('.wbody').onclick=e=>{const b=e.target.closest('[data-wb]');if(!b)return;if(switchBody(b.dataset.wb)){rebuildPlayer();sfx('pop');}wsRender();};
 document.querySelector('.wstyle:not(.wbody)').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
-$('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);
+$('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);renderMe();
   scene.remove(av.g);av=new Avatar(SAVE.look,n,tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
   curTrack='sparkle-room';startMusic();

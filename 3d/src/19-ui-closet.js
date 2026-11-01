@@ -34,15 +34,20 @@ let wantPhoto=false;$('#photoBtn').onclick=()=>{wantPhoto=true;};
 function takePhoto(){questEvent('act','photo');const url=canvas.toDataURL('image/png');$('#flash').style.transition='none';$('#flash').style.opacity=.9;requestAnimationFrame(()=>{$('#flash').style.transition='opacity .5s';$('#flash').style.opacity=0;});
   try{sndCam.currentTime=0;sndCam.play().catch(()=>{});}catch(e){}$('#photoImg').src=url;$('#photoSave').href=url;setTimeout(()=>$('#photo').classList.add('show'),350);}
 $('#photoClose').onclick=()=>$('#photo').classList.remove('show');
-$('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#setName').value=SAVE.name||'';$('#settings').classList.add('show');};
+$('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#setName').value=SAVE.name||'';$('#settings').classList.add('show');renderMe();};
+/* you at the top left: your picture (the same choice as the 2D studio, kept by pics.js) and your name */
+const PIC=window.BrynnyPic||{current:()=>'',html:()=>isGuy(SAVE.look)?'👦':'👧',picker:()=>'',set(){}};
+function renderMe(){$('#mePic').innerHTML=PIC.html(PIC.current());$('#meName').textContent=SAVE.name||'Me';if($('#settings').classList.contains('show'))$('#picRow').innerHTML=PIC.picker(true);}
+$('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;PIC.set(b.dataset.pic);sfx('pop');renderMe();});
+addEventListener('storage',e=>{if(!e.key||e.key.startsWith('brynny.'))renderMe();});
 // change your name (the 2D studio gets it too, see 01b-shared-name.js)
 function saveNameFromSettings(){const el=$('#setName'),n=el.value.trim();if(!n){el.value=SAVE.name||'';el.focus();toast('Type your name first ✏️');return;}
   if(n.slice(0,16)===SAVE.name){toast(`Your name is ${SAVE.name} 💖`);return;}
-  setMyName(n);el.value=SAVE.name;el.blur();rebuildPlayer();sfx('tada');toast(`✨ Hi ${SAVE.name}! Your new name is saved`);}
+  setMyName(n);el.value=SAVE.name;el.blur();rebuildPlayer();renderMe();sfx('tada');toast(`✨ Hi ${SAVE.name}! Your new name is saved`);}
 $('#setNameGo').onclick=saveNameFromSettings;
 $('#setName').addEventListener('keydown',e=>{if(e.key==='Enter')saveNameFromSettings();});
 // a name changed in the 2D studio (in another tab) shows up when you come back
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&pullName()){rebuildPlayer();if($('#settings').classList.contains('show'))$('#setName').value=SAVE.name;}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(pullName()){rebuildPlayer();if($('#settings').classList.contains('show'))$('#setName').value=SAVE.name;}renderMe();});
 $('#setClose').onclick=()=>$('#settings').classList.remove('show');
 $('#settings').onclick=e=>{if(e.target.id==='settings')$('#settings').classList.remove('show');};
 

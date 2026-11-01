@@ -1444,7 +1444,7 @@ function switchBody(b){const cur=isGuy(SAVE.look)?'guy':'girl';if(b===cur)return
   SAVE.look=nx&&nx.look?nx.look:b==='guy'?defaultGuyLook(SAVE.look):Object.assign(defaultLook(),{style:SAVE.look.style||'glam',skin:SAVE.look.skin,eyes:SAVE.look.eyes,makeup:defaultMakeup()});
   if(nx&&nx.paint)SAVE.facePaint=nx.paint;else delete SAVE.facePaint;
   if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();
-  persist();did('body',b);shareBody();return true;}
+  persist();did('body',b);shareBody();renderMe();return true;}
 // tell the 2D studio whether you play a girl or a guy (its top-left picture matches unless you pick your own)
 function shareBody(){try{localStorage.setItem('brynny.body',JSON.stringify({b:isGuy(SAVE.look)?'guy':'girl',at:Date.now()}));}catch(e){}}
 
@@ -2124,15 +2124,20 @@ let wantPhoto=false;$('#photoBtn').onclick=()=>{wantPhoto=true;};
 function takePhoto(){questEvent('act','photo');const url=canvas.toDataURL('image/png');$('#flash').style.transition='none';$('#flash').style.opacity=.9;requestAnimationFrame(()=>{$('#flash').style.transition='opacity .5s';$('#flash').style.opacity=0;});
   try{sndCam.currentTime=0;sndCam.play().catch(()=>{});}catch(e){}$('#photoImg').src=url;$('#photoSave').href=url;setTimeout(()=>$('#photo').classList.add('show'),350);}
 $('#photoClose').onclick=()=>$('#photo').classList.remove('show');
-$('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#setName').value=SAVE.name||'';$('#settings').classList.add('show');};
+$('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#setName').value=SAVE.name||'';$('#settings').classList.add('show');renderMe();};
+/* you at the top left: your picture (the same choice as the 2D studio, kept by pics.js) and your name */
+const PIC=window.BrynnyPic||{current:()=>'',html:()=>isGuy(SAVE.look)?'👦':'👧',picker:()=>'',set(){}};
+function renderMe(){$('#mePic').innerHTML=PIC.html(PIC.current());$('#meName').textContent=SAVE.name||'Me';if($('#settings').classList.contains('show'))$('#picRow').innerHTML=PIC.picker(true);}
+$('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;PIC.set(b.dataset.pic);sfx('pop');renderMe();});
+addEventListener('storage',e=>{if(!e.key||e.key.startsWith('brynny.'))renderMe();});
 // change your name (the 2D studio gets it too, see 01b-shared-name.js)
 function saveNameFromSettings(){const el=$('#setName'),n=el.value.trim();if(!n){el.value=SAVE.name||'';el.focus();toast('Type your name first ✏️');return;}
   if(n.slice(0,16)===SAVE.name){toast(`Your name is ${SAVE.name} 💖`);return;}
-  setMyName(n);el.value=SAVE.name;el.blur();rebuildPlayer();sfx('tada');toast(`✨ Hi ${SAVE.name}! Your new name is saved`);}
+  setMyName(n);el.value=SAVE.name;el.blur();rebuildPlayer();renderMe();sfx('tada');toast(`✨ Hi ${SAVE.name}! Your new name is saved`);}
 $('#setNameGo').onclick=saveNameFromSettings;
 $('#setName').addEventListener('keydown',e=>{if(e.key==='Enter')saveNameFromSettings();});
 // a name changed in the 2D studio (in another tab) shows up when you come back
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&pullName()){rebuildPlayer();if($('#settings').classList.contains('show'))$('#setName').value=SAVE.name;}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(pullName()){rebuildPlayer();if($('#settings').classList.contains('show'))$('#setName').value=SAVE.name;}renderMe();});
 $('#setClose').onclick=()=>$('#settings').classList.remove('show');
 $('#settings').onclick=e=>{if(e.target.id==='settings')$('#settings').classList.remove('show');};
 
@@ -3459,7 +3464,7 @@ const wsRender=()=>{const G=isGuy(SAVE.look);document.querySelectorAll('[data-ws
   const gb=document.querySelector('[data-ws="glam"]');if(gb)gb.innerHTML=G?'😎<span>Real guy</span>':'💃<span>Glam girl</span>';};wsRender();
 document.querySelector('.wbody').onclick=e=>{const b=e.target.closest('[data-wb]');if(!b)return;if(switchBody(b.dataset.wb)){rebuildPlayer();sfx('pop');}wsRender();};
 document.querySelector('.wstyle:not(.wbody)').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
-$('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);
+$('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);renderMe();
   scene.remove(av.g);av=new Avatar(SAVE.look,n,tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
   curTrack='sparkle-room';startMusic();
@@ -4375,4 +4380,5 @@ function portraitTick(){const now=performance.now();if(!started||now<PORT.t)retu
   let shot=false;
   if(meK!==PORT.key.me&&av&&av.head){PORT.key.me=meK;snapOne(av.g,av.head,1.05,.13,'brynny.me3d');shot=true;}
   else if(pt&&petK!==PORT.key.pet&&pt.head){PORT.key.pet=petK;snapOne(pt.g,pt.head,.75,.05,'brynny.pet3d',{name:pt.name});shot=true;}
-  if(shot)renderer.render(scene,camera);}
+  if(shot){renderer.render(scene,camera);renderMe();}}
+renderMe();

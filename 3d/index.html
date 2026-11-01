@@ -28,6 +28,14 @@ input{font-family:inherit}
 #top{left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) 0 calc(env(safe-area-inset-left) + 12px)}
 .pill{background:rgba(255,255,255,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:999px;padding:7px 14px;font-weight:600;font-size:16px;box-shadow:0 4px 14px rgba(59,35,87,.16);white-space:nowrap}
 #place{max-width:56vw;overflow:hidden;text-overflow:ellipsis}
+/* you at the top left (like the 2D studio): your picture and name; tap for settings */
+#topl{display:flex;align-items:center;gap:6px;min-width:0}#topl #place{max-width:calc(100vw - 250px);min-width:0}
+#setBtn{display:flex;align-items:center;gap:7px;padding:4px 12px 4px 5px;max-width:34vw;flex:none}#mePic{width:30px;height:30px;border-radius:50%;background:#ffe6f2;display:grid;place-items:center;font-size:22px;flex:none;overflow:hidden}
+#meName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#meName::after{content:" ▾";color:#b07aa8}#place{font-size:14px;padding:5px 12px}
+.picimg{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.picrow{margin:0 0 12px;max-height:34vh;overflow:auto;text-align:left}.picrow>div{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.picrow>b{display:block;font-size:13px;color:#9a7aa0;margin:4px 0}
+.picrow button{display:flex;align-items:center;justify-content:center;gap:6px;font-size:24px;width:42px;height:42px;border-radius:14px;background:#fff7fb;border:3px solid #f6e3ef}.picrow button.on{border-color:#ff4d8d;background:#ffe6f2}
+.picrow button.auto{width:auto;padding:0 10px;font-size:13px;font-weight:700}.picrow button.auto .picimg{width:26px;height:26px}.picrow .hint{font-size:13px;color:#9a7aa0;margin:4px 0}
 #side{right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 106px);display:flex;flex-direction:column;gap:20px}
 .rb{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.9);font-size:26px;box-shadow:0 4px 14px rgba(59,35,87,.2);display:grid;place-items:center;position:relative}
 .rb:active{transform:scale(.93)}
@@ -251,11 +259,10 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 </script>
 <canvas id="c" tabindex="0"></canvas>
 
-<div class="hud" id="top"><div class="pill" id="place">✨ Sparkle Studio</div><div id="topr"><button class="pill" id="stars" aria-label="My stars and challenges">⭐ <b id="starN">0</b> <span>🏆</span></button><button class="pill" id="coins" aria-label="My coins and the shop">🪙 <b id="coinN">0</b> <span>🛍️</span></button></div></div>
+<div class="hud" id="top"><div id="topl"><button class="pill" id="setBtn" aria-label="You, your picture and settings"><span id="mePic">👧</span><span id="meName">Me</span></button><div class="pill" id="place">✨ Sparkle Studio</div></div><div id="topr"><button class="pill" id="stars" aria-label="My stars and challenges">⭐ <b id="starN">0</b> <span>🏆</span></button><button class="pill" id="coins" aria-label="My coins and the shop">🪙 <b id="coinN">0</b> <span>🛍️</span></button></div></div>
 <div class="hud" id="side">
   <button class="rb" id="photoBtn" aria-label="Take a picture">📸<small>Photo</small></button>
   <button class="rb" id="musicBtn" aria-label="Music">🎵<small>Music</small></button>
-  <button class="rb" id="setBtn" aria-label="Settings">⚙️<small>Settings</small></button>
 </div>
 <div class="hud" id="actions"></div>
 <div class="hud pill" id="hint">Drag on the left side to walk.<br>Drag on the right side to look around.</div>
@@ -446,6 +453,8 @@ body.contest #closet{display:none}
 </div></div>
 <div class="modal" id="settings"><div class="card">
   <h2 style="margin:0 0 14px">⚙️ Settings</h2>
+  <div class="setlbl">🖼️ Your picture</div>
+  <div class="picrow" id="picRow"></div>
   <div class="setlbl">✏️ Your name</div>
   <div id="setNameRow"><input id="setName" maxlength="16" placeholder="Your name" autocomplete="off" aria-label="Your name"><button class="btn" id="setNameGo">Save</button></div>
   <a class="btn" href="../" style="display:block">🏠 Go back to the 2D studio</a>
@@ -463,6 +472,7 @@ body.contest #closet{display:none}
   <a href="../" style="display:inline-block;margin-top:14px;color:var(--muted);font-weight:600;font-size:14px">← Back to the 2D studio</a>
 </div></div>
 
+<script src="../pics.js"></script>
 <script src="../family.js"></script>
 <script type="module" src="game.js"></script>
 <script>
