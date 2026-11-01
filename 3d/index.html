@@ -264,6 +264,27 @@ body.shopping #zoomCtl,body.talking #zoomCtl{display:none!important}
 @media (max-height:520px){#map .card{display:flex;gap:12px;align-items:center;text-align:left;max-width:640px}#mapCv{width:calc(100vh - 70px);margin:0;flex:none}#map .row{flex-direction:column}}
 #mini{pointer-events:auto}
 </style>
+<script>
+/* ---------- problems: save what went wrong to the same list as the 2D studio (snake game's Firebase, dressup_errors) ---------- */
+// Errors, lost 3D graphics, and "tried to walk but didn't move" (a bug that throws no error) all land there,
+// marked "3D world", so a grown-up can look them up. At most 5 per visit; names, photos and messages are never sent.
+(()=>{const VERSION='3d-2026-11-01',MAX=5,queue=[];let saved=0,send=null,loading=false;
+  const STATS={apiKey:'AIzaSyAA8sqDROwZoVvcy8MoJ1cTmGlg0GCP_nY',authDomain:'snake-game-2e23b.firebaseapp.com',projectId:'snake-game-2e23b',appId:'1:185426735320:web:84d5c2b47233711dd527ad'};
+  const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
+  const cut=(v,n)=>String(v==null?'':v).slice(0,n);
+  async function connect(){if(loading)return;loading=true;
+    try{const [a,f]=await Promise.all([import(SDK+'firebase-app.js'),import(SDK+'firebase-firestore.js')]);
+      const db=f.getFirestore(a.initializeApp(STATS,'stats3d'));
+      send=e=>f.addDoc(f.collection(db,'dressup_errors'),{...e,at:f.serverTimestamp()}).catch(()=>{});
+      queue.splice(0).forEach(send);}catch(e){loading=false;}}
+  function where(extra){let s='3D world';try{const p=document.getElementById('place');if(p&&p.textContent)s+=' | place: '+p.textContent;
+    const g=window.__game;if(g&&g.player){const q=g.player.pos;s+=` | at ${q.x.toFixed(1)},${q.z.toFixed(1)}`;}}catch(e){}return extra?s+' | '+extra:s;}
+  window.reportProblem=(error,extra)=>{try{if(saved>=MAX||location.protocol==='file:')return;saved++;
+    const e={message:cut(error&&error.message||error,500),stack:cut(error&&error.stack,1500),where:cut(where(extra),200),version:VERSION,device:cut(navigator.userAgent,300)};
+    if(send)send(e);else{queue.push(e);connect();}}catch(x){}};
+  addEventListener('error',e=>{if(e.error||e.message)reportProblem(e.error||e.message,'error');});
+  addEventListener('unhandledrejection',e=>reportProblem(e.reason||'promise failed','promise'));})();
+</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
@@ -596,7 +617,7 @@ setTimeout(()=>{const l=document.getElementById('loading');if(l&&!window.__game)
   document.getElementById('newver').onclick=()=>location.reload();
   addEventListener('load',check);document.addEventListener('visibilitychange',check);setInterval(check,5*60*1000);})();
 // iPhones can drop the 3D graphics when memory runs low or the app sits in the background; show a way back instead of a frozen picture
-document.getElementById('c').addEventListener('webglcontextlost',e=>{e.preventDefault();document.getElementById('glLost').classList.add('show');});
+document.getElementById('c').addEventListener('webglcontextlost',e=>{e.preventDefault();window.reportProblem&&reportProblem('The 3D graphics were lost (phone memory or background)','graphics');document.getElementById('glLost').classList.add('show');});
 </script>
 <script>
 // save the game for offline play (see sw.js)
