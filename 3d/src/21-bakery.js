@@ -291,7 +291,7 @@ function bakeryUp(e){if(e.pointerId===bk.pipe){bk.pipe=null;bk.lastP=null;persis
 function bakeryCam(dt){const z=Z.bakery,S=z.stand,H=cakeH()+plateInfo()[3];const [pi,df]=BCAM[btab];const pitch=Math.min(1.35,Math.max(-.05,pi+bcam.dp)),yaw=z.rot;
   // back up far enough that the whole cake fits in the part of the screen the panel does not cover
   const land=innerWidth>innerHeight*1.25,vf=Math.tan(camera.fov*Math.PI/360),hf=vf*camera.aspect;
-  const d=df*Math.max(.7/(hf*(land?.38:.95)),(H*.5+.28)/(vf*(land?.75:.5)));
+  const d=df*Math.max(.7/(hf*(land?.38:.95)),(H*.5+.28)/(vf*(land?.75:.5)))*ZOOM.k;
   const [cx,cz]=z.toWorld(S.lx,S.lz);bTgt.set(cx,.84+(btab==='write'?H:H*.5),cz);bWant.set(bTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,bTgt.y+Math.sin(pitch)*d,bTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
   const a=Math.min(1,dt*5);bcam.p.lerp(bWant,a);bcam.t.lerp(bTgt,a);camera.position.copy(bcam.p);camera.lookAt(bcam.t);}
 buildCake();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>buildText());

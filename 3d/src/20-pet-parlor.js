@@ -176,7 +176,7 @@ function parlorPet(pt,dt){const z=Z.parlor;pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0
   if(pt.wet>.3&&Math.random()<dt*3)burst(petTop(pt).add(new THREE.Vector3(0,-pt.tagH*.4,0)),'#8fd8ff',3,.5,.05);}
 function parlorCam(dt){const z=Z.parlor,pt=pPet;if(!pt)return;const [yo,pi,di,ty]=PCAM[ptab],k=Math.min(1.1,Math.max(.7,pt.tagH));
   if(ptab==='nails'){pawCam(pt,dt);return;}
-  const yaw=z.rot+yo+pcam.dy,pitch=Math.min(1.25,Math.max(-.02,pi+pcam.dp)),d=di*k;
+  const yaw=z.rot+yo+pcam.dy,pitch=Math.min(1.25,Math.max(-.02,pi+pcam.dp)),d=di*k*stationZoom();
   pTgt.set(pt.pos.x,z.table.h+ty*k,pt.pos.z);pWant.set(pTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,pTgt.y+Math.sin(pitch)*d,pTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
   const a=Math.min(1,dt*5);pcam.p.lerp(pWant,a);pcam.t.lerp(pTgt,a);camera.position.copy(pcam.p);camera.lookAt(pcam.t);}
 

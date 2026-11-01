@@ -37,7 +37,7 @@ function pawCam(pt,dt){const l=pt.legs[pFocus]||pt.legs[0],paw=l.paw.getWorldPos
   // look from in front of the paw and a bit to its side; back paws are seen more from the side
   const lx=l.sx*(l.sz>0?.45:1),lz=l.sz>0?1:.15,yaw=pt.face+pcam.dy,c=Math.cos(yaw),s=Math.sin(yaw);
   const dir=new THREE.Vector3(lx*c+lz*s,(l.sz>0?.6:.8)+pcam.dp*.5,-lx*s+lz*c).normalize();
-  pTgt.copy(paw);pWant.copy(paw).addScaledVector(dir,(l.sz>0?.3:.34)*k);
+  pTgt.copy(paw);pWant.copy(paw).addScaledVector(dir,(l.sz>0?.3:.34)*k*ZOOM.k);
   const a=Math.min(1,dt*5);pcam.p.lerp(pWant,a);pcam.t.lerp(pTgt,a);camera.position.copy(pcam.p);camera.lookAt(pcam.t);}
 
 /* ---------- big round buttons over the game, and the progress bar ---------- */

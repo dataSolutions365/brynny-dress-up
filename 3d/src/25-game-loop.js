@@ -85,6 +85,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   for(const a of anims)a(t,dt);tickBursts(dt);
   for(const f of onTick)f(dt);
   // camera
+  zoomTick();
   const playMode=!closetOpen;
   const ZM={eyes:[.012,.3],lips:[-.058,.26],face:[-.01,.55]}[closetOpen?czoom:'']||null;
   if(ZM)player.face=angDamp(player.face,cam.closetYaw,Math.min(1,dt*8));

@@ -144,6 +144,28 @@ const TEX={
 };
 const groundMat=std('#ffffff',{map:TEX.grass,roughness:.95});
 
+// ---- src/01b-shared-name.js ----
+/* ---------- your name, shared with the 2D studio ---------- */
+// Both games keep the player's name under 'brynny.name' as {n:name,at:time}, and whichever game changed it last wins.
+// The 2D studio (index.html, save key 'brynny-dressup-v1') has a list of dress-up girls, so a new name typed here
+// also renames the girl you are playing there.
+const NAME_KEY='brynny.name',STORE_2D='brynny-dressup-v1';
+function sharedName(){try{const s=JSON.parse(localStorage.getItem(NAME_KEY));return s&&typeof s.n==='string'&&s.n.trim()?s:null;}catch(e){return null;}}
+function read2D(){try{const d=JSON.parse(localStorage.getItem(STORE_2D));return d&&Array.isArray(d.chars)&&d.chars.length?d:null;}catch(e){return null;}}
+const cur2D=d=>d.chars.find(c=>c.id===d.cur)||d.chars[0];
+// on start: take the name if the 2D studio changed it last; before either game has shared one, use the 2D girl's name
+function pullName(){const s=sharedName();
+  if(s){if(s.at>(SAVE.nameAt||0)&&s.n!==SAVE.name){SAVE.name=s.n.trim().slice(0,16);SAVE.nameAt=s.at;persist();return true;}return false;}
+  const d=read2D(),c=d&&d.welcomed&&cur2D(d),n=c&&String(c.name||'').trim().slice(0,16);if(n&&n!==SAVE.name){SAVE.name=n;persist();return true;}
+  return false;}
+pullName();
+// change the name in this game and send it to the 2D studio too
+function setMyName(n){n=String(n||'').trim().slice(0,16);if(!n)return false;const s=sharedName();
+  if(n===SAVE.name&&s&&s.n===n)return true;
+  const at=Date.now();SAVE.name=n;SAVE.nameAt=at;persist();
+  try{localStorage.setItem(NAME_KEY,JSON.stringify({n,at}));}catch(e){}
+  const d=read2D();if(d){const c=cur2D(d);if(c&&c.name!==n){c.name=n;c.nameAt=at;c.at=at;try{localStorage.setItem(STORE_2D,JSON.stringify(d));}catch(e){}}}
+  return true;}
 // ---- src/02-island.js ----
 /* ---------- island ---------- */
 const R=44.5;
@@ -1592,6 +1614,7 @@ function paintAt(uv){const cv=av.paintCv,W=cv.width,x=cv.getContext('2d');const 
 function savePaint(){try{SAVE.facePaint=av.paintCv.toDataURL('image/png');}catch(e){}persist();}
 const drawing=()=>closetOpen&&!parlorOpen&&!shopOpen&&ctab==='makeup'&&(!glamOpen||mTool==='paint');
 canvas.addEventListener('pointerdown',e=>{e.preventDefault();
+  if(pinchDown(e))return;
   if(parlorOpen){parlorDown(e);return;}
   if(bakeryOpen){bakeryDown(e);return;}
   if(beautyDown(e))return;
@@ -1599,6 +1622,7 @@ canvas.addEventListener('pointerdown',e=>{e.preventDefault();
   if(closetOpen||e.pointerType==='mouse'||e.clientX>innerWidth*.5){if(look.id===null){look.id=e.pointerId;look.x=e.clientX;look.y=e.clientY;try{canvas.setPointerCapture(e.pointerId);}catch(_){}}return;}
   if(joy.id===null){joy.id=e.pointerId;joy.x0=e.clientX;joy.y0=e.clientY;joy.x=joy.y=0;joyEl.style.left=e.clientX+'px';joyEl.style.top=e.clientY+'px';joyEl.style.display='block';knob.style.transform='';try{canvas.setPointerCapture(e.pointerId);}catch(_){}fadeHint();}});
 canvas.addEventListener('pointermove',e=>{
+  if(pinchMove(e))return;
   if(parlorOpen){parlorMove(e);return;}
   if(bakeryOpen){bakeryMove(e);return;}
   if(beautyMove(e))return;
@@ -1606,15 +1630,50 @@ canvas.addEventListener('pointermove',e=>{
   if(e.pointerId===joy.id){let dx=e.clientX-joy.x0,dy=e.clientY-joy.y0;const d=Math.hypot(dx,dy),max=56;if(d>max){dx*=max/d;dy*=max/d;}joy.x=dx/max;joy.y=dy/max;knob.style.transform=`translate(${dx}px,${dy}px)`;}
   if(e.pointerId===look.id){const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;
     if(closetOpen){if(!drawing()&&!(ct.on&&!ct.sub)&&!(glamOpen&&ctab!=='hair'))player.face+=dx*.012;}else{cam.yaw-=dx*.006;cam.pitch=Math.min(1.25,Math.max(-.15,cam.pitch+dy*.004));fadeHint();}}});
-const endPtr=e=>{parlorUp(e);bakeryUp(e);beautyUp(e);if(e.pointerId===brush.id){brush.id=null;brush.last=null;savePaint();}if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}if(e.pointerId===look.id)look.id=null;};
+const endPtr=e=>{pinchUp(e);parlorUp(e);bakeryUp(e);beautyUp(e);if(e.pointerId===brush.id){brush.id=null;brush.last=null;savePaint();}if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}if(e.pointerId===look.id)look.id=null;};
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);canvas.addEventListener('lostpointercapture',endPtr);
-canvas.addEventListener('wheel',e=>{cam.dist=Math.min(12,Math.max(2.5,cam.dist+e.deltaY*.005));e.preventDefault();},{passive:false});
+canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 $('#jump').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
 function jump(){if(closetOpen)return;if(player.onGround){player.vy=6.2;player.onGround=false;sfx('jump');}}
 let hintFaded=false;function fadeHint(){if(hintFaded)return;hintFaded=true;setTimeout(()=>$('#hint').style.opacity=0,2500);setTimeout(()=>$('#hint').style.display='none',3200);}
 if(!isTouch)$('#hint').innerHTML='Walk with W A S D or the arrow keys.<br>Drag to look around. Space to jump.';
 
+// ---- src/17b-zoom.js ----
+/* ================= ZOOM ================= */
+// Pinch with two fingers, scroll the mouse wheel, or tap the ➕ and ➖ buttons on the left to zoom in and out.
+// Walking around, that moves the camera closer or further (cam.dist). At the pet parlor and the bakery it changes how
+// far back the close-up camera stands (ZOOM.k), so you can always back away if your pet or cake is too close.
+const ZOOM={k:Math.min(2.6,Math.max(.7,+SAVE.zoomK||1)),min:.7,max:2.6},PLAY_MIN=2.5,PLAY_MAX=14;
+const zoomEl=$('#zoomCtl');
+function zoomWhere(){if(parlorOpen||bakeryOpen)return 'station';if(!closetOpen)return 'play';return null;}
+let zoomSaveT=0;
+function zoomBy(f){const w=zoomWhere();
+  if(w==='play')cam.dist=Math.min(PLAY_MAX,Math.max(PLAY_MIN,cam.dist*f));
+  else if(w==='station'){ZOOM.k=Math.min(ZOOM.max,Math.max(ZOOM.min,ZOOM.k*f));clearTimeout(zoomSaveT);zoomSaveT=setTimeout(()=>{SAVE.zoomK=+ZOOM.k.toFixed(2);persist();},800);}}
+// how far the parlor and bakery cameras stand back: a bit further on a tall phone, where the panel covers the bottom
+const stationZoom=()=>ZOOM.k*(innerWidth>innerHeight*1.25?1:1.2);
+
+/* two-finger pinch */
+const pinch={pts:new Map(),d:0,on:false};
+const pinchDist=()=>{const [a,b]=[...pinch.pts.values()];return Math.hypot(a[0]-b[0],a[1]-b[1]);};
+function pinchDown(e){if(e.pointerType==='mouse')return false;pinch.pts.set(e.pointerId,[e.clientX,e.clientY]);
+  if(pinch.pts.size!==2||!zoomWhere())return false;
+  // a second finger: stop walking, looking around or scrubbing, and zoom instead
+  pinch.on=true;pinch.d=pinchDist();joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';look.id=null;pcam.id=null;bcam.id=null;
+  if(rub.id!==null){rub.id=null;persist();renderMeters();}return true;}
+function pinchMove(e){if(!pinch.pts.has(e.pointerId))return false;pinch.pts.set(e.pointerId,[e.clientX,e.clientY]);if(!pinch.on)return false;
+  const d=pinchDist();if(d>10&&pinch.d>10)zoomBy(pinch.d/d);pinch.d=d;return true;}
+function pinchUp(e){pinch.pts.delete(e.pointerId);if(pinch.pts.size<2)pinch.on=false;}
+
+/* the ➕ ➖ buttons: tap to zoom a step, or hold to keep zooming */
+let zoomHold=null;
+function zoomPress(f){zoomBy(f);sfx('pop');clearInterval(zoomHold);let n=0;zoomHold=setInterval(()=>{if(++n>3)zoomBy(Math.pow(f,.35));},90);}
+const zoomStop=()=>{clearInterval(zoomHold);zoomHold=null;};
+[['#zoomIn',1/1.25],['#zoomOut',1.25]].forEach(([id,f])=>{const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();zoomPress(f);});
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>b.addEventListener(t,zoomStop));});
+let zoomShown=null;
+function zoomTick(){const s=started&&!!zoomWhere();if(s!==zoomShown){zoomShown=s;zoomEl.classList.toggle('show',s);if(!s)zoomStop();}}
 // ---- src/18-sound.js ----
 /* ================= SOUND ================= */
 let AC=null;function ac(){if(!AC)try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}return AC;}
@@ -1701,7 +1760,15 @@ let wantPhoto=false;$('#photoBtn').onclick=()=>{wantPhoto=true;};
 function takePhoto(){questEvent('act','photo');const url=canvas.toDataURL('image/png');$('#flash').style.transition='none';$('#flash').style.opacity=.9;requestAnimationFrame(()=>{$('#flash').style.transition='opacity .5s';$('#flash').style.opacity=0;});
   try{sndCam.currentTime=0;sndCam.play().catch(()=>{});}catch(e){}$('#photoImg').src=url;$('#photoSave').href=url;setTimeout(()=>$('#photo').classList.add('show'),350);}
 $('#photoClose').onclick=()=>$('#photo').classList.remove('show');
-$('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#settings').classList.add('show');};
+$('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#setName').value=SAVE.name||'';$('#settings').classList.add('show');};
+// change your name (the 2D studio gets it too, see 01b-shared-name.js)
+function saveNameFromSettings(){const el=$('#setName'),n=el.value.trim();if(!n){el.value=SAVE.name||'';el.focus();toast('Type your name first ✏️');return;}
+  if(n.slice(0,16)===SAVE.name){toast(`Your name is ${SAVE.name} 💖`);return;}
+  setMyName(n);el.value=SAVE.name;el.blur();rebuildPlayer();sfx('tada');toast(`✨ Hi ${SAVE.name}! Your new name is saved`);}
+$('#setNameGo').onclick=saveNameFromSettings;
+$('#setName').addEventListener('keydown',e=>{if(e.key==='Enter')saveNameFromSettings();});
+// a name changed in the 2D studio (in another tab) shows up when you come back
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&pullName()){rebuildPlayer();if($('#settings').classList.contains('show'))$('#setName').value=SAVE.name;}});
 $('#setClose').onclick=()=>$('#settings').classList.remove('show');
 $('#settings').onclick=e=>{if(e.target.id==='settings')$('#settings').classList.remove('show');};
 
@@ -1949,7 +2016,7 @@ function parlorPet(pt,dt){const z=Z.parlor;pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0
   if(pt.wet>.3&&Math.random()<dt*3)burst(petTop(pt).add(new THREE.Vector3(0,-pt.tagH*.4,0)),'#8fd8ff',3,.5,.05);}
 function parlorCam(dt){const z=Z.parlor,pt=pPet;if(!pt)return;const [yo,pi,di,ty]=PCAM[ptab],k=Math.min(1.1,Math.max(.7,pt.tagH));
   if(ptab==='nails'){pawCam(pt,dt);return;}
-  const yaw=z.rot+yo+pcam.dy,pitch=Math.min(1.25,Math.max(-.02,pi+pcam.dp)),d=di*k;
+  const yaw=z.rot+yo+pcam.dy,pitch=Math.min(1.25,Math.max(-.02,pi+pcam.dp)),d=di*k*stationZoom();
   pTgt.set(pt.pos.x,z.table.h+ty*k,pt.pos.z);pWant.set(pTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,pTgt.y+Math.sin(pitch)*d,pTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
   const a=Math.min(1,dt*5);pcam.p.lerp(pWant,a);pcam.t.lerp(pTgt,a);camera.position.copy(pcam.p);camera.lookAt(pcam.t);}
 
@@ -2247,7 +2314,7 @@ function bakeryUp(e){if(e.pointerId===bk.pipe){bk.pipe=null;bk.lastP=null;persis
 function bakeryCam(dt){const z=Z.bakery,S=z.stand,H=cakeH()+plateInfo()[3];const [pi,df]=BCAM[btab];const pitch=Math.min(1.35,Math.max(-.05,pi+bcam.dp)),yaw=z.rot;
   // back up far enough that the whole cake fits in the part of the screen the panel does not cover
   const land=innerWidth>innerHeight*1.25,vf=Math.tan(camera.fov*Math.PI/360),hf=vf*camera.aspect;
-  const d=df*Math.max(.7/(hf*(land?.38:.95)),(H*.5+.28)/(vf*(land?.75:.5)));
+  const d=df*Math.max(.7/(hf*(land?.38:.95)),(H*.5+.28)/(vf*(land?.75:.5)))*ZOOM.k;
   const [cx,cz]=z.toWorld(S.lx,S.lz);bTgt.set(cx,.84+(btab==='write'?H:H*.5),cz);bWant.set(bTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,bTgt.y+Math.sin(pitch)*d,bTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
   const a=Math.min(1,dt*5);bcam.p.lerp(bWant,a);bcam.t.lerp(bTgt,a);camera.position.copy(bcam.p);camera.lookAt(bcam.t);}
 buildCake();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>buildText());
@@ -2645,7 +2712,7 @@ window.__shop={earn,openShop,closeShop,buy,askBuy,SHOP};
 $('#wname').value=SAVE.name||'';
 const wsRender=()=>document.querySelectorAll('[data-ws]').forEach(b=>b.classList.toggle('on',b.dataset.ws===(SAVE.look.style||'glam')));wsRender();
 document.querySelector('.wstyle').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
-$('#play').onclick=()=>{const n=$('#wname').value.trim()||'Brynny';SAVE.name=n;persist();
+$('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);
   scene.remove(av.g);av=new Avatar(SAVE.look,n,'#ff4d8d',true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
   curTrack='sparkle-room';startMusic();
@@ -3152,7 +3219,7 @@ function pawCam(pt,dt){const l=pt.legs[pFocus]||pt.legs[0],paw=l.paw.getWorldPos
   // look from in front of the paw and a bit to its side; back paws are seen more from the side
   const lx=l.sx*(l.sz>0?.45:1),lz=l.sz>0?1:.15,yaw=pt.face+pcam.dy,c=Math.cos(yaw),s=Math.sin(yaw);
   const dir=new THREE.Vector3(lx*c+lz*s,(l.sz>0?.6:.8)+pcam.dp*.5,-lx*s+lz*c).normalize();
-  pTgt.copy(paw);pWant.copy(paw).addScaledVector(dir,(l.sz>0?.3:.34)*k);
+  pTgt.copy(paw);pWant.copy(paw).addScaledVector(dir,(l.sz>0?.3:.34)*k*ZOOM.k);
   const a=Math.min(1,dt*5);pcam.p.lerp(pWant,a);pcam.t.lerp(pTgt,a);camera.position.copy(pcam.p);camera.lookAt(pcam.t);}
 
 /* ---------- big round buttons over the game, and the progress bar ---------- */
@@ -3259,6 +3326,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   for(const a of anims)a(t,dt);tickBursts(dt);
   for(const f of onTick)f(dt);
   // camera
+  zoomTick();
   const playMode=!closetOpen;
   const ZM={eyes:[.012,.3],lips:[-.058,.26],face:[-.01,.55]}[closetOpen?czoom:'']||null;
   if(ZM)player.face=angDamp(player.face,cam.closetYaw,Math.min(1,dt*8));
