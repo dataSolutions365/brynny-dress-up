@@ -30,6 +30,9 @@ In the 3D world you can also:
 - Adopt a pet. Walk up to a kitty, puppy, squirrel, or bunny and tap Adopt, and it follows you everywhere.
 - Visit the Star Model Agency. Sit at the glam mirror in the dressing room for makeup, salon hair (updo, beach waves, side braid, high pony, glossy blow-dry), a manicure, and a pedicure; then enter the model contest: 3 themed rounds, a runway walk with a pose mini-game, 3 judges, 3 rival models, and coin prizes.
 
+### Working on the 3D code
+The 3D game is split into small files in `3d/src/`, one per feature (each place, the avatar, pets, the bakery, the shop, the glam mirror, the map). After changing one, run `node 3d/build.mjs` to rebuild `3d/game.js`, which is what the page loads. Don't edit `3d/game.js` directly.
+
 ## Play it
 Open `index.html` in a browser, or visit the GitHub Pages link for this repository.
 
