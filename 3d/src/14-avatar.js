@@ -285,8 +285,20 @@ class Avatar{
       if(ex.cape){const g=new THREE.PlaneGeometry(.44,.78,6,10);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,-Math.abs(x)*x*1.5-(.39-y)*.12*0);p.setX(i,x*(1+(.39-y)*.6));}g.translate(0,-.39,0);g.computeVertexNormals();
         const m=mat(ex.cape);m.side=THREE.DoubleSide;const cg=new THREE.Group();cg.position.set(0,.47,-.11);spine.add(cg);this.parts.push(cg);cg.geometry={dispose(){}};P(g,m,cg).rotation.y=Math.PI;this.cape=cg;
         P(new THREE.TorusGeometry(.07,.012,8,20),m,spine,0,.47,0).rotation.x=Math.PI/2;}
-      if(ex.purse){const m=mat(ex.purse,'shiny'),a=arms[1];P(box(.1,.08,.04),m,a.hand,0,-.11,0);P(new THREE.TorusGeometry(.04,.006,6,16,Math.PI),m,a.hand,0,-.07,0);}
-      if(ex.wand){const a=arms[0];const w=P(cyl(.006,.006,.26,8),mat('#ffffff','shiny'),a.hand,0,-.03,.08);w.rotation.x=Math.PI/2-.3;const st=P(starGeo,mat(ex.wand,'gem'),a.hand,0,.0,.22);st.scale.setScalar(.22);}
+      if(ex.purse){// a proper handbag: rounded body, a darker flap, gold clasp, rings and a little heart charm
+        const m=mat(ex.purse,'shiny'),dk=mat('#'+new THREE.Color(ex.purse).offsetHSL(0,0,-.12).getHexString(),'shiny'),gold=mat('#e8c25a','metal'),a=arms[1];
+        const pg=new THREE.Group();pg.position.set(a.sx*.03,-.01,.01);pg.rotation.z=a.sx*.38;pg.scale.setScalar(1.35);a.hand.add(pg);this.parts.push(pg);pg.geometry={dispose(){}};
+        P(new THREE.TorusGeometry(.055,.008,8,24,Math.PI),m,pg,0,-.06,0);
+        for(const s of [-1,1])P(new THREE.TorusGeometry(.011,.003,6,14),gold,pg,s*.055,-.062,0);
+        P(new RoundedBoxGeometry(.19,.14,.07,3,.022),m,pg,0,-.135,0);
+        P(new RoundedBoxGeometry(.194,.062,.074,3,.016),dk,pg,0,-.092,.002);
+        const cl=P(new THREE.TorusGeometry(.012,.004,8,18),gold,pg,0,-.122,.038);cl.scale.y=.8;
+        P(sph(.007,10,8),mat('#ffffff','gem'),pg,0,-.122,.039);
+        const hs=new THREE.Shape();hs.moveTo(0,-.012);hs.bezierCurveTo(-.016,0,-.01,.012,0,.005);hs.bezierCurveTo(.01,.012,.016,0,0,-.012);
+        P(cyl(.0012,.0012,.026,4),gold,pg,.055,-.083,.004);
+        P(new THREE.ExtrudeGeometry(hs,{depth:.004,bevelEnabled:true,bevelSize:.0015,bevelThickness:.0015,bevelSegments:2,curveSegments:8}),gold,pg,.055,-.1,.002);}
+      if(ex.wand){const a=arms[0];const w=P(cyl(.008,.008,.34,10),mat('#ffffff','shiny'),a.hand,0,-.02,.1);w.rotation.x=Math.PI/2-.3;const st=P(starGeo,mat(ex.wand,'gem'),a.hand,0,.03,.27);st.scale.setScalar(.32);
+        for(const s of [-1,1]){const rb=P(new THREE.TorusGeometry(.012,.004,6,12),mat('#ff8fc8','shiny'),a.hand,s*.012,-.04,.04);rb.rotation.y=Math.PI/2;}}
       if(ex.glasses){const m=mat(ex.glasses,'shiny');for(const s of [-1,1])P(new THREE.TorusGeometry(.03,.005,8,24),m,head,s*.046,.005,.133);P(box(.03,.005,.005),m,head,0,.01,.136);
         for(const s of [-1,1]){const arm=P(box(.005,.005,.13),m,head,s*.078,.008,.07);}}
       if(ex.halo){const h=P(new THREE.TorusGeometry(.085,.011,10,36),mat(ex.halo,'gem'),head,0,.3,-.01);h.rotation.x=Math.PI/2;h.castShadow=false;}
@@ -294,7 +306,7 @@ class Avatar{
         P(new THREE.ConeGeometry(.024,.14,18),mat(ex.unicorn,'sparkle'),hg,0,.07,0);for(let i=0;i<3;i++){const r=P(new THREE.TorusGeometry(.021-i*.006,.0045,6,16),mat('#ffffff','shiny'),hg,0,.018+i*.033,0);r.rotation.x=Math.PI/2+.25;}}
       if(ex.balloon){const bm=mat(ex.balloon,'shiny');const bg=new THREE.Group();bg.position.set(-.3,.8,-.02);spine.add(bg);this.parts.push(bg);bg.geometry={dispose(){}};
         P(sph(.11,24,18),bm,bg).scale.set(1,1.15,1);P(new THREE.ConeGeometry(.016,.03,10),bm,bg,0,-.135,0).rotation.x=Math.PI;P(cyl(.002,.002,.72,6),mat('#ffffff'),bg,0,-.5,0);}
-      if(ex.pearls){const m=mat(ex.pearls,'shiny');for(let i=0;i<14;i++){const a=i/14*Math.PI*2;P(sph(.012,8,6),m,spine,Math.sin(a)*.065,.45-Math.max(0,Math.cos(a))*.03,Math.cos(a)*.055);}}
+      if(ex.pearls){const m=mat(ex.pearls,'shiny');for(let i=0;i<18;i++){const a=i/18*Math.PI*2;P(sph(.0145,12,8),m,spine,Math.sin(a)*.068,.45-Math.max(0,Math.cos(a))*.035,Math.cos(a)*.058);}P(sph(.021,14,10),m,spine,0,.41,.066);}
       if(ex.scarf){const m=mat(ex.scarf);P(new THREE.TorusGeometry(.065,.03,10,24),m,spine,0,.46,0).rotation.x=Math.PI/2;const tail=P(capTop(.03,.16),m,spine,.04,.46,.07);tail.scale.z=.4;tail.rotation.x=-.15;}}
     /* holiday costumes: their 3D pieces live in seasons.js (window.__costumes[id](kit,color)) */
     {const C=window.__costumes;if(C){const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,av:this};

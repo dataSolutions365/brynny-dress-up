@@ -23,7 +23,7 @@
   anims.push(t=>{cg.rotation.y=t*.25;cg.position.y=3.62+Math.sin(t*1.5)*.06;});}
  // glass display case with little cakes
  {const dg=new THREE.Group();dg.position.set(-2.55,0,-3.75);g.add(dg);M(box(2.5,.9,.85),pinkG,0,.45,0,dg);M(box(2.55,.06,.9),white,0,.92,0,dg);
-  M(box(2.45,.55,.8),phys('#ffffff',{roughness:0,transmission:.9,transparent:true,opacity:.25,clearcoat:1}),0,1.22,0,dg,false,false);
+  M(box(2.45,.55,.8),phys('#ffffff',{roughness:0,transparent:true,opacity:.25,clearcoat:1}),0,1.22,0,dg,false,false);
   [['#ffb3d1','#ff6fae'],['#6b3b22','#e8c25a'],['#fff4fa','#8fd8ff']].forEach(([c,t],i)=>{const x=-.8+i*.8;M(cyl(.2,.2,.22,28),phys(c,{roughness:.5,clearcoat:.3}),x,1.06,0,dg);M(cyl(.21,.21,.04,28),phys(t,{roughness:.3,clearcoat:1}),x,1.17,0,dg);M(sph(.035,10,8),phys('#d0102b',{roughness:.1,clearcoat:1}),x,1.22,0,dg);});
   z.ob(-2.55,-3.75,1.3);z.ob(-3.3,-3.75,.6);z.ob(-1.8,-3.75,.6);}
  // cupcake shelf

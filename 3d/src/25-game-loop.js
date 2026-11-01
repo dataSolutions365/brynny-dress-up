@@ -42,7 +42,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
   const gy=groundAt(f.pos.x,f.pos.z);f.pos.y+=(gy-f.pos.y)*Math.min(1,dt*12);
   f.g.position.copy(f.pos);f.g.rotation.y=f.face+(f.spinY||0);f.update(dt,sp,false);}
 
-function tick(){const dt=Math.min(.05,clock.getDelta()),t=clock.elapsedTime;
+function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elapsedTime;if(started)adaptRes(rawDt);
   // movement input
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started)mag=0;
@@ -118,7 +118,13 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)music.pause
 // background where the browser allows it, so Tiereyn keeps running on the loading screen. Then show the world.
 function showWorld(){renderer.setAnimationLoop(tick);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=$('#loading');if(l){l.classList.add('done');setTimeout(()=>l.remove(),600);}$('#welcome').classList.add('show');}));}
-function warmUp(){scene.updateMatrixWorld(true);let c;try{c=renderer.compileAsync?renderer.compileAsync(scene,camera):null;}catch(e){c=null;}
+// The glam-room mirror draws the world a second time into its own picture, and that picture needs its own set of
+// shaders. Build those now too, or the game freezes for a few seconds the first time the mirror comes into view.
+function warmUp(){scene.updateMatrixWorld(true);let c;try{c=renderer.compileAsync?renderer.compileAsync(scene,camera):null;
+    const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=renderer.compileAsync?renderer.compileAsync(scene,camera):null;renderer.setRenderTarget(null);if(c&&c2)c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
   // never wait forever: if building the shaders takes too long, just start (the first frame finishes the job)
-  Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(showWorld);}
+  Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
+// The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
+// while thousands of them were sent over. Draw everything once, behind the loading screen, so they are all there already.
+function preUpload(){const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});renderer.render(scene,camera);}catch(e){}off.forEach(o=>o.frustumCulled=true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
