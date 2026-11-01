@@ -360,6 +360,10 @@ for (const b of G.LAMPS) {
 }
 // a soft light that follows you so you can still see your outfit at night
 const lantern = new THREE.PointLight('#ffd9a8', 0, 9, 1.6); scene.add(lantern);
+// and a soft light in front of your face (on the camera's side), so the lights above
+// don't leave the chin in dark shadow (it looked like a beard at night)
+const faceLight = new THREE.PointLight('#ffe8d6', 0, 2.4, 1.5); scene.add(faceLight);
+const toCam = new THREE.Vector3(), headAt = new THREE.Vector3();
 const cloudBase = C('#ffffff'), cloudNight = C('#3a4170');
 
 function applySky(n) {
@@ -374,6 +378,7 @@ function applySky(n) {
   G.lampMat.color.copy(lampBase).multiplyScalar(lerp(1, 2.2, n));
   halo.opacity = smooth(.2, .8, n) * .9; poolMat.opacity = smooth(.2, .8, n) * .45;
   lantern.intensity = smooth(.2, .8, n) * 3.5;
+  faceLight.intensity = smooth(.1, .7, n) * 1.6;
   for (const m of G.CLOUD_MATS) { m.color.copy(cloudBase).lerp(cloudNight, n); m.emissiveIntensity = lerp(.25, .03, n); }
   for (const f of nightHooks) f(n);
 }
@@ -564,6 +569,11 @@ G.onTick.push(dt => {
   const want = nightTarget(); nightK += (want - nightK) * Math.min(1, dt * .8); if (Math.abs(want - nightK) < .001) nightK = want;
   applySky(nightK);
   const P = G.player.pos; lantern.position.set(P.x, P.y + 2.6, P.z + .4);
+  const av = G.av && G.av();
+  if (faceLight.intensity > 0 && av && av.head) { // between the face and the camera, a little below the eyes
+    av.head.getWorldPosition(headAt);
+    toCam.set(G.camera.position.x - headAt.x, 0, G.camera.position.z - headAt.z); if (toCam.lengthSq() < 1e-4) toCam.set(0, 0, 1);
+    toCam.normalize().multiplyScalar(.8); faceLight.position.set(headAt.x + toCam.x, headAt.y - .1, headAt.z + toCam.z); }
   const isNight = nightK > .5;
   if (isNight !== wasNight) { wasNight = isNight; if (isNight) nightNo++;
     if (G.started() && !G.closetOpen()) { G.banner(isNight ? '🌙 Night time!' : '☀️ Good morning!');
