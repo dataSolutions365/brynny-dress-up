@@ -13,3 +13,15 @@ jobs:
           node-version: 20
       - name: 3d/game.js matches 3d/src
         run: node 3d/build.mjs --check
+  walk:
+    # opens the 3D world on an iPhone-size screen and checks the character really walks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright and Chromium
+        run: npm i --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
+      - name: The character walks
+        run: node 3d/tests/walk.mjs

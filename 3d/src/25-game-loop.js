@@ -27,6 +27,11 @@ function stepPushables(p,dt){
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
   const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim){p.x*=lim/d;p.z*=lim/d;}}
+// "tried to walk but didn't move": a bug like this throws no error, so watch for it and report it once per visit
+const walkW={t0:0,d:0,sent:false};// t0: when this push on the joystick started (real time, so slow phones count the same)
+function walkWatch(mag,step){if(walkW.sent)return;if(mag<.5){walkW.t0=0;walkW.d=0;return;}const now=performance.now();if(!walkW.t0)walkW.t0=now;walkW.d+=step;
+  if(walkW.d>.3){walkW.t0=now;walkW.d=0;return;}
+  if(now-walkW.t0>5000){walkW.sent=true;window.reportProblem&&window.reportProblem("Tried to walk for 5 seconds but didn't move",'walking');}}
 const angDamp=(a,b,k)=>{let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k;};
 function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
   if(!f.tgt&&f.wait<=0&&!f.follow){const z=Math.random()<.7?f.home:rnd(ZONES);const a=Math.random()*Math.PI*2,r=Math.random()*z.r*.8;f.tgt=new THREE.Vector3(z.x+Math.sin(a)*r,0,z.z+Math.cos(a)*r);}
@@ -51,7 +56,8 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost();// a bit quicker on the open grass between places, normal speed inside them
     const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
     const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
-    player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;}else player.speed*=.8;
+    player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;
+    walkWatch(mag,Math.hypot(p.x-old.x,p.z-old.z));}else{player.speed*=.8;walkWatch(0,0);}
   // vertical
   const gy=groundAt(p.x,p.z);player.vy-=18*dt;p.y+=player.vy*dt;
   if(p.y<=gy){if(!player.onGround&&player.vy<-3)burst(new THREE.Vector3(p.x,gy+.05,p.z),'#ffffff',10,1);p.y=gy;player.vy=0;player.onGround=true;}else if(p.y>gy+.05)player.onGround=false;
@@ -131,11 +137,18 @@ function showWorld(){renderer.setAnimationLoop(tick);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=$('#loading');if(l){l.classList.add('done');setTimeout(()=>l.remove(),600);}$('#welcome').classList.add('show');}));}
 // The glam-room mirror draws the world a second time into its own picture, and that picture needs its own set of
 // shaders. Build those now too, or the game freezes for a few seconds the first time the mirror comes into view.
-function warmUp(){scene.updateMatrixWorld(true);let c;try{c=renderer.compileAsync?renderer.compileAsync(scene,camera):null;
-    const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=renderer.compileAsync?renderer.compileAsync(scene,camera):null;renderer.setRenderTarget(null);if(c&&c2)c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
+// Like three's compileAsync, but a material that gets thrown away while its shader is still building is skipped.
+// three's own version crashes on that (only on phones and computers that build shaders in the background),
+// so the loading screen sat there for the full 25 seconds below.
+function compileWait(){const mats=renderer.compile(scene,camera);return new Promise(res=>{const check=()=>{
+    try{mats.forEach(m=>{const pr=renderer.properties.get(m).currentProgram;if(!pr||pr.isReady())mats.delete(m);});}catch(e){mats.clear();}
+    if(mats.size)setTimeout(check,10);else res();};setTimeout(check,10);});}
+function warmUp(){scene.updateMatrixWorld(true);let c;try{c=compileWait();
+    const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=compileWait();renderer.setRenderTarget(null);c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
   // never wait forever: if building the shaders takes too long, just start (the first frame finishes the job)
   Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
 // The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
 // while thousands of them were sent over. Draw everything once, behind the loading screen, so they are all there already.
-function preUpload(){const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});renderer.render(scene,camera);}catch(e){}off.forEach(o=>o.frustumCulled=true);}
+function preUpload(){if(LITE)return;const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;// skip the shadow pass for this one giant frame
+  try{renderer.render(scene,camera);}finally{renderer.shadowMap.autoUpdate=au;renderer.shadowMap.needsUpdate=true;}}catch(e){}off.forEach(o=>o.frustumCulled=true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);

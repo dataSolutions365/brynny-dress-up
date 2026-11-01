@@ -59,6 +59,10 @@ $('#setNameGo').onclick=saveNameFromSettings;
 $('#setName').addEventListener('keydown',e=>{if(e.key==='Enter')saveNameFromSettings();});
 // a name changed in the 2D studio (in another tab) shows up when you come back
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(pullName()){rebuildPlayer();if($('#settings').classList.contains('show'))$('#setName').value=SAVE.name;}renderMe();});
+// picture quality switch (see LITE in 01-setup.js); the game starts again to use it
+const renderQ=()=>{$('#qFull').classList.toggle('on',!LITE);$('#qLite').classList.toggle('on',LITE);};renderQ();
+const pickQ=lite=>{if(lite===LITE)return;try{localStorage.setItem('brynny.lite3d',lite?'on':'off');}catch(e){}persist();location.reload();};
+$('#qFull').onclick=()=>pickQ(false);$('#qLite').onclick=()=>pickQ(true);
 $('#setClose').onclick=()=>$('#settings').classList.remove('show');
 $('#settings').onclick=e=>{if(e.target.id==='settings')$('#settings').classList.remove('show');};
 
