@@ -2268,7 +2268,11 @@ $('#saveBtn').onclick=()=>{DB.gallery.unshift({id:uid(),name:me().name,look:JSON
 $('#galBtn').onclick=()=>{renderGallery();$('#galModal').classList.add('show');};
 $('#whoBtn').onclick=()=>{renderWho();$('#whoModal').classList.add('show');};
 /* your picture at the top left: the list and the saving are in pics.js, shared with the 3D world */
-function renderPic(){$('#whoPic').innerHTML=BrynnyPic.html(BrynnyPic.current());$('#picRow').innerHTML=BrynnyPic.picker(false);}
+// "Match my look" here is the face of the doll you are dressing up, so it changes with every hair, makeup and hat change
+BrynnyPic.match=()=>{const L=me().look,h=L.height||1,s=150*h,y=580-(580-92)*h;return `<svg class="picimg" viewBox="${150-s/2} ${y-s/2} ${s} ${s}" xmlns="http://www.w3.org/2000/svg" style="background:#ffe6f2"><g>${charInner(L)}</g></svg>`;};
+function renderTopPic(){$('#whoPic').innerHTML=BrynnyPic.html(BrynnyPic.current());}
+function renderPic(){renderTopPic();$('#picRow').innerHTML=BrynnyPic.picker(false);}
+{const rs0=renderStage;renderStage=function(){const r=rs0.apply(this,arguments);try{renderTopPic();}catch(e){}return r;};}
 $('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;BrynnyPic.set(b.dataset.pic);renderPic();});
 renderPic();document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderPic();});
 addEventListener('storage',e=>{if(!e.key||e.key.startsWith('brynny.'))renderPic();});
