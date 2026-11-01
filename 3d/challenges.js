@@ -36,6 +36,8 @@ const LIST = [
   { id: 'bath', tab: 'parlor', e: '🛁', t: 'Give your pet a bubble bath', r: 2, go: 'parlor', ev: { k: 'bath' } },
   { id: 'paws', tab: 'parlor', e: '💅', t: 'Paint all 4 paws', r: 2, go: 'parlor', ev: { k: 'paws' } },
   { id: 'petDress', tab: 'parlor', e: '🎀', t: 'Dress up your pet', r: 1, go: 'parlor', ev: { k: 'petdress' } },
+  { id: 'petContest', tab: 'parlor', e: '🏆', t: 'Enter a pet dress-up contest', r: 1, go: 'parlor', ev: { k: 'petct' } },
+  { id: 'petWin', tab: 'parlor', e: '👑', t: 'Win a pet dress-up contest', r: 2, go: 'parlor', ev: { k: 'petct', a: p => p === 0 } },
   // 🧁 Sweet Bakery
   { id: 'cake', tab: 'bakery', e: '🎂', t: 'Design a cake', r: 1, go: 'bakery', ev: { k: 'cake' } },
   { id: 'tallCake', tab: 'bakery', e: '🍰', t: 'Make a cake with 3 layers or more', r: 2, go: 'bakery', ev: { k: 'cake', a: n => n >= 3 } },

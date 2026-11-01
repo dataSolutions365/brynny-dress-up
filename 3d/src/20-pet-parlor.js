@@ -1,10 +1,17 @@
 /* ================= PET PARLOR (feed, bath, nails, dress up) ================= */
 const PFOOD={cat:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],dog:[['🦴','Bone'],['🍖','Meat'],['🥕','Carrot']],squirrel:[['🌰','Acorn'],['🥜','Peanuts'],['🍓','Berry']],monkey:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],hedgehog:[['🐛','Mealworm'],['🍓','Berry'],['🥚','Egg']],bunny:[['🥕','Carrot'],['🥬','Lettuce'],['🍎','Apple']]};
-const PHATS=[['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['crown','👑','Crown','#ffd23f'],['party','🥳','Party hat','#4fb6ff'],['bow','🎀','Big bow','#ff6fae'],['witch','🧙','Witch hat','#5b2a86'],['santa','🎅','Santa hat','#e0263b'],['flowers','🌸','Flower crown','#ff8fc8']];
-const PNECK=[['bowtie','🎀','Bow tie','#ff3b6b'],['bandana','🧣','Bandana','#4fb6ff'],['pearls','📿','Pearls','#ffffff'],['scarf','🧶','Scarf','#7ee081']];
-const PBODY=[['sweater','🧶','Sweater','#ffb3d1'],['tutu','🩰','Tutu','#ff8fc8'],['cape','🦸','Cape','#e0263b'],['wings','🧚','Fairy wings','#b388ff']];
-const PGLASS=[['sun','🕶️','Sunglasses','#2d2d3a'],['heart','💗','Heart glasses','#ff6fae'],['star','⭐','Star glasses','#ffd23f']];
-const PSLOTS=[['hat','🎩 Hats',PHATS],['neck','🎀 Neck',PNECK],['body','👚 Outfits',PBODY],['glasses','👓 Glasses',PGLASS]];
+// [id, emoji, name, starting color]. New things go at the end of a list so saved outfits keep working.
+const PHATS=[['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['crown','👑','Crown','#ffd23f'],['party','🥳','Party hat','#4fb6ff'],['bow','🎀','Big bow','#ff6fae'],['witch','🧙','Witch hat','#5b2a86'],['santa','🎅','Santa hat','#e0263b'],['flowers','🌸','Flower crown','#ff8fc8'],
+  ['tiara','👸','Tiara','#c0c0c0'],['tophat','🎩','Top hat','#2d2d3a'],['cowboy','🤠','Cowboy hat','#c47a3a'],['sunhat','👒','Sun hat','#fff1b8'],['cap','🧢','Ball cap','#4fb6ff'],['chef','👨‍🍳','Chef hat','#ffffff'],['bunny','🐰','Bunny ears','#ffffff'],['pumpkin','🎃','Pumpkin hat','#ff8a1f'],['antlers','🦌','Reindeer antlers','#8a5a3b']];
+const PNECK=[['bowtie','🎀','Bow tie','#ff3b6b'],['bandana','🧣','Bandana','#4fb6ff'],['pearls','📿','Pearls','#ffffff'],['scarf','🧶','Scarf','#7ee081'],
+  ['lei','🌺','Flower lei','#ff6fae'],['tie','👔','Necktie','#3a5bd9'],['medal','🏅','Gold medal','#e0263b'],['jewel','💎','Jewel necklace','#8e6cff'],['bell','🔔','Jingle bell','#e0263b']];
+const PBODY=[['sweater','🧶','Sweater','#ffb3d1'],['tutu','🩰','Tutu','#ff8fc8'],['cape','🦸','Cape','#e0263b'],['wings','🧚','Fairy wings','#b388ff'],
+  ['dress','👗','Party dress','#ff6fae'],['tux','🤵','Tuxedo','#2d2d3a'],['raincoat','🧥','Raincoat','#ffd23f'],['bee','🐝','Bee costume','#ffd23f'],['dino','🦖','Dino spikes','#7ee081'],['angel','👼','Angel wings','#ffffff'],['bat','🦇','Bat wings','#2d2d3a'],['floatie','🛟','Swim ring','#ff3b6b']];
+const PGLASS=[['sun','🕶️','Sunglasses','#2d2d3a'],['heart','💗','Heart glasses','#ff6fae'],['star','⭐','Star glasses','#ffd23f'],
+  ['round','🤓','Round glasses','#d4af37'],['goggles','🥽','Swim goggles','#4fb6ff'],['monocle','🧐','Monocle','#d4af37'],['flower','🌼','Flower glasses','#ffd23f'],['mask','🎭','Party mask','#8e6cff']];
+const PFEET=[['socks','🧦','Striped socks','#ff6fae'],['boots','👢','Rain boots','#ff3b6b'],['sneakers','👟','Sneakers','#4fb6ff'],['slippers','🥿','Fluffy slippers','#ffb3d1']];
+const PEXTRA=[['balloon','🎈','Balloon','#ff3b6b'],['backpack','🎒','Backpack','#8e6cff'],['tailbow','🎀','Tail bow','#ff6fae'],['sparkle','✨','Sparkle magic','#ffd23f']];
+const PSLOTS=[['hat','🎩 Hats',PHATS],['neck','🎀 Neck',PNECK],['body','👚 Outfits',PBODY],['glasses','👓 Glasses',PGLASS],['feet','👟 Paws',PFEET],['extra','🎈 Extras',PEXTRA]];
 const POLISH=['#ff3b6b','#ff6fae','#ffb3d1','#c2185b','#8e6cff','#b388ff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#ff8a1f','#ffffff','#2d2d3a'];
 const RAINBOW=['#ff3b6b','#ffd23f','#7ee081','#4fb6ff'];
 const PTABS=[['feed','🍖','Feed'],['bath','🛁','Bath'],['nails','💅','Nails'],['dress','🎀','Dress up']];
@@ -39,7 +46,8 @@ function showDirt(pt){const c=petCare(pt);pt.dirtM.forEach((s,i)=>{const h=c.dir
 function setWet(pt,w){pt.wet=w;pt.furMats.forEach((m,i)=>{m.color.copy(pt.furBase[i]).multiplyScalar(1-.32*w);m.roughness=.95-.55*w;m.sheen=1-.8*w;m.clearcoat=.7*w;});}
 function clearBubbles(pt){pt.bubbles.forEach(b=>pt.body.remove(b));pt.bubbles=[];}
 
-function dressPet(pt){const F=petCare(pt).fit||{},D=pt.D,H=D.head,r=D.r,L=D.len,hd=pt.head,ts=pt.torso;
+// a pet can wear a borrowed outfit (pt.fitOver): the contest's computer pets, which have no saved care
+function dressPet(pt){const F=pt.fitOver||petCare(pt).fit||{},D=pt.D,H=D.head,r=D.r,L=D.len,hd=pt.head,ts=pt.torso;
   pt.fitMeshes.forEach(m=>{if(m.parent)m.parent.remove(m);m.geometry.dispose();m.material.dispose();});pt.fitMeshes=[];
   const add=(geo,mat,x,y,zz,parent)=>{const m=M(geo,mat,x,y,zz,parent,true,false);pt.fitMeshes.push(m);return m;};
   const cloth=(c,o={})=>phys(c,{roughness:.8,sheen:1,sheenColor:new THREE.Color('#ffffff'),side:THREE.DoubleSide,...o});
@@ -74,7 +82,8 @@ function dressPet(pt){const F=petCare(pt).fit||{},D=pt.D,H=D.head,r=D.r,L=D.len,
     if(gl.id==='sun'){for(const s of [-1,1]){add(new THREE.TorusGeometry(H*.2,H*.035,8,24),shiny(c),s*H*.42,y,zz,hd);add(new THREE.CircleGeometry(H*.19,24),phys('#1a1a22',{roughness:.05,clearcoat:1,transparent:true,opacity:.85}),s*H*.42,y,zz-.001,hd);}add(box(H*.3,H*.05,H*.04),shiny(c),0,y+H*.03,zz+.002,hd);}
     if(gl.id==='heart'||gl.id==='star'){const sh=gl.id==='heart'?heartShape:starShape,k=gl.id==='heart'?H*.22:H*.85;
       for(const s of [-1,1]){const m=add(new THREE.ExtrudeGeometry(sh,{depth:.4,bevelEnabled:false}),phys(c,{roughness:.1,clearcoat:1,transparent:true,opacity:.8}),s*H*.42,y,zz-.01,hd);m.scale.set(k,k,H*.08/.4);}
-      add(box(H*.28,H*.05,H*.04),shiny(c),0,y+H*.05,zz,hd);}}}
+      add(box(H*.28,H*.05,H*.04),shiny(c),0,y+H*.05,zz,hd);}}
+  dressPetMore(pt,F,add,cloth,shiny);}
 function applyPet(pt){paintNails(pt);showDirt(pt);dressPet(pt);}
 PETS.forEach(pt=>{petExtras(pt);applyPet(pt);});
 
@@ -90,7 +99,8 @@ function openParlor(pt){if(closetOpen)return;closeTalk();const z=Z.parlor,T=z.ta
   pcam.p.copy(camera.position);pcam.t.copy(cam.fv||player.pos);pcam.dy=pcam.dp=0;
   renderParlor();$('#parlor').classList.add('show');$('#pcontent').scrollTop=0;
   sfx('tada');pt.happy=2;setTimeout(()=>{if(parlorOpen)pt.speak(petNeed(pt));},500);}
-function closeParlor(){if(!parlorOpen)return;const z=Z.parlor,pt=pPet;parlorOpen=closetOpen=false;z.padLbl.visible=true;
+function closeParlor(){if(!parlorOpen)return;if(pc.on&&!pc.force&&pc.phase==='dress'){pcParlorDone();return;}// pet contest (21c-pet-contest.js)
+  const z=Z.parlor,pt=pPet;parlorOpen=closetOpen=false;z.padLbl.visible=true;
   document.body.classList.remove('dressing');$('#parlor').classList.remove('show');z.tub.visible=z.bowl.visible=false;
   if(pt){pt.inParlor=false;pt.eatT=0;pt.head.rotation.x=pt.headX0;if(pt.wet>.05)floaties(petTop(pt),'💧',5);clearBubbles(pt);setWet(pt,0);
     const [x,w]=z.toWorld(-.45,0);pt.pos.set(x,z.table.h,w);pt.vy=3;pt.happy=2;}
@@ -101,20 +111,21 @@ function renderMeters(){if(!pPet)return;const c=petCare(pPet);const clean=Math.r
   $('#pmeters').innerHTML=`<div class="meter">🍖 Tummy<i><b style="width:${Math.round(c.food)}%"></b></i></div><div class="meter">🫧 Clean<i><b style="width:${clean}%"></b></i></div>`;}
 function bathHint(){const el=$('#phint');if(!el||!pPet)return;const pt=pPet,c=petCare(pt);
   el.textContent=dirtSum(c)>0?`1️⃣ Rub soap on the muddy spots 🧼`:pt.bubbles.length?`2️⃣ Now rinse off the bubbles 🚿`:pt.wet>.01?`3️⃣ Blow-dry ${pt.name} 🌬️`:`${pt.name} is squeaky clean! ✨`;}
-function renderParlor(){const pt=pPet,c=petCare(pt),z=Z.parlor;$('#ptitle').textContent=`🐾 ${pt.name}'s spa`;
-  $('#ptabs').innerHTML=PTABS.map(([id,ico,n])=>`<button class="tab${id===ptab?' on':''}" data-ptab="${id}"><b>${ico}</b>${n}</button>`).join('');
+function renderParlor(){const pt=pPet,c=petCare(pt),z=Z.parlor;$('#ptitle').textContent=pc.on?`🏆 Dress up ${pt.name}!`:`🐾 ${pt.name}'s spa`;
+  $('#ptabs').innerHTML=PTABS.filter(t=>!pc.on||t[0]==='dress').map(([id,ico,n])=>`<button class="tab${id===ptab?' on':''}" data-ptab="${id}"><b>${ico}</b>${n}</button>`).join('');
   const sw=(list,cur,kind)=>`<div class="swatches">${list.map(col=>`<button class="sw${col===cur?' on':''}" style="background:${col}" data-sw="${kind}" data-c="${col}" aria-label="color ${col}"></button>`).join('')}</div>`;
   let h='';
   if(ptab==='feed')h=`<h3>Snack time! What does ${pt.name} want?</h3><div class="grid">${PFOOD[pt.kind].concat([['🍪','Treat']],TREATS).map(([e,n])=>lockBtn('treat:'+e,e,n)||`<button class="item" data-food="${e}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><p class="drawhint">Tap a food to put it in the bowl. Watch the tummy meter fill up!</p>`;
   else if(ptab==='bath')h=`<h3 id="phint"></h3><div class="grid">${[['soap','🧼','Soap'],['rinse','🚿','Rinse'],['dry','🌬️','Blow-dry']].map(([id,e,n])=>`<button class="item${ptool===id?' on':''}" data-tool="${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><p class="drawhint">Pick a tool, then rub ${pt.name} with your finger. Drag next to ${pt.name} to spin around and find more mud.</p>`;
   else if(ptab==='nails')h=`<h3>💅 Pick a polish, then tap one claw at a time</h3><div class="swatches">${POLISH.map(col=>`<button class="sw${col===ppol?' on':''}" style="background:${col}" data-pol="${col}" aria-label="polish ${col}"></button>`).join('')}<button class="sw fancy${ppol==='glitter'?' on':''}" style="background:linear-gradient(135deg,#fff3b0,#d4af37,#ffe27a)" data-pol="glitter" aria-label="glitter">✨</button><button class="sw fancy${ppol==='rainbow'?' on':''}" style="background:conic-gradient(#ff3b6b,#ffd23f,#7ee081,#4fb6ff,#ff3b6b)" data-pol="rainbow" aria-label="rainbow">🌈</button></div>
     <div style="height:12px"></div><div class="chips"><button data-paint="all">💅 Paint all claws</button><button data-paint="clear">🧽 Take off polish</button></div><p class="drawhint">👆 Use the big paw buttons to look at each paw up close.</p>`;
-  else{const F=c.fit;h=PSLOTS.map(([slot,title,list])=>`<h3>${title}</h3><div class="grid"><button class="item${!F[slot]?' on':''}" data-fit="${slot}:"><b>🚫</b><span>None</span></button>${list.map(([id,e,n])=>lockBtn('pet:'+id,e,n)||`<button class="item${F[slot]&&F[slot].id===id?' on':''}" data-fit="${slot}:${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>${F[slot]&&pslot===slot?'<div style="height:8px"></div>'+sw(myColors(COLORS),F[slot].c,'fitc'):''}`).join('');}
+  else{const F=c.fit;h=(pc.on?'':`<div class="ctbtns" style="margin:2px 0 6px"><button class="btn" data-pcgo="1">🏆 Enter the pet dress-up contest</button></div>`)+PSLOTS.map(([slot,title,list])=>`<h3>${title}</h3><div class="grid"><button class="item${!F[slot]?' on':''}" data-fit="${slot}:"><b>🚫</b><span>None</span></button>${list.map(([id,e,n])=>lockBtn('pet:'+id,e,n)||`<button class="item${F[slot]&&F[slot].id===id?' on':''}" data-fit="${slot}:${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>${F[slot]&&pslot===slot?'<div style="height:8px"></div>'+sw(myColors(COLORS),F[slot].c,'fitc'):''}`).join('');}
   $('#pcontent').innerHTML=h;renderMeters();bathHint();
   z.tub.visible=ptab==='bath';z.bowl.visible=ptab==='feed';if(ptab!=='feed')z.bowlFood.visible=false;}
 $('#ptabs').onclick=e=>{const b=e.target.closest('[data-ptab]');if(!b)return;ptab=b.dataset.ptab;pcam.dy=pcam.dp=0;sfx('pop');renderParlor();$('#pcontent').scrollTop=0;};
 $('#pcontent').onclick=e=>{const b=e.target.closest('button');if(!b||!pPet)return;const pt=pPet,c=petCare(pt);
   if(b.dataset.lock){askBuy(b.dataset.lock);return;}
+  if(b.dataset.pcgo){closeParlor();pcOpen();return;}
   if(b.dataset.food)return feedPet(b.dataset.food);
   if(b.dataset.tool){ptool=b.dataset.tool;sfx('pop');renderParlor();return;}
   if(b.dataset.pol){ppol=b.dataset.pol;sfx('pop');renderParlor();renderNailUI();return;}
