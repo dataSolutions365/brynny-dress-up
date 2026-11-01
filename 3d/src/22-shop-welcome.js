@@ -26,13 +26,15 @@ $('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('�
 
 // buying
 function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');const have=SAVE.coins||0,need=s.p-have,mine=owns(k),wear=/^(look|pet):/.test(k);
+  // clothing-store things are bought at the store
+  if(s.tab==='store'&&!mine&&!storeOpen){$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>Get it at the 👔 Clothing Store for ${s.p} 🪙! It's past the 💃 Runway.</p><button class="btn" data-b="go">🗺️ Show me the way</button><button class="btn ghost" data-b="close">OK</button>`;$('#buy').dataset.k=k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p>`+
     (mine?(wear?`<button class="btn" data-b="wear">✨ Wear it</button>`:'')+`<button class="btn ghost" data-b="close">OK</button>`
     :need<=0?`<button class="btn" data-b="buy">Buy for ${s.p} 🪙</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} 🪙</p>`
     :`<p class="bneed">You need <b>${need}</b> more 🪙</p><p>Find ⭐ stars, take care of your pet, and help the townspeople to earn more!</p><button class="btn ghost" data-b="close">OK</button>`);
   $('#buy').dataset.k=k;$('#buy').classList.add('show');}
 $('#buy').onclick=e=>{const b=e.target.closest('[data-b]'),k=$('#buy').dataset.k;if(e.target.id==='buy'||b&&b.dataset.b==='close'){$('#buy').classList.remove('show');return;}
-  if(!b)return;$('#buy').classList.remove('show');if(b.dataset.b==='buy')buy(k);if(b.dataset.b==='wear')wearIt(k);};
+  if(!b)return;$('#buy').classList.remove('show');if(b.dataset.b==='buy')buy(k);if(b.dataset.b==='wear')wearIt(k);if(b.dataset.b==='go'){if(closetOpen)closeCloset();setDest(Z.store);}};
 function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;SAVE.coins-=s.p;SAVE.owned[k]=true;did('buy',k);persist();showCoins(true);sfx('tada');
   banner(`${s.e} It's yours!`);burst(new THREE.Vector3(player.pos.x,player.pos.y+1.3,player.pos.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),50,3,.18);
   const [kind,id]=k.split(':');
@@ -42,9 +44,7 @@ function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;S
   if(kind==='treat')toast(`Feed the ${s.n.toLowerCase()} to your pet at the 🐾 Pet Parlor!`);
   refreshOpen();}
 function wearIt(k){const [kind,id]=k.split(':');
-  if(kind==='look'){const L=SAVE.look,f=a=>a.find(x=>x[0]===id),d=f(DRESSES),h=f(HATS),t=f(TOPS);
-    if(d){L.dress={id,c:d[3]};L.top=L.bottom=null;}else if(h)L.hat={id,c:h[3]};else if(t){L.top={id,c:t[3]};L.dress=null;if(!L.bottom)L.bottom=plainBottom(L);}
-    else{const it=f(EXTRAS);L.extras[id]=L.extras[id]||it[3];if(!closetOpen||ctab==='extras')lastExtra=id;}
+  if(kind==='look'){const L=SAVE.look;if(applyItem(L,id)==='extras'&&(!closetOpen||ctab==='extras'))lastExtra=id;
     av.dress(L);persist();av.play('twirl');}
   if(kind==='pet'){const pt=pPet||myPet();if(!pt){toast('Adopt a pet first, then they can wear it! 🐾');return;}const c=petCare(pt),it=PHATS.find(x=>x[0]===id);c.fit.hat={id,c:it[3]};dressPet(pt);persist();pt.happy=2;pt.speak('So fancy! 💖');}
   refreshOpen();}

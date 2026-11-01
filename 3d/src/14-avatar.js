@@ -65,6 +65,11 @@ const TAN_C=new THREE.Color('#9a5a2e');
 const BLUSH={pink:'255,110,150',peach:'255,150,110',rose:'220,80,110'};
 /* sculpted doll head: a sphere pushed in and out along each direction (nose, cheekbones, eye sockets, jaw, chin) */
 const FACEOPT=[['eyes','Eye shape',[['almond','👁️','Almond'],['doe','🦌','Doe'],['cat','🐱','Cat eye'],['round','⚪','Round']]],['nose','Nose',[['straight','👃','Straight'],['petite','✨','Petite'],['button','🔘','Button']]],['lips','Lips',[['full','💋','Full'],['pout','😗','Pouty'],['heart','💗','Heart'],['soft','🙂','Soft']]]];
+// shapes you pick at the barber's face chair (and in the closet's Face tab). Left unset, guys get a squarer jaw and flatter brows.
+FACEOPT.push(['brows','Eyebrows',[['arched','〰️','Arched'],['straight','➖','Straight'],['thick','🖍️','Thick'],['bushy','🐛','Bushy']]],['jaw','Jaw',[['soft','🙂','Soft'],['square','🟫','Square'],['strong','💪','Strong']]]);
+const JAWV={soft:0,square:1,strong:1.7};
+const BROWS={arched:{arch:1,w0:.0046,w1:.0015},straight:{arch:.25,w0:.0055,w1:.0026},thick:{arch:.8,w0:.0075,w1:.0032},bushy:{arch:.35,w0:.0098,w1:.0052}};
+const faceVal=(L,k)=>{const f=(L.face||{})[k];if(f)return f;if(k==='jaw')return isGuy(L)?'square':'soft';if(k==='brows')return isGuy(L)?'straight':'arched';const o=FACEOPT.find(x=>x[0]===k);return o[2][0][0];};
 const NOSE={straight:{h:.18,w:.04,top:.06,tip:.035},petite:{h:.13,w:.036,top:.0,tip:.03},button:{h:.11,w:.05,top:-.04,tip:.055}};
 function sculpt(d,nose='straight',jaw=0){const N=NOSE[nose]||NOSE.straight;const g=(cx,cy,cz,w)=>Math.exp(-((d.x-cx)**2+(d.y-cy)**2+(d.z-cz)**2)/(w*w));const sm=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
   let r=1;const front=sm(.55,.92,d.z);
@@ -101,9 +106,9 @@ class Avatar{
     this.shellX=guy?1.12+.15:1.12;
     B(guy?cyl(.047,.054,.16,14):this.look.style!=='cute'?cyl(.039,.047,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
     const head=this.head=new THREE.Group();head.position.y=.68;spine.add(head);
-    const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?(guy?new THREE.Vector3(.93,1.05,.98):new THREE.Vector3(.9,1.06,.98)):new THREE.Vector3(1,1.08,1);const JAW=this.jaw=guy&&glam?1:0;
+    const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?(guy?new THREE.Vector3(.93,1.05,.98):new THREE.Vector3(.9,1.06,.98)):new THREE.Vector3(1,1.08,1);
     let surf;
-    const F=this.face=Object.assign({eyes:'almond',nose:'straight',lips:'full'},this.look.face||{});
+    const F=this.face=Object.assign({eyes:'almond',nose:'straight',lips:'full'},this.look.face||{});const JAW=this.jaw=glam?(F.jaw in JAWV?JAWV[F.jaw]:guy?1:0):0;
     if(glam){const hg=headGeo(HS,false,0,F.nose,JAW);const hm=B(hg,head);const tmp=new THREE.Mesh(hg);tmp.updateMatrixWorld(true);
       surf=(x,y,off=0)=>{headRay.set(new THREE.Vector3(x,y,.5),new THREE.Vector3(0,0,-1));const h=headRay.intersectObject(tmp,false)[0];return (h?h.point.z:.1)+off;};}
     else{B(sph(.13,40,30),head).scale.copy(HS);surf=(x,y,off=0)=>HS.z*Math.sqrt(Math.max(0,.0169-(x/HS.x)**2-(y/HS.y)**2))+off;}
@@ -130,8 +135,8 @@ class Avatar{
         if(!guy){const wing=M(new THREE.CapsuleGeometry(.0026,F.eyes==='cat'?.016:.009,4,8),lash,sx*.0315*ES[0],.0045,.0035,eg,false);wing.rotation.z=-sx*1.15;}
         const low=M(new THREE.TorusGeometry(.03,.0014,6,24,Math.PI),lowM,0,-.001,.003,eg,false);low.scale.set(ES[0]*.98,ES[1],1);low.rotation.z=Math.PI;
         eg.userData.sx=sx;eg.userData.rx=.03*ES[0];eg.userData.ry=.03*ES[1];this.eyes.push(eg);
-        const pts=(guy?[[.012,.043],[.03,.048],[.05,.0515],[.069,.0505],[.086,.045]]:[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]]).map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0022)));
-        M(guy?browGeo(pts,.0068,.0042):browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
+        const BW=BROWS[F.brows],pts=(guy&&!BW?[[.012,.043],[.03,.048],[.05,.0515],[.069,.0505],[.086,.045]]:[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]]).map(([x,y])=>{if(BW)y=.05+(y-.05)*BW.arch;return new THREE.Vector3(sx*x,y,surf(x,y,.0022));});
+        M(BW?browGeo(pts,BW.w0,BW.w1):guy?browGeo(pts,.0068,.0042):browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
       const LS=guy?[1.02,.62,.68]:{full:[1,1,1],heart:[.85,1.05,1.2],soft:[1.12,.8,.82],pout:[.92,1.2,1.15]}[F.lips]||[1,1,1];
       // full, glossy, sculpted lips: an upper lip with a cupid's bow and a fuller lower lip
       const W=.031*LS[0];for(const [up,h,d,cy] of [[true,.0078*LS[1],.007,-.0528],[false,.0108*LS[2],.0098,-.065]]){const geo=lipGeo(up,W,h,d,cy,(x,y)=>surf(x,y));
@@ -144,7 +149,7 @@ class Avatar{
         M(sph(.0095,12,8),dark,0,-.001,.0135,eg,false).scale.set(1,1,.4);M(sph(.004,8,6),shine,.007,.008,.017,eg,false);
         const l=M(new THREE.TorusGeometry(.029,.0045,6,16,Math.PI),lash,0,.002,.004,eg,false);l.scale.set(1,1.15,1);
         eg.userData.sx=sx;eg.userData.rx=.03;eg.userData.ry=.034;this.eyes.push(eg);
-        const brow=M(new THREE.CapsuleGeometry(guy?.0058:.004,.03,4,8),lash,sx*.046,.058,.118,head,false);brow.rotation.z=Math.PI/2-sx*.14;}
+        const BW=BROWS[F.brows],brow=M(new THREE.CapsuleGeometry(BW?.004*BW.w0/.0046:guy?.0058:.004,.03,4,8),lash,sx*.046,.058,.118,head,false);brow.rotation.z=Math.PI/2-sx*.14*(BW?BW.arch:1);}
       if(guy){lip(.019,0,-.054,.1175,1.1,.26,.5);lip(.019,0,-.063,.1165,1,.32,.55);}else{lip(.021,0,-.0515,.1178,1.12,.36,.5);lip(.021,0,-.0635,.1165,1.02,.46,.55);}}
     // makeup shell
     const RES=this.paintable?1024:256;this.faceCv=document.createElement('canvas');this.faceCv.width=this.faceCv.height=RES;
@@ -327,7 +332,8 @@ class Avatar{
     {const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,decal,av:this};
       for(const C of [OUTFITS2D,GUY_WEAR,window.__costumes])if(C){
         for(const slot of ['dress','top','bottom','shoes','hat']){const it=look[slot];if(look.dress&&(slot==='top'||slot==='bottom'))continue;if(it&&C[it.id])C[it.id](kit,it.c);}
-        for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
+        for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}
+      barberDress(kit,look);}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
       this.lipM.color.set(mk.lips||(this.guy?new THREE.Color(look.skin).multiplyScalar(.82).lerp(new THREE.Color('#b0685f'),.35):this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips&&!this.guy);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(mk.browC||new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
