@@ -1,8 +1,8 @@
 /* ---------- island ---------- */
-const R=44.5;
+const R=72;// island radius (was 44.5; grown so places have room to breathe)
 M(new THREE.CylinderGeometry(R+1.6,R+3.2,3,96),std('#f1d9a6',{map:TEX.sand,roughness:1}),0,-1.5,0,scene,false,true);
 const grass=M(new THREE.CircleGeometry(R,96),groundMat,0,.005,0,scene,false,true);grass.rotation.x=-Math.PI/2;
-const waterGeo=new THREE.PlaneGeometry(420,420,100,100);waterGeo.rotateX(-Math.PI/2);
+const waterGeo=new THREE.PlaneGeometry(520,520,110,110);waterGeo.rotateX(-Math.PI/2);
 const water=M(waterGeo,phys('#2ab0d4',{roughness:.06,metalness:.05,clearcoat:1,clearcoatRoughness:.05}),0,-.35,0,scene,false,true);
 const wpos=waterGeo.attributes.position;const wbase=Float32Array.from(wpos.array);let wTick=0;
 anims.push(t=>{if(++wTick%2)return;for(let i=0;i<wpos.count;i++){const x=wbase[i*3],z=wbase[i*3+2];wpos.array[i*3+1]=Math.sin(x*.35+t*1.3)*.07+Math.sin(z*.27+t*1.05)*.07+Math.sin((x+z)*.8+t*2.2)*.02;}wpos.needsUpdate=true;waterGeo.computeVertexNormals();});
@@ -18,23 +18,27 @@ for(let i=0;i<10;i++){const g=new THREE.Group();const cm=std('#ffffff',{roughnes
 
 /* ---------- zones ---------- */
 const deg=d=>d*Math.PI/180;
+// Layout: an inner ring of places at d=34, an outer ring at d=57 in the gaps between them, and spots right behind
+// some inner places (d = 34 + 8.5 + their r + an 8 step gap) that get a short path from the place in front (nopath).
+// Free spots behind an inner place: 120 (behind Christmas Village). 240 and 300 (d about 56) are kept for the clothing store and barber shop.
 const ZONES=[
   {id:'studio',name:'✨ Sparkle Studio',ang:0,d:0,r:6.5,music:'sparkle-room'},
-  {id:'birthday',name:'🎂 Birthday Party',ang:0,d:24,r:8.5,music:'bday-ukulele'},
-  {id:'halloween',name:'🎃 Halloween Hollow',ang:60,d:24,r:8.5,music:'halloween-waltz'},
-  {id:'christmas',name:'🎄 Christmas Village',ang:120,d:24,r:8.5,music:'winter-days'},
-  {id:'beach',name:'🏖️ Beach Day',ang:180,d:34,r:10,music:'sea-waves'},
-  {id:'runway',name:'💃 Runway',ang:240,d:24,r:8.5,music:'fashion-walk'},
-  {id:'spring',name:'🌷 Spring Garden',ang:300,d:24,r:8.5,music:'spring-birds'},
-  {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:36,r:7,music:'clouds'},
-  {id:'bakery',name:'🧁 Sweet Bakery',ang:330,d:36,r:7,music:'valentine-day'},
-  {id:'agency',name:'⭐ Star Model Agency',ang:270,d:36,r:7.5,music:'fashion-show'},
-  {id:'court',name:'🏀 Basketball Court',ang:90,d:36,r:7.5,music:'stadium'},
-  {id:'batting',name:'⚾ Batting Cage',ang:210,d:36,r:7.5,music:'stadium-cheer'},
+  {id:'birthday',name:'🎂 Birthday Party',ang:0,d:34,r:8.5,music:'bday-ukulele'},
+  {id:'halloween',name:'🎃 Halloween Hollow',ang:60,d:34,r:8.5,music:'halloween-waltz'},
+  {id:'christmas',name:'🎄 Christmas Village',ang:120,d:34,r:8.5,music:'winter-days'},
+  // the beach sits at the shore so its dock reaches out over the water
+  {id:'beach',name:'🏖️ Beach Day',ang:180,d:R-10.5,r:10,music:'sea-waves'},
+  {id:'runway',name:'💃 Runway',ang:240,d:34,r:8.5,music:'fashion-walk'},
+  {id:'spring',name:'🌷 Spring Garden',ang:300,d:34,r:8.5,music:'spring-birds'},
+  {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:57,r:7,music:'clouds'},
+  {id:'bakery',name:'🧁 Sweet Bakery',ang:330,d:57,r:7,music:'valentine-day'},
+  {id:'agency',name:'⭐ Star Model Agency',ang:270,d:57,r:7.5,music:'fashion-show'},
+  {id:'court',name:'🏀 Basketball Court',ang:90,d:57,r:7.5,music:'stadium'},
+  {id:'batting',name:'⚾ Batting Cage',ang:210,d:57,r:7.5,music:'stadium-cheer'},
   // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
-  {id:'barn',name:'🐴 Happy Barn',ang:0,d:38.5,r:6,music:'spring-birds',nopath:true},
-  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:38.5,r:6,music:'city-park',nopath:true},
-  {id:'garage',name:'🔧 Car Garage',ang:150,d:36,r:7,music:'fireworks'},
+  {id:'barn',name:'🐴 Happy Barn',ang:0,d:56.5,r:6,music:'spring-birds',nopath:true},
+  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:56.5,r:6,music:'city-park',nopath:true},
+  {id:'garage',name:'🔧 Car Garage',ang:150,d:57,r:7,music:'fireworks'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -44,6 +48,8 @@ for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;
   z.toWorld=(lx,lz)=>[z.x+lx*c+lz*s,z.z-lx*s+lz*c];
   z.ob=(lx,lz,r)=>{const [x,w]=z.toWorld(lx,lz);obs.push({x,z:w,r});};}
 const Z=Object.fromEntries(ZONES.map(z=>[z.id,z]));
+// for a place behind another one (nopath): the gap between the two, so its short path can cross it
+for(const z of ZONES){const f=ZONES.find(o=>o!==z&&o.d&&o.ang===z.ang&&o.d<z.d);z.gap=f?Math.max(0,z.d-z.r-f.d-f.r):0;}
 // small things on the ground (like presents) that get bumped, slide and tumble when you walk into them
 const PUSH=[];function pushable(z,m,r,h){PUSH.push({z,m,r,h,y0:m.position.y,vx:0,vz:0,vy:0,spin:0,tx:0,tz:0,ry:m.rotation.y});return m;}
 
@@ -52,8 +58,11 @@ const LAMPS=[],lampMat=glow('#fff1c4',1.6);// street lights (seasons.js turns th
 const pathMat=std('#ffffff',{map:TEX.stone,roughness:.85});pathMat.polygonOffset=true;pathMat.polygonOffsetFactor=-1;pathMat.polygonOffsetUnits=-1;
 {const ring=M(new THREE.RingGeometry(6.4,7.9,72),pathMat,0,.012,0,scene,false,true);ring.rotation.x=-Math.PI/2;
  for(const z of ZONES){if(!z.d||z.nopath)continue;const g=new THREE.Group();g.rotation.y=Math.atan2(z.x,z.z);scene.add(g);
-  const len=z.d-z.r*.5-7;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,7+len/2,g,false,true);p.rotation.x=-Math.PI/2;
-  for(const s of [-1,1]){const lx=s*1.9,lz=7+len*.55;const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
+  // p0: where the path starts (default: the plaza ring), so a path to a place behind another one doesn't run through it
+  const p0=z.p0||7,len=z.d-z.r*.5-p0;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,p0+len/2,g,false,true);p.rotation.x=-Math.PI/2;
+  // a pair of street lights about every 13 steps along the path
+  const nL=Math.max(1,Math.round(len/13));
+  for(let i=0;i<nL;i++)for(const s of [-1,1]){const lx=s*1.9,lz=p0+len*(i+.55)/(nL+.1);const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
     LAMPS.push(M(sph(.2,16,12),lampMat,lx,2.7,lz,g,false,false));const wp=new THREE.Vector3(lx,0,lz).applyAxisAngle(new THREE.Vector3(0,1,0),g.rotation.y);obs.push({x:wp.x,z:wp.z,r:.2});}}}
 
 /* signposts */

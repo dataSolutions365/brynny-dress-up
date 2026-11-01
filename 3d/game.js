@@ -180,10 +180,10 @@ function setMyName(n){n=String(n||'').trim().slice(0,16);if(!n)return false;cons
   return true;}
 // ---- src/02-island.js ----
 /* ---------- island ---------- */
-const R=44.5;
+const R=72;// island radius (was 44.5; grown so places have room to breathe)
 M(new THREE.CylinderGeometry(R+1.6,R+3.2,3,96),std('#f1d9a6',{map:TEX.sand,roughness:1}),0,-1.5,0,scene,false,true);
 const grass=M(new THREE.CircleGeometry(R,96),groundMat,0,.005,0,scene,false,true);grass.rotation.x=-Math.PI/2;
-const waterGeo=new THREE.PlaneGeometry(420,420,100,100);waterGeo.rotateX(-Math.PI/2);
+const waterGeo=new THREE.PlaneGeometry(520,520,110,110);waterGeo.rotateX(-Math.PI/2);
 const water=M(waterGeo,phys('#2ab0d4',{roughness:.06,metalness:.05,clearcoat:1,clearcoatRoughness:.05}),0,-.35,0,scene,false,true);
 const wpos=waterGeo.attributes.position;const wbase=Float32Array.from(wpos.array);let wTick=0;
 anims.push(t=>{if(++wTick%2)return;for(let i=0;i<wpos.count;i++){const x=wbase[i*3],z=wbase[i*3+2];wpos.array[i*3+1]=Math.sin(x*.35+t*1.3)*.07+Math.sin(z*.27+t*1.05)*.07+Math.sin((x+z)*.8+t*2.2)*.02;}wpos.needsUpdate=true;waterGeo.computeVertexNormals();});
@@ -199,23 +199,27 @@ for(let i=0;i<10;i++){const g=new THREE.Group();const cm=std('#ffffff',{roughnes
 
 /* ---------- zones ---------- */
 const deg=d=>d*Math.PI/180;
+// Layout: an inner ring of places at d=34, an outer ring at d=57 in the gaps between them, and spots right behind
+// some inner places (d = 34 + 8.5 + their r + an 8 step gap) that get a short path from the place in front (nopath).
+// Free spots behind an inner place: 120 (behind Christmas Village). 240 and 300 (d about 56) are kept for the clothing store and barber shop.
 const ZONES=[
   {id:'studio',name:'✨ Sparkle Studio',ang:0,d:0,r:6.5,music:'sparkle-room'},
-  {id:'birthday',name:'🎂 Birthday Party',ang:0,d:24,r:8.5,music:'bday-ukulele'},
-  {id:'halloween',name:'🎃 Halloween Hollow',ang:60,d:24,r:8.5,music:'halloween-waltz'},
-  {id:'christmas',name:'🎄 Christmas Village',ang:120,d:24,r:8.5,music:'winter-days'},
-  {id:'beach',name:'🏖️ Beach Day',ang:180,d:34,r:10,music:'sea-waves'},
-  {id:'runway',name:'💃 Runway',ang:240,d:24,r:8.5,music:'fashion-walk'},
-  {id:'spring',name:'🌷 Spring Garden',ang:300,d:24,r:8.5,music:'spring-birds'},
-  {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:36,r:7,music:'clouds'},
-  {id:'bakery',name:'🧁 Sweet Bakery',ang:330,d:36,r:7,music:'valentine-day'},
-  {id:'agency',name:'⭐ Star Model Agency',ang:270,d:36,r:7.5,music:'fashion-show'},
-  {id:'court',name:'🏀 Basketball Court',ang:90,d:36,r:7.5,music:'stadium'},
-  {id:'batting',name:'⚾ Batting Cage',ang:210,d:36,r:7.5,music:'stadium-cheer'},
+  {id:'birthday',name:'🎂 Birthday Party',ang:0,d:34,r:8.5,music:'bday-ukulele'},
+  {id:'halloween',name:'🎃 Halloween Hollow',ang:60,d:34,r:8.5,music:'halloween-waltz'},
+  {id:'christmas',name:'🎄 Christmas Village',ang:120,d:34,r:8.5,music:'winter-days'},
+  // the beach sits at the shore so its dock reaches out over the water
+  {id:'beach',name:'🏖️ Beach Day',ang:180,d:R-10.5,r:10,music:'sea-waves'},
+  {id:'runway',name:'💃 Runway',ang:240,d:34,r:8.5,music:'fashion-walk'},
+  {id:'spring',name:'🌷 Spring Garden',ang:300,d:34,r:8.5,music:'spring-birds'},
+  {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:57,r:7,music:'clouds'},
+  {id:'bakery',name:'🧁 Sweet Bakery',ang:330,d:57,r:7,music:'valentine-day'},
+  {id:'agency',name:'⭐ Star Model Agency',ang:270,d:57,r:7.5,music:'fashion-show'},
+  {id:'court',name:'🏀 Basketball Court',ang:90,d:57,r:7.5,music:'stadium'},
+  {id:'batting',name:'⚾ Batting Cage',ang:210,d:57,r:7.5,music:'stadium-cheer'},
   // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
-  {id:'barn',name:'🐴 Happy Barn',ang:0,d:38.5,r:6,music:'spring-birds',nopath:true},
-  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:38.5,r:6,music:'city-park',nopath:true},
-  {id:'garage',name:'🔧 Car Garage',ang:150,d:36,r:7,music:'fireworks'},
+  {id:'barn',name:'🐴 Happy Barn',ang:0,d:56.5,r:6,music:'spring-birds',nopath:true},
+  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:56.5,r:6,music:'city-park',nopath:true},
+  {id:'garage',name:'🔧 Car Garage',ang:150,d:57,r:7,music:'fireworks'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -225,6 +229,8 @@ for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;
   z.toWorld=(lx,lz)=>[z.x+lx*c+lz*s,z.z-lx*s+lz*c];
   z.ob=(lx,lz,r)=>{const [x,w]=z.toWorld(lx,lz);obs.push({x,z:w,r});};}
 const Z=Object.fromEntries(ZONES.map(z=>[z.id,z]));
+// for a place behind another one (nopath): the gap between the two, so its short path can cross it
+for(const z of ZONES){const f=ZONES.find(o=>o!==z&&o.d&&o.ang===z.ang&&o.d<z.d);z.gap=f?Math.max(0,z.d-z.r-f.d-f.r):0;}
 // small things on the ground (like presents) that get bumped, slide and tumble when you walk into them
 const PUSH=[];function pushable(z,m,r,h){PUSH.push({z,m,r,h,y0:m.position.y,vx:0,vz:0,vy:0,spin:0,tx:0,tz:0,ry:m.rotation.y});return m;}
 
@@ -233,8 +239,11 @@ const LAMPS=[],lampMat=glow('#fff1c4',1.6);// street lights (seasons.js turns th
 const pathMat=std('#ffffff',{map:TEX.stone,roughness:.85});pathMat.polygonOffset=true;pathMat.polygonOffsetFactor=-1;pathMat.polygonOffsetUnits=-1;
 {const ring=M(new THREE.RingGeometry(6.4,7.9,72),pathMat,0,.012,0,scene,false,true);ring.rotation.x=-Math.PI/2;
  for(const z of ZONES){if(!z.d||z.nopath)continue;const g=new THREE.Group();g.rotation.y=Math.atan2(z.x,z.z);scene.add(g);
-  const len=z.d-z.r*.5-7;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,7+len/2,g,false,true);p.rotation.x=-Math.PI/2;
-  for(const s of [-1,1]){const lx=s*1.9,lz=7+len*.55;const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
+  // p0: where the path starts (default: the plaza ring), so a path to a place behind another one doesn't run through it
+  const p0=z.p0||7,len=z.d-z.r*.5-p0;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,p0+len/2,g,false,true);p.rotation.x=-Math.PI/2;
+  // a pair of street lights about every 13 steps along the path
+  const nL=Math.max(1,Math.round(len/13));
+  for(let i=0;i<nL;i++)for(const s of [-1,1]){const lx=s*1.9,lz=p0+len*(i+.55)/(nL+.1);const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
     LAMPS.push(M(sph(.2,16,12),lampMat,lx,2.7,lz,g,false,false));const wp=new THREE.Vector3(lx,0,lz).applyAxisAngle(new THREE.Vector3(0,1,0),g.rotation.y);obs.push({x:wp.x,z:wp.z,r:.2});}}}
 
 /* signposts */
@@ -843,8 +852,8 @@ function ringFence(z,FR,gateA,railM,gateM,label,fg){const g=z.g,wood=std('#b07a4
  const dirt=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#d9b77e';x.fillRect(0,0,w,h);for(let i=0;i<2600;i++){const c=Math.random();x.fillStyle=c<.4?'rgba(160,115,60,.35)':c<.75?'rgba(255,236,170,.55)':'rgba(120,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(Math.random()*Math.PI);x.fillRect(0,0,6+Math.random()*7,1.4);x.restore();}},4);
  patch(z.r,std('#ffffff',{map:dirt,roughness:1}),z.x,z.z);
  // a short dirt path from the party to the gate
- {const [px,pz]=z.toWorld(0,z.r+.6);const pm=std('#ffffff',{map:dirt,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
-  const p=M(new THREE.PlaneGeometry(2.2,2.4),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
+ {const [px,pz]=z.toWorld(0,z.r+.6+z.gap/2);const pm=std('#ffffff',{map:dirt,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
+  const p=M(new THREE.PlaneGeometry(2.2,2.4+z.gap),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
  const red=phys('#d6453d',{roughness:.55,clearcoat:.3}),white=phys('#fffaf2',{roughness:.45,clearcoat:.4}),roofM=phys('#5b4a6b',{roughness:.6,clearcoat:.3}),
    wood=std('#b07a4a',{roughness:.85}),dark=std('#3b2618',{roughness:1}),gold=std('#e8c25a',{metalness:1,roughness:.25});
  /* the barn: a gambrel (two-slope) roof like a storybook barn */
@@ -1023,8 +1032,8 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  const grassT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e3c77a';x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(170,140,60,.4)':c<.7?'rgba(255,240,170,.55)':'rgba(140,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(-Math.PI/2+(Math.random()-.5)*.6);x.fillRect(0,0,5+Math.random()*8,1.3);x.restore();}},4);
  patch(z.r,std('#ffffff',{map:grassT,roughness:1}),z.x,z.z);
  // a short dirt path from Halloween Hollow to the gate
- {const [px,pz]=z.toWorld(0,z.r+.6);const pm=std('#ffffff',{map:grassT,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
-  const p=M(new THREE.PlaneGeometry(2.2,2.4),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
+ {const [px,pz]=z.toWorld(0,z.r+.6+z.gap/2);const pm=std('#ffffff',{map:grassT,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
+  const p=M(new THREE.PlaneGeometry(2.2,2.4+z.gap),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
  const wood=std('#9a6a43',{roughness:.85}),bark=std('#7a5236',{roughness:.9}),leafM=phys('#6fa83a',{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')});
  z.fence=5.55;ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a');
  // flat-topped acacia trees, the giraffes' favorite snack
@@ -1054,16 +1063,16 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
 /* ---------- park trees ---------- */
 {const trunkM=std('#7a5236',{roughness:.9});const leafs=['#3f8f3a','#4fa645','#2f7a34','#5cb04a'].map(c=>phys(c,{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')}));
  const trees=[];let tries=0;
- while(trees.length<56&&tries++<3000){const a=rand()*Math.PI*2,d=10+rand()*33;const x=Math.sin(a)*d,w=Math.cos(a)*d;
+ while(trees.length<120&&tries++<6000){const a=rand()*Math.PI*2,d=10+Math.sqrt(rand())*(R-11.5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
    if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+2.5))continue;
-   if(ZONES.some(z=>{if(!z.d)return false;const t=(x*z.x+w*z.z)/(z.d*z.d);if(t<0||t>1)return false;return Math.hypot(x-z.x*t,w-z.z*t)<3.4;}))continue;
+   if(ZONES.some(z=>{if(!z.d)return false;const t=(x*z.x+w*z.z)/(z.d*z.d);if(t<(z.p0||0)/z.d||t>1)return false;return Math.hypot(x-z.x*t,w-z.z*t)<3.4;}))continue;
    if(trees.some(t=>Math.hypot(t[0]-x,t[1]-w)<3.2))continue;trees.push([x,w]);}
  for(const [x,w] of trees){const s=.8+rand()*.6;const tg=new THREE.Group();tg.position.set(x,0,w);tg.scale.setScalar(s);scene.add(tg);
    M(cyl(.18,.28,2.4,10),trunkM,0,1.2,0,tg);const lm=pick(leafs);
    for(let k=0;k<4;k++){const b=M(new THREE.IcosahedronGeometry(1+rand()*.4,2),lm,(rand()-.5)*1.2,2.8+rand()*1.2,(rand()-.5)*1.2,tg);b.scale.y=.85;}
    obs.push({x,z:w,r:.45*s});}
  // bushes with little flowers on the open grass
- for(let i=0;i<40;i++){const a=rand()*Math.PI*2,d=9+rand()*35;const x=Math.sin(a)*d,w=Math.cos(a)*d;if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+1))continue;
+ for(let i=0;i<90;i++){const a=rand()*Math.PI*2,d=9+Math.sqrt(rand())*(R-10);const x=Math.sin(a)*d,w=Math.cos(a)*d;if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+1))continue;
    const b=M(sph(.4+rand()*.3,12,10),pick(leafs),x,.2,w);b.scale.y=.7;}}
 
 /* ---------- stars to collect ---------- */
@@ -1071,7 +1080,7 @@ const starShape=new THREE.Shape();for(let i=0;i<10;i++){const a=i/10*Math.PI*2,r
 const starGeo=new THREE.ExtrudeGeometry(starShape,{depth:.06,bevelEnabled:true,bevelSize:.03,bevelThickness:.03,bevelSegments:2});starGeo.center();
 const starMat=new THREE.MeshStandardMaterial({color:'#ffd23f',metalness:.9,roughness:.15,emissive:'#ffaa00',emissiveIntensity:.9});
 const STARS=[];
-{let tries=0;while(STARS.length<24&&tries++<4000){const a=rand()*Math.PI*2,d=3+rand()*40;const x=Math.sin(a)*d,w=Math.cos(a)*d;
+{let tries=0;while(STARS.length<24&&tries++<5000){const a=rand()*Math.PI*2,d=3+Math.sqrt(rand())*(R-5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
   if(obs.some(o=>Math.hypot(o.x-x,o.z-w)<o.r+1))continue;if(STARS.some(s=>Math.hypot(s.x-x,s.z-w)<5))continue;
   const high=STARS.length%4===3;const m=M(starGeo,starMat,x,(high?2.3:1.1)+groundAt(x,w),w,scene,true,false);STARS.push({x,z:w,y:m.position.y,m,got:false});}}
 anims.push(t=>STARS.forEach((s,i)=>{if(s.got)return;s.m.rotation.y=t*2+i;s.m.position.y=s.y+Math.sin(t*2.5+i)*.12;}));
@@ -5792,7 +5801,7 @@ function stepPushables(p,dt){
       if(bd<mm&&bd>1e-4){const ux=bx/bd,uz=bz/bd,push=(mm-bd)/2;q.x+=ux*push;q.z+=uz*push;bq.x-=ux*push;bq.z-=uz*push;
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
-  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?48.5:R+.9;if(d>lim){p.x*=lim/d;p.z*=lim/d;}}
+  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim){p.x*=lim/d;p.z*=lim/d;}}
 const angDamp=(a,b,k)=>{let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k;};
 function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
   if(!f.tgt&&f.wait<=0&&!f.follow){const z=Math.random()<.7?f.home:rnd(ZONES);const a=Math.random()*Math.PI*2,r=Math.random()*z.r*.8;f.tgt=new THREE.Vector3(z.x+Math.sin(a)*r,0,z.z+Math.cos(a)*r);}
@@ -5800,7 +5809,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
   if(talkF===f){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*6);if(dP>5)closeTalk();}
   else if(f.follow){const i=FRIENDS.filter(o=>o.follow).indexOf(f),a=player.face+Math.PI+(i%2?.7:-.7)*(1+(i>>1)*.5),r=1.4+(i>>1)*.6;
     f.tgt=new THREE.Vector3(P.x+Math.sin(a)*r,0,P.z+Math.cos(a)*r);tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();
-    if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(6,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
+    if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(8,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
     else f.face=angDamp(f.face,player.face,dt*4);}
   else if(dP<2.4&&started){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*5);if(f.cool<=0){f.cool=14;f.play('wave');friendBubble(f,questReady(f)?'Come talk to me! 💬':rnd(f.info.hi));}}
   else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave']));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
@@ -5814,7 +5823,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
-    const spd=5*mag*rideBoost();const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
+    const spd=(curZone===PARK?6.5:5)*mag*rideBoost();// a bit quicker on the open grass between places, normal speed inside themconst old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
     const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
     player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;}else player.speed*=.8;
   // vertical
@@ -5920,14 +5929,14 @@ function drawWorld(x,w2s,k,size){
   // paths
   x.strokeStyle='#efe6da';x.lineCap='round';x.lineWidth=Math.max(2,2.6*k);
   x.beginPath();x.arc(cx,cy,7.15*k,0,Math.PI*2);x.stroke();
-  for(const z of ZONES){if(!z.d||z.nopath)continue;const [px,py]=w2s(z.x,z.z);x.beginPath();x.moveTo(cx+(px-cx)*7/z.d,cy+(py-cy)*7/z.d);x.lineTo(px,py);x.stroke();}
+  for(const z of ZONES){if(!z.d||z.nopath)continue;const [px,py]=w2s(z.x,z.z),f=(z.p0||7)/z.d;x.beginPath();x.moveTo(cx+(px-cx)*f,cy+(py-cy)*f);x.lineTo(px,py);x.stroke();}
   // zones
   for(const z of ZONES){const [px,py]=w2s(z.x,z.z);x.beginPath();x.arc(px,py,z.r*k,0,Math.PI*2);x.fillStyle=MAPC[z.id]||'#fff3b0';x.fill();
     x.lineWidth=Math.max(1.5,.35*k);x.strokeStyle=mapDest===z?'#ff4d8d':'rgba(255,255,255,.9)';x.stroke();}
 }
 function drawArrow(x,px,py,ang,s,fill){x.save();x.translate(px,py);x.rotate(ang);x.beginPath();x.moveTo(0,-s);x.lineTo(s*.72,s*.7);x.lineTo(0,s*.32);x.lineTo(-s*.72,s*.7);x.closePath();
   x.fillStyle=fill;x.fill();x.lineWidth=s*.22;x.strokeStyle='#fff';x.lineJoin='round';x.stroke();x.restore();}
-function drawMini(){const S=miniCv.width,h=S/2,k=S/44;// ~44 world units across
+function drawMini(){const S=miniCv.width,h=S/2,k=S/54;// ~54 world units across
   const p=player.pos,fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;
   // heading-up: what's ahead on screen is up on the map
   const w2s=(wx,wz)=>{const dx=wx-p.x,dz=wz-p.z;return [h+(dx*rx+dz*rz)*k,h-(dx*fx+dz*fz)*k];};
@@ -5944,26 +5953,75 @@ function drawMini(){const S=miniCv.width,h=S/2,k=S/44;// ~44 world units across
   // player: facing relative to the camera
   const pa=Math.atan2(Math.sin(player.face)*rx+Math.cos(player.face)*rz,Math.sin(player.face)*fx+Math.cos(player.face)*fz);
   drawArrow(x,h,h,pa,15,'#8e6cff');x.restore();}
-// full map is fixed (start view: the plaza is "up"), so places never move around
-const MAPW=R+5;
-const mapW2s=(wx,wz)=>{const S=mapCv.width,k=S/(MAPW*2);return [S/2+wx*k,S/2+wz*k];};
-function drawMap(){const S=mapCv.width,k=S/(MAPW*2),x=mapX;drawWorld(x,mapW2s,k,S);
-  x.textAlign='center';x.textBaseline='middle';
-  for(const z of ZONES){let [px,py]=mapW2s(z.x,z.z);x.font=`${Math.round(S*.065)}px serif`;x.fillText(zEmoji(z),px,py-S*.018);
-    x.font=`700 ${Math.round(S*.03)}px system-ui,-apple-system,sans-serif`;const t=zLabel(z),tw=x.measureText(t).width,ty=py+S*.042;px=Math.min(S*.95-tw/2-8,Math.max(S*.05+tw/2+8,px));
-    x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.82)';x.beginPath();x.roundRect?x.roundRect(px-tw/2-8,ty-S*.022,tw+16,S*.044,S*.022):x.rect(px-tw/2-8,ty-S*.022,tw+16,S*.044);x.fill();
-    x.fillStyle='#fff';x.fillText(t,px,ty+1);
-    if(window.__chal&&window.__chal.left(z.id)){const [bx,by]=mapW2s(z.x,z.z);x.font=`${Math.round(S*.045)}px serif`;x.fillText('⭐',bx+S*.05,by-S*.05);}}
+// full map is fixed (start view: the plaza is "up"), so places never move around.
+// It can zoom in (➕ / pinch) and be dragged around, so names stay big enough to read on a phone.
+const MAPW=R+3,MAPZ=[1,1.6,2.4];
+const mv={zi:0,z:1,ox:0,oy:0};// zoom step, zoom, and how far the view is dragged (canvas px)
+const mapK=()=>mapCv.width/(MAPW*2)*mv.z;
+// world (x,z) -> canvas px; lay=true gives the un-dragged spot used for laying out tags
+const mapW2s=(wx,wz,lay)=>{const S=mapCv.width,k=mapK();return [S/2+(lay?0:mv.ox)+wx*k,S/2+(lay?0:mv.oy)+wz*k];};
+const mapTS=()=>Math.min(1.35,Math.pow(mv.z,.45));// tags grow a little when zoomed in
+const mapFont=S=>`700 ${Math.round(S*.03*mapTS())}px system-ui,-apple-system,sans-serif`;
+// Where each place's emoji and name tag go. Tags try below, above, then beside the place and take the first
+// spot that doesn't cover another tag or emoji, so names never sit on top of each other.
+let mapLay=null;
+function mapLayout(){const S=mapCv.width;if(mapLay&&mapLay.S===S&&mapLay.n===ZONES.length&&mapLay.zm===mv.z)return mapLay.z;
+  const x=mapX,k=mapK(),ts=mapTS(),h=Math.round(S*.046*ts),pad=S*.008,c=S/2,rIn=MAPW*k-S*.01;x.font=mapFont(S);
+  const items=ZONES.map(z=>{const [px,py]=mapW2s(z.x,z.z,true),e=Math.round(Math.min(S*.06*ts,Math.max(S*.042*ts,z.r*k*1.05)));
+    return {z,px,py,e,t:zLabel(z),w:x.measureText(zLabel(z)).width+S*.028*ts,eb:{x0:px-e*.55,y0:py-e*.62,x1:px+e*.55,y1:py+e*.48}};});
+  const hit=(a,b,p=pad)=>a.x0<b.x1+p&&b.x0<a.x1+p&&a.y0<b.y1+p&&b.y0<a.y1+p;
+  const inside=b=>[[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]].every(([X,Y])=>Math.hypot(X-c,Y-c)<rIn);
+  // a long name can also fold onto two lines when one line doesn't fit anywhere
+  const two=t=>{const ws=t.split(' ');if(ws.length<2)return null;let bi=1,bw=1e9;for(let i=1;i<ws.length;i++){const m=Math.max(x.measureText(ws.slice(0,i).join(' ')).width,x.measureText(ws.slice(i).join(' ')).width);if(m<bw){bw=m;bi=i;}}
+    return {lines:[ws.slice(0,bi).join(' '),ws.slice(bi).join(' ')],w:bw+S*.028*ts};};
+  // place tags one by one; try a few different orders and keep the tidiest result
+  const tryOrder=order=>{const placed=[],out=new Map();let tot=0;
+    for(const it of order){const {px,py,e}=it;let best=null,bs=1e9;
+      for(const v of [{lines:[it.t],w:it.w},two(it.t)]){if(!v||bs<.05)continue;const w=v.w,hh=h*(v.lines.length>1?1.75:1);
+        const dn=py+e*.48+hh*.5+2,up=py-e*.62-hh*.5-2,sx=e*.3+w*.5;
+        const cands=[[px,dn],[px,up],[px+sx,dn],[px-sx,dn],[px+sx,up],[px-sx,up],[px+e*.55+w*.5+4,py],[px-e*.55-w*.5-4,py]];
+        for(let [ci,[cx,cy]] of cands.entries()){
+          // keep tags over the map; poking a little past the shore onto the water is fine
+          cx=Math.max(c-MAPW*k+w/2+4,Math.min(c+MAPW*k-w/2-4,cx));
+          const b={x0:cx-w/2,y0:cy-hh/2,x1:cx+w/2,y1:cy+hh/2,lines:v.lines};
+          const sc=(inside(b)?0:.5)+placed.filter(o=>hit(b,o)).length*100+items.filter(o=>o!==it&&hit(b,o.eb)).length*100+(hit(b,it.eb,-2)?100:0)+[0,.1,.3,.3,.4,.4,.7,.7][ci]+(v.lines.length>1?.25:0);
+          if(sc<bs){bs=sc;best=b;}if(sc<.05)break;}}
+      out.set(it,best);placed.push(best);tot+=bs;}
+    return {out,tot};};
+  // crowded middle first is usually best; then some shuffles (same every time) in case it isn't
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  let best=tryOrder([...items].sort((a,b)=>a.z.d-b.z.d));
+  for(let i=0;i<40&&best.tot>=100;i++){const o=[...items];for(let j=o.length-1;j>0;j--){const q=Math.floor(rnd()*(j+1));[o[j],o[q]]=[o[q],o[j]];}
+    const r=tryOrder(o);if(r.tot<best.tot)best=r;}
+  for(const it of items)it.lb=best.out.get(it);
+  mapLay={S,n:ZONES.length,zm:mv.z,z:items};return items;}
+function drawMap(){const S=mapCv.width,k=mapK(),x=mapX,ts=mapTS();drawWorld(x,mapW2s,k,S);
+  x.save();x.translate(mv.ox,mv.oy);
+  x.textAlign='center';x.textBaseline='middle';const lay=mapLayout(),h=S*.046*ts;
+  for(const it of lay){const z=it.z;x.font=`${it.e}px serif`;x.fillText(zEmoji(z),it.px,it.py-it.e*.07);}
+  for(const it of lay){const z=it.z,b=it.lb,cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;x.font=mapFont(S);
+    x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.86)';x.beginPath();x.roundRect?x.roundRect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0,h/2):x.rect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0);x.fill();
+    x.fillStyle='#fff';b.lines.forEach((t,i)=>x.fillText(t,cx,cy+1+(i-(b.lines.length-1)/2)*h*.72));
+    if(window.__chal&&window.__chal.left(z.id)){x.font=`${Math.round(S*.04*ts)}px serif`;x.fillText('⭐',it.px+it.e*.6,it.py-it.e*.6);}}
+  x.restore();x.textAlign='center';x.textBaseline='middle';
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=mapW2s(o.pos.x,o.pos.z);x.beginPath();x.arc(ox,oy,S*.016,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
   const [px,py]=mapW2s(player.pos.x,player.pos.z);
-  x.beginPath();x.arc(px,py,S*.045+Math.sin(performance.now()/200)*S*.006,0,Math.PI*2);x.fillStyle='rgba(142,108,255,.25)';x.fill();
-  x.beginPath();x.arc(px,py,S*.03,0,Math.PI*2);x.fillStyle='#fff';x.fill();drawArrow(x,px,py,Math.atan2(Math.sin(player.face),-Math.cos(player.face)),S*.026,'#8e6cff');
-  x.font=`700 ${Math.round(S*.03)}px system-ui,-apple-system,sans-serif`;const yw=x.measureText('You').width+S*.03,yy=py-S*.075;
-  x.fillStyle='#8e6cff';x.beginPath();x.roundRect?x.roundRect(px-yw/2,yy-S*.024,yw,S*.048,S*.024):x.rect(px-yw/2,yy-S*.024,yw,S*.048);x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();
+  x.beginPath();x.arc(px,py,S*.04+Math.sin(performance.now()/200)*S*.006,0,Math.PI*2);x.fillStyle='rgba(142,108,255,.25)';x.fill();
+  x.beginPath();x.arc(px,py,S*.026,0,Math.PI*2);x.fillStyle='#fff';x.fill();drawArrow(x,px,py,Math.atan2(Math.sin(player.face),-Math.cos(player.face)),S*.022,'#8e6cff');
+  x.font=mapFont(S);const yh=S*.046*ts,yw=x.measureText('You').width+S*.03*ts,yy=py-S*.04-yh*.6;
+  x.fillStyle='#8e6cff';x.beginPath();x.roundRect?x.roundRect(px-yw/2,yy-yh/2,yw,yh,yh/2):x.rect(px-yw/2,yy-yh/2,yw,yh);x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();
   x.fillStyle='#fff';x.fillText('You',px,yy+1);}
+// keep the island on screen while dragging
+function mapClamp(){const S=mapCv.width,lim=Math.max(0,MAPW*mapK()-S/2);mv.ox=Math.max(-lim,Math.min(lim,mv.ox));mv.oy=Math.max(-lim,Math.min(lim,mv.oy));}
+// zoom to step i, keeping the canvas point (fx,fy) still (default: the middle of the view)
+function mapZoom(i,fx,fy){const S=mapCv.width;i=Math.max(0,Math.min(MAPZ.length-1,i));if(fx==null){fx=fy=S/2;}
+  const f=MAPZ[i]/mv.z;mv.ox=fx-S/2-(fx-S/2-mv.ox)*f;mv.oy=fy-S/2-(fy-S/2-mv.oy)*f;mv.zi=i;mv.z=MAPZ[i];mapClamp();
+  mapCv.classList.toggle('zoomed',i>0);$('#mapIn').disabled=i===MAPZ.length-1;$('#mapOut').disabled=i===0;}
+function mapCenterOn(wx,wz){const k=mapK();mv.ox=-wx*k;mv.oy=-wz*k;mapClamp();}
 let mapOpen=false;
 function openMap(){if(closetOpen)return;mapOpen=true;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#mapStop').style.display=mapDest?'inline-block':'none';
   $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:'Tap a place and a sparkly arrow will show you the way!';
+  if(mv.zi>0)mapCenterOn(player.pos.x,player.pos.z);
   $('#map').classList.add('show');sfx('pop');(function loop(){if(!mapOpen)return;drawMap();requestAnimationFrame(loop);})();}
 function closeMap(){mapOpen=false;$('#map').classList.remove('show');}
 // 3D guide beam over the place you're going to
@@ -5973,8 +6031,24 @@ const beam=new THREE.Group();beam.visible=false;scene.add(beam);
  const st=M(new THREE.OctahedronGeometry(.8),new THREE.MeshBasicMaterial({color:'#ffd23f'}),0,6,0,beam,false,false);
  anims.push(t=>{if(!beam.visible)return;st.position.y=6+Math.sin(t*2.5)*.5;st.rotation.y=t*2;bm.opacity=.28+Math.sin(t*4)*.08;});}
 function setDest(z){mapDest=z;$('#mini').classList.toggle('going',!!z);if(z){beam.position.set(z.x,0,z.z);beam.visible=true;}else beam.visible=false;}
-mapCv.addEventListener('click',e=>{const r=mapCv.getBoundingClientRect(),sx=(e.clientX-r.left)/r.width*mapCv.width,sy=(e.clientY-r.top)/r.height*mapCv.height;
-  const k=mapCv.width/(MAPW*2);let best=null,bd=1e9;for(const z of ZONES){const [px,py]=mapW2s(z.x,z.z),d=Math.hypot(sx-px,sy-(py+mapCv.width*.012));if(d<Math.max(z.r*k,mapCv.width*.09)&&d<bd){bd=d;best=z;}}
+// drag to move the map around when zoomed in, pinch to zoom; a short tap picks a place
+const mptr=new Map();let mdrag=0,mpinch=0;
+const mapPt=e=>{const r=mapCv.getBoundingClientRect();return [(e.clientX-r.left)/r.width*mapCv.width,(e.clientY-r.top)/r.height*mapCv.height];};
+mapCv.addEventListener('pointerdown',e=>{mptr.set(e.pointerId,mapPt(e));if(mptr.size===1)mdrag=0;if(mptr.size===2){const [a,b]=[...mptr.values()];mpinch=Math.hypot(a[0]-b[0],a[1]-b[1]);}try{mapCv.setPointerCapture(e.pointerId);}catch(_){}});
+mapCv.addEventListener('pointermove',e=>{const old=mptr.get(e.pointerId);if(!old)return;const p=mapPt(e);mptr.set(e.pointerId,p);
+  if(mptr.size===2){const [a,b]=[...mptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);mdrag=99;
+    if(mpinch&&d/mpinch>1.35){mapZoom(mv.zi+1,(a[0]+b[0])/2,(a[1]+b[1])/2);mpinch=d;}else if(mpinch&&d/mpinch<.74){mapZoom(mv.zi-1,(a[0]+b[0])/2,(a[1]+b[1])/2);mpinch=d;}return;}
+  const dx=p[0]-old[0],dy=p[1]-old[1];mdrag+=Math.hypot(dx,dy);if(mv.zi>0){mv.ox+=dx;mv.oy+=dy;mapClamp();}});
+const mapUp=e=>{mptr.delete(e.pointerId);if(mptr.size<2)mpinch=0;};
+mapCv.addEventListener('pointerup',mapUp);mapCv.addEventListener('pointercancel',mapUp);
+mapCv.addEventListener('wheel',e=>{e.preventDefault();const [fx,fy]=mapPt(e);mapZoom(mv.zi+(e.deltaY<0?1:-1),fx,fy);},{passive:false});
+$('#mapIn').onclick=()=>mapZoom(mv.zi+1);$('#mapOut').onclick=()=>mapZoom(mv.zi-1);
+mapCv.addEventListener('click',e=>{if(mdrag>mapCv.width*.02)return;// that was a drag, not a tap
+  const [sx0,sy0]=mapPt(e),sx=sx0-mv.ox,sy=sy0-mv.oy;
+  // a tap on a name tag picks that place; otherwise the closest place within reach of the tap
+  const S=mapCv.width,k=mapK(),lay=mapLayout();let best=null,bd=1e9;
+  for(const it of lay){const b=it.lb;if(sx>=b.x0-4&&sx<=b.x1+4&&sy>=b.y0-4&&sy<=b.y1+4){best=it.z;bd=0;break;}}
+  if(!best)for(const it of lay){const d=Math.hypot(sx-it.px,sy-it.py);if(d<Math.max(it.z.r*k,S*.06)&&d<bd){bd=d;best=it.z;}}
   if(!best)return;if(curZone===best){toast(`You're already at ${zLabel(best)}! ✨`);return;}
   setDest(best);sfx('star');closeMap();toast(`Follow the pink arrow on the map to ${zLabel(best)} 💗`);});
 $('#mini').addEventListener('click',openMap);
