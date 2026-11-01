@@ -10,7 +10,9 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👗</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- the font loads without holding up the page, so the loading screen shows right away -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{--pink:#ff6fae;--pink2:#ffd6ea;--purple:#8e6cff;--ink:#3b2357;--muted:#8a7499}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -102,7 +104,21 @@ input{font-family:inherit}
 .wstyle button span{font-size:13px;font-weight:700}.wstyle button.on{border-color:var(--pink);background:#ffe6f2}
 .how{display:flex;justify-content:center;gap:14px;font-size:13px;color:var(--muted);margin-top:14px;line-height:1.3}
 .how div{flex:1}.how b{display:block;font-size:26px}
-#loading{position:fixed;inset:0;display:grid;place-items:center;font-size:22px;font-weight:600;z-index:40;background:#ffe6f2}
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-size:22px;font-weight:600;z-index:40;background:radial-gradient(circle at 50% 42%,#fff4fa,#ffd6ea 75%);transition:opacity .5s;padding:20px;text-align:center}
+#loading.done{opacity:0;pointer-events:none}
+/* Tiereyn the squirrel runs in circles while the world builds. Only transform animations, so she keeps running even while the phone is busy. */
+.sqTrack{position:relative;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,#c9efb4 0 52%,#a8e08f 53% 66%,transparent 67%)}
+.sqTrack:before{content:'🌰';position:absolute;left:50%;top:50%;font-size:34px;transform:translate(-50%,-50%)}
+.sqRun{position:absolute;inset:0;animation:sqSpin 1.6s linear infinite}
+.sqHop{position:absolute;left:50%;top:2px;width:84px;height:66px;margin-left:-42px;animation:sqHop .27s ease-in-out infinite alternate}
+.sqHop svg{width:100%;height:100%;overflow:visible}
+.sqTail{transform-origin:30px 42px;animation:sqTail .27s ease-in-out infinite alternate}
+@keyframes sqSpin{to{transform:rotate(360deg)}}
+@keyframes sqHop{from{transform:translateY(0)}to{transform:translateY(-7px)}}
+@keyframes sqTail{from{transform:rotate(-6deg)}to{transform:rotate(8deg)}}
+#loadMsg{min-height:1.3em;color:var(--ink)}
+#loadSub{font-size:14px;font-weight:500;color:var(--muted);margin-top:-10px}
+@media (prefers-reduced-motion:reduce){.sqRun{animation-duration:4s}.sqHop,.sqTail{animation:none}}
 #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:15;transition:opacity .5s}
 body.dressing #jump,body.dressing #hint,body.dressing #side,body.dressing #poseBtn,body.dressing #actions,body.dressing #petBtn,body.dressing #talkBtn,body.dressing #talk{display:none!important}
 /* talking with townspeople */
@@ -149,10 +165,32 @@ body.dressing #mini,body.shopping #mini{display:none!important}
 @media (max-height:520px){#map .card{display:flex;gap:12px;align-items:center;text-align:left;max-width:640px}#mapCv{width:calc(100vh - 70px);margin:0;flex:none}#map .row{flex-direction:column}}
 #mini{pointer-events:auto}
 </style>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="loading">Loading the world… ✨</div>
+<div id="loading" role="status" aria-live="polite">
+  <div class="sqTrack" aria-hidden="true"><div class="sqRun"><div class="sqHop">
+    <svg viewBox="0 0 84 66">
+      <g class="sqTail"><path d="M34 46 C14 52 2 40 6 24 C9 10 24 2 34 10 C42 17 36 26 28 24 C22 22 24 32 34 34 Z" fill="#8f8f9a" stroke="#6d6d78" stroke-width="2"/><path d="M12 22 C14 14 22 10 28 12" fill="none" stroke="#b9b9c3" stroke-width="3" stroke-linecap="round"/></g>
+      <ellipse cx="46" cy="44" rx="17" ry="12" fill="#9a9aa5"/>
+      <ellipse cx="50" cy="48" rx="10" ry="7" fill="#fff"/>
+      <ellipse cx="36" cy="55" rx="7" ry="4" fill="#85858f"/><ellipse cx="57" cy="56" rx="5" ry="3" fill="#85858f"/>
+      <circle cx="63" cy="31" r="11" fill="#9a9aa5"/>
+      <ellipse cx="66" cy="35" rx="6" ry="4.5" fill="#fff"/>
+      <path d="M56 22 L58 11 L64 21 Z" fill="#9a9aa5" stroke="#85858f" stroke-width="1.5" stroke-linejoin="round"/><path d="M58.5 19 L59 15 L61.5 19.5 Z" fill="#ffc2dc"/>
+      <circle cx="66" cy="28" r="2.6" fill="#2b1d2e"/><circle cx="67" cy="27" r=".9" fill="#fff"/>
+      <circle cx="73.5" cy="32" r="2" fill="#5a3b48"/>
+      <circle cx="64" cy="35" r="2.2" fill="#ffb3d1" opacity=".7"/>
+    </svg>
+  </div></div></div>
+  <div id="loadMsg">Loading the world… ✨</div>
+  <div id="loadSub">Tiereyn is running around while everything gets ready</div>
+</div>
+<script>
+// little messages while the world builds (they change whenever the phone has a moment)
+(function(){var M=['Planting the trees 🌳','Blowing up the balloons 🎈','Baking the cakes 🎂','Waking up the pets 🐶','Hanging up the dresses 👗','Turning on the lights 💡','Gathering acorns 🌰','Almost ready… ✨'],i=0;
+var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||document.getElementById('loading').dataset.err){clearInterval(t);return;}e.textContent=M[Math.min(i++,M.length-1)];},1600);})();
+</script>
 <canvas id="c" tabindex="0"></canvas>
 
 <div class="hud" id="top"><div class="pill" id="place">✨ Sparkle Studio</div><div id="topr"><button class="pill" id="stars" aria-label="My stars and challenges">⭐ <b id="starN">0</b> <span>🏆</span></button><button class="pill" id="coins" aria-label="My coins and the shop">🪙 <b id="coinN">0</b> <span>🛍️</span></button></div></div>
@@ -2783,8 +2821,15 @@ function tick(){const dt=Math.min(.05,clock.getDelta()),t=clock.elapsedTime;
 function resize(){camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<innerHeight?62:55;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);}
 addEventListener('resize',resize);resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)music.pause();else if(musicOn&&started&&music.src)music.play().catch(()=>{});});
-renderer.setAnimationLoop(tick);
-$('#loading').remove();$('#welcome').classList.add('show');
+// Start-up: wait until online.js, challenges.js and seasons.js have added their things too (seasons adds a light,
+// and every new light makes the graphics card rebuild all of its shaders), then build the shaders once, in the
+// background where the browser allows it, so Tiereyn keeps running on the loading screen. Then show the world.
+function showWorld(){renderer.setAnimationLoop(tick);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=$('#loading');if(l){l.classList.add('done');setTimeout(()=>l.remove(),600);}$('#welcome').classList.add('show');}));}
+function warmUp(){scene.updateMatrixWorld(true);let c;try{c=renderer.compileAsync?renderer.compileAsync(scene,camera):null;}catch(e){c=null;}
+  // never wait forever: if building the shaders takes too long, just start (the first frame finishes the job)
+  Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(showWorld);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 /* ================= MAP ================= */
 const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
@@ -2872,7 +2917,7 @@ Object.assign(window.__game,{glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen|
 </script>
 <script>
 // show a friendly message if the 3D engine can't load (old phone or no internet)
-setTimeout(()=>{const l=document.getElementById('loading');if(l)l.textContent='Could not load the 3D world. Check the internet and try again.';},15000);
+setTimeout(()=>{const l=document.getElementById('loading');if(l&&!window.__game){l.dataset.err=1;l.innerHTML='<div>Could not load the 3D world. Check the internet and try again.</div>';}},20000);
 </script>
 <script type="module" src="online.js"></script>
 <script type="module" src="challenges.js"></script>
