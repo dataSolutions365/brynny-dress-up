@@ -38,7 +38,7 @@ function switchBody(b){const cur=isGuy(SAVE.look)?'guy':'girl';if(b===cur)return
   SAVE.look=nx&&nx.look?nx.look:b==='guy'?defaultGuyLook(SAVE.look):Object.assign(defaultLook(),{style:SAVE.look.style||'glam',skin:SAVE.look.skin,eyes:SAVE.look.eyes,makeup:defaultMakeup()});
   if(nx&&nx.paint)SAVE.facePaint=nx.paint;else delete SAVE.facePaint;
   if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();
-  persist();did('body',b);shareBody();return true;}
+  persist();did('body',b);shareBody();renderMe();return true;}
 // tell the 2D studio whether you play a girl or a guy (its top-left picture matches unless you pick your own)
 function shareBody(){try{localStorage.setItem('brynny.body',JSON.stringify({b:isGuy(SAVE.look)?'guy':'girl',at:Date.now()}));}catch(e){}}
 

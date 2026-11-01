@@ -435,6 +435,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 <div class="toast" id="toast"></div>
 <button id="updBtn">✨ New version! Tap to update</button>
 
+<script src="pics.js"></script>
 <script src="family.js"></script>
 <script>
 /* ---------- errors: save what went wrong (snake game's Firebase, list dressup_errors) and keep playing ---------- */
@@ -2266,24 +2267,9 @@ $('#randBtn').onclick=()=>{const keep=L();me().look=randomLook(keep);persist();r
 $('#saveBtn').onclick=()=>{DB.gallery.unshift({id:uid(),name:me().name,look:JSON.parse(JSON.stringify(L())),at:Date.now()});DB.gallery=DB.gallery.slice(0,80);persist();toast('📸 Saved to your Gallery!');sparkle();Music.sfx('snap');};
 $('#galBtn').onclick=()=>{renderGallery();$('#galModal').classList.add('show');};
 $('#whoBtn').onclick=()=>{renderWho();$('#whoModal').classList.add('show');};
-/* your picture at the top left (shared in localStorage with the 3D world). Pick a plain girl or guy, an animal, anything
-   else in the list, a live picture of your 3D character or your 3D pet (they update as you change their look), or
-   "Match my game" to follow the girl/guy choice from the 3D world. */
-const PIC_KEY='brynny.pic',BODY_KEY='brynny.body';
-const PICS=[['People',['👧','👦','🧒','👩','👨','👱‍♀️','👱‍♂️','👸','🤴','🧚‍♀️','🧙‍♂️','🦸‍♀️','🦸‍♂️','🥷','🧑‍🚀','🧑‍🎤']],
-  ['Animals',['🐱','🐶','🐕','🐿️','🐰','🐵','🦔','🦄','🐹','🐻','🐼','🦊','🐯','🐸','🐧','🦋']],
-  ['Fun',['⚽','🏀','⚾','🏈','🎮','🚗','🛹','🎸','🎂','🌈','🌟','💎']]];
-const LIVE={'@me3d':['brynny.me3d','My 3D character'],'@pet3d':['brynny.pet3d','My 3D pet']};
-const readLS=k=>{try{return JSON.parse(localStorage.getItem(k))||null;}catch(e){return null;}};
-const autoPic=()=>{const b=readLS(BODY_KEY);return b&&b.b==='guy'?'👦':'👧';};
-const liveImg=id=>{const d=LIVE[id]&&readLS(LIVE[id][0]);return d&&typeof d.img==='string'&&d.img.startsWith('data:image/')?d.img:null;};
-// what to draw for a picture: an emoji, or a live picture from the 3D world (the girl/guy emoji until there is one)
-const picHTML=id=>{if(LIVE[id]){const im=liveImg(id);return im?`<img class="picimg" src="${im}" alt="">`:autoPic();}return esc(id||autoPic());};
-function renderPic(){const p=readLS(PIC_KEY),cur=p&&p.e||'';$('#whoPic').innerHTML=picHTML(cur);
-  const btn=(id,label)=>`<button class="${cur===id?'on ':''}${label?'auto':''}" data-pic="${id}" aria-label="${label||'Picture '+id}">${label?`${id?picHTML(id):autoPic()} ${label}`:esc(id)}</button>`;
-  $('#picRow').innerHTML=`<div>${btn('','Match my game')}${btn('@me3d','My 3D character')}${btn('@pet3d','My 3D pet')}</div>`+PICS.map(([t,l])=>`<b>${t}</b><div>${l.map(e=>btn(e)).join('')}</div>`).join('')+
-    (cur in LIVE&&!liveImg(cur)?`<p class="hint">Play the 🌍 3D World once${cur==='@pet3d'?' with a pet':''} and the picture shows up here.</p>`:'');}
-$('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;try{if(b.dataset.pic)localStorage.setItem(PIC_KEY,JSON.stringify({e:b.dataset.pic,at:Date.now()}));else localStorage.removeItem(PIC_KEY);}catch(er){}renderPic();});
+/* your picture at the top left: the list and the saving are in pics.js, shared with the 3D world */
+function renderPic(){$('#whoPic').innerHTML=BrynnyPic.html(BrynnyPic.current());$('#picRow').innerHTML=BrynnyPic.picker(false);}
+$('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;BrynnyPic.set(b.dataset.pic);renderPic();});
 renderPic();document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderPic();});
 addEventListener('storage',e=>{if(!e.key||e.key.startsWith('brynny.'))renderPic();});
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m||e.target.hasAttribute('data-close'))m.classList.remove('show');}));

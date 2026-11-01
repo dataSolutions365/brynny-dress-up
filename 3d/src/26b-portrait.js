@@ -20,4 +20,5 @@ function portraitTick(){const now=performance.now();if(!started||now<PORT.t)retu
   let shot=false;
   if(meK!==PORT.key.me&&av&&av.head){PORT.key.me=meK;snapOne(av.g,av.head,1.05,.13,'brynny.me3d');shot=true;}
   else if(pt&&petK!==PORT.key.pet&&pt.head){PORT.key.pet=petK;snapOne(pt.g,pt.head,.75,.05,'brynny.pet3d',{name:pt.name});shot=true;}
-  if(shot)renderer.render(scene,camera);}
+  if(shot){renderer.render(scene,camera);renderMe();}}
+renderMe();
