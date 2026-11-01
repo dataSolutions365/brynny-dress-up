@@ -192,6 +192,25 @@ body.dressing #jump,body.dressing #hint,body.dressing #side,body.dressing #poseB
 #topts button:active{transform:scale(.94)}
 body.talking #actions,body.talking #jump,body.talking #petBtn,body.talking #poseBtn,body.talking #talkBtn{display:none!important}
 @media (max-height:520px){#talk{width:min(620px,calc(100vw - 24px));padding:8px 12px 10px}#tsay{margin:6px 2px 8px;font-size:15px;min-height:0}#topts{grid-template-columns:repeat(6,1fr);gap:6px}#topts button{min-height:50px;font-size:19px}#talkBtn{bottom:calc(env(safe-area-inset-bottom) + 130px)}#talkBtn.up{bottom:calc(env(safe-area-inset-bottom) + 185px)}}
+/* car garage (3d/src/24d-garage.js) */
+#garage{position:fixed;z-index:8;left:0;right:0;bottom:0;height:min(40vh,380px);background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(59,35,87,.25);display:flex;flex-direction:column;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1);padding-bottom:env(safe-area-inset-bottom)}
+#garage.show{transform:none}
+@media (orientation:landscape) and (min-aspect-ratio:5/4){#garage{left:auto;top:0;width:min(42vw,420px);height:auto;border-radius:26px 0 0 26px;transform:translateX(105%);padding-right:env(safe-area-inset-right)}}
+#gdone{background:#3a5bd9;color:#fff;font-weight:700;padding:9px 18px;border-radius:999px;font-size:16px;box-shadow:0 3px 0 #2a44a8}
+#gphoto{width:40px;height:40px;border-radius:50%;background:#e3ebff;font-size:20px}
+#gtabs .tab b{position:relative}#gtabs .tab i{position:absolute;right:-10px;top:-6px;font-style:normal;font-size:13px}
+.gpips{display:flex;gap:5px;margin:10px 2px 2px}.gpips span{flex:1;height:7px;border-radius:4px;background:#e3e7f0}.gpips span.ok{background:#7ee081}.gpips span.on{background:#3a5bd9}
+.gsay{font-size:18px;font-weight:700;margin:8px 2px 4px;line-height:1.3}
+#gcontent .btn{font-size:17px;padding:11px 20px;margin:10px 0 2px;background:linear-gradient(90deg,#3a5bd9,#4fb6ff);box-shadow:0 4px 0 #2a44a8}
+.gbar{position:relative;height:26px;border-radius:13px;background:#eef1f7;overflow:hidden;margin:10px 2px 4px;border:2px solid #d6dcea}
+.gbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#e8b13a,#ffd23f);border-radius:13px}
+.gbar em{position:absolute;top:0;bottom:0;left:78%;width:20%;background:rgba(126,224,129,.45);border-left:2px solid #2fa84f;border-right:2px solid #2fa84f}
+.gbar em{z-index:1}.gbar.drain i{background:linear-gradient(90deg,#1a140e,#4a3a2a)}
+.gtray{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.gtray button{background:#f2f5ff;border:2px solid #d6dcea;border-radius:16px;padding:8px 2px;font-size:24px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.gtray button span{font-size:12px;font-weight:700}.gtray button.want{border-color:#3a5bd9;background:#e3ebff;animation:gpulse 1s infinite}
+@keyframes gpulse{50%{transform:scale(1.06)}}
+.gdone{font-size:18px;font-weight:700;margin:14px 2px 4px}
 /* bakery */
 #bakery{position:fixed;z-index:8;left:0;right:0;bottom:0;height:min(47vh,430px);background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(59,35,87,.25);display:flex;flex-direction:column;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1);padding-bottom:env(safe-area-inset-bottom)}
 #bakery.show{transform:none}
@@ -336,6 +355,11 @@ body.dressing #rideBtn,body.talking #rideBtn,body.dressing #zooBtn,body.talking 
   <div class="chead"><h2>🧁 Cake Studio</h2><button id="bphoto" aria-label="Take a picture">📸</button><button id="bdone">Done</button></div>
   <div class="tabs" id="btabs"></div>
   <div class="ccontent" id="bcontent"></div>
+</div>
+<div id="garage" aria-label="Car garage">
+  <div class="chead"><h2>🔧 Car Garage</h2><button id="gphoto" aria-label="Take a picture">📸</button><button id="gdone">Done</button></div>
+  <div class="tabs" id="gtabs"></div>
+  <div class="ccontent" id="gcontent"></div>
 </div>
 <style>
 /* coins + shop */

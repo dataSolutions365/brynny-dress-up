@@ -4,7 +4,7 @@
 // far back the close-up camera stands (ZOOM.k), so you can always back away if your pet or cake is too close.
 const ZOOM={k:Math.min(2.6,Math.max(.7,+SAVE.zoomK||1)),min:.7,max:2.6},PLAY_MIN=2.5,PLAY_MAX=14;
 const zoomEl=$('#zoomCtl');
-function zoomWhere(){if(parlorOpen||bakeryOpen)return 'station';if(!closetOpen)return 'play';return null;}
+function zoomWhere(){if(parlorOpen||bakeryOpen||garageOpen)return 'station';if(!closetOpen)return 'play';return null;}
 let zoomSaveT=0;
 function zoomBy(f){const w=zoomWhere();
   if(w==='play')cam.dist=Math.min(PLAY_MAX,Math.max(PLAY_MIN,cam.dist*f));
