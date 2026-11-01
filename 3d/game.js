@@ -838,7 +838,7 @@ const BLUSH={pink:'255,110,150',peach:'255,150,110',rose:'220,80,110'};
 /* sculpted doll head: a sphere pushed in and out along each direction (nose, cheekbones, eye sockets, jaw, chin) */
 const FACEOPT=[['eyes','Eye shape',[['almond','👁️','Almond'],['doe','🦌','Doe'],['cat','🐱','Cat eye'],['round','⚪','Round']]],['nose','Nose',[['straight','👃','Straight'],['petite','✨','Petite'],['button','🔘','Button']]],['lips','Lips',[['full','💋','Full'],['pout','😗','Pouty'],['heart','💗','Heart'],['soft','🙂','Soft']]]];
 const NOSE={straight:{h:.18,w:.04,top:.06,tip:.035},petite:{h:.13,w:.036,top:.0,tip:.03},button:{h:.11,w:.05,top:-.04,tip:.055}};
-function sculpt(d,nose='straight'){const N=NOSE[nose]||NOSE.straight;const g=(cx,cy,cz,w)=>Math.exp(-((d.x-cx)**2+(d.y-cy)**2+(d.z-cz)**2)/(w*w));const sm=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
+function sculpt(d,nose='straight',jaw=0){const N=NOSE[nose]||NOSE.straight;const g=(cx,cy,cz,w)=>Math.exp(-((d.x-cx)**2+(d.y-cy)**2+(d.z-cz)**2)/(w*w));const sm=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
   let r=1;const front=sm(.55,.92,d.z);
   // nose: a narrow ridge that grows from between the eyes to the tip, then tucks under
   const dy=d.y,T=N.top;let prof=0;if(dy<T&&dy>-.24)prof=N.h*Math.pow((T-dy)/(T+.24),1.5);else if(dy<=-.24&&dy>-.33)prof=N.h*(1-Math.pow((-.24-dy)/.09,2));
@@ -846,12 +846,14 @@ function sculpt(d,nose='straight'){const N=NOSE[nose]||NOSE.straight;const g=(cx
   for(const sx of [-1,1]){r+=.035*g(sx*.075,-.275,.955,.05)*front;
     r-=.04*g(sx*.33,.06,.94,.13);r+=.022*g(sx*.33,.3,.89,.14);
     r+=.05*g(sx*.58,-.1,.8,.2);r-=.025*g(sx*.62,-.45,.66,.18);}
-  if(dy<-.15)r-=.11*sm(.15,.85,-dy)*Math.pow(Math.abs(d.x),1.15);
+  if(dy<-.15)r-=.11*(1-.45*jaw)*sm(.15,.85,-dy)*Math.pow(Math.abs(d.x),1.15);
+  // a guy's face: a wider, squarer jaw and a flatter brow
+  if(jaw)for(const sx of [-1,1]){r+=jaw*.04*g(sx*.55,-.55,.62,.2);r+=jaw*.015*g(sx*.3,.18,.93,.14);}
   r+=.04*g(0,-.8,.58,.22)+.03*g(0,-.46,.88,.2)-.012*g(0,-.62,.79,.08);
   if(d.z<0)r+=.04*(-d.z);
   return r;}
-function headGeo(HS,patch,lift=0,nose){const g=patch?new THREE.SphereGeometry(1,72,56,FACE.p0,FACE.pl,FACE.t0,FACE.tl):new THREE.SphereGeometry(1,96,72);const p=g.attributes.position,v=new THREE.Vector3();
-  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).normalize();const r=(sculpt(v,nose)+lift)*.13;p.setXYZ(i,v.x*r*HS.x,v.y*r*HS.y,v.z*r*HS.z);}g.computeVertexNormals();return g;}
+function headGeo(HS,patch,lift=0,nose,jaw=0){const g=patch?new THREE.SphereGeometry(1,72,56,FACE.p0,FACE.pl,FACE.t0,FACE.tl):new THREE.SphereGeometry(1,96,72);const p=g.attributes.position,v=new THREE.Vector3();
+  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).normalize();const r=(sculpt(v,nose,jaw)+lift)*.13;p.setXYZ(i,v.x*r*HS.x,v.y*r*HS.y,v.z*r*HS.z);}g.computeVertexNormals();return g;}
 const headRay=new THREE.Raycaster();
 class Avatar{
   constructor(look,name,tagColor='#ff4d8d',paint=false){
@@ -862,17 +864,19 @@ class Avatar{
   part(geo,mat,parent,x=0,y=0,z=0,outfit=true){const m=M(geo,mat,x,y,z,parent,true,true);if(outfit)this.parts.push(m);return m;}
   buildBody(){
     const s=this.skin=lookMat(this.look.skin,'skin');const B=(geo,parent,x,y,z)=>this.part(geo,s,parent,x,y,z,false);
-    const G0=this.look.style!=='cute';this.legX=G0?.04:0;this.hip=HIP+this.legX*2;this.lift=0;
+    const G0=this.look.style!=='cute',guy=this.guy=isGuy(this.look);this.legX=G0?.04:0;this.hip=HIP+this.legX*2;this.lift=0;
     const hips=this.hips=new THREE.Group();hips.position.y=this.hip;this.g.add(hips);
-    B(sph(.13,24,16),hips).scale.set(1.05,.75,.8);
+    B(sph(.13,24,16),hips).scale.set(guy?.97:1.05,.75,guy?.78:.8);
     const spine=this.spine=new THREE.Group();hips.add(spine);
-    const chest=B(new THREE.CapsuleGeometry(.12,.2,6,20),spine,0,.24,0);chest.scale.set(this.look.style!=='cute'?1.0:1.12,1,this.look.style!=='cute'?.74:.78);
-    B(this.look.style!=='cute'?cyl(.039,.047,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
+    const chest=B(new THREE.CapsuleGeometry(.12,.2,6,20),spine,0,.24,0);chest.scale.set((this.look.style!=='cute'?1.0:1.12)+(guy?.15:0),1,this.look.style!=='cute'?.74:.78);
+    // tops are a little wider on a guy's broader chest
+    this.shellX=guy?1.12+.15:1.12;
+    B(guy?cyl(.047,.054,.16,14):this.look.style!=='cute'?cyl(.039,.047,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
     const head=this.head=new THREE.Group();head.position.y=.68;spine.add(head);
-    const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?new THREE.Vector3(.9,1.06,.98):new THREE.Vector3(1,1.08,1);
+    const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?(guy?new THREE.Vector3(.93,1.05,.98):new THREE.Vector3(.9,1.06,.98)):new THREE.Vector3(1,1.08,1);const JAW=this.jaw=guy&&glam?1:0;
     let surf;
     const F=this.face=Object.assign({eyes:'almond',nose:'straight',lips:'full'},this.look.face||{});
-    if(glam){const hg=headGeo(HS,false,0,F.nose);const hm=B(hg,head);const tmp=new THREE.Mesh(hg);tmp.updateMatrixWorld(true);
+    if(glam){const hg=headGeo(HS,false,0,F.nose,JAW);const hm=B(hg,head);const tmp=new THREE.Mesh(hg);tmp.updateMatrixWorld(true);
       surf=(x,y,off=0)=>{headRay.set(new THREE.Vector3(x,y,.5),new THREE.Vector3(0,0,-1));const h=headRay.intersectObject(tmp,false)[0];return (h?h.point.z:.1)+off;};}
     else{B(sph(.13,40,30),head).scale.copy(HS);surf=(x,y,off=0)=>HS.z*Math.sqrt(Math.max(0,.0169-(x/HS.x)**2-(y/HS.y)**2))+off;}
     for(const sx of [-1,1])B(sph(.025,10,8),head,sx*.127*HS.x,-.005,0).scale.set(.6,1,.8);
@@ -887,7 +891,7 @@ class Avatar{
       this.browM=new THREE.MeshStandardMaterial({color:'#3a2618',roughness:.8});
       const lidM=new THREE.MeshStandardMaterial({color:'#6b4a44',roughness:.8,transparent:true,opacity:.28,depthWrite:false}),lowM=new THREE.MeshStandardMaterial({color:'#7a5244',roughness:.7});
       const ES={almond:[1.22,.76,.12,.92],round:[1.1,.92,.04,.95],cat:[1.36,.64,.3,.9],doe:[1.18,.88,-.04,1.0]}[F.eyes]||[1.22,.76,.12,.92];
-      for(const sx of [-1,1]){const eg=new THREE.Group();eg.position.set(sx*.044,.008,surf(.044,.008,-.011));eg.rotation.z=sx*ES[2];eg.rotation.y=sx*.2;eg.scale.setScalar(ES[3]);head.add(eg);
+      for(const sx of [-1,1]){const eg=new THREE.Group();eg.position.set(sx*.044,.008,surf(.044,.008,-.011));eg.rotation.z=sx*ES[2];eg.rotation.y=sx*.2;eg.scale.setScalar(ES[3]*(guy?.9:1));head.add(eg);
         M(sph(.03,24,16),white,0,0,0,eg,false).scale.set(ES[0],ES[1],.5);
         // a big shaded iris (pupil, streaks and dark rim are in the texture), tucked a little under the upper lid
         this.iris.map=irisTex();M(irisGeo(.0205),this.iris,0,-.0025,.0075,eg,false).scale.set(1,1,.45);
@@ -895,12 +899,12 @@ class Avatar{
         // soft lid shadow on the top of the eye white, a thick lash line with a little flick, and a soft lower lid
         M(new THREE.SphereGeometry(.03,24,10,0,Math.PI*2,0,1.05),lidM,0,0,0,eg,false).scale.set(ES[0]*1.01,ES[1]*1.01,.51);
         const up=M(new THREE.TorusGeometry(.03,.0048,8,32,Math.PI),lash,0,.0005,.0035,eg,false);up.scale.set(ES[0],ES[1]*1.05,1);
-        const wing=M(new THREE.CapsuleGeometry(.0026,F.eyes==='cat'?.016:.009,4,8),lash,sx*.0315*ES[0],.0045,.0035,eg,false);wing.rotation.z=-sx*1.15;
+        if(!guy){const wing=M(new THREE.CapsuleGeometry(.0026,F.eyes==='cat'?.016:.009,4,8),lash,sx*.0315*ES[0],.0045,.0035,eg,false);wing.rotation.z=-sx*1.15;}
         const low=M(new THREE.TorusGeometry(.03,.0014,6,24,Math.PI),lowM,0,-.001,.003,eg,false);low.scale.set(ES[0]*.98,ES[1],1);low.rotation.z=Math.PI;
         eg.userData.sx=sx;eg.userData.rx=.03*ES[0];eg.userData.ry=.03*ES[1];this.eyes.push(eg);
-        const pts=[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]].map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0022)));
-        M(browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
-      const LS={full:[1,1,1],heart:[.85,1.05,1.2],soft:[1.12,.8,.82],pout:[.92,1.2,1.15]}[F.lips]||[1,1,1];
+        const pts=(guy?[[.012,.043],[.03,.048],[.05,.0515],[.069,.0505],[.086,.045]]:[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]]).map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0022)));
+        M(guy?browGeo(pts,.0068,.0042):browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
+      const LS=guy?[1.02,.62,.68]:{full:[1,1,1],heart:[.85,1.05,1.2],soft:[1.12,.8,.82],pout:[.92,1.2,1.15]}[F.lips]||[1,1,1];
       // full, glossy, sculpted lips: an upper lip with a cupid's bow and a fuller lower lip
       const W=.031*LS[0];for(const [up,h,d,cy] of [[true,.0078*LS[1],.007,-.0528],[false,.0108*LS[2],.0098,-.065]]){const geo=lipGeo(up,W,h,d,cy,(x,y)=>surf(x,y));
         M(geo,this.lipM,0,0,0,head,false);const l=M(geo,this.linerM,0,-cy*.04,-.0012,head,false);l.scale.set(1.07,1.04,1);l.visible=false;this.lipLiner.push(l);}
@@ -912,21 +916,21 @@ class Avatar{
         M(sph(.0095,12,8),dark,0,-.001,.0135,eg,false).scale.set(1,1,.4);M(sph(.004,8,6),shine,.007,.008,.017,eg,false);
         const l=M(new THREE.TorusGeometry(.029,.0045,6,16,Math.PI),lash,0,.002,.004,eg,false);l.scale.set(1,1.15,1);
         eg.userData.sx=sx;eg.userData.rx=.03;eg.userData.ry=.034;this.eyes.push(eg);
-        const brow=M(new THREE.CapsuleGeometry(.004,.03,4,8),lash,sx*.046,.058,.118,head,false);brow.rotation.z=Math.PI/2-sx*.14;}
-      lip(.021,0,-.0515,.1178,1.12,.36,.5);lip(.021,0,-.0635,.1165,1.02,.46,.55);}
+        const brow=M(new THREE.CapsuleGeometry(guy?.0058:.004,.03,4,8),lash,sx*.046,.058,.118,head,false);brow.rotation.z=Math.PI/2-sx*.14;}
+      if(guy){lip(.019,0,-.054,.1175,1.1,.26,.5);lip(.019,0,-.063,.1165,1,.32,.55);}else{lip(.021,0,-.0515,.1178,1.12,.36,.5);lip(.021,0,-.0635,.1165,1.02,.46,.55);}}
     // makeup shell
     const RES=this.paintable?1024:256;this.faceCv=document.createElement('canvas');this.faceCv.width=this.faceCv.height=RES;
     if(this.paintable){this.paintCv=document.createElement('canvas');this.paintCv.width=this.paintCv.height=RES;}
     this.faceTex=new THREE.CanvasTexture(this.faceCv);this.faceTex.colorSpace=THREE.SRGBColorSpace;this.faceTex.anisotropy=4;
-    this.overlay=M(glam?headGeo(HS,true,.012,F.nose):new THREE.SphereGeometry(FACE.r,48,32,FACE.p0,FACE.pl,FACE.t0,FACE.tl),new THREE.MeshStandardMaterial({map:this.faceTex,transparent:true,roughness:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),0,0,0,head,false,true);
+    this.overlay=M(glam?headGeo(HS,true,.012,F.nose,JAW):new THREE.SphereGeometry(FACE.r,48,32,FACE.p0,FACE.pl,FACE.t0,FACE.tl),new THREE.MeshStandardMaterial({map:this.faceTex,transparent:true,roughness:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),0,0,0,head,false,true);
     if(!glam)this.overlay.scale.copy(HS);
     // arms
-    this.arms=[];for(const sx of [-1,1]){const sh=new THREE.Group();sh.position.set(sx*(glam?.155:.165),.42,0);spine.add(sh);B(capTop(glam?.038:.042,glam?.185:.17),sh);
-      const el=new THREE.Group();el.position.y=glam?-.255:-.24;sh.add(el);B(capTop(glam?.032:.036,glam?.175:.16),el);const hand=new THREE.Group();hand.position.y=glam?-.245:-.23;el.add(hand);const HG=handGeo(sx);B(HG.g,hand);hand.userData.nails=HG.nails;if(!glam)hand.scale.setScalar(1.12);
+    this.arms=[];for(const sx of [-1,1]){const sh=new THREE.Group();sh.position.set(sx*((glam?.155:.165)+(guy?.02:0)),.42,0);spine.add(sh);B(capTop((glam?.038:.042)+(guy?.006:0),glam?.185:.17),sh);if(guy)B(sph(.044,16,12),sh,0,-.02,0).scale.set(1,.9,.95);
+      const el=new THREE.Group();el.position.y=glam?-.255:-.24;sh.add(el);B(capTop((glam?.032:.036)+(guy?.005:0),glam?.175:.16),el);const hand=new THREE.Group();hand.position.y=glam?-.245:-.23;el.add(hand);const HG=handGeo(sx);B(HG.g,hand);hand.userData.nails=HG.nails;if(!glam)hand.scale.setScalar(1.12);
       this.arms.push({sh,el,hand,sx});}
     // legs
-    this.legs=[];for(const sx of [-1,1]){const hp=new THREE.Group();const X=this.legX;hp.position.set(sx*.075,-.02,0);hips.add(hp);B(capTop(glam?.058:.062,.3+X),hp);
-      const kn=new THREE.Group();kn.position.y=-.38-X;hp.add(kn);B(capTop(glam?.045:.05,.3+X),kn);const an=new THREE.Group();an.position.y=-.37-X;kn.add(an);const FG=footGeo(sx);B(FG.g,an);an.userData.nails=FG.nails;
+    this.legs=[];for(const sx of [-1,1]){const hp=new THREE.Group();const X=this.legX;hp.position.set(sx*.075,-.02,0);hips.add(hp);B(capTop((glam?.058:.062)+(guy?.002:0),.3+X),hp);
+      const kn=new THREE.Group();kn.position.y=-.38-X;hp.add(kn);B(capTop((glam?.045:.05)+(guy?.004:0),.3+X),kn);const an=new THREE.Group();an.position.y=-.37-X;kn.add(an);const FG=footGeo(sx);B(FG.g,an);an.userData.nails=FG.nails;
       this.legs.push({hp,kn,an,sx});}}
   setSkin(c){this.skin.color.set(c);}
   dress(look){
@@ -970,11 +974,13 @@ class Avatar{
         const e=cv.getPoint((nb-1)/10);P(sph(.016,10,8),mat('#ff6fae','shiny'),head,e.x,e.y-.035,e.z);P(new THREE.ConeGeometry(.022,.05,10),m,head,e.x,e.y-.075,e.z).rotation.x=Math.PI;}
       if(id==='highpony'){P(sph(.046,14,12),m,head,0,.135,-.115);P(new THREE.TorusGeometry(.034,.013,8,20),mat('#ff6fae','shiny'),head,0,.14,-.13).rotation.x=Math.PI/2-.9;
         const t=P(capTop(.05*(1+HV*.4),(this.glam?.34:.26)*HL),m,head,0,.145,-.15);t.rotation.x=.75;}
+      // guy hair styles live in 14c-guy.js
+      if(GUY_HAIR[id])GUY_HAIR[id]({P,m,mat,head,cap,side,hang,HL,HV,glam:this.glam});
       (h.clips||[]).forEach(([x,y,z,c])=>{const cm=mat(c||'#ff6fae','shiny'),cg=new THREE.Group();cg.position.set(x,y,z);cg.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(x,y-.02,z).normalize());head.add(cg);this.parts.push(cg);cg.geometry={dispose(){}};
         for(const sd of [-1,1]){const l=P(new THREE.ConeGeometry(.016,.032,12),cm,cg,sd*.016,0,0);l.rotation.z=sd*Math.PI/2;l.scale.z=.45;}P(sph(.009,10,8),cm,cg);});}
     this.hairMeshes=this.parts.slice(hair0).filter(o=>o.isMesh);
     /* clothes */
-    const topShell=(m,sleeve)=>{const c=P(new THREE.CapsuleGeometry(.129,.2,6,24),m,spine,0,.24,0);c.scale.set(1.12,1,.8);
+    const topShell=(m,sleeve)=>{const c=P(new THREE.CapsuleGeometry(.129,.2,6,24),m,spine,0,.24,0);c.scale.set(this.shellX,1,.8);
       for(const a of arms){if(sleeve==='short')P(capTop(.051,.06),m,a.sh);
         if(sleeve==='long'){P(capTop(.049,.17),m,a.sh);P(capTop(.043,.15),m,a.el);}
         if(sleeve==='puff')P(sph(.072,18,14),m,a.sh,0,-.03,0);
@@ -1091,16 +1097,16 @@ class Avatar{
     /* holiday costumes: their 3D pieces live in seasons.js (window.__costumes[id](kit,color)) */
     /* outfits brought over from the 2D game live in 14b-outfits-2d.js (OUTFITS2D[id](kit,color)) */
     {const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,decal,av:this};
-      for(const C of [OUTFITS2D,window.__costumes])if(C){
+      for(const C of [OUTFITS2D,GUY_WEAR,window.__costumes])if(C){
         for(const slot of ['dress','top','bottom','shoes','hat']){const it=look[slot];if(look.dress&&(slot==='top'||slot==='bottom'))continue;if(it&&C[it.id])C[it.id](kit,it.c);}
         for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
-      this.lipM.color.set(mk.lips||(this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(mk.browC||new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
+      this.lipM.color.set(mk.lips||(this.guy?new THREE.Color(look.skin).multiplyScalar(.82).lerp(new THREE.Color('#b0685f'),.35):this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips&&!this.guy);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(mk.browC||new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
       this.lipLiner.forEach(l=>{l.visible=!!mk.lipLiner;});if(mk.lipLiner)this.linerM.color.set(mk.lipLiner);
       this.lashM.color.set(mk.lashes==='bold'?'#0d0a0a':'#2b1d16');
       // glam faces always get a fan of curled lashes; mascara makes them longer and darker
-      if(this.glam){const L=mk.lashes==='bold'?[15,.017,1.8]:mk.lashes==='long'?[13,.014,1.5]:[11,.011,1.3];
+      if(this.glam){const L=mk.lashes==='bold'?[15,.017,1.8]:mk.lashes==='long'?[13,.014,1.5]:this.guy?[9,.006,1]:[11,.011,1.3];
         for(const eg of this.eyes){const m=P(lashFan(eg.userData.rx,eg.userData.ry*1.04,eg.userData.sx,L[0],L[1],L[2]),this.lashM,eg,0,.0005,0);m.castShadow=false;}}
       else if(mk.lashes==='long'||mk.lashes==='bold'){const n=mk.lashes==='bold'?8:6,h=mk.lashes==='bold'?.014:.01;const lg=new THREE.ConeGeometry(.0014,h,4);
         for(const eg of this.eyes){const sx=eg.userData.sx;for(let i=0;i<n;i++){const a=.25+i/(n-1)*(Math.PI-.5);const m=P(lg.clone(),this.lashM,eg,Math.cos(a)*eg.userData.rx,.002+Math.sin(a)*eg.userData.ry,.006);m.rotation.z=a-Math.PI/2+sx*.15*(Math.cos(a));m.rotation.x=.5;m.castShadow=false;}}}
@@ -1117,7 +1123,7 @@ class Avatar{
       for(const sx of [-1,1]){let [px,py]=at(sx*.07,-.045,.09);soft(px,py,120*k,55*k,'120,70,50',.16);[px,py]=at(sx*.062,-.014,.105);soft(px,py,70*k,40*k,'255,245,235',.28);
         // soft sculpting: cheekbone contour, a warm crease above the eye, deeper at the outer corner, and a soft lower lid
         [px,py]=at(sx*.088,-.05,.08);soft(px,py,120*k,38*k,'150,80,60',.2);
-        if(!mk.shadow){[px,py]=at(sx*.046,.03,.115);soft(px,py,125*k,58*k,'175,100,100',.42);[px,py]=at(sx*.074,.016,.1);soft(px,py,55*k,45*k,'120,62,62',.32);}
+        if(!mk.shadow){const gk=this.guy?.3:1;[px,py]=at(sx*.046,.03,.115);soft(px,py,125*k,58*k,'175,100,100',.42*gk);[px,py]=at(sx*.074,.016,.1);soft(px,py,55*k,45*k,'120,62,62',.32*gk);}
         [px,py]=at(sx*.05,-.022,.115);soft(px,py,80*k,22*k,'150,90,90',.22);}
       const [nx,ny]=at(0,-.01,.13);soft(nx,ny,18*k,60*k,'255,250,240',.18);
       for(const sx of [-1,1]){let [px,py]=at(sx*.013,-.018,.12);soft(px,py,16*k,70*k,'130,80,60',.2);[px,py]=at(sx*.011,-.036,.12);soft(px,py,16*k,12*k,'110,60,50',.28);}
@@ -1397,6 +1403,257 @@ const OUTFITS2D={
   // 🟡 Gold bangles on both wrists
   bangles(k,c){const m=k.mat(c,'metal');m.roughness=.25;for(const a of k.arms)for(let i=0;i<3;i++)beltRing(k,m,a.el,.04,.005,-.14-i*.014);},
 };
+// ---- src/14c-guy.js ----
+/* ================= GUYS ================= */
+// You can play as a girl or a guy (look.body==='guy'), picked on the welcome screen or in the closet's Face tab.
+// A guy has his own body (broader shoulders, flatter chest, slimmer hips, squarer jaw), his own hair styles and his
+// own closet. Each body keeps its own saved look in SAVE.looks, so switching back and forth never loses an outfit.
+// The clothes work like OUTFITS2D: each one is a function (kit,color) that adds its pieces to the avatar.
+const isGuy=L=>!!L&&L.body==='guy';
+const tagColor=L=>isGuy(L)?'#2f7be5':'#ff4d8d';
+
+const GUY_HAIRS=[['crop','💇‍♂️','Crew cut'],['buzz','🪒','Buzz cut'],['quiff','😎','Swoop'],['sidepart','👔','Side part'],['curltop','🌀','Curly top'],['spiky','⚡','Spiky'],['flow','🏄','Surfer flow'],['manbun','🥷','Man bun'],['afro','☁️','Afro']];
+const GUY_OUTFITS=[['suit','🤵','Sharp suit','#1f2a44'],['suit2','💼','Everyday suit','#6b7280'],['tux','🎩','Tuxedo','#1a1a1a'],['tracksuit','🏃','Tracksuit','#d62839'],['sweatsuit','🛋️','Sweatsuit','#8a8f99'],['coveralls','🔧','Mechanic coveralls','#2f4a7a'],['bballuni','🏀','Basketball uniform','#4f2d7f']];
+const GUY_TOPS=[['gtee','👕','T-shirt','#4fb6ff'],['graphictee','⚡','Graphic tee','#2d2d3a'],['polo','⛳','Polo shirt','#2e9e4f'],['buttonup','👔','Button-up shirt','#cfe3ff'],['flannelover','🍁','Flannel over tee','#c0392b'],
+  ['crewneck','🧶','Sweatshirt','#8a8f99'],['ghoodie','🧥','Hoodie','#2d2d3a'],['ziphoodie','🤐','Zip hoodie','#3a5bd9'],['quarterzip','⛷️','Quarter-zip','#1f2a44'],['puffer','❄️','Puffer jacket','#2d2d3a'],
+  ['varsity','🏈','Varsity jacket','#d62839'],['jacket','🧥','Jean jacket','#5b8fd6'],['jersey','🏀','Jersey','#4fb6ff'],['tank','🎽','Tank top','#ffffff']];
+const GUY_BOTTOMS=[['khakis','👖','Khakis','#c8b28a'],['slimjeans','👖','Tight jeans','#3a5bd9'],['baggyjeans','👖','Baggy jeans','#6f9be0'],['cargoshorts','🩳','Cargo shorts','#8a7a52'],['gymshorts','🏃','Gym shorts','#2d2d3a'],
+  ['sweats','😴','Sweatpants','#8a8f99'],['cargopants','🪖','Cargo pants','#5d6b3a'],['swimtrunks','🏖️','Swim trunks','#2fd1c5']];
+const GUY_SHOES=[['kicks','👟','Sneakers','#ffffff'],['hightops','🏀','High-tops','#d62839'],['skateshoes','🛹','Skate shoes','#2d2d3a'],['slides','🩴','Slides & socks','#2d2d3a'],['oxfords','👞','Dress shoes','#3b2416'],['loafers','🥿','Loafers','#7a4a2a'],['workboots','🥾','Work boots','#b07a3a'],['cleats','⚽','Cleats','#ff8a1f']];
+const GUY_HATS=[['cap','🧢','Ball cap','#3a5bd9'],['backcap','🔄','Backwards cap','#d62839'],['snapback','🧢','Snapback','#2d2d3a'],['beanie','🧶','Beanie','#2d2d3a'],['bucket','🪣','Bucket hat','#c8b28a'],['sweatband','🏃','Sweatband','#ffffff']];
+const GUY_EXTRAS=[['chain','⛓️','Chain','#e0b04a'],['watch','⌚','Watch','#c0c0c0'],['shades','🕶️','Sunglasses','#2d2d3a'],['glasses','👓','Glasses','#2d2d3a'],['headphones','🎧','Headphones','#2d2d3a'],['backpack','🎒','Backpack','#d62839'],
+  ['wristbands','💪','Wristbands','#ffffff'],['skateboard','🛹','Skateboard','#ff8a1f'],['scarf','🧣','Scarf','#3a5bd9'],['medal','🥇','Gold medal','#ffd23f'],['cape','🦸','Cape','#e0263b']];
+const GUY_CAT={dresses:GUY_OUTFITS,tops:GUY_TOPS,bottoms:GUY_BOTTOMS,shoes:GUY_SHOES,hats:GUY_HATS,extras:GUY_EXTRAS};
+const GUY_TABS=[['hair','💇‍♂️','Hair'],['skin','🙂','Face'],['dresses','🤵','Suits'],['tops','👕','Tops'],['bottoms','👖','Bottoms'],['shoes','👟','Shoes'],['hats','🧢','Hats'],['extras','⌚','Extras']];
+// holiday things that are made for dresses stay in the girls' closet
+const GIRL_ONLY=new Set(['ghost','elf']);
+const catOf=tab=>{if(!isGuy(SAVE.look))return CAT[tab];const base=GUY_CAT[tab]||[];
+  const hol=(CAT[tab]||[]).filter(x=>{const s=shopItem('look:'+x[0]);return s&&s.hol&&!GIRL_ONLY.has(x[0])&&!base.some(b=>b[0]===x[0]);});return base.concat(hol);};
+const hairsOf=L=>isGuy(L)?GUY_HAIRS:HAIRS;
+const tabsOf=()=>isGuy(SAVE.look)?GUY_TABS:TABS;
+const LOOK_ALL=a=>a.concat(...Object.values(GUY_CAT));
+const defaultGuyLook=(from)=>({body:'guy',style:(from&&from.style)||'glam',skin:(from&&from.skin)||'#f7cfae',eyes:(from&&from.eyes)||'#6b4a2b',hair:{id:'crop',c:'#4a2c1a'},
+  top:{id:'gtee',c:'#4fb6ff'},bottom:{id:'slimjeans',c:'#3a5bd9'},dress:null,shoes:{id:'kicks',c:'#ffffff'},hat:null,extras:{},makeup:Object.assign(defaultMakeup(),{blush:'none'})});
+// what goes on when a top or bottom replaces a full outfit
+const plainTop=L=>isGuy(L)?{id:'gtee',c:'#4fb6ff'}:{id:'tee',c:'#ff6fae'};
+const plainBottom=L=>isGuy(L)?{id:'slimjeans',c:'#3a5bd9'}:{id:'jeans',c:'#3a5bd9'};
+// switch between playing a girl and a guy; each keeps its own look (and face paint)
+function switchBody(b){const cur=isGuy(SAVE.look)?'guy':'girl';if(b===cur)return false;
+  SAVE.looks=SAVE.looks||{};SAVE.looks[cur]={look:SAVE.look,paint:SAVE.facePaint||null};
+  const nx=SAVE.looks[b];
+  SAVE.look=nx&&nx.look?nx.look:b==='guy'?defaultGuyLook(SAVE.look):Object.assign(defaultLook(),{style:SAVE.look.style||'glam',skin:SAVE.look.skin,eyes:SAVE.look.eyes,makeup:defaultMakeup()});
+  if(nx&&nx.paint)SAVE.facePaint=nx.paint;else delete SAVE.facePaint;
+  if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();
+  persist();did('body',b);return true;}
+
+/* ---------- guy hair: added on top of the short cap every hair style starts with ---------- */
+const GUY_HAIR={
+  crop({P,m,head,cap}){cap.scale.set(1.02,1.07,1.04);const t=new THREE.IcosahedronGeometry(.032,1);
+    for(let i=0;i<9;i++){const a=-1+i*.25;const s=P(t.clone(),m,head,Math.sin(a)*.09,.118+Math.cos(a*1.3)*.012,.035+Math.cos(a)*.03);s.scale.set(1.2,.45,1);}},
+  buzz({cap,m}){cap.scale.set(1.0,1.04,1.015);m.bumpScale=.08;m.sheen=.3;},
+  quiff({P,m,head,cap}){cap.scale.set(1.02,1.07,1.04);const q=P(sph(.07,20,14),m,head,0,.125,.065);q.scale.set(1.25,.62,1.05);q.rotation.x=-.45;
+    const q2=P(sph(.05,16,12),m,head,.01,.155,.05);q2.scale.set(1.3,.6,1.1);q2.rotation.x=-.7;},
+  sidepart({P,m,head,cap}){cap.scale.set(1.03,1.08,1.05);const f=P(sph(.075,20,14),m,head,-.025,.115,.06);f.scale.set(1.35,.42,1);f.rotation.z=-.25;f.rotation.x=-.3;
+    const s=P(sph(.06,16,12),m,head,.07,.1,.03);s.scale.set(.9,.5,1.1);},
+  curltop({P,m,head,cap}){cap.scale.set(1.0,1.04,1.02);const rr=new THREE.IcosahedronGeometry(.03,1);
+    for(let i=0;i<26;i++){const az=(i*2.4)%(Math.PI*2),pol=.15+(i%5)*.17;const x=Math.sin(pol)*Math.sin(az)*.13,z=Math.sin(pol)*Math.cos(az)*.13+.005,y=.1+Math.cos(pol)*.045;P(rr.clone(),m,head,x,y,z);}},
+  spiky({P,m,head,cap}){cap.scale.set(1.02,1.06,1.04);const cg=new THREE.ConeGeometry(.022,.07,8);
+    for(let i=0;i<12;i++){const az=(i*2.4)%(Math.PI*2),pol=.2+(i%4)*.2;const d=new THREE.Vector3(Math.sin(pol)*Math.sin(az),Math.cos(pol),Math.sin(pol)*Math.cos(az)+.25).normalize();
+      const s=P(cg.clone(),m,head,d.x*.13,d.y*.13+.02,d.z*.12);s.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d);}},
+  flow({P,m,head,cap,hang}){cap.scale.set(1.04,1.1,1.06);hang(.24,.04,.168,false);const f=P(sph(.07,20,14),m,head,.02,.112,.07);f.scale.set(1.4,.42,.9);f.rotation.z=-.2;},
+  manbun({P,m,head,cap}){cap.scale.set(1.03,1.08,1.05);const b=P(sph(.05,18,14),m,head,0,.135,-.105);b.scale.set(1,.85,1);P(new THREE.TorusGeometry(.03,.009,8,18),m,head,0,.11,-.1).rotation.x=Math.PI/2-.6;},
+  afro({P,m,head,cap}){cap.scale.set(1.06,1.12,1.08);const rr=new THREE.IcosahedronGeometry(.05,1);
+    for(let i=0;i<46;i++){const pol=.15+(i%7)*.24,az=((i*.618)%1)*Math.PI*2;const r=.16,x=Math.sin(pol)*Math.sin(az)*r*1.05,y=Math.cos(pol)*r*1.05+.02,z=Math.sin(pol)*Math.cos(az)*r-.025;
+      if(z>.05&&y<.09)continue;if(y<-.06)continue;P(rr.clone(),m,head,x,y,z);}},
+};
+
+/* ---------- helpers for guy clothes ---------- */
+// how far the front of the top sticks out at height y (and side position x), so trims sit right on the cloth
+const shellZ=(k,y,x=0)=>{const d=Math.max(0,Math.abs(y-.24)-.1),R2=.129*.129-d*d-(x/k.av.shellX)**2;const z=.8*Math.sqrt(Math.max(0,R2));
+  // up by the neck, stay in front of the neck
+  return y>.42&&Math.abs(x)<.056?Math.max(z,Math.sqrt(.0031-x*x)):z;};
+// a flat strip that follows the front of the top: pts are [x,y,half width] from top to bottom
+function frontStrip(k,m,pts,off=.002){const pos=[],idx=[];
+  pts.forEach(([x,y,w],i)=>{for(const s of [-1,1]){const X=x+s*w;pos.push(X,y,shellZ(k,y,X)+off);}if(i){const a=(i-1)*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();
+  m.side=THREE.DoubleSide;const o=k.P(g,m,k.spine);o.castShadow=false;return o;}
+const lineOf=(x0,y0,x1,y1,w0,w1,n=6)=>Array.from({length:n+1},(_,i)=>{const t=i/n;return [x0+(x1-x0)*t,y0+(y1-y0)*t,w0+(w1-w0)*t];});
+const isLight=c=>new THREE.Color(c).getHSL({}).l>.6;
+const trimOf=c=>isLight(c)?'#2d2d3a':'#ffffff';
+const frontDot=(k,m,y,x=0,r=.0065)=>k.P(sph(r,8,6),m,k.spine,x,y,shellZ(k,y,x)+.003);
+// a belt that goes around the waist of the pants
+const guyBelt=(k,c='#3a2a1e')=>{const b=beltRing(k,k.mat(c,'shiny'),k.hips,.142,.011,.045);b.scale.set(1,1,.8);k.P(box(.03,.022,.008),k.mat('#d9d9d9','metal'),k.hips,0,.045,.116);};
+// a crew neck, a stand collar, shirt-collar points, cuffs and a waistband
+const crewNeck=(k,m,r=.056,t=.011)=>{const o=k.P(new THREE.TorusGeometry(r,t,8,24),m,k.spine,0,.468,0);o.rotation.x=Math.PI/2;return o;};
+const shirtCollar=(k,m)=>{crewNeck(k,m,.058,.009);for(const s of [-1,1])frontStrip(k,m,lineOf(s*.012,.463,s*.045,.418,.004,.016,3),.004);};
+const cuffs=(k,m,r=.045,t=.014)=>{for(const a of k.arms)k.P(new THREE.TorusGeometry(r,t,8,20),m,a.el,0,-.19,0).rotation.x=Math.PI/2;};
+const waistband=(k,m)=>{const o=beltRing(k,m,k.spine,.098,.014,.055);o.scale.set(k.av.shellX,1,.8);};
+// pants: slim legs hug the leg; loose legs are open tubes so they hang wide
+function looseLegs(k,m,r=.088,{thigh=.46,shin=.4,hem=1.06}={}){m.side=THREE.DoubleSide;
+  for(const l of k.legs){k.P(new THREE.CylinderGeometry(r,r*1.02,thigh,28,1,true),m,l.hp,0,.02-thigh/2,0);
+    if(shin)k.P(new THREE.CylinderGeometry(r*1.02,r*hem,shin,28,1,true),m,l.kn,0,.03-shin/2,0);}}
+const sidePockets=(k,m,y,r=.088)=>{for(const l of k.legs){k.P(box(.022,.075,.07),m,l.hp,l.sx*(r+.008),y,0);k.P(box(.024,.012,.072),m,l.hp,l.sx*(r+.009),y+.04,0);}};
+const ankleCuffs=(k,m,r=.062)=>{const X=k.av.legX;for(const l of k.legs)beltRing(k,m,l.kn,r,.016,-.33-X);};
+const drawstrings=(k,y=.1)=>{const w=k.mat('#ffffff');for(const s of [-1,1]){const d=k.P(cyl(.0035,.0035,.07,6),w,k.hips,s*.018,y-.035,.12);d.rotation.z=s*.12;}};
+// plaid fabric for the flannel
+const PLAID_TEX={};
+function plaidMat(k,c){const t=PLAID_TEX[c]||(PLAID_TEX[c]=canvasTex(128,128,(x,w,h)=>{x.fillStyle=c;x.fillRect(0,0,w,h);
+  x.fillStyle='rgba(20,20,30,.45)';x.fillRect(0,40,w,26);x.fillRect(40,0,26,h);x.fillStyle='rgba(255,255,255,.25)';x.fillRect(0,96,w,6);x.fillRect(96,0,6,h);
+  x.fillStyle='rgba(20,20,30,.3)';x.fillRect(0,8,w,6);x.fillRect(8,0,6,h);},4));
+  const m=new THREE.MeshPhysicalMaterial({color:'#ffffff',map:t,roughness:.85,sheen:.6,sheenColor:new THREE.Color('#ffffff'),sheenRoughness:.5});k.av.mats.push(m);return m;}
+// a suit jacket: long sleeves, a hem over the hips, lapels and buttons. The shirt (and tie) show in the V.
+function suitJacket(k,c,{shirt='#ffffff',lapel,tie,bow,pocket}={}){const jm=k.mat(c),dk=k.mat(lapel||shadeC(c,-.18),lapel?'shiny':'fabric');
+  k.topShell(jm,'long');const hem=k.skirt(jm,.13,.152,{r0:.15,curve:1,folds:0,k:8});hem.scale.set(k.av.shellX/1.12*1.04,1,.82);
+  frontStrip(k,k.mat(shirt),lineOf(0,.462,0,.27,.036,.002,8),.003);shirtCollar(k,k.mat(shirt));
+  for(const s of [-1,1])frontStrip(k,dk,lineOf(s*.04,.452,s*.006,.262,.014,.006,8),.005);
+  const bm=k.mat(shadeC(c,-.35),'shiny');frontDot(k,bm,.22);frontDot(k,bm,.16);
+  for(const a of k.arms)k.P(new THREE.TorusGeometry(.044,.006,6,20),k.mat(shirt),a.el,0,-.2,0).rotation.x=Math.PI/2;
+  if(tie){const tm=k.mat(tie,'shiny');k.P(sph(.011,10,8),tm,k.spine,0,.447,shellZ(k,.447)+.012).scale.set(1.1,1,.6);frontStrip(k,tm,[[0,.44,.007],[0,.4,.013],[0,.3,.016],[0,.27,.016],[0,.255,.0]],.007);}
+  if(bow){const bm2=k.mat(bow,'shiny');for(const s of [-1,1]){const l=k.P(new THREE.ConeGeometry(.018,.04,12),bm2,k.spine,s*.02,.452,shellZ(k,.452)+.016);l.rotation.z=s*Math.PI/2;l.scale.z=.5;}k.P(sph(.008,8,6),bm2,k.spine,0,.452,shellZ(k,.452)+.018);}
+  if(pocket){const pm=k.mat(pocket,'shiny');k.P(box(.03,.014,.006),pm,k.spine,.072,.355,shellZ(k,.355,.072)+.004).rotation.z=.1;}
+  return jm;}
+const slacks=(k,c)=>{const m=k.mat(c);k.waist(m);k.legsShell(m,.068,true);return m;};
+// shoes
+const shoeTrim=(k,m,c)=>k.legs.forEach(l=>{for(const s of [-1,1]){const b=k.P(box(.005,.014,.085),m,l.an,s*.064,-.025,.05);b.rotation.x=-.25;}});
+
+/* ---------- the guy clothes ---------- */
+const GUY_WEAR={
+  /* suits and full outfits */
+  // 🤵 Sharp suit: slim jacket, white shirt, a tie and a pocket square
+  suit(k,c){suitJacket(k,c,{tie:isLight(c)?'#1f2a44':'#c0392b',pocket:'#ffffff'});slacks(k,c);},
+  // 💼 Everyday suit: a relaxed blazer over an open-collar shirt
+  suit2(k,c){suitJacket(k,c,{shirt:'#cfe3ff'});slacks(k,shadeC(c,-.1));},
+  // 🎩 Tuxedo: satin lapels and a bow tie
+  tux(k,c){suitJacket(k,c,{lapel:shadeC(c,-.3),bow:'#1a1a1a',pocket:'#ffffff'});const m=slacks(k,c);sideStripes(k,k.mat(shadeC(c,-.3),'shiny'),true);},
+  // 🏃 Tracksuit: shiny zip jacket and track pants with white stripes
+  tracksuit(k,c){const m=k.mat(c,'shiny'),w=k.mat(trimOf(c));k.topShell(m,'long');waistband(k,m);
+    const col=k.P(new THREE.CylinderGeometry(.06,.064,.05,24,1,true),m,k.spine,0,.48,0);col.material.side=THREE.DoubleSide;
+    frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.47,0,.03,.004,.004,10),.004);
+    for(const a of k.arms){k.P(box(.008,.17,.02),w,a.sh,a.sx*.048,-.13,0);k.P(box(.008,.15,.02),w,a.el,a.sx*.042,-.1,0);}
+    k.waist(m);k.legsShell(m,.072,true);sideStripes(k,w,true);ankleCuffs(k,m);},
+  // 🛋️ Sweatsuit: a matching hoodie and sweatpants
+  sweatsuit(k,c){GUY_WEAR.ghoodie(k,c);GUY_WEAR.sweats(k,c);},
+  // 🔧 Mechanic coveralls: one piece with a zipper, pockets, a belt and a name patch
+  coveralls(k,c){const m=k.mat(c),dk=k.mat(shadeC(c,-.25));k.topShell(m,'long');shirtCollar(k,m);k.waist(m);k.legsShell(m,.074,true);
+    frontStrip(k,k.mat('#c0c0c0','metal'),lineOf(0,.45,0,.04,.004,.004,10),.004);beltRing(k,dk,k.hips,.142,.012,.06).scale.set(1,1,.8);
+    for(const s of [-1,1])frontStrip(k,dk,lineOf(s*.07,.37,s*.07,.31,.03,.03,2),.004);
+    const nm=(k.av.name||'').slice(0,6).toUpperCase()||'ACE';const t=canvasTex(256,96,(x)=>{x.fillStyle='#ffffff';roundRect(x,4,4,248,88,40);x.fill();x.strokeStyle='#c0392b';x.lineWidth=8;x.stroke();x.fillStyle='#c0392b';x.font='bold 54px Fredoka, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(nm,128,52);});
+    const pm=new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.7});k.av.mats.push(pm);frontStrip(k,pm,[[-.07,.395,.032],[-.07,.365,.032]],.006);
+    {const g=k.av.parts[k.av.parts.length-1].geometry;g.setAttribute('uv',new THREE.Float32BufferAttribute([0,1,1,1,0,0,1,0],2));}
+    k.legs.forEach(l=>k.P(box(.022,.07,.06),dk,l.hp,l.sx*.08,-.2,0));},
+  // 🏀 Basketball uniform: a numbered tank and long shorts with stripes
+  bballuni(k,c){const m=k.mat(c),w=k.mat(trimOf(c));k.topShell(m,'strap');for(const a of k.arms){const st=k.P(box(.045,.12,.012),m,k.spine,a.sx*.07,.41,0);st.scale.z=8;}
+    frontStrip(k,w,lineOf(-.04,.44,0,.39,.005,.006,3),.003);frontStrip(k,w,lineOf(.04,.44,0,.39,.005,.006,3),.003);frontText(k,'23',trimOf(c),.27,.15);
+    GUY_WEAR.gymshorts(k,c,.36);},
+
+  /* tops */
+  // 👕 T-shirt with a crew neck and a little longer sleeves
+  gtee(k,c){const m=k.mat(c);k.topShell(m,'short');for(const a of k.arms)k.P(capTop(.052,.04),m,a.sh,0,-.04,0);crewNeck(k,m);},
+  // ⚡ Graphic tee
+  graphictee(k,c){GUY_WEAR.gtee(k,c);const t=canvasTex(128,128,(x)=>{x.font='88px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('⚡',64,70);});
+    const dm=new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.7,depthWrite:false});k.av.mats.push(dm);k.P(new THREE.PlaneGeometry(.13,.13),dm,k.spine,0,.28,.107).castShadow=false;},
+  // ⛳ Polo: collar points, a button placket and a tiny logo
+  polo(k,c){const m=k.mat(c);k.topShell(m,'short');shirtCollar(k,k.mat(c));frontStrip(k,k.mat(shadeC(c,-.08)),lineOf(0,.46,0,.36,.012,.012,4),.003);
+    const bm=k.mat('#ffffff','shiny');frontDot(k,bm,.42,0,.005);frontDot(k,bm,.38,0,.005);frontDot(k,k.mat(trimOf(c),'shiny'),.37,.075,.008);},
+  // 👔 Button-up: collar, buttons down the front and cuffs
+  buttonup(k,c){const m=k.mat(c);k.topShell(m,'long');shirtCollar(k,m);const bm=k.mat('#ffffff','shiny');[.43,.37,.31,.25,.19,.13].forEach(y=>frontDot(k,bm,y,0,.0045));cuffs(k,m,.043,.01);
+    frontStrip(k,k.mat(shadeC(c,-.1)),lineOf(0,.45,0,.08,.0015,.0015,8),.0035);},
+  // 🍁 Flannel shirt worn open over a white tee
+  flannelover(k,c){const m=plaidMat(k,c);k.topShell(m,'long');frontStrip(k,k.mat('#ffffff'),lineOf(0,.462,0,.03,.03,.034,10),.003);crewNeck(k,k.mat('#ffffff'),.054,.008);
+    for(const s of [-1,1])frontStrip(k,k.mat(shadeC(c,-.2)),lineOf(s*.034,.462,s*.038,.03,.004,.004,10),.004);cuffs(k,m,.043,.012);},
+  // 🧶 Crewneck sweatshirt with ribbed neck, cuffs and waistband, and your first letter on the chest
+  crewneck(k,c){const m=k.mat(c),rib=k.mat(shadeC(c,-.12));k.topShell(m,'long');crewNeck(k,rib,.056,.013);cuffs(k,rib);waistband(k,rib);
+    frontText(k,((k.av.name||'B').trim()[0]||'B').toUpperCase(),trimOf(c),.3,.12);},
+  // 🧥 Hoodie: hood, front pocket and drawstrings
+  ghoodie(k,c){const m=k.mat(c),rib=k.mat(shadeC(c,-.12));k.topShell(m,'long');k.P(sph(.1,16,12,0,Math.PI*2,0,Math.PI*.6),m,k.spine,0,.44,-.07).rotation.x=-1.9;
+    frontStrip(k,rib,lineOf(0,.2,0,.09,.06,.075,3),.006);cuffs(k,rib);waistband(k,rib);
+    const w=k.mat('#ffffff');for(const s of [-1,1])frontStrip(k,w,lineOf(s*.022,.45,s*.024,.36,.0035,.0035,3),.005);},
+  // 🤐 Zip hoodie: a hoodie with a zipper all the way down
+  ziphoodie(k,c){GUY_WEAR.ghoodie(k,c);frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.46,0,.03,.004,.004,10),.008);},
+  // ⛷️ Quarter-zip: a stand-up collar with a short zipper
+  quarterzip(k,c){const m=k.mat(c);k.topShell(m,'long');const col=k.P(new THREE.CylinderGeometry(.058,.064,.055,24,1,true),m,k.spine,0,.485,0);col.material.side=THREE.DoubleSide;
+    frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.47,0,.34,.004,.004,5),.004);k.P(box(.008,.02,.004),k.mat('#d9d9d9','metal'),k.spine,.006,.33,shellZ(k,.33)+.008);cuffs(k,m,.044,.01);waistband(k,m);},
+  // ❄️ Puffer jacket: puffy stitched rings, a tall collar and puffy sleeves
+  puffer(k,c){const m=k.mat(c,'shiny');const b=k.P(new THREE.CapsuleGeometry(.14,.2,6,24),m,k.spine,0,.24,0);b.scale.set(k.av.shellX*1.02,1,.86);
+    for(const y of [.16,.24,.32]){const r=k.P(new THREE.TorusGeometry(.14,.02,8,32),m,k.spine,0,y,0);r.rotation.x=Math.PI/2;r.scale.set(k.av.shellX*1.03,.88,1);}
+    const col=k.P(new THREE.CylinderGeometry(.066,.075,.07,24,1,true),m,k.spine,0,.48,0);col.material.side=THREE.DoubleSide;
+    for(const a of k.arms){k.P(capTop(.06,.17),m,a.sh);k.P(capTop(.054,.15),m,a.el);k.P(new THREE.TorusGeometry(.058,.016,8,20),m,a.sh,0,-.13,0).rotation.x=Math.PI/2;k.P(new THREE.TorusGeometry(.052,.015,8,20),m,a.el,0,-.1,0).rotation.x=Math.PI/2;}
+    const hem=k.skirt(m,.1,.158,{r0:.152,curve:1,folds:0,k:8});hem.scale.set(k.av.shellX/1.12*1.05,1,.84);
+    frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.5,0,.0,.004,.004,10),.02);},
+
+  /* bottoms */
+  // 👖 Khakis with a belt
+  khakis(k,c){const m=k.mat(c);k.waist(m);k.legsShell(m,.07,true);guyBelt(k);},
+  // 👖 Tight jeans
+  slimjeans(k,c){const m=k.mat(c,'denim');k.waist(m);k.legsShell(m,.066,true);guyBelt(k);},
+  // 👖 Baggy jeans: wide legs that stack over the shoes
+  baggyjeans(k,c){const m=k.mat(c,'denim');k.waist(m);looseLegs(k,m,.09,{hem:1.08});guyBelt(k,'#1a1a1a');},
+  // 🩳 Cargo shorts down to the knee, with big side pockets
+  cargoshorts(k,c){const m=k.mat(c);k.waist(m);looseLegs(k,m,.086,{thigh:.44,shin:0});sidePockets(k,k.mat(shadeC(c,-.1)),-.24,.086);guyBelt(k);},
+  // 🏃 Gym shorts with a stripe down the side
+  gymshorts(k,c,len=.27){const m=k.mat(c);k.waist(m);looseLegs(k,m,.088,{thigh:len,shin:0});const w=k.mat(trimOf(c));
+    for(const l of k.legs){k.P(box(.008,len,.02),w,l.hp,l.sx*.09,.02-len/2,0);beltRing(k,w,l.hp,.089,.005,.02-len+.006);}drawstrings(k);},
+  // 😴 Sweatpants with cuffs at the ankles
+  sweats(k,c){const m=k.mat(c);k.waist(m);k.legsShell(m,.078,true);ankleCuffs(k,k.mat(shadeC(c,-.1)),.064);drawstrings(k);},
+  // 🪖 Cargo pants: loose legs with pockets on the thighs
+  cargopants(k,c){const m=k.mat(c);k.waist(m);looseLegs(k,m,.084,{hem:.84});sidePockets(k,k.mat(shadeC(c,-.12)),-.24,.084);guyBelt(k,'#1a1a1a');},
+  // 🏖️ Swim trunks with a leaf print
+  swimtrunks(k,c){const m=printMat(k,c,'leaves');k.waist(m);m.side=THREE.DoubleSide;for(const l of k.legs)k.P(new THREE.CylinderGeometry(.086,.09,.3,28,1,true),m,l.hp,0,.02-.15,0);drawstrings(k);},
+
+  /* shoes */
+  // 👟 Sneakers: chunky white soles and a stripe on the side
+  kicks(k,c){const m=k.mat(c);shoeShell(k,m,.88,1.05);solePad(k,k.mat(isLight(c)?'#f2f2f2':'#ffffff','shiny'),.036,.118,.235);shoeTrim(k,k.mat(isLight(c)?'#3a5bd9':'#ffffff','shiny'));
+    k.legs.forEach(l=>{for(let i=0;i<3;i++)k.P(box(.036,.005,.006),k.mat('#ffffff'),l.an,0,.012+i*.016,.095-i*.012);});},
+  // 🛹 Skate shoes: flat and wide with a gum sole
+  skateshoes(k,c){const m=k.mat(c);shoeShell(k,m,.82,1.07);solePad(k,k.mat('#f4f1e8'),.03,.12,.24);shoeTrim(k,k.mat('#ffffff'));},
+  // 🩴 Slides with white socks
+  slides(k,c){const w=k.mat('#ffffff');shoeShell(k,w,.78,.98);bootLeg(k,w,.05,.12);const m=k.mat(c,'shiny');
+    k.legs.forEach(l=>{k.P(new RoundedBoxGeometry(.115,.024,.235,2,.008),m,l.an,0,-.05,.045);k.P(new RoundedBoxGeometry(.13,.045,.095,2,.016),m,l.an,0,-.02,.075);});},
+  // 👞 Dress shoes: polished with a thin dark sole
+  oxfords(k,c){const m=k.mat(c,'shiny');m.clearcoat=1;shoeShell(k,m,.72,1.02);solePad(k,k.mat('#1a1a1a','shiny'),.016,.11,.23);
+    k.legs.forEach(l=>k.P(box(.03,.004,.03),k.mat(shadeC(c,-.3)),l.an,0,.012,.085));},
+  // 🥿 Loafers: low with a strap across the top
+  loafers(k,c){const m=k.mat(c,'shiny');shoeShell(k,m,.64,1.02);solePad(k,k.mat('#2a1a10','shiny'),.014,.11,.23);k.legs.forEach(l=>k.P(box(.08,.008,.02),k.mat(shadeC(c,-.25),'shiny'),l.an,0,.006,.085));},
+  // 🥾 Work boots: tall, laced, with a thick sole
+  workboots(k,c){const m=k.mat(c);shoeShell(k,m,.95,1.08);bootLeg(k,m,.064,.13);solePad(k,k.mat('#3a2a1e','shiny'),.04,.122,.24);
+    const lm=k.mat(shadeC(c,-.4));k.legs.forEach(l=>{for(let i=0;i<4;i++)k.P(box(.04,.005,.006),lm,l.an,0,.0+i*.02,.1-i*.013);beltRing(k,k.mat(shadeC(c,-.15)),l.kn,.066,.012,-.41-k.av.legX+.13);});},
+
+  /* hats */
+  // 🔄 Backwards cap
+  backcap(k,c){const m=k.mat(c);k.P(new THREE.SphereGeometry(.146,28,14,0,Math.PI*2,0,Math.PI/2),m,k.head,0,.025,-.005).scale.set(1.02,.9,1.04);
+    const b=k.P(cyl(.1,.1,.012,24),m,k.head,0,.045,-.15);b.scale.z=.9;b.rotation.x=-.2;k.P(sph(.012,8,6),m,k.head,0,.158,-.005);},
+  // 🧢 Snapback: a taller crown and a flat brim
+  snapback(k,c){const m=k.mat(c);k.P(new THREE.SphereGeometry(.15,28,14,0,Math.PI*2,0,Math.PI/2),m,k.head,0,.025,-.005).scale.set(1.02,1,1.04);
+    const b=k.P(cyl(.11,.11,.012,24),m,k.head,0,.045,.15);b.scale.z=.85;k.P(sph(.012,8,6),m,k.head,0,.175,-.005);frontText(Object.assign({},k,{spine:k.head}),'★',trimOf(c),.1,.07);
+    const lt=k.av.parts[k.av.parts.length-1];lt.position.z=.148;lt.rotation.x=-.25;},
+  // 🪣 Bucket hat: a soft crown with a brim that slopes down all around
+  bucket(k,c){const m=k.mat(c);m.side=THREE.DoubleSide;k.P(new THREE.CylinderGeometry(.13,.152,.1,32,1,false),m,k.head,0,.12,-.005);k.P(new THREE.CylinderGeometry(.152,.215,.05,32,1,true),m,k.head,0,.05,-.005);
+    beltRing(k,k.mat(shadeC(c,-.2)),k.head,.15,.008,.075);},
+
+  /* extras */
+  // ⛓️ Chain necklace
+  chain(k,c){const m=k.mat(c,'metal'),g=new THREE.TorusGeometry(.0085,.0028,6,12);
+    for(let i=0;i<26;i++){const a=i/26*Math.PI*2;const o=k.P(g.clone(),m,k.spine,Math.sin(a)*.075,.452-Math.max(0,Math.cos(a))*.06,Math.cos(a)*.066+(Math.cos(a)>0?.012:0));o.rotation.y=a;if(i%2)o.rotation.x=Math.PI/2;o.castShadow=false;}},
+  // ⌚ Watch on the left wrist
+  watch(k,c){const a=k.arms[1],m=k.mat(c,'metal');k.P(new THREE.TorusGeometry(.037,.008,8,20),k.mat('#2d2d3a','shiny'),a.el,0,-.2,0).rotation.x=Math.PI/2;
+    const f=k.P(cyl(.016,.016,.01,20),m,a.el,a.sx*.04,-.2,0);f.rotation.z=Math.PI/2;const gl=k.P(cyl(.012,.012,.004,20),k.mat('#cfefff','glass'),a.el,a.sx*.046,-.2,0);gl.rotation.z=Math.PI/2;},
+  // 🕶️ Sunglasses
+  shades(k,c){const m=k.mat(c,'shiny'),lens=k.mat('#1a1a2a','shiny');lens.metalness=.6;lens.roughness=.05;
+    for(const s of [-1,1]){k.P(new RoundedBoxGeometry(.05,.03,.006,2,.008),lens,k.head,s*.045,.008,.135);const arm=k.P(box(.005,.005,.13),m,k.head,s*.08,.012,.07);}
+    k.P(box(.12,.007,.007),m,k.head,0,.024,.136);},
+  // 🎧 Headphones over the ears
+  headphones(k,c){const m=k.mat(c,'shiny');const b=k.P(new THREE.TorusGeometry(.15,.011,8,32,Math.PI),m,k.head,0,.02,-.01);
+    for(const s of [-1,1]){const cup=k.P(cyl(.042,.042,.03,24),m,k.head,s*.14,.0,-.01);cup.rotation.z=Math.PI/2;const pad=k.P(cyl(.036,.036,.012,24),k.mat('#2d2d3a'),k.head,s*.122,.0,-.01);pad.rotation.z=Math.PI/2;}},
+  // 🎒 Backpack with straps over the shoulders
+  backpack(k,c){const m=k.mat(c),dk=k.mat(shadeC(c,-.2));k.P(new RoundedBoxGeometry(.22,.27,.1,3,.03),m,k.spine,0,.26,-.155);k.P(new RoundedBoxGeometry(.16,.1,.04,3,.015),dk,k.spine,0,.18,-.21);
+    for(const s of [-1,1]){frontStrip(k,dk,lineOf(s*.075,.45,s*.085,.2,.012,.012,6),.006);const t=k.P(new THREE.TorusGeometry(.04,.012,6,16,Math.PI),dk,k.spine,s*.08,.45,-.03);t.rotation.y=Math.PI/2;}},
+  // 💪 Wristbands on both wrists
+  wristbands(k,c){const m=k.mat(c);for(const a of k.arms){const w=k.P(new THREE.CylinderGeometry(.042,.042,.04,20),m,a.el,0,-.19,0);}},
+  // 🛹 Skateboard carried in the right hand
+  skateboard(k,c){const a=k.arms[0];const g=new THREE.Group();g.position.set(a.sx*.03,-.06,0);g.rotation.z=a.sx*.08;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
+    k.P(new RoundedBoxGeometry(.014,.62,.18,2,.006),k.mat(c,'shiny'),g,0,0,0);k.P(new RoundedBoxGeometry(.004,.6,.17,2,.002),k.mat('#2d2d3a'),g,-a.sx*.009,0,0);
+    const wm=k.mat('#ffd23f','shiny');for(const y of [-.21,.21])for(const z of [-.06,.06]){const w=k.P(cyl(.022,.022,.02,12),wm,g,a.sx*.03,y,z);w.rotation.z=Math.PI/2;}},
+};
 // ---- src/15-player-friends-townspeople.js ----
 /* ================= PLAYER ================= */
 if(!SAVE.look)SAVE.look=defaultLook();
@@ -1404,7 +1661,7 @@ if(!SAVE.name)SAVE.name='';
 const player={pos:new THREE.Vector3(0,.15,2.6),vy:0,face:Math.PI,onGround:true,speed:0};
 if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();if(!SAVE.look.style)SAVE.look.style='glam';
 function loadPaint(a){if(!SAVE.facePaint||!a.paintCv)return;const im=new Image();im.onload=()=>{a.paintCv.getContext('2d').drawImage(im,0,0);a.renderFace();};im.src=SAVE.facePaint;}
-let av=new Avatar(SAVE.look,SAVE.name||'Brynny','#ff4d8d',true);scene.add(av.g);loadPaint(av);
+let av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
 const cam={yaw:0,pitch:.3,dist:5.2,cy:0,cp:.3,cd:5.2,closetYaw:0,vo:0,mode:'play',ty:new THREE.Vector3()};
 cam.yaw=0;// camera on +z side, so walking "up" heads toward the plaza center first
 cam.cy=cam.yaw;
@@ -1426,7 +1683,7 @@ const TOWN=[
   {n:'Nora',home:'christmas',em:'⛄',hi:['Brrr! Hi there! ❄️','Hello! Want some hot cocoa? ☕'],chat:['I built that snowman all by myself! ⛄','Snowflakes are all different, just like people ❄️','I always leave cookies for Santa 🍪','Ice skating makes me feel like a princess ⛸️'],qs:['twirl','visit:halloween','pet']},
   {n:'Kiki',home:'studio',em:'👗',hi:['Ooh, let me see your outfit! 👀','Hi bestie! 💕'],chat:['Have you tried the mirrors? Mirror selfies are the best 🪞','I change my outfit like five times a day 😂','Accessories make the outfit! 👜','Glitter is basically a personality ✨'],qs:['wings','photo','shoes']},
 ];
-const LOOK_NAME=(arr,id)=>{const a=arr.find(x=>x[0]===id);return a?[a[2],a[1]]:null;};
+const LOOK_NAME=(arr,id)=>{const a=LOOK_ALL(arr).find(x=>x[0]===id);return a?[a[2],a[1]]:null;};
 const QUESTS={
   hat:{ask:'Can you put on a cute hat and come show me? 👒',hint:'Go to the 👗 Dress up circle in the Sparkle Studio and pick something from Hats.',check:()=>!!SAVE.look.hat},
   dress:{ask:'Will you wear a fancy dress and come back to show me? 👗',hint:'Go to the 👗 Dress up circle in the Sparkle Studio and pick a dress.',check:()=>!!SAVE.look.dress},
@@ -1886,11 +2143,11 @@ let ctab='dresses',lastExtra=null,czoom='body';
 const MK_SHADOW=['#ff6fae','#ffb3d1','#b388ff','#8e6cff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#d4af37','#c0c0c0','#ff8a1f','#8a5a3b','#2d2d3a'];
 const MK_LIPS=['#ff3b6b','#e0263b','#c2185b','#ff6fae','#ffb3d1','#e89aa0','#b5655b','#8e2b5b','#ff8a1f','#8e6cff','#4fb6ff','#2d2d3a'];
 const MK_BRUSH=['#2b1d16','#000000','#ffffff','#ff3b6b','#c2185b','#ff6fae','#b388ff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#d4af37','#c0c0c0','#8a5a3b'];
-function renderCloset(){const L=SAVE.look;
-  $('#tabs').innerHTML=(glamOpen?GTABS:TABS).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
+function renderCloset(){const L=SAVE.look;if(!glamOpen&&!tabsOf().some(t=>t[0]===ctab))ctab=isGuy(L)?'tops':'dresses';
+  $('#tabs').innerHTML=(glamOpen?GTABS:tabsOf()).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';const sw=(list,cur,kind)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
   const gh=glamOpen&&glamHTML();if(gh)h=gh;
-  else if(ctab==='hair'){h+=`<h3>Hair style</h3><div class="grid">${HAIRS.map(([id,ico,n])=>`<button class="item${L.hair.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div><h3>Hair color</h3>`+sw(myColors(HAIRC),L.hair.c,'hair');}
+  else if(ctab==='hair'){h+=`<h3>Hair style</h3><div class="grid">${hairsOf(L).map(([id,ico,n])=>`<button class="item${L.hair.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div><h3>Hair color</h3>`+sw(myColors(HAIRC),L.hair.c,'hair');}
   else if(ctab==='makeup'){const mk=L.makeup;const swn=(list,cur,kind)=>`<div class="swatches"><button class="sw none${!cur?' on':''}" data-sw="${kind}" data-c="" aria-label="none">🚫</button>${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}"></button>`).join('')}</div>`;
     const ch=(key,opts)=>`<div class="chips">${opts.map(([v,n])=>`<button class="${String(mk[key])===String(v)?'on':''}" data-mk="${key}" data-v="${v}">${n}</button>`).join('')}</div>`;
     h+=`<div class="zoomrow">${[['eyes','👁️ Eyes'],['lips','👄 Lips'],['face','🙂 Face']].map(([z,n])=>`<button class="${czoom===z?'on':''}" data-zoom="${z}">${n}</button>`).join('')}</div>
@@ -1905,15 +2162,15 @@ function renderCloset(){const L=SAVE.look;
       `<h3>Lip liner</h3>`+swn(MK_LIPS,mk.lipLiner,'lipLiner')+
       `<h3>Lip gloss</h3>`+ch('gloss',[[false,'Matte'],[true,'Shiny gloss']])+
       `<h3>🌸 Blush</h3>`+ch('blush',[['none','None'],['pink','Pink'],['peach','Peach'],['rose','Rose']]);}
-  else if(ctab==='skin'){h+=`<h3>Look style</h3><div class="grid">${[['glam','💃','Glam girl'],['cute','🧸','Cute cartoon']].map(([v,e,n])=>`<button class="item${(L.style||'glam')===v?' on':''}" data-style="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`+((L.style||'glam')!=='cute'?FACEOPT.map(([k,t,opts])=>`<h3>${t}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${((L.face||{})[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join(''):'')+`<h3>Skin tone</h3>`+sw(SKIN,L.skin,'skin')+`<h3>Eye color</h3>`+sw(EYES,L.eyes,'eyes');}
-  else{const list=CAT[ctab],k=KEY[ctab];
+  else if(ctab==='skin'){const G=isGuy(L);h+=`<h3>Girl or guy</h3><div class="grid">${[['girl','👧','Girl'],['guy','👦','Guy']].map(([v,e,n])=>`<button class="item${(G?'guy':'girl')===v?' on':''}" data-body="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><h3>Look style</h3><div class="grid">${[['glam',G?'😎':'💃',G?'Real guy':'Glam girl'],['cute','🧸','Cute cartoon']].map(([v,e,n])=>`<button class="item${(L.style||'glam')===v?' on':''}" data-style="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`+((L.style||'glam')!=='cute'?FACEOPT.filter(o=>!G||o[0]!=='lips').map(([k,t,opts])=>`<h3>${t}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${((L.face||{})[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join(''):'')+`<h3>Skin tone</h3>`+sw(SKIN,L.skin,'skin')+`<h3>Eye color</h3>`+sw(EYES,L.eyes,'eyes');}
+  else{const list=catOf(ctab),k=KEY[ctab];
     if(ctab==='extras'){h+=`<h3>Tap to add or take off</h3><div class="grid">${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${L.extras[id]?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
       if(lastExtra&&L.extras[lastExtra])h+=`<h3>Color</h3>`+sw(myColors(COLORS),L.extras[lastExtra],'item');}
     else{const cur=L[k];const none=ctab!=='shoes'&&ctab!=='dresses'?`<button class="item${!cur?' on':''}" data-item=""><b>🚫</b><span>None</span></button>`:'';
       h+=`<div class="grid">${none}${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
       if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
   $('#ccontent').innerHTML=h;}
-function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny','#ff4d8d',true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;}
+function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
 $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
@@ -1921,6 +2178,7 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
   if(b.dataset.lock){askBuy(b.dataset.lock);return;}
   if(b.dataset.hair){L.hair.id=b.dataset.hair;return changed();}
   if(b.dataset.face){const [k,v]=b.dataset.face.split(':');L.face=Object.assign({},L.face,{[k]:v});persist();rebuildPlayer();if(glamOpen)glamSeat(false);sfx('pop');renderCloset();return;}
+  if(b.dataset.body){if(switchBody(b.dataset.body)){rebuildPlayer();sfx('tada');wsRender();}renderCloset();return;}
   if(b.dataset.style){if(L.style!==b.dataset.style){L.style=b.dataset.style;persist();rebuildPlayer();sfx('pop');}renderCloset();return;}
   if(b.dataset.zoom){setZoom(b.dataset.zoom);if(b.dataset.zoom==='lips'){brush.c=L.makeup.lips||'#c2185b';brush.size='thin';brush.erase=false;}if(b.dataset.zoom==='eyes'){brush.c='#2b1d16';brush.size='thin';brush.erase=false;}renderCloset();return;}
   if(b.dataset.brush){const v=b.dataset.brush,x=av.paintCv.getContext('2d');
@@ -1932,10 +2190,10 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
   if(['shadow','lips','lipLiner','linerC'].includes(b.dataset.sw)){L.makeup[b.dataset.sw]=b.dataset.c||null;if(b.dataset.sw==='linerC'&&L.makeup.liner==='none')L.makeup.liner='thin';return changed();}
   if(b.dataset.sw){const c=b.dataset.c,k=b.dataset.sw;if(k==='hair')L.hair.c=c;else if(k==='skin')L.skin=c;else if(k==='eyes')L.eyes=c;
     else if(ctab==='extras'){if(lastExtra)L.extras[lastExtra]=c;}else{const cur=L[KEY[ctab]];if(cur)cur.c=c;}return changed();}
-  if('item' in b.dataset){const id=b.dataset.item;const list=CAT[ctab];const it=list.find(x=>x[0]===id);
+  if('item' in b.dataset){const id=b.dataset.item;const list=catOf(ctab);const it=list.find(x=>x[0]===id);
     if(ctab==='extras'){if(L.extras[id]){delete L.extras[id];lastExtra=null;}else{L.extras[id]=it[3];lastExtra=id;}return changed();}
     const k=KEY[ctab];if(!id){L[k]=null;}else{const prev=L[k];L[k]={id,c:prev&&prev.id===id?prev.c:(prev&&ctab!=='dresses'&&ctab!=='hats'?prev.c:it[3])};if(prev&&prev.id===id)L[k].c=prev.c;else L[k].c=it[3];}
-    if(ctab==='dresses'&&id){L.top=null;L.bottom=null;}if((ctab==='tops'||ctab==='bottoms')&&id){if(L.dress){L.dress=null;if(ctab==='tops'&&!L.bottom)L.bottom={id:'jeans',c:'#3a5bd9'};if(ctab==='bottoms'&&!L.top)L.top={id:'tee',c:'#ff6fae'};}}
+    if(ctab==='dresses'&&id){L.top=null;L.bottom=null;}if((ctab==='tops'||ctab==='bottoms')&&id){if(L.dress){L.dress=null;if(ctab==='tops'&&!L.bottom)L.bottom=plainBottom(L);if(ctab==='bottoms'&&!L.top)L.top=plainTop(L);}}
     return changed();}};
 function openCloset(){if(closetOpen)return;closeTalk();closetOpen=true;Z.studio.padLbl.visible=false;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');document.body.classList.add('dressing');renderCloset();$('#closet').classList.add('show');player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}
 function closeCloset(){if(glamOpen){closeGlam();return;}closetOpen=false;Z.studio.padLbl.visible=true;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();did('dress');}
@@ -3152,7 +3410,7 @@ function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;S
   refreshOpen();}
 function wearIt(k){const [kind,id]=k.split(':');
   if(kind==='look'){const L=SAVE.look,f=a=>a.find(x=>x[0]===id),d=f(DRESSES),h=f(HATS),t=f(TOPS);
-    if(d){L.dress={id,c:d[3]};L.top=L.bottom=null;}else if(h)L.hat={id,c:h[3]};else if(t){L.top={id,c:t[3]};L.dress=null;if(!L.bottom)L.bottom={id:'jeans',c:'#3a5bd9'};}
+    if(d){L.dress={id,c:d[3]};L.top=L.bottom=null;}else if(h)L.hat={id,c:h[3]};else if(t){L.top={id,c:t[3]};L.dress=null;if(!L.bottom)L.bottom=plainBottom(L);}
     else{const it=f(EXTRAS);L.extras[id]=L.extras[id]||it[3];if(!closetOpen||ctab==='extras')lastExtra=id;}
     av.dress(L);persist();av.play('twirl');}
   if(kind==='pet'){const pt=pPet||myPet();if(!pt){toast('Adopt a pet first, then they can wear it! 🐾');return;}const c=petCare(pt),it=PHATS.find(x=>x[0]===id);c.fit.hat={id,c:it[3]};dressPet(pt);persist();pt.happy=2;pt.speak('So fancy! 💖');}
@@ -3193,10 +3451,14 @@ window.__shop={earn,openShop,closeShop,buy,askBuy,SHOP};
 
 /* welcome */
 $('#wname').value=SAVE.name||'';
-const wsRender=()=>document.querySelectorAll('[data-ws]').forEach(b=>b.classList.toggle('on',b.dataset.ws===(SAVE.look.style||'glam')));wsRender();
-document.querySelector('.wstyle').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
+// girl or guy, and the look style (the glam button says Glam girl or Real guy)
+const wsRender=()=>{const G=isGuy(SAVE.look);document.querySelectorAll('[data-ws]').forEach(b=>b.classList.toggle('on',b.dataset.ws===(SAVE.look.style||'glam')));
+  document.querySelectorAll('[data-wb]').forEach(b=>b.classList.toggle('on',b.dataset.wb===(G?'guy':'girl')));
+  const gb=document.querySelector('[data-ws="glam"]');if(gb)gb.innerHTML=G?'😎<span>Real guy</span>':'💃<span>Glam girl</span>';};wsRender();
+document.querySelector('.wbody').onclick=e=>{const b=e.target.closest('[data-wb]');if(!b)return;if(switchBody(b.dataset.wb)){rebuildPlayer();sfx('pop');}wsRender();};
+document.querySelector('.wstyle:not(.wbody)').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
 $('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);
-  scene.remove(av.g);av=new Avatar(SAVE.look,n,'#ff4d8d',true);scene.add(av.g);loadPaint(av);
+  scene.remove(av.g);av=new Avatar(SAVE.look,n,tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
   curTrack='sparkle-room';startMusic();
   banner('✨ Sparkle Studio');setTimeout(()=>toast('Find all 24 stars! ⭐'),2000);};
@@ -3371,7 +3633,7 @@ function hairHTML(){const H=SAVE.look.hair,t=HTOOLS.find(x=>x[0]===hTool);
   h+=`<div class="hmeters">${meter('Length',((H.len||1)-.35)/.95)}${meter('Curls',H.curl||0)}${meter('Volume',H.vol||0)}</div>`;
   if(hTool==='spray')h+=`<h3>Spray color</h3><div class="swatches">${myColors(HAIRC.concat(['#ffd23f','#7ee081','#ff3b6b'])).map(c=>`<button class="sw${c===sprayC?' on':''}" style="background:${c}" data-spray="${c}"></button>`).join('')}</div>`;
   if(hTool==='clip')h+=`<h3>Clip color</h3><div class="swatches">${['#ff6fae','#ffd23f','#4fb6ff','#b388ff','#ffffff','#7ee081','#d4af37'].map(c=>`<button class="sw${c===clipC?' on':''}" style="background:${c}" data-clipc="${c}"></button>`).join('')}</div><div class="chips" style="margin-top:8px"><button data-hreset="clips">🧹 Take clips off</button></div>`;
-  h+=`<h3>Quick styles</h3><div class="grid">${HAIRS.map(([id,ico,n])=>`<button class="item${H.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>
+  h+=`<h3>Quick styles</h3><div class="grid">${hairsOf(SAVE.look).map(([id,ico,n])=>`<button class="item${H.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>
     <div class="chips" style="margin-top:10px"><button data-hreset="all">↩️ Wash out (reset length, curls, volume)</button></div>`;
   return h;}
 function makeupHTML(){const mk=SAVE.look.makeup,t=MTOOLS.find(x=>x[0]===mTool),cols=MKC[mTool];

@@ -4,7 +4,7 @@ if(!SAVE.name)SAVE.name='';
 const player={pos:new THREE.Vector3(0,.15,2.6),vy:0,face:Math.PI,onGround:true,speed:0};
 if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();if(!SAVE.look.style)SAVE.look.style='glam';
 function loadPaint(a){if(!SAVE.facePaint||!a.paintCv)return;const im=new Image();im.onload=()=>{a.paintCv.getContext('2d').drawImage(im,0,0);a.renderFace();};im.src=SAVE.facePaint;}
-let av=new Avatar(SAVE.look,SAVE.name||'Brynny','#ff4d8d',true);scene.add(av.g);loadPaint(av);
+let av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
 const cam={yaw:0,pitch:.3,dist:5.2,cy:0,cp:.3,cd:5.2,closetYaw:0,vo:0,mode:'play',ty:new THREE.Vector3()};
 cam.yaw=0;// camera on +z side, so walking "up" heads toward the plaza center first
 cam.cy=cam.yaw;
@@ -26,7 +26,7 @@ const TOWN=[
   {n:'Nora',home:'christmas',em:'⛄',hi:['Brrr! Hi there! ❄️','Hello! Want some hot cocoa? ☕'],chat:['I built that snowman all by myself! ⛄','Snowflakes are all different, just like people ❄️','I always leave cookies for Santa 🍪','Ice skating makes me feel like a princess ⛸️'],qs:['twirl','visit:halloween','pet']},
   {n:'Kiki',home:'studio',em:'👗',hi:['Ooh, let me see your outfit! 👀','Hi bestie! 💕'],chat:['Have you tried the mirrors? Mirror selfies are the best 🪞','I change my outfit like five times a day 😂','Accessories make the outfit! 👜','Glitter is basically a personality ✨'],qs:['wings','photo','shoes']},
 ];
-const LOOK_NAME=(arr,id)=>{const a=arr.find(x=>x[0]===id);return a?[a[2],a[1]]:null;};
+const LOOK_NAME=(arr,id)=>{const a=LOOK_ALL(arr).find(x=>x[0]===id);return a?[a[2],a[1]]:null;};
 const QUESTS={
   hat:{ask:'Can you put on a cute hat and come show me? 👒',hint:'Go to the 👗 Dress up circle in the Sparkle Studio and pick something from Hats.',check:()=>!!SAVE.look.hat},
   dress:{ask:'Will you wear a fancy dress and come back to show me? 👗',hint:'Go to the 👗 Dress up circle in the Sparkle Studio and pick a dress.',check:()=>!!SAVE.look.dress},

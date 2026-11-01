@@ -43,7 +43,7 @@ function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;S
   refreshOpen();}
 function wearIt(k){const [kind,id]=k.split(':');
   if(kind==='look'){const L=SAVE.look,f=a=>a.find(x=>x[0]===id),d=f(DRESSES),h=f(HATS),t=f(TOPS);
-    if(d){L.dress={id,c:d[3]};L.top=L.bottom=null;}else if(h)L.hat={id,c:h[3]};else if(t){L.top={id,c:t[3]};L.dress=null;if(!L.bottom)L.bottom={id:'jeans',c:'#3a5bd9'};}
+    if(d){L.dress={id,c:d[3]};L.top=L.bottom=null;}else if(h)L.hat={id,c:h[3]};else if(t){L.top={id,c:t[3]};L.dress=null;if(!L.bottom)L.bottom=plainBottom(L);}
     else{const it=f(EXTRAS);L.extras[id]=L.extras[id]||it[3];if(!closetOpen||ctab==='extras')lastExtra=id;}
     av.dress(L);persist();av.play('twirl');}
   if(kind==='pet'){const pt=pPet||myPet();if(!pt){toast('Adopt a pet first, then they can wear it! 🐾');return;}const c=petCare(pt),it=PHATS.find(x=>x[0]===id);c.fit.hat={id,c:it[3]};dressPet(pt);persist();pt.happy=2;pt.speak('So fancy! 💖');}
@@ -84,10 +84,14 @@ window.__shop={earn,openShop,closeShop,buy,askBuy,SHOP};
 
 /* welcome */
 $('#wname').value=SAVE.name||'';
-const wsRender=()=>document.querySelectorAll('[data-ws]').forEach(b=>b.classList.toggle('on',b.dataset.ws===(SAVE.look.style||'glam')));wsRender();
-document.querySelector('.wstyle').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
+// girl or guy, and the look style (the glam button says Glam girl or Real guy)
+const wsRender=()=>{const G=isGuy(SAVE.look);document.querySelectorAll('[data-ws]').forEach(b=>b.classList.toggle('on',b.dataset.ws===(SAVE.look.style||'glam')));
+  document.querySelectorAll('[data-wb]').forEach(b=>b.classList.toggle('on',b.dataset.wb===(G?'guy':'girl')));
+  const gb=document.querySelector('[data-ws="glam"]');if(gb)gb.innerHTML=G?'😎<span>Real guy</span>':'💃<span>Glam girl</span>';};wsRender();
+document.querySelector('.wbody').onclick=e=>{const b=e.target.closest('[data-wb]');if(!b)return;if(switchBody(b.dataset.wb)){rebuildPlayer();sfx('pop');}wsRender();};
+document.querySelector('.wstyle:not(.wbody)').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
 $('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);
-  scene.remove(av.g);av=new Avatar(SAVE.look,n,'#ff4d8d',true);scene.add(av.g);loadPaint(av);
+  scene.remove(av.g);av=new Avatar(SAVE.look,n,tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
   curTrack='sparkle-room';startMusic();
   banner('✨ Sparkle Studio');setTimeout(()=>toast('Find all 24 stars! ⭐'),2000);};
