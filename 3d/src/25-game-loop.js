@@ -96,13 +96,14 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   cam.cy=angDamp(cam.cy,tYaw,Math.min(1,dt*(playMode?14:6)));cam.cp+=(tPitch-cam.cp)*Math.min(1,dt*6);cam.cd+=(tDist-cam.cd)*Math.min(1,dt*5);
   const want=ZM?av.head.localToWorld(tmpV.set(0,ZM[0],.1)):tmpV.set(p.x,p.y+(playMode?1.15:.82),p.z);
   if(!cam.fv){cam.fv=want.clone();}cam.fv.lerp(want,Math.min(1,dt*(playMode&&player.speed>.5?22:9)));const tgt=cam.ty.copy(cam.fv);
-  const nearT=ZM||glamOpen?.01:.1;if(camera.near!==nearT){camera.near=nearT;camera.updateProjectionMatrix();}
+  const nearT=ZM||glamOpen||barberOpen?.01:.1;if(camera.near!==nearT){camera.near=nearT;camera.updateProjectionMatrix();}
   camera.position.set(tgt.x+Math.sin(cam.cy)*Math.cos(cam.cp)*cam.cd,tgt.y+Math.sin(cam.cp)*cam.cd,tgt.z+Math.cos(cam.cy)*Math.cos(cam.cp)*cam.cd);
   const minY=groundAt(camera.position.x,camera.position.z)+.25;if(camera.position.y<minY)camera.position.y=minY;
-  if(playMode)agencyCamClamp(tgt);
+  if(playMode){agencyCamClamp(tgt);shopCamClamp(BARB,tgt);shopCamClamp(STOR,tgt);}
   camera.lookAt(tgt);
   if(parlorOpen)parlorCam(dt);
   if(glamOpen)glamCam(dt);
+  if(barberOpen)barberCam(dt);
   if(ct.on)contestCam(dt);
   if(bakeryOpen)bakeryCam(dt);
   if(garageOpen)garageCam(dt);

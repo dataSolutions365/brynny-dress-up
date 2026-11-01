@@ -100,7 +100,7 @@ function makeupHTML(){const mk=SAVE.look.makeup,t=MTOOLS.find(x=>x[0]===mTool),c
   if(['shadow','liner','lashes'].includes(mTool))h+=eyeLooksHTML();
   return h+faceShapes();}
 function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute')return '';const F=L.face||{};
-  return FACEOPT.filter(([k])=>k!=='nose').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
+  return FACEOPT.filter(([k])=>k==='eyes'||k==='lips').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
 function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;if(mkExtraClick(b))return true;
   if(b.dataset.htool){hTool=b.dataset.htool;if(hTool==='clip'&&!b.classList.contains('on')){}else if(hTool==='clip'){}sfx('pop');renderCloset();return true;}
   if(b.dataset.hview){hairView=+b.dataset.hview;sfx('pop');return true;}

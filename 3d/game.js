@@ -220,6 +220,9 @@ const ZONES=[
   {id:'barn',name:'🐴 Happy Barn',ang:0,d:56.5,r:6,music:'spring-birds',nopath:true},
   {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:56.5,r:6,music:'city-park',nopath:true},
   {id:'garage',name:'🔧 Car Garage',ang:150,d:57,r:7,music:'fireworks'},
+  // behind the Spring Garden and the Runway, with a short path from the place in front (p0)
+  {id:'barber',name:'💈 Barber Shop',ang:300,d:56.1,r:5.6,music:'city-park',p0:43.2},
+  {id:'store',name:'👔 Clothing Store',ang:240,d:56.5,r:6,music:'fashion-walk',p0:43.2},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -834,6 +837,115 @@ const CARX={};
  for(const [lx,lz] of [[5.3,4.3],[-5.3,-4.3],[5.3,-1.2]]){M(cyl(.22,.17,.45,16),white,lx,.23,lz,g);for(let k=0;k<5;k++){const b=M(new THREE.IcosahedronGeometry(.22,1),phys('#4fa645',{roughness:.8,sheen:.6}),lx+Math.sin(k*1.3)*.12,.6+k*.12,lz+Math.cos(k*1.3)*.12,g);b.scale.y=.9;}z.ob(lx,lz,.3);}
  const pl=new THREE.PointLight('#ffe6f4',22,13,2);pl.position.set(0,3.4,-.5);g.add(pl);}
 
+// ---- src/12b-place-barber-and-store.js ----
+/* ===== 💈 Barber Shop and 👔 Clothing Store: two little shops out past the Spring Garden and the Runway ===== */
+// A small shop building: walls with a doorway in the front (+z faces the middle of the island), a roof that doesn't
+// block the sun, a sign over the door and a striped awning. Returns the materials so the inside can match.
+function smallShop(z,{W,B,F,H,wall,trim,roof,floor,sign,signFg,stripe}){const g=z.g;z.box={W,B,F,H};
+  const wallM=phys(wall,{roughness:.6,clearcoat:.15}),trimM=std(trim,{roughness:.4,metalness:.3}),white=phys('#ffffff',{roughness:.3,clearcoat:.6});
+  const fl=M(new THREE.PlaneGeometry(W*2,F-B),phys('#ffffff',{map:floor,roughness:.3,clearcoat:.5}),0,.02,(B+F)/2,g,false,true);fl.rotation.x=-Math.PI/2;fl.material.polygonOffset=true;fl.material.polygonOffsetFactor=-2;
+  const D=1.25;// half the doorway
+  M(box(W*2+.3,H,.3),wallM,0,H/2,B,g);for(let x=-W;x<=W+.01;x+=.95)z.ob(x,B,.5);
+  for(const sx of [-1,1]){M(box(.3,H,F-B),wallM,sx*W,H/2,(B+F)/2,g);for(let k=B;k<=F+.01;k+=.95)z.ob(sx*W,k,.5);
+    M(box(W-D,H,.3),wallM,sx*(D+(W-D)/2),H/2,F,g);for(let x=D+.45;x<=W;x+=.9)z.ob(sx*x,F,.5);z.ob(sx*(D+.1),F,.3);
+    M(box(.32,H,.36),trimM,sx*D,H/2,F,g);
+    // a shop window on each side of the door
+    M(new THREE.PlaneGeometry(1.5,1.4),glow('#fff1c4',1.0),sx*(D+(W-D)/2),1.7,F+.16,g,false,false);M(box(1.66,1.56,.06),white,sx*(D+(W-D)/2),1.7,F+.14,g);}
+  M(box(D*2,H-2.6,.3),wallM,0,2.6+(H-2.6)/2,F,g);
+  M(box(W*2+.4,.16,.4),trimM,0,H+.02,F,g);
+  M(box(W*2+.6,.26,F-B+.6),phys(roof,{roughness:.5,clearcoat:.4}),0,H+.17,(B+F)/2,g,false,true);
+  M(new THREE.PlaneGeometry(Math.min(W*2-.6,4.4),1),new THREE.MeshBasicMaterial({map:labelTex(sign,{size:58,fg:signFg,border:trim}),transparent:true}),0,H-.55,F+.17,g,false,false);
+  // striped awning over the windows and the door
+  const st=canvasTex(128,32,(x,w,h)=>{for(let i=0;i<8;i++){x.fillStyle=stripe[i%2];x.fillRect(i*16,0,16,h);}});st.wrapS=THREE.RepeatWrapping;st.repeat.set(W*1.2,1);
+  const aw=M(new THREE.PlaneGeometry(W*2,.9),phys('#ffffff',{map:st,roughness:.8,side:THREE.DoubleSide}),0,2.75,F+.45,g);aw.rotation.x=-.9;
+  const scal=canvasTex(128,32,(x,w,h)=>{for(let i=0;i<8;i++){x.fillStyle=stripe[i%2];x.beginPath();x.moveTo(i*16,0);x.lineTo(i*16+16,0);x.lineTo(i*16+8,h);x.fill();}});scal.wrapS=THREE.RepeatWrapping;scal.repeat.set(W*1.2,1);
+  M(new THREE.PlaneGeometry(W*2,.22),new THREE.MeshStandardMaterial({map:scal,transparent:true,side:THREE.DoubleSide,roughness:.8}),0,2.34,F+.74,g,false,false);
+  return {wallM,trimM,white};}
+// a glowing pad on the floor that opens something when you step on it
+function floorPad(z,lx,lz,color,emoji,label){const g=z.g,m=glow(color,1.4);m.transparent=true;
+  M(new THREE.RingGeometry(.42,.6,40),m,lx,.04,lz,g,false,false).rotation.x=-Math.PI/2;
+  const t=canvasTex(128,128,(x)=>{x.font='88px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,64,70);});
+  M(new THREE.PlaneGeometry(.6,.6),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}),lx,.045,lz,g,false,false).rotation.x=-Math.PI/2;
+  const lbl=sprite(labelTex(label,{size:52}),1.9,.47);lbl.position.set(lx,1.05,lz);g.add(lbl);
+  const ph=Math.random()*6;anims.push(t=>{m.opacity=.55+.45*Math.sin(t*3+ph);lbl.position.y=1+Math.sin(t*2+ph)*.08;});
+  return {lx,lz,r:.6,lbl};}
+
+/* ---------- 💈 Barber Shop ---------- */
+{const z=Z.barber,g=z.g;const W=4.4,B=-3.8,F=3.8,H=3.7;
+ const chk=canvasTex(128,128,(x)=>{x.fillStyle='#f4f4f4';x.fillRect(0,0,128,128);x.fillStyle='#222831';x.fillRect(0,0,64,64);x.fillRect(64,64,64,64);},5);
+ const {white,trimM}=smallShop(z,{W,B,F,H,wall:'#cfe3ff',trim:'#2f4a7a',roof:'#2f4a7a',floor:chk,sign:'💈 Barber Shop',signFg:'#2f4a7a',stripe:['#d62839','#ffffff']});
+ const chrome=std('#e6e9ef',{metalness:1,roughness:.15}),leather=phys('#b3121f',{roughness:.35,clearcoat:.6}),dark=std('#22252b',{roughness:.5});
+ // the spinning barber pole by the door: red, white and blue stripes that look like they climb up
+ {const tex=canvasTex(128,256,(x,w,h)=>{x.fillStyle='#ffffff';x.fillRect(0,0,w,h);const cols=['#d62839','#ffffff','#1f4fb3','#ffffff'];x.lineWidth=34;
+    for(let i=-8;i<16;i++){x.strokeStyle=cols[((i%4)+4)%4];x.beginPath();x.moveTo(0,i*32);x.lineTo(w,i*32+w*.9);x.stroke();}});tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  const pg=new THREE.Group();pg.position.set(-1.8,0,F+.55);g.add(pg);
+  M(cyl(.06,.08,1,12),chrome,0,.5,0,pg);M(cyl(.2,.22,.1,24),chrome,0,1.03,0,pg);
+  const pole=M(cyl(.15,.15,1.2,32,1),phys('#ffffff',{map:tex,roughness:.25,clearcoat:1,emissive:'#ffffff',emissiveMap:tex,emissiveIntensity:.25}),0,1.7,0,pg);
+  M(cyl(.18,.18,1.24,32,1,true),phys('#ffffff',{transparent:true,opacity:.16,roughness:0,clearcoat:1,side:THREE.DoubleSide}),0,1.7,0,pg,false,false);
+  M(cyl(.2,.2,.1,24),chrome,0,2.35,0,pg);M(sph(.18,20,12,0,Math.PI*2,0,Math.PI/2),chrome,0,2.4,0,pg);M(sph(.05,12,8),glow('#fff1c4',1.6),0,2.62,0,pg,false,false);
+  anims.push((t,dt)=>{tex.offset.y=-t*.35;});z.ob(-1.8,F+.55,.3);z.pole=pole;}
+ // three barber stations along the back wall: a mirror, a shelf with tools and a big red chair. The middle one is yours.
+ z.chairs=[];
+ for(const lx of [-2.6,0,2.6]){const mi=M(new THREE.PlaneGeometry(1.3,1.25),phys('#dfe9f5',{metalness:1,roughness:.04,envMapIntensity:1.4}),lx,1.85,B+.17,g,false,false);M(box(1.44,1.39,.06),dark,lx,1.85,B+.14,g);
+   M(box(1.5,.06,.4),white,lx,1.05,B+.35,g);M(box(1.5,.9,.36),phys('#2f4a7a',{roughness:.5,clearcoat:.3}),lx,.5,B+.33,g);for(const k of [-.5,.5])z.ob(lx+k,B+.35,.45);
+   // a blue jar of combs, a spray bottle and the clippers
+   M(cyl(.07,.07,.2,16),phys('#2ab7ff',{transmission:.6,transparent:true,opacity:.7,roughness:.05}),lx-.45,1.18,B+.32,g);for(let i=0;i<3;i++){const c=M(box(.012,.22,.05),dark,lx-.47+i*.02,1.22,B+.32,g);c.rotation.z=(i-1)*.2;}
+   M(cyl(.045,.05,.18,12),phys('#ffffff',{roughness:.3,clearcoat:.8}),lx+.42,1.17,B+.34,g);M(box(.04,.06,.05),dark,lx+.42,1.29,B+.34,g);
+   const cl=M(new RoundedBoxGeometry(.07,.16,.05,2,.015),phys('#1d1d22',{roughness:.3,clearcoat:.8}),lx+.15,1.1,B+.36,g);cl.rotation.z=1.3;
+   const cg=new THREE.Group();cg.position.set(lx,0,B+1.75);g.add(cg);z.chairs.push(cg);
+   M(cyl(.26,.3,.06,24),chrome,0,.03,0,cg);M(cyl(.07,.09,.36,12),chrome,0,.24,0,cg);
+   M(new RoundedBoxGeometry(.62,.14,.58,3,.05),leather,0,.46,0,cg);
+   const bk=M(new RoundedBoxGeometry(.58,.72,.12,3,.05),leather,0,.86,.29,cg);bk.rotation.x=-.12;const hr=M(new RoundedBoxGeometry(.32,.16,.1,3,.04),leather,0,1.34,.36,cg);cg.userData.back=[bk,hr];
+   for(const s of [-1,1]){M(new RoundedBoxGeometry(.08,.08,.5,2,.03),leather,s*.33,.66,.02,cg);M(cyl(.02,.02,.2,8),chrome,s*.33,.56,.02,cg);}
+   const fr=M(box(.42,.03,.16),chrome,0,.2,-.42,cg);M(cyl(.015,.015,.22,8),chrome,0,.26,-.32,cg).rotation.x=.9;
+   z.ob(lx,B+1.75,.45);}
+ z.seat=[0,B+1.75];
+ // a waiting bench, a magazine table and a plant
+ {const wood=std('#9a6a43',{roughness:.7});const bg=new THREE.Group();bg.position.set(-W+.45,0,1.6);bg.rotation.y=Math.PI/2;g.add(bg);
+  M(box(1.9,.1,.45),leather,0,.45,0,bg);M(box(1.9,.5,.08),leather,0,.75,-.22,bg);for(const x of [-.85,.85])M(box(.06,.42,.4),chrome,x,.21,0,bg);for(let k=0;k<3;k++)z.ob(-W+.45,.85+k*.75,.4);
+  M(cyl(.3,.3,.04,20),wood,-W+.5,.5,-.05,g);M(cyl(.03,.03,.5,8),chrome,-W+.5,.25,-.05,g);z.ob(-W+.5,-.05,.35);
+  ['#ff6fae','#4fb6ff','#ffd23f'].forEach((c,i)=>{const mg=M(box(.18,.01,.24),std(c),-W+.45+i*.06,.53+i*.01,-.05+i*.03,g);mg.rotation.y=i*.4;});
+  M(cyl(.22,.17,.42,16),white,W-.45,.21,2.8,g);for(let k=0;k<5;k++){const b=M(new THREE.IcosahedronGeometry(.2,1),phys('#4fa645',{roughness:.8}),W-.45+Math.sin(k*1.3)*.1,.55+k*.12,2.8+Math.cos(k*1.3)*.1,g);}z.ob(W-.45,2.8,.3);
+  const ws=M(new THREE.PlaneGeometry(1.4,.36),new THREE.MeshBasicMaterial({map:labelTex('Waiting area',{size:56,fg:'#2f4a7a'}),transparent:true}),-W+.17,1.9,1.6,g,false,false);ws.rotation.y=Math.PI/2;}
+ // a few hair clippings on the floor by your chair
+ for(let i=0;i<9;i++){const c=M(new THREE.CircleGeometry(.05+Math.random()*.05,6),std('#3a2618',{roughness:1}),(Math.random()-.5)*1.1,.03,B+1.75+(Math.random()-.5)*1.1,g,false,false);c.rotation.x=-Math.PI/2;c.scale.y=.5;}
+ // step on the pad in front of your chair
+ z.bpad=floorPad(z,0,B+2.75,'#4fb6ff','✂️','💈 Barber chair');
+ signpost(z);}
+
+/* ---------- 👔 Clothing Store ---------- */
+{const z=Z.store,g=z.g;const W=4.8,B=-4,F=4,H=3.8;
+ const woodT=canvasTex(256,256,(x,w,h)=>{for(let i=0;i<8;i++){x.fillStyle=`hsl(30,${30+Math.random()*10}%,${52+Math.random()*10}%)`;x.fillRect(0,i*32,w,32);x.fillStyle='rgba(60,30,10,.25)';x.fillRect(0,i*32,w,2);x.fillRect(Math.random()*w,i*32,2,32);}},4);
+ const {white}=smallShop(z,{W,B,F,H,wall:'#efe6d6',trim:'#3b2f2a',roof:'#3b2f2a',floor:woodT,sign:'👔 Clothing Store',signFg:'#3b2f2a',stripe:['#1f2a44','#efe6d6']});
+ const metal=std('#d9d9e8',{metalness:1,roughness:.2}),wood=std('#7a5236',{roughness:.6}),dark=std('#2b2b33',{roughness:.5});
+ // clothing racks with shirts on hangers
+ const rack=(lx,lz,rot,cols)=>{const rg=new THREE.Group();rg.position.set(lx,0,lz);rg.rotation.y=rot;g.add(rg);M(cyl(.025,.025,1.8,10),metal,0,1.55,0,rg).rotation.z=Math.PI/2;for(const s of [-.85,.85])M(cyl(.025,.03,1.55,8),metal,s,.78,0,rg);
+   cols.forEach((c,i)=>{const x=-.7+i*1.4/(cols.length-1);M(new THREE.TorusGeometry(.04,.006,6,12,Math.PI),metal,x,1.58,0,rg).rotation.y=Math.PI/2;const sh=M(new RoundedBoxGeometry(.06,.6,.42,2,.03),phys(c,{roughness:.8,sheen:.6}),x,1.22,0,rg);
+     M(new RoundedBoxGeometry(.05,.4,.1,2,.02),phys(c,{roughness:.8}),x,1.32,.24,rg).rotation.x=.15;M(new RoundedBoxGeometry(.05,.4,.1,2,.02),phys(c,{roughness:.8}),x,1.32,-.24,rg).rotation.x=-.15;});
+   for(const s of [-.8,0,.8]){const [wx,wz]=[lx+Math.cos(rot)*s,lz-Math.sin(rot)*s];z.ob(wx,wz,.4);}};
+ rack(-3,1.2,0,['#d62839','#2d2d3a','#4fb6ff','#2e9e4f','#c0392b','#ffffff']);rack(-3,-1.2,0,['#1f2a44','#6b7a3f','#c8b28a','#ff8a1f','#8a8f99','#2fa3d6']);
+ // shelves of folded jeans and tees on the back wall
+ {const sg=new THREE.Group();sg.position.set(-2.4,0,B+.3);g.add(sg);for(let r=0;r<3;r++){M(box(2.6,.05,.4),wood,0,.6+r*.65,0,sg);
+    for(let i=0;i<5;i++)for(let k=0;k<2;k++)M(new RoundedBoxGeometry(.38,.08,.3,2,.02),phys(['#3a5bd9','#6f9be0','#2d2d3a','#c8b28a','#ffffff','#d62839','#4fb6ff'][(i+r*2+k)%7],{roughness:.85}),-1.05+i*.52,.67+r*.65+k*.085,0,sg);}
+  for(const s of [-1.3,1.3])M(box(.05,2.1,.4),wood,s,1.05,0,sg);for(let k=0;k<3;k++)z.ob(-3.4+k*1,B+.3,.4);}
+ // the glasses counter: a glass case with sunglasses on little stands, and the cash register
+ {const cg=new THREE.Group();cg.position.set(2.6,0,1.9);g.add(cg);M(box(2.4,.85,.7),wood,0,.43,0,cg);M(box(2.44,.05,.74),dark,0,.88,0,cg);
+  M(box(2.3,.3,.6),phys('#ffffff',{transmission:.9,transparent:true,opacity:.25,roughness:0,thickness:.1}),0,1.06,0,cg,false,false);
+  ['#d4af37','#ff3b6b','#2d2d3a','#8a5a3b','#4fb6ff'].forEach((c,i)=>{const x=-.9+i*.45,fm=std(c,{metalness:.6,roughness:.25});for(const s of [-1,1]){M(new THREE.TorusGeometry(.05,.008,8,20),fm,x+s*.058,.98,.05,cg);
+    M(new THREE.CircleGeometry(.05,16),phys('#22252b',{roughness:.05,clearcoat:1,transparent:true,opacity:.8}),x+s*.058,.98,.052,cg,false,false);}M(box(.03,.008,.008),fm,x,.99,.05,cg);M(box(.01,.06,.01),metal,x,.93,.0,cg);});
+  const reg=new THREE.Group();reg.position.set(.75,.91,-.12);cg.add(reg);M(new RoundedBoxGeometry(.4,.18,.32,2,.03),dark,0,.09,0,reg);const scr=M(new RoundedBoxGeometry(.3,.18,.04,2,.02),dark,0,.28,.06,reg);scr.rotation.x=-.4;
+  M(new THREE.PlaneGeometry(.25,.13),glow('#7ee081',1.2),0,.285,.085,reg,false,false).rotation.x=-.4;
+  const gl=sprite(labelTex('🕶️ Glasses',{size:56,fg:'#3b2f2a'}),1.5,.37);gl.position.set(-.3,1.55,0);cg.add(gl);
+  for(let k=0;k<4;k++)z.ob(2.6-1.05+k*.7,1.9,.45);}
+ z.clerk=[2.6,1.1];
+ // a tall mirror on the back wall, and the pad in front of it where you try things on
+ {M(new THREE.PlaneGeometry(1.1,2.1),phys('#dfe9f5',{metalness:1,roughness:.04,envMapIntensity:1.4}),2.2,1.3,B+.17,g,false,false);M(box(1.24,2.24,.06),wood,2.2,1.3,B+.14,g);
+  M(new THREE.PlaneGeometry(1.4,.36),new THREE.MeshBasicMaterial({map:labelTex('Try it on!',{size:56,fg:'#3b2f2a'}),transparent:true}),2.2,2.7,B+.18,g,false,false);}
+ z.spad=floorPad(z,2.2,B+1.5,'#ffd23f','👔','👔 Try on & buy');
+ // two mannequin spots by the windows (the mannequins themselves are made when you walk in, see 24d)
+ z.manq=[[-1.9,F-1],[1.9,F-1.1]];for(const [lx,lz] of z.manq){M(cyl(.35,.38,.12,24),white,lx,.06,lz,g);z.ob(lx,lz,.4);}
+ for(const [lx,lz] of [[W-.45,-1.2],[-W+.45,3.2]]){M(cyl(.22,.17,.42,16),white,lx,.21,lz,g);for(let k=0;k<5;k++)M(new THREE.IcosahedronGeometry(.2,1),phys('#4fa645',{roughness:.8}),lx+Math.sin(k*1.3)*.1,.55+k*.12,lz+Math.cos(k*1.3)*.1,g);z.ob(lx,lz,.3);}
+ signpost(z);}
 // ---- src/12b-place-barn.js ----
 /* ===== Happy Barn (the building, fence and paddock; the animals live in 24d-barn.js) ===== */
 // local layout: +z points back toward the Birthday Party (the gate), the red barn stands at the back
@@ -1230,6 +1342,11 @@ const TAN_C=new THREE.Color('#9a5a2e');
 const BLUSH={pink:'255,110,150',peach:'255,150,110',rose:'220,80,110'};
 /* sculpted doll head: a sphere pushed in and out along each direction (nose, cheekbones, eye sockets, jaw, chin) */
 const FACEOPT=[['eyes','Eye shape',[['almond','👁️','Almond'],['doe','🦌','Doe'],['cat','🐱','Cat eye'],['round','⚪','Round']]],['nose','Nose',[['straight','👃','Straight'],['petite','✨','Petite'],['button','🔘','Button']]],['lips','Lips',[['full','💋','Full'],['pout','😗','Pouty'],['heart','💗','Heart'],['soft','🙂','Soft']]]];
+// shapes you pick at the barber's face chair (and in the closet's Face tab). Left unset, guys get a squarer jaw and flatter brows.
+FACEOPT.push(['brows','Eyebrows',[['arched','〰️','Arched'],['straight','➖','Straight'],['thick','🖍️','Thick'],['bushy','🐛','Bushy']]],['jaw','Jaw',[['soft','🙂','Soft'],['square','🟫','Square'],['strong','💪','Strong']]]);
+const JAWV={soft:0,square:1,strong:1.7};
+const BROWS={arched:{arch:1,w0:.0046,w1:.0015},straight:{arch:.25,w0:.0055,w1:.0026},thick:{arch:.8,w0:.0075,w1:.0032},bushy:{arch:.35,w0:.0098,w1:.0052}};
+const faceVal=(L,k)=>{const f=(L.face||{})[k];if(f)return f;if(k==='jaw')return isGuy(L)?'square':'soft';if(k==='brows')return isGuy(L)?'straight':'arched';const o=FACEOPT.find(x=>x[0]===k);return o[2][0][0];};
 const NOSE={straight:{h:.18,w:.04,top:.06,tip:.035},petite:{h:.13,w:.036,top:.0,tip:.03},button:{h:.11,w:.05,top:-.04,tip:.055}};
 function sculpt(d,nose='straight',jaw=0){const N=NOSE[nose]||NOSE.straight;const g=(cx,cy,cz,w)=>Math.exp(-((d.x-cx)**2+(d.y-cy)**2+(d.z-cz)**2)/(w*w));const sm=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
   let r=1;const front=sm(.55,.92,d.z);
@@ -1266,9 +1383,9 @@ class Avatar{
     this.shellX=guy?1.12+.15:1.12;
     B(guy?cyl(.047,.054,.16,14):this.look.style!=='cute'?cyl(.039,.047,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
     const head=this.head=new THREE.Group();head.position.y=.68;spine.add(head);
-    const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?(guy?new THREE.Vector3(.93,1.05,.98):new THREE.Vector3(.9,1.06,.98)):new THREE.Vector3(1,1.08,1);const JAW=this.jaw=guy&&glam?1:0;
+    const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?(guy?new THREE.Vector3(.93,1.05,.98):new THREE.Vector3(.9,1.06,.98)):new THREE.Vector3(1,1.08,1);
     let surf;
-    const F=this.face=Object.assign({eyes:'almond',nose:'straight',lips:'full'},this.look.face||{});
+    const F=this.face=Object.assign({eyes:'almond',nose:'straight',lips:'full'},this.look.face||{});const JAW=this.jaw=glam?(F.jaw in JAWV?JAWV[F.jaw]:guy?1:0):0;
     if(glam){const hg=headGeo(HS,false,0,F.nose,JAW);const hm=B(hg,head);const tmp=new THREE.Mesh(hg);tmp.updateMatrixWorld(true);
       surf=(x,y,off=0)=>{headRay.set(new THREE.Vector3(x,y,.5),new THREE.Vector3(0,0,-1));const h=headRay.intersectObject(tmp,false)[0];return (h?h.point.z:.1)+off;};}
     else{B(sph(.13,40,30),head).scale.copy(HS);surf=(x,y,off=0)=>HS.z*Math.sqrt(Math.max(0,.0169-(x/HS.x)**2-(y/HS.y)**2))+off;}
@@ -1295,8 +1412,8 @@ class Avatar{
         if(!guy){const wing=M(new THREE.CapsuleGeometry(.0026,F.eyes==='cat'?.016:.009,4,8),lash,sx*.0315*ES[0],.0045,.0035,eg,false);wing.rotation.z=-sx*1.15;}
         const low=M(new THREE.TorusGeometry(.03,.0014,6,24,Math.PI),lowM,0,-.001,.003,eg,false);low.scale.set(ES[0]*.98,ES[1],1);low.rotation.z=Math.PI;
         eg.userData.sx=sx;eg.userData.rx=.03*ES[0];eg.userData.ry=.03*ES[1];this.eyes.push(eg);
-        const pts=(guy?[[.012,.043],[.03,.048],[.05,.0515],[.069,.0505],[.086,.045]]:[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]]).map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0022)));
-        M(guy?browGeo(pts,.0068,.0042):browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
+        const BW=BROWS[F.brows],pts=(guy&&!BW?[[.012,.043],[.03,.048],[.05,.0515],[.069,.0505],[.086,.045]]:[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]]).map(([x,y])=>{if(BW)y=.05+(y-.05)*BW.arch;return new THREE.Vector3(sx*x,y,surf(x,y,.0022));});
+        M(BW?browGeo(pts,BW.w0,BW.w1):guy?browGeo(pts,.0068,.0042):browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
       const LS=guy?[1.02,.62,.68]:{full:[1,1,1],heart:[.85,1.05,1.2],soft:[1.12,.8,.82],pout:[.92,1.2,1.15]}[F.lips]||[1,1,1];
       // full, glossy, sculpted lips: an upper lip with a cupid's bow and a fuller lower lip
       const W=.031*LS[0];for(const [up,h,d,cy] of [[true,.0078*LS[1],.007,-.0528],[false,.0108*LS[2],.0098,-.065]]){const geo=lipGeo(up,W,h,d,cy,(x,y)=>surf(x,y));
@@ -1309,7 +1426,7 @@ class Avatar{
         M(sph(.0095,12,8),dark,0,-.001,.0135,eg,false).scale.set(1,1,.4);M(sph(.004,8,6),shine,.007,.008,.017,eg,false);
         const l=M(new THREE.TorusGeometry(.029,.0045,6,16,Math.PI),lash,0,.002,.004,eg,false);l.scale.set(1,1.15,1);
         eg.userData.sx=sx;eg.userData.rx=.03;eg.userData.ry=.034;this.eyes.push(eg);
-        const brow=M(new THREE.CapsuleGeometry(guy?.0058:.004,.03,4,8),lash,sx*.046,.058,.118,head,false);brow.rotation.z=Math.PI/2-sx*.14;}
+        const BW=BROWS[F.brows],brow=M(new THREE.CapsuleGeometry(BW?.004*BW.w0/.0046:guy?.0058:.004,.03,4,8),lash,sx*.046,.058,.118,head,false);brow.rotation.z=Math.PI/2-sx*.14*(BW?BW.arch:1);}
       if(guy){lip(.019,0,-.054,.1175,1.1,.26,.5);lip(.019,0,-.063,.1165,1,.32,.55);}else{lip(.021,0,-.0515,.1178,1.12,.36,.5);lip(.021,0,-.0635,.1165,1.02,.46,.55);}}
     // makeup shell
     const RES=this.paintable?1024:256;this.faceCv=document.createElement('canvas');this.faceCv.width=this.faceCv.height=RES;
@@ -1492,7 +1609,8 @@ class Avatar{
     {const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,decal,av:this};
       for(const C of [OUTFITS2D,GUY_WEAR,window.__costumes])if(C){
         for(const slot of ['dress','top','bottom','shoes','hat']){const it=look[slot];if(look.dress&&(slot==='top'||slot==='bottom'))continue;if(it&&C[it.id])C[it.id](kit,it.c);}
-        for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
+        for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}
+      barberDress(kit,look);}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
       this.lipM.color.set(mk.lips||(this.guy?new THREE.Color(look.skin).multiplyScalar(.82).lerp(new THREE.Color('#b0685f'),.35):this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips&&!this.guy);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(mk.browC||new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
@@ -1824,7 +1942,8 @@ const GUY_TABS=[['hair','💇‍♂️','Hair'],['skin','🙂','Face'],['dresses
 const GIRL_ONLY=new Set(['ghost','elf']);
 const catOf=tab=>{if(!isGuy(SAVE.look))return CAT[tab];const base=GUY_CAT[tab]||[];
   const hol=(CAT[tab]||[]).filter(x=>{const s=shopItem('look:'+x[0]);return s&&s.hol&&!GIRL_ONLY.has(x[0])&&!base.some(b=>b[0]===x[0]);});return base.concat(hol);};
-const hairsOf=L=>isGuy(L)?GUY_HAIRS:HAIRS;
+// barber specials show up in the closet once you've had that cut at the 💈 barber
+const hairsOf=L=>isGuy(L)?GUY_HAIRS.concat(BCUTS.filter(c=>(SAVE.cuts||{})[c[0]]).map(c=>c.slice(0,3))):HAIRS;
 const tabsOf=()=>isGuy(SAVE.look)?GUY_TABS:TABS;
 const LOOK_ALL=a=>a.concat(...Object.values(GUY_CAT));
 const defaultGuyLook=(from)=>({body:'guy',style:(from&&from.style)||'glam',skin:(from&&from.skin)||'#f7cfae',eyes:(from&&from.eyes)||'#6b4a2b',hair:{id:'crop',c:'#4a2c1a'},
@@ -2118,6 +2237,206 @@ const GUY_SPORT_LOOKS={
   court:{top:{id:'bballjersey',c:'#d62839'},bottom:{id:'bballshorts',c:'#d62839'},shoes:{id:'courtkicks',c:'#ffffff'},hat:{id:'sweatband',c:'#ffffff'}},
   batting:{top:{id:'baseballtop',c:'#ffffff'},bottom:{id:'baseballpants',c:'#ffffff'},shoes:{id:'ballcleats',c:'#2d2d3a'},hat:{id:'helmet',c:'#3a5bd9'},glove:'#a0622d'}};
 const sportLook=zid=>(isGuy(SAVE.look)?GUY_SPORT_LOOKS:SPORT_LOOKS)[zid];
+// ---- src/14d-barber-looks.js ----
+/* ================= BARBER LOOKS: haircuts, facial hair and glasses ================= */
+// Barber cuts and facial hair are "shells": a copy of the head's own shape, puffed out a little where the hair grows.
+// thick(d) says how thick the hair is (in meters) for each direction d from the middle of the head (d is a unit vector:
+// +z is the face, +y is up). Where it's 0 or less there is no hair, so the shape of thick() is the haircut.
+const smooth=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
+// the head's radius in direction d (same shape as headGeo in 14-avatar.js)
+const headR=(av,d)=>av.glam?sculpt(d,av.face.nose,av.jaw)*.13:.13;
+function shellGeo(av,thick,seg=1){const g=new THREE.SphereGeometry(1,Math.round(96*seg),Math.round(72*seg)),p=g.attributes.position,d=new THREE.Vector3(),keep=new Uint8Array(p.count),HS=av.hs;
+  // outside the haircut the shell tucks just under the skin, so the edge is where the two meet: a smooth line, not steps
+  for(let i=0;i<p.count;i++){d.fromBufferAttribute(p,i).normalize();const t=thick(d);keep[i]=t>0?1:0;const r=headR(av,d)+Math.max(t,-.004)+.0006;p.setXYZ(i,d.x*r*HS.x,d.y*r*HS.y,d.z*r*HS.z);}
+  const ix=g.index.array,out=[];for(let i=0;i<ix.length;i+=3)if(keep[ix[i]]||keep[ix[i+1]]||keep[ix[i+2]])out.push(ix[i],ix[i+1],ix[i+2]);
+  g.setIndex(out);g.computeVertexNormals();return g;}
+// a point on the hair (or skin) in direction d, and the outward direction there
+function shellPt(av,d,t=0){const HS=av.hs,r=headR(av,d)+t;return new THREE.Vector3(d.x*r*HS.x,d.y*r*HS.y,d.z*r*HS.z);}
+const dirOf=(az,y)=>{const s=Math.sqrt(Math.max(0,1-y*y));return new THREE.Vector3(Math.sin(az)*s,y,Math.cos(az)*s);};
+
+/* ---------- haircuts ---------- */
+// where the hair stops: high on the forehead, above the ears, low at the back of the neck
+function hairline(d){const c=d.z/(Math.hypot(d.x,d.z)||1);return c>=0?.2+.42*Math.pow(c,1.5):.2-.7*Math.pow(-c,1.2);}
+const onTop=(d,a=.45,b=.85)=>smooth(a,b,d.y);
+// below the hairline it gives how far below (as a small minus number), so the shell slides smoothly under the skin
+const grow=(d,w=.12)=>{const h=hairline(d);return d.y<=h?(d.y-h)*.06:smooth(h,h+w,d.y);};
+// each cut: [id, emoji, name, thickness(d), extra pieces(kit,material)]
+const BCUTS=[
+  ['fade','📐','Fade',d=>{const e=grow(d,.08);return e<0?e:e*(.0025+.032*onTop(d,.5,.82));}],
+  ['slick','😎','Slick back',d=>{const e=grow(d,.1);return e<0?e:e*(.01+.036*onTop(d,.3,.85)*(.65+.35*Math.max(0,d.z)));},(k,m)=>{m.roughness=.14;m.clearcoat=.85;m.clearcoatRoughness=.1;}],
+  ['twists','🪢','Twists',d=>{const e=grow(d,.08);return e<0?e:e*(.004+.012*onTop(d,.4,.8));},(k,m)=>{
+    const tg=capTop(.0105,.022);for(let i=0;i<46;i++){const y=.4+((i*.618)%1)*.58,az=i*2.399;const d=dirOf(az,y);if(d.z>.5&&y<.7)continue;const tw=k.P(tg.clone(),m,k.head);tw.position.copy(shellPt(k.av,d,.004));tw.quaternion.setFromUnitVectors(new THREE.Vector3(0,-1,0),d.clone().lerp(new THREE.Vector3(0,1,0),.12).normalize());}tg.dispose();}],
+  ['fauxhawk','🦅','Faux hawk',d=>{const e=grow(d,.08);return e<0?e:e*(.0025+.008*onTop(d,.5,.8)+.05*Math.exp(-((d.x/.22)**2))*onTop(d,.5,.9)*(.7+.3*d.z));},(k,m)=>{
+    const cg=new THREE.ConeGeometry(.03,.06,10);for(let i=0;i<5;i++){const d=new THREE.Vector3(0,.95,.45-i*.2).normalize();const c=k.P(cg.clone(),m,k.head);c.position.copy(shellPt(k.av,d,.055+.004*(2-Math.abs(i-1))));c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.clone().lerp(new THREE.Vector3(0,.2,1),.3).normalize());c.scale.z=.55;}cg.dispose();}],
+  ['mohawk','🦔','Mohawk',d=>{const e=grow(d,.06);if(e<0)return e;const band=Math.exp(-((d.x/.13)**2));return band>.3?e*(.004+.016*band):(band-.3)*.03;},(k,m)=>{
+    const cg=new THREE.ConeGeometry(.03,.12,10);for(let i=0;i<9;i++){const a=.6-i*.24,d=new THREE.Vector3(0,Math.cos(a),Math.sin(a));const c=k.P(cg.clone(),m,k.head);c.position.copy(shellPt(k.av,d,.065-.004*Math.abs(i-3)));c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d);c.scale.z=.4;}cg.dispose();}],
+  ['cornrows','〰️','Cornrows',d=>{const e=grow(d,.05);return e<0?e:.0025;},(k,m)=>{
+    for(let r=-4;r<=4;r++){const x=r*.13,q=Math.sqrt(1-x*x),pts=[];for(let f=.95;f>-2.5;f-=.12){const d=new THREE.Vector3(x,q*Math.cos(f),q*Math.sin(f));if(d.y>hairline(d)+.03)pts.push(shellPt(k.av,d,.004));}
+      if(pts.length>3){const g=fuzz(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),pts.length*4,.0085,7,false),.002,320);k.P(g,m,k.head);}}}],
+  ['bald','🥚','Bald',d=>-1],
+];
+const BCUT=Object.fromEntries(BCUTS.map(c=>[c[0],c]));
+
+/* ---------- facial hair ---------- */
+// soft masks (0 to 1) for each part of a beard, from the direction d. y: up and down, ax: how far to the side, az: angle round from the front
+const fz=d=>({ax:Math.abs(d.x),y:d.y,z:d.z,az:Math.atan2(Math.abs(d.x),d.z)});
+const mouth=({ax,y})=>smooth(.33,.27,ax)*smooth(-.58,-.54,y)*smooth(-.33,-.37,y);// the lips stay uncovered
+const MUST=({ax,y,z})=>{const lo=-.37-.55*Math.max(0,ax-.2);return smooth(-.25,-.29,y)*smooth(lo-.04,lo,y)*smooth(.35,.3,ax)*smooth(.45,.6,z);};
+const CHIN=({ax,y,z})=>smooth(.23,.17,ax)*smooth(-.53,-.58,y)*smooth(-.1,.15,z);
+const SIDES=({ax,y,z})=>smooth(.25,.29,ax)*smooth(.37,.33,ax)*smooth(-.33,-.37,y)*smooth(-.62,-.58,y)*smooth(.3,.5,z);
+const JAWLINE=({y,az})=>{const top=-.32+.48*smooth(.35,1.35,az);return smooth(top+.04,top-.02,y)*smooth(1.8,1.6,az);};
+const BURNS=({y,az})=>smooth(1.15,1.3,az)*smooth(1.75,1.6,az)*smooth(.22,.16,y)*smooth(-.4,-.3,y);
+const STRAP=({y,az})=>{const top=-.6+.75*smooth(.4,1.35,az);return smooth(top+.05,top-.02,y)*smooth(top-.32,top-.24,y)*smooth(1.75,1.6,az);};
+const max=(...a)=>Math.max(...a);
+// [id, emoji, name, mask(f), thickness(f) or 'stubble']
+const BEARDS=[
+  ['none','🙂','Clean shave'],
+  ['stubble','🧔‍♂️','Stubble',f=>JAWLINE(f)*(1-mouth(f)),'stubble'],
+  ['mustache','🥸','Mustache',MUST,f=>.008],
+  ['handlebar','🎩','Handlebar',MUST,f=>.008],
+  ['goatee','🐐','Goatee',f=>max(MUST(f),CHIN(f),SIDES(f))*(1-mouth(f)),f=>.008+.01*smooth(-.6,-.85,f.y)],
+  ['chinstrap','➰','Chin strap',f=>max(STRAP(f),BURNS(f)),f=>.006],
+  ['sideburns','🎸','Sideburns',BURNS,f=>.006],
+  ['beard','🧔','Short beard',f=>JAWLINE(f)*(1-mouth(f)),f=>.009+.006*smooth(-.5,-.85,f.y)],
+  ['fullbeard','🧙‍♂️','Big beard',f=>JAWLINE(f)*(1-mouth(f)),f=>.013+.05*smooth(-.45,-.95,f.y)*smooth(.9,.2,f.az)],
+];
+const BEARD=Object.fromEntries(BEARDS.map(b=>[b[0],b]));
+let stubbleTex=null;
+function stubbleMat(k,c){if(!stubbleTex){stubbleTex=canvasTex(256,256,(x,w,h)=>{x.clearRect(0,0,w,h);for(let i=0;i<5200;i++){x.fillStyle=`rgba(255,255,255,${.35+Math.random()*.6})`;x.fillRect(Math.random()*w,Math.random()*h,1+Math.random(),1.5+Math.random()*1.5);}},6);stubbleTex.colorSpace=THREE.NoColorSpace;}
+  const m=new THREE.MeshStandardMaterial({color:new THREE.Color(c).multiplyScalar(.75),alphaMap:stubbleTex,transparent:true,opacity:.9,depthWrite:false,roughness:.9,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});k.av.mats.push(m);return m;}
+function buildBeard(k,b){const B=BEARD[b.id];if(!B||!B[3])return;const av=k.av,c=b.c||'#3a2618';
+  const stub=B[4]==='stubble',m=stub?stubbleMat(k,c):k.mat(c,'hair');
+  const g=shellGeo(av,d=>{const f=fz(d),v=B[3](f);if(v<.35)return (v-.35)*.03;return (stub?.0024:B[4](f))*smooth(.35,.7,v);},1.3);
+  if(!stub)fuzz(g,.0012,240);const mesh=k.P(g,m,k.head);mesh.castShadow=false;
+  if(b.id==='handlebar')for(const s of [-1,1]){const pts=[[.2,-.34],[.3,-.38],[.38,-.3],[.36,-.2]].map(([ax,y])=>{const d=new THREE.Vector3(s*ax,y,1).normalize();d.y=y;d.normalize();return shellPt(av,d,.008+ (ax>.33?.01:0));});
+    k.P(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),14,.0045,6,false),m,k.head);k.P(sph(.0055,8,6),m,k.head).position.copy(pts[3]);}}
+
+/* ---------- glasses ---------- */
+// new glasses for the 👔 clothing store. They sit where the closet's 👓 glasses sit: lenses at x ±.046, y .005, z .133
+// You can only wear one pair at a time.
+const GLASSES=['glasses','heartglasses','shades','aviators','roundspecs','sportshades','thickframes','gamer3d'];
+const STORE_GLASSES=[['aviators','🕶️','Aviators','#d4af37'],['roundspecs','🤓','Round glasses','#8a5a3b'],['sportshades','🏃','Sport shades','#ff3b6b'],['thickframes','👓','Thick frames','#2d2d3a'],['gamer3d','🎮','3D glasses','#ffffff']];
+const lensMat=(k,c,o=.82)=>{const m=new THREE.MeshPhysicalMaterial({color:c,roughness:.05,metalness:.3,clearcoat:1,transparent:true,opacity:o,iridescence:.35,side:THREE.DoubleSide});k.av.mats.push(m);return m;};
+// a rounded rectangle centered on 0,0
+function roundShape(sh,w,h,r){const x=-w/2,y=-h/2;sh.moveTo(x+r,y);sh.lineTo(x+w-r,y);sh.quadraticCurveTo(x+w,y,x+w,y+r);sh.lineTo(x+w,y+h-r);sh.quadraticCurveTo(x+w,y+h,x+w-r,y+h);sh.lineTo(x+r,y+h);sh.quadraticCurveTo(x,y+h,x,y+h-r);sh.lineTo(x,y+r);sh.quadraticCurveTo(x,y,x+r,y);return sh;}
+const temples=(k,m,y=.008,w=.005)=>{for(const s of [-1,1])k.P(box(w,w,.13),m,k.head,s*.08,y,.07);};
+const STORE_WEAR={
+  // 🕶️ Aviators: thin gold wire, big teardrop lenses and a double bridge
+  aviators(k,c){const m=k.mat(c,'metal'),lm=lensMat(k,'#3a3f4a');const sh=new THREE.Shape();sh.moveTo(-.026,.016);sh.bezierCurveTo(-.01,.022,.022,.02,.028,.012);sh.bezierCurveTo(.032,-.012,.012,-.03,-.004,-.028);sh.bezierCurveTo(-.026,-.024,-.032,0,-.026,.016);
+    for(const s of [-1,1]){const l=k.P(new THREE.ShapeGeometry(sh,16),lm,k.head,s*.047,.004,.134);l.scale.x=s;
+      k.P(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(sh.getPoints(20).map(p=>new THREE.Vector3(p.x*s,p.y,0)),true),40,.0016,5,true),m,k.head,s*.047,.004,.135);}
+    k.P(box(.026,.0025,.0025),m,k.head,0,.019,.137);k.P(box(.02,.0025,.0025),m,k.head,0,.011,.137);temples(k,m,.016,.003);},
+  // 🤓 Round glasses: thin round frames with clear lenses
+  roundspecs(k,c){const m=k.mat(c,'shiny'),lm=lensMat(k,'#e8f6ff',.18);for(const s of [-1,1]){k.P(new THREE.TorusGeometry(.024,.0028,8,28),m,k.head,s*.042,.004,.135);k.P(new THREE.CircleGeometry(.024,24),lm,k.head,s*.042,.004,.134);}
+    k.P(new THREE.TorusGeometry(.009,.0024,6,12,Math.PI),m,k.head,0,.008,.137);temples(k,m,.01,.004);},
+  // 🏃 Sport shades: one curved wrap-around lens that shines like a rainbow
+  sportshades(k,c){const m=k.mat(c,'shiny'),lm=lensMat(k,c,.85);lm.iridescence=1;lm.metalness=.6;
+    k.P(new THREE.CylinderGeometry(.142,.142,.036,40,1,true,-.75,1.5),lm,k.head,0,.008,-.005);
+    k.P(new THREE.CylinderGeometry(.144,.144,.006,40,1,true,-.78,1.56),m,k.head,0,.027,-.005).material.side=THREE.DoubleSide;temples(k,m,.02,.005);},
+  // 👓 Thick frames: big bold square frames
+  thickframes(k,c){const m=k.mat(c,'shiny'),lm=lensMat(k,'#e8f6ff',.16);const rr=(w,h,r)=>{const sh=new THREE.Shape();roundShape(sh,w,h,r);return sh;};
+    const fr=rr(.06,.042,.01);fr.holes.push(rr(.044,.028,.006));const fg=new THREE.ExtrudeGeometry(fr,{depth:.006,bevelEnabled:true,bevelSize:.0012,bevelThickness:.0012,bevelSegments:2});
+    for(const s of [-1,1]){k.P(fg.clone(),m,k.head,s*.046,.006,.131);k.P(new THREE.ShapeGeometry(rr(.044,.028,.006)),lm,k.head,s*.046,.006,.134);}fg.dispose();
+    k.P(box(.028,.007,.007),m,k.head,0,.014,.137);temples(k,m,.016,.006);},
+  // 🎮 3D glasses: white frames with one red and one blue lens
+  gamer3d(k,c){const m=k.mat(c,'shiny');for(const s of [-1,1]){k.P(new RoundedBoxGeometry(.056,.034,.006,2,.006),m,k.head,s*.046,.006,.134);k.P(box(.044,.024,.003),lensMat(k,s<0?'#ff2a4d':'#2ab7ff',.85),k.head,s*.046,.006,.138);}
+    k.P(box(.03,.006,.006),m,k.head,0,.012,.137);temples(k,m,.014,.006);},
+};
+
+/* ---------- guy clothes you can only get at the 👔 clothing store ---------- */
+const CAMO_TEX={};
+function camoMat(k,c){const t=CAMO_TEX[c]||(CAMO_TEX[c]=canvasTex(256,256,(x,w,h)=>{x.fillStyle=c;x.fillRect(0,0,w,h);
+  for(const [k2,n] of [[-.25,22],[.2,20],[-.45,16]]){x.fillStyle=shadeC(c,k2);for(let i=0;i<n;i++){x.beginPath();const X=Math.random()*w,Y=Math.random()*h;for(let a=0;a<6.3;a+=.7){const r=14+Math.random()*16;x.lineTo(X+Math.cos(a)*r,Y+Math.sin(a)*r*.7);}x.fill();}}},3));
+  const m=new THREE.MeshPhysicalMaterial({color:'#ffffff',map:t,roughness:.85,sheen:.5,sheenColor:new THREE.Color('#ffffff')});k.av.mats.push(m);return m;}
+const ARGYLE_TEX={};
+function argyleMat(k,c){const t=ARGYLE_TEX[c]||(ARGYLE_TEX[c]=canvasTex(128,128,(x,w,h)=>{x.fillStyle=c;x.fillRect(0,0,w,h);x.fillStyle=shadeC(c,-.22);
+  x.beginPath();x.moveTo(64,0);x.lineTo(128,64);x.lineTo(64,128);x.lineTo(0,64);x.fill();x.strokeStyle='rgba(255,255,255,.7)';x.lineWidth=3;x.beginPath();x.moveTo(0,0);x.lineTo(128,128);x.moveTo(128,0);x.lineTo(0,128);x.stroke();},4));
+  const m=new THREE.MeshPhysicalMaterial({color:'#ffffff',map:t,roughness:.9,sheen:.8,sheenColor:new THREE.Color('#ffffff')});k.av.mats.push(m);return m;}
+const STORE_TOPS=[['leather','🧥','Leather jacket','#2d2d3a'],['hawaiian','🌺','Hawaiian shirt','#2fa3d6'],['baseball','⚾','Baseball jersey','#ffffff'],['football','🏈','Football jersey','#d62839'],['camo','🪖','Camo jacket','#6b7a3f'],['sweatervest','🧶','Sweater vest','#1f2a44']];
+const STORE_BOTTOMS=[['ripped','🩹','Ripped jeans','#6f9be0'],['camopants','🪖','Camo pants','#6b7a3f'],['chinoshorts','🩳','Chino shorts','#c8b28a']];
+const STORE_SHOES=[['cowboyboots','🤠','Cowboy boots','#8a5a3b'],['goldkicks','✨','Gold sneakers','#e0b04a'],['runners','🏃','Running shoes','#4fb6ff']];
+const STORE_HATS=[['fedora','🕵️','Fedora','#3b3b46'],['cowboyhat','🤠','Cowboy hat','#c8a06a'],['visor','☀️','Visor','#ffffff']];
+const STORE_EXTRAS=[['studs','💎','Diamond studs','#cfefff'],['dogtags','🪖','Dog tags','#c0c0c0']];
+Object.assign(STORE_WEAR,{
+  // 🧥 Leather jacket: shiny, open over a white tee, with a wide collar and a zipper
+  leather(k,c){const m=k.mat(c,'shiny');m.roughness=.35;k.topShell(m,'long');frontStrip(k,k.mat('#ffffff'),lineOf(0,.462,0,.08,.03,.036,10),.003);crewNeck(k,k.mat('#ffffff'),.054,.008);
+    const dk=k.mat(shadeC(c,-.2),'shiny');for(const s of [-1,1])frontStrip(k,dk,lineOf(s*.04,.47,s*.07,.36,.02,.012,5),.006);
+    frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(.036,.4,.04,.08,.003,.003,8),.006);waistband(k,dk);cuffs(k,dk,.044,.012);},
+  // 🌺 Hawaiian shirt: flowers all over, a collar and buttons
+  hawaiian(k,c){const m=printMat(k,c,'flowers');k.topShell(m,'short');shirtCollar(k,m);const bm=k.mat('#ffffff','shiny');[.42,.35,.28,.21,.14].forEach(y=>frontDot(k,bm,y,0,.0045));},
+  // ⚾ Baseball jersey: buttons down the front, piping and a number
+  baseball(k,c){const m=k.mat(c),t=k.mat(isLight(c)?'#1f2a44':'#ffffff');k.topShell(m,'short');crewNeck(k,t,.056,.007);
+    frontStrip(k,t,lineOf(0,.45,0,.04,.004,.004,10),.003);[.4,.32,.24,.16].forEach(y=>frontDot(k,t,y,.012,.004));frontText(k,'7',isLight(c)?'#d62839':'#ffffff',.3,.1);
+    for(const a of k.arms)k.P(new THREE.TorusGeometry(.052,.006,6,20),t,a.sh,0,-.06,0).rotation.x=Math.PI/2;},
+  // 🏈 Football jersey: big shoulder pads, a number and stripes on the sleeves
+  football(k,c){const m=k.mat(c),w=k.mat(trimOf(c));k.topShell(m,'short');for(const a of k.arms){const p=k.P(sph(.085,18,12),m,k.spine,a.sx*.13,.43,0);p.scale.set(1,.5,1.05);
+      for(const dy of [-.02,-.035])k.P(new THREE.TorusGeometry(.053,.006,6,20),w,a.sh,0,dy,0).rotation.x=Math.PI/2;}
+    crewNeck(k,w,.058,.01);frontText(k,'88',trimOf(c),.27,.15);},
+  // 🪖 Camo jacket: camouflage print, pockets on the chest and a collar
+  camo(k,c){const m=camoMat(k,c);k.topShell(m,'long');shirtCollar(k,m);frontStrip(k,k.mat(shadeC(c,-.35)),lineOf(0,.45,0,.04,.004,.004,10),.004);
+    for(const s of [-1,1])frontStrip(k,camoMat(k,shadeC(c,-.05)),lineOf(s*.065,.37,s*.065,.31,.028,.028,2),.005);cuffs(k,m,.044,.012);waistband(k,m);},
+  // 🧶 Sweater vest: an argyle vest over a white button-up
+  sweatervest(k,c){GUY_WEAR.buttonup(k,'#ffffff');const v=k.topShell(argyleMat(k,c));v.scale.multiplyScalar(1.025);v.scale.z*=1.02;
+    frontStrip(k,k.mat('#ffffff'),lineOf(0,.47,0,.33,.04,.0,6),.006);for(const s of [-1,1])frontStrip(k,k.mat(shadeC(c,-.3)),lineOf(s*.04,.47,0,.33,.005,.004,6),.007);waistband(k,k.mat(shadeC(c,-.3)));},
+  // 🩹 Ripped jeans: tight jeans with frayed rips at the knees
+  ripped(k,c){GUY_WEAR.slimjeans(k,c);const w=k.mat('#f2efe6');for(const l of k.legs){for(const [p,y] of [[l.kn,-.01],[l.hp,-.24]]){const r=k.P(box(.05,.022,.004),w,p,0,y,.067);r.rotation.z=l.sx*.15;}}},
+  // 🪖 Camo pants with pockets on the side
+  camopants(k,c){const m=camoMat(k,c);k.waist(m);looseLegs(k,m,.084,{hem:.84});sidePockets(k,camoMat(k,shadeC(c,-.05)),-.24,.084);guyBelt(k,'#1a1a1a');},
+  // 🩳 Chino shorts with rolled hems
+  chinoshorts(k,c){const m=k.mat(c);k.waist(m);looseLegs(k,m,.084,{thigh:.36,shin:0});for(const l of k.legs)beltRing(k,k.mat(shadeC(c,-.1)),l.hp,.086,.009,.02-.36+.01);guyBelt(k);},
+  // 🤠 Cowboy boots: pointy toes, a heel, tall shafts and stitching
+  cowboyboots(k,c){const m=k.mat(c,'shiny');shoeShell(k,m,.85,1.02).forEach(sh=>{sh.scale.z*=1.15;});bootLeg(k,m,.066,.2);const dk=k.mat(shadeC(c,-.35),'shiny');
+    k.legs.forEach(l=>{k.P(box(.07,.045,.05),dk,l.an,0,-.05,-.035);for(const s of [-1,1]){const st=k.P(box(.004,.12,.004),k.mat('#ffd23f'),l.kn,s*.05,-.31-k.av.legX,.042);st.rotation.y=s*.6;}});},
+  // ✨ Gold sneakers: shiny gold with white soles
+  goldkicks(k,c){const m=k.mat(c,'metal');m.roughness=.18;shoeShell(k,m,.88,1.05);solePad(k,k.mat('#ffffff','shiny'),.036,.118,.235);shoeTrim(k,k.mat('#ffffff','shiny'));},
+  // 🏃 Running shoes: light, with a bright sole and a stripe
+  runners(k,c){const m=k.mat(c);shoeShell(k,m,.8,1.03);solePad(k,k.mat(isLight(c)?'#ff3b6b':'#ffd23f','shiny'),.03,.114,.232);shoeTrim(k,k.mat('#ffffff','shiny'));},
+  // 🕵️ Fedora: a pinched crown, a band and a short brim
+  fedora(k,c){const m=k.mat(c);m.side=THREE.DoubleSide;const cr=k.P(new THREE.CylinderGeometry(.115,.135,.11,32),m,k.head,0,.15,-.005);cr.scale.z=.95;
+    k.P(sph(.1,20,10,0,Math.PI*2,0,Math.PI/2),m,k.head,0,.2,-.005).scale.set(1.13,.25,1.05);beltRing(k,k.mat('#1a1a1a'),k.head,.135,.012,.11);
+    const b=k.P(new THREE.CylinderGeometry(.21,.21,.008,40),m,k.head,0,.098,-.005);b.rotation.x=-.08;},
+  // 🤠 Cowboy hat: a tall crown and a wide brim that curls up at the sides
+  cowboyhat(k,c){const m=k.mat(c);m.side=THREE.DoubleSide;k.P(new THREE.CylinderGeometry(.11,.13,.13,32),m,k.head,0,.16,-.005).scale.z=.9;
+    k.P(sph(.1,20,10,0,Math.PI*2,0,Math.PI/2),m,k.head,0,.22,-.005).scale.set(1.1,.3,.95);beltRing(k,k.mat(shadeC(c,-.45)),k.head,.13,.012,.11);
+    const g=new THREE.RingGeometry(.12,.27,48,4),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),r=Math.hypot(x,y);p.setZ(i,Math.max(0,r-.17)*Math.pow(Math.abs(x)/r,3)*1.1);}g.computeVertexNormals();
+    const br=k.P(g,m,k.head,0,.1,-.005);br.rotation.x=-Math.PI/2;},
+  // ☀️ Visor: a headband with a curved brim and no top
+  visor(k,c){const m=k.mat(c);m.side=THREE.DoubleSide;k.P(new THREE.CylinderGeometry(.143,.143,.035,32,1,true),m,k.head,0,.065,-.005);
+    const b=k.P(new THREE.CylinderGeometry(.143,.2,.012,32,1,false,-1,2),m,k.head,0,.05,-.005);b.scale.z=1.1;},
+  // 💎 Diamond studs in both ears
+  studs(k,c){const m=k.mat(c,'gem');for(const s of [-1,1])k.P(new THREE.OctahedronGeometry(.008,0),m,k.head,s*.12*k.av.hs.x,-.035,0);},
+  // 🪖 Dog tags on a chain
+  dogtags(k,c){const m=k.mat(c,'metal'),g=new THREE.TorusGeometry(.006,.0018,6,10);
+    for(let i=0;i<22;i++){const a=i/22*Math.PI*2;k.P(g.clone(),m,k.spine,Math.sin(a)*.074,.45-Math.max(0,Math.cos(a))*.1,Math.cos(a)*.066+(Math.cos(a)>0?.014:0)).rotation.y=a;}
+    for(const s of [-1,1]){const t=k.P(new RoundedBoxGeometry(.026,.04,.004,2,.006),m,k.spine,s*.009,.33,shellZ(k,.33)+.006);t.rotation.z=s*.15;}},
+});
+Object.assign(GUY_WEAR,STORE_WEAR);Object.assign(OUTFITS2D,{aviators:STORE_WEAR.aviators,roundspecs:STORE_WEAR.roundspecs,sportshades:STORE_WEAR.sportshades,thickframes:STORE_WEAR.thickframes,gamer3d:STORE_WEAR.gamer3d});
+// the store's things are in the closet too, with a 🔒 until you buy them (glasses for girls too)
+GUY_TOPS.push(...STORE_TOPS);GUY_BOTTOMS.push(...STORE_BOTTOMS);GUY_SHOES.push(...STORE_SHOES);GUY_HATS.push(...STORE_HATS);GUY_EXTRAS.push(...STORE_GLASSES,...STORE_EXTRAS);EXTRAS.push(...STORE_GLASSES);
+// prices. tab:'store' things are sold in the 👔 clothing store, not in the 🪙 coin shop
+const STORE_PRICE={tops:[55,35,45,60,50,40],bottoms:[40,45,30],shoes:[60,90,45],hats:[45,55,25],glasses:[40,25,45,30,20],extras:[35,30]};
+const STORE_CAT={glasses:STORE_GLASSES,tops:STORE_TOPS,bottoms:STORE_BOTTOMS,shoes:STORE_SHOES,hats:STORE_HATS,extras:STORE_EXTRAS};
+for(const tab in STORE_CAT)STORE_CAT[tab].forEach(([id,e,n],i)=>SHOP.push({k:'look:'+id,tab:'store',st:tab,e,n,p:STORE_PRICE[tab][i],
+  d:`${tab==='glasses'?'Try them on and see!':'Made for guys.'} Find ${tab==='glasses'?'them':'it'} in your closet's ${{glasses:'Extras',tops:'Tops',bottoms:'Bottoms',shoes:'Shoes',hats:'Hats',extras:'Extras'}[tab]}.`}));
+
+// put one thing on a look (for buying, wearing, and trying things on in the store)
+const SLOT_TABS=['dresses','tops','bottoms','shoes','hats','extras'];
+function findItem(id){for(const tab of SLOT_TABS){const it=(CAT[tab]||[]).concat(GUY_CAT[tab]||[]).find(x=>x[0]===id);if(it)return [tab,it];}return [null,null];}
+function applyItem(L,id,c){const [tab,it]=findItem(id);if(!it)return null;c=c||it[3];
+  if(tab==='extras'){L.extras=L.extras||{};if(GLASSES.includes(id))GLASSES.forEach(g=>{if(g!==id)delete L.extras[g];});L.extras[id]=L.extras[id]||c;return tab;}
+  L[KEY[tab]]={id,c};
+  if(tab==='dresses'){L.top=L.bottom=null;}
+  if(tab==='tops'){L.dress=null;if(!L.bottom)L.bottom=plainBottom(L);}
+  if(tab==='bottoms'){L.dress=null;if(!L.top)L.top=plainTop(L);}
+  return tab;}
+
+/* ---------- put it all on the avatar (14-avatar.js calls this at the end of dress) ---------- */
+function barberDress(k,look){const av=k.av,h=look.hair||{},cut=BCUT[h.id];
+  if(cut){const cap=av.hairMeshes[0];if(cap){cap.visible=false;av.hairMeshes=av.hairMeshes.filter(m=>m!==cap);}
+    const m=k.mat(h.c||'#2b1d16','hair');const n0=av.parts.length;
+    if(h.id!=='bald'){const g=shellGeo(av,cut[3]);fuzz(g,.0012,200);k.P(g,m,k.head);}
+    if(cut[4])cut[4](k,m);av.hairMeshes=av.hairMeshes.concat(av.parts.slice(n0).filter(o=>o.isMesh));}
+  if(look.beard&&look.beard.id&&look.beard.id!=='none')buildBeard(k,look.beard);}
 // ---- src/15-player-friends-townspeople.js ----
 /* ================= PLAYER ================= */
 if(!SAVE.look)SAVE.look=defaultLook();
@@ -2457,7 +2776,7 @@ canvas.addEventListener('pointermove',e=>{
   if(e.pointerId===brush.id){const uv=faceHit(e);if(uv)paintAt(uv);else brush.last=null;return;}
   if(e.pointerId===joy.id){let dx=e.clientX-joy.x0,dy=e.clientY-joy.y0;const d=Math.hypot(dx,dy),max=56;if(d>max){dx*=max/d;dy*=max/d;}joy.x=dx/max;joy.y=dy/max;knob.style.transform=`translate(${dx}px,${dy}px)`;}
   if(e.pointerId===look.id){const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;
-    if(closetOpen){if(!drawing()&&!(ct.on&&!ct.sub)&&!(glamOpen&&ctab!=='hair'))player.face+=dx*.012;}else{cam.yaw-=dx*.006;cam.pitch=Math.min(1.25,Math.max(-.15,cam.pitch+dy*.004));fadeHint();}}});
+    if(closetOpen){if(barberOpen)bview-=dx*.012;else if(!drawing()&&!(ct.on&&!ct.sub)&&!(glamOpen&&ctab!=='hair'))player.face+=dx*.012;}else{cam.yaw-=dx*.006;cam.pitch=Math.min(1.25,Math.max(-.15,cam.pitch+dy*.004));fadeHint();}}});
 const endPtr=e=>{pinchUp(e);parlorUp(e);bakeryUp(e);garageUp(e);beautyUp(e);if(e.pointerId===brush.id){brush.id=null;brush.last=null;savePaint();}if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}if(e.pointerId===look.id)look.id=null;};
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);canvas.addEventListener('lostpointercapture',endPtr);
 canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
@@ -2616,10 +2935,10 @@ let ctab='dresses',lastExtra=null,czoom='body';
 const MK_SHADOW=['#ff6fae','#ffb3d1','#b388ff','#8e6cff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#d4af37','#c0c0c0','#ff8a1f','#8a5a3b','#2d2d3a'];
 const MK_LIPS=['#ff3b6b','#e0263b','#c2185b','#ff6fae','#ffb3d1','#e89aa0','#b5655b','#8e2b5b','#ff8a1f','#8e6cff','#4fb6ff','#2d2d3a'];
 const MK_BRUSH=['#2b1d16','#000000','#ffffff','#ff3b6b','#c2185b','#ff6fae','#b388ff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#d4af37','#c0c0c0','#8a5a3b'];
-function renderCloset(){const L=SAVE.look;if(!glamOpen&&!tabsOf().some(t=>t[0]===ctab))ctab=isGuy(L)?'tops':'dresses';
-  $('#tabs').innerHTML=(glamOpen?GTABS:tabsOf()).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
+function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&&!tabsOf().some(t=>t[0]===ctab))ctab=isGuy(L)?'tops':'dresses';
+  $('#tabs').innerHTML=(glamOpen?GTABS:barberOpen?BARBER_TABS:storeOpen?storeTabs():tabsOf()).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';const sw=(list,cur,kind)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
-  const gh=glamOpen&&glamHTML();if(gh)h=gh;
+  const gh=glamOpen&&glamHTML()||barberOpen&&barberHTML()||storeOpen&&storeHTML();if(gh)h=gh;
   else if(ctab==='hair'){h+=`<h3>Hair style</h3><div class="grid">${hairsOf(L).map(([id,ico,n])=>`<button class="item${L.hair.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div><h3>Hair color</h3>`+sw(myColors(HAIRC),L.hair.c,'hair');}
   else if(ctab==='makeup'){const mk=L.makeup;const swn=(list,cur,kind)=>`<div class="swatches"><button class="sw none${!cur?' on':''}" data-sw="${kind}" data-c="" aria-label="none">🚫</button>${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}"></button>`).join('')}</div>`;
     const ch=(key,opts)=>`<div class="chips">${opts.map(([v,n])=>`<button class="${String(mk[key])===String(v)?'on':''}" data-mk="${key}" data-v="${v}">${n}</button>`).join('')}</div>`;
@@ -2635,7 +2954,7 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!tabsOf().some(t=>t[0]==
       `<h3>Lip liner</h3>`+swn(MK_LIPS,mk.lipLiner,'lipLiner')+
       `<h3>Lip gloss</h3>`+ch('gloss',[[false,'Matte'],[true,'Shiny gloss']])+
       `<h3>🌸 Blush</h3>`+ch('blush',[['none','None'],['pink','Pink'],['peach','Peach'],['rose','Rose']]);}
-  else if(ctab==='skin'){const G=isGuy(L);h+=`<h3>Girl or guy</h3><div class="grid">${[['girl','👧','Girl'],['guy','👦','Guy']].map(([v,e,n])=>`<button class="item${(G?'guy':'girl')===v?' on':''}" data-body="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><h3>Look style</h3><div class="grid">${[['glam',G?'😎':'💃',G?'Real guy':'Glam girl'],['cute','🧸','Cute cartoon']].map(([v,e,n])=>`<button class="item${(L.style||'glam')===v?' on':''}" data-style="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`+((L.style||'glam')!=='cute'?FACEOPT.filter(o=>!G||o[0]!=='lips').map(([k,t,opts])=>`<h3>${t}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${((L.face||{})[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join(''):'')+`<h3>Skin tone</h3>`+sw(SKIN,L.skin,'skin')+`<h3>Eye color</h3>`+sw(EYES,L.eyes,'eyes');}
+  else if(ctab==='skin'){const G=isGuy(L);h+=`<h3>Girl or guy</h3><div class="grid">${[['girl','👧','Girl'],['guy','👦','Guy']].map(([v,e,n])=>`<button class="item${(G?'guy':'girl')===v?' on':''}" data-body="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><h3>Look style</h3><div class="grid">${[['glam',G?'😎':'💃',G?'Real guy':'Glam girl'],['cute','🧸','Cute cartoon']].map(([v,e,n])=>`<button class="item${(L.style||'glam')===v?' on':''}" data-style="${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`+((L.style||'glam')!=='cute'?FACEOPT.filter(o=>!G||o[0]!=='lips').map(([k,t,opts])=>`<h3>${t}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${faceVal(L,k)===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join(''):'')+`<h3>Skin tone</h3>`+sw(SKIN,L.skin,'skin')+`<h3>Eye color</h3>`+sw(EYES,L.eyes,'eyes');}
   else{const list=catOf(ctab),k=KEY[ctab];
     if(ctab==='extras'){h+=`<h3>Tap to add or take off</h3><div class="grid">${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${L.extras[id]?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
       if(lastExtra&&L.extras[lastExtra])h+=`<h3>Color</h3>`+sw(myColors(COLORS),L.extras[lastExtra],'item');}
@@ -2664,12 +2983,12 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
   if(b.dataset.sw){const c=b.dataset.c,k=b.dataset.sw;if(k==='hair')L.hair.c=c;else if(k==='skin')L.skin=c;else if(k==='eyes')L.eyes=c;
     else if(ctab==='extras'){if(lastExtra)L.extras[lastExtra]=c;}else{const cur=L[KEY[ctab]];if(cur)cur.c=c;}return changed();}
   if('item' in b.dataset){const id=b.dataset.item;const list=catOf(ctab);const it=list.find(x=>x[0]===id);
-    if(ctab==='extras'){if(L.extras[id]){delete L.extras[id];lastExtra=null;}else{L.extras[id]=it[3];lastExtra=id;}return changed();}
+    if(ctab==='extras'){if(L.extras[id]){delete L.extras[id];lastExtra=null;}else{applyItem(L,id);lastExtra=id;}return changed();}
     const k=KEY[ctab];if(!id){L[k]=null;}else{const prev=L[k];L[k]={id,c:prev&&prev.id===id?prev.c:(prev&&ctab!=='dresses'&&ctab!=='hats'?prev.c:it[3])};if(prev&&prev.id===id)L[k].c=prev.c;else L[k].c=it[3];}
     if(ctab==='dresses'&&id){L.top=null;L.bottom=null;}if((ctab==='tops'||ctab==='bottoms')&&id){if(L.dress){L.dress=null;if(ctab==='tops'&&!L.bottom)L.bottom=plainBottom(L);if(ctab==='bottoms'&&!L.top)L.top=plainTop(L);}}
     return changed();}};
 function openCloset(){if(closetOpen)return;closeTalk();closetOpen=true;Z.studio.padLbl.visible=false;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');document.body.classList.add('dressing');renderCloset();$('#closet').classList.add('show');player.face=cam.yaw;cam.closetYaw=cam.yaw;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}
-function closeCloset(){if(glamOpen){closeGlam();return;}closetOpen=false;Z.studio.padLbl.visible=true;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();did('dress');}
+function closeCloset(){if(glamOpen){closeGlam();return;}if(barberOpen){closeBarber();return;}if(storeOpen){closeStore();return;}closetOpen=false;Z.studio.padLbl.visible=true;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');cam.yaw=cam.closetYaw;player.face=cam.closetYaw+Math.PI;av.play('twirl');closeClosetHook();did('dress');}
 function closeClosetHook(){if(ct.on&&ct.sub==='closet'){ct.sub=null;backToContest();}}
 $('#done').onclick=closeCloset;
 
@@ -3866,13 +4185,15 @@ $('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('�
 
 // buying
 function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');const have=SAVE.coins||0,need=s.p-have,mine=owns(k),wear=/^(look|pet):/.test(k);
+  // clothing-store things are bought at the store
+  if(s.tab==='store'&&!mine&&!storeOpen){$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>Get it at the 👔 Clothing Store for ${s.p} 🪙! It's past the 💃 Runway.</p><button class="btn" data-b="go">🗺️ Show me the way</button><button class="btn ghost" data-b="close">OK</button>`;$('#buy').dataset.k=k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p>`+
     (mine?(wear?`<button class="btn" data-b="wear">✨ Wear it</button>`:'')+`<button class="btn ghost" data-b="close">OK</button>`
     :need<=0?`<button class="btn" data-b="buy">Buy for ${s.p} 🪙</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} 🪙</p>`
     :`<p class="bneed">You need <b>${need}</b> more 🪙</p><p>Find ⭐ stars, take care of your pet, and help the townspeople to earn more!</p><button class="btn ghost" data-b="close">OK</button>`);
   $('#buy').dataset.k=k;$('#buy').classList.add('show');}
 $('#buy').onclick=e=>{const b=e.target.closest('[data-b]'),k=$('#buy').dataset.k;if(e.target.id==='buy'||b&&b.dataset.b==='close'){$('#buy').classList.remove('show');return;}
-  if(!b)return;$('#buy').classList.remove('show');if(b.dataset.b==='buy')buy(k);if(b.dataset.b==='wear')wearIt(k);};
+  if(!b)return;$('#buy').classList.remove('show');if(b.dataset.b==='buy')buy(k);if(b.dataset.b==='wear')wearIt(k);if(b.dataset.b==='go'){if(closetOpen)closeCloset();setDest(Z.store);}};
 function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;SAVE.coins-=s.p;SAVE.owned[k]=true;did('buy',k);persist();showCoins(true);sfx('tada');
   banner(`${s.e} It's yours!`);burst(new THREE.Vector3(player.pos.x,player.pos.y+1.3,player.pos.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),50,3,.18);
   const [kind,id]=k.split(':');
@@ -3882,9 +4203,7 @@ function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;S
   if(kind==='treat')toast(`Feed the ${s.n.toLowerCase()} to your pet at the 🐾 Pet Parlor!`);
   refreshOpen();}
 function wearIt(k){const [kind,id]=k.split(':');
-  if(kind==='look'){const L=SAVE.look,f=a=>a.find(x=>x[0]===id),d=f(DRESSES),h=f(HATS),t=f(TOPS);
-    if(d){L.dress={id,c:d[3]};L.top=L.bottom=null;}else if(h)L.hat={id,c:h[3]};else if(t){L.top={id,c:t[3]};L.dress=null;if(!L.bottom)L.bottom=plainBottom(L);}
-    else{const it=f(EXTRAS);L.extras[id]=L.extras[id]||it[3];if(!closetOpen||ctab==='extras')lastExtra=id;}
+  if(kind==='look'){const L=SAVE.look;if(applyItem(L,id)==='extras'&&(!closetOpen||ctab==='extras'))lastExtra=id;
     av.dress(L);persist();av.play('twirl');}
   if(kind==='pet'){const pt=pPet||myPet();if(!pt){toast('Adopt a pet first, then they can wear it! 🐾');return;}const c=petCare(pt),it=PHATS.find(x=>x[0]===id);c.fit.hat={id,c:it[3]};dressPet(pt);persist();pt.happy=2;pt.speak('So fancy! 💖');}
   refreshOpen();}
@@ -4119,7 +4438,7 @@ function makeupHTML(){const mk=SAVE.look.makeup,t=MTOOLS.find(x=>x[0]===mTool),c
   if(['shadow','liner','lashes'].includes(mTool))h+=eyeLooksHTML();
   return h+faceShapes();}
 function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute')return '';const F=L.face||{};
-  return FACEOPT.filter(([k])=>k!=='nose').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
+  return FACEOPT.filter(([k])=>k==='eyes'||k==='lips').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
 function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;if(mkExtraClick(b))return true;
   if(b.dataset.htool){hTool=b.dataset.htool;if(hTool==='clip'&&!b.classList.contains('on')){}else if(hTool==='clip'){}sfx('pop');renderCloset();return true;}
   if(b.dataset.hview){hairView=+b.dataset.hview;sfx('pop');return true;}
@@ -4603,6 +4922,129 @@ function openMystery(){const th=rnd(MK_THEMES),L=SAVE.look,mk=L.makeup;
   av.dress(L);persist();sfx('tada');tone(660,.12,'triangle',.08);tone(990,.16,'triangle',.08,.12);
   burst(av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.1,.1)),rnd(th.c),36,1.1,.06);
   toast(`🎁 Surprise! A ${th.n} look!`);gigiSays(rnd(['Ooh, what a surprise! 🎁','I love this one! 😍','Mystery magic! ✨']));did('mystery');renderCloset();}
+// ---- src/24d-barber-and-store.js ----
+/* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
+// The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
+// Both use the closet panel, like the glam mirror does.
+const BARB=Z.barber,STOR=Z.store;
+const zW=(z,lx,y,lz)=>{const [x,w]=z.toWorld(lx,lz);return new THREE.Vector3(x,y,w);};
+const zFace=(z,dx,dz)=>{const c=Math.cos(z.rot),s=Math.sin(z.rot);return Math.atan2(dx*c+dz*s,-dx*s+dz*c);};
+let barberOpen=false,storeOpen=false,bview=.6,onBBPad=false,onSTPad=false,storePick=null;
+
+/* ---------- the people who work here ---------- */
+const shopNPC={built:false,all:[]};
+function mkNPC(z,look,name,lx,lz,face){const a=new Avatar(look,name,'#2f7be5');const o={a,g:a.g,pos:zW(z,lx,0,lz),face,home:[lx,lz,face],z,say:null,sayT:0};a.g.position.copy(o.pos);a.g.rotation.y=face;scene.add(a.g);shopNPC.all.push(o);return o;}
+function buildShopNPCs(){if(shopNPC.built)return;shopNPC.built=true;
+  const max=Object.assign(defaultGuyLook(),{skin:'#c8a072',eyes:'#3d2a1a',hair:{id:'fade',c:'#2b1d16'},beard:{id:'beard',c:'#2b1d16'},top:{id:'buttonup',c:'#ffffff'},bottom:{id:'khakis',c:'#2d2d3a'},shoes:{id:'oxfords',c:'#3b2416'},face:{jaw:'square',brows:'thick'}});
+  shopNPC.max=mkNPC(BARB,max,'💈 Barber Max',.95,BARB.seat[1]+.45,zFace(BARB,-1,-.3));
+  const jay=Object.assign(defaultGuyLook(),{skin:'#8d5a3b',eyes:'#3d2a1a',hair:{id:'cornrows',c:'#1d1410'},beard:{id:'goatee',c:'#1d1410'},top:{id:'sweatervest',c:'#1f2a44'},bottom:{id:'khakis',c:'#c8b28a'},shoes:{id:'loafers',c:'#7a4a2a'},extras:{roundspecs:'#2d2d3a'}});
+  shopNPC.jay=mkNPC(STOR,jay,'👔 Jay',STOR.clerk[0],STOR.clerk[1],zFace(STOR,0,1));
+  // mannequins in the windows show off store clothes (no name tag, and they stand still)
+  const mq=[{top:{id:'leather',c:'#2d2d3a'},bottom:{id:'ripped',c:'#6f9be0'},shoes:{id:'goldkicks',c:'#e0b04a'},hat:{id:'fedora',c:'#3b3b46'},extras:{aviators:'#d4af37'}},
+    {top:{id:'football',c:'#d62839'},bottom:{id:'camopants',c:'#6b7a3f'},shoes:{id:'runners',c:'#4fb6ff'},hat:{id:'visor',c:'#ffffff'},extras:{sportshades:'#ff3b6b',dogtags:'#c0c0c0'}}];
+  STOR.manq.forEach(([lx,lz],i)=>{const l=Object.assign(defaultGuyLook(),{style:'cute',skin:'#f4f4f4',hair:{id:'bald',c:'#ffffff'}},mq[i]);const o=mkNPC(STOR,l,'',lx,lz+.0,zFace(STOR,0,1));o.a.tag.visible=false;o.still=true;o.g.position.y=.12;});}
+anims.push((t,dt)=>{const here=started&&(curZone===BARB||curZone===STOR||barberOpen||storeOpen);if(!here)return;buildShopNPCs();
+  for(const o of shopNPC.all){if(o.still)continue;o.g.position.copy(o.pos);o.g.rotation.y=o.face;o.a.update(dt,0,false);if(o.say){o.sayT-=dt;if(o.sayT<0){o.g.remove(o.say);o.say=null;}}}});
+const say=(o,t)=>{if(o)friendBubble(o,t);};
+
+/* ---------- walking in and stepping on the pads ---------- */
+let shopZone=null;
+anims.push(()=>{if(!started)return;const p=player.pos;
+  if(curZone!==shopZone){shopZone=curZone;if(!closetOpen&&curZone===BARB)setTimeout(()=>toast(isGuy(SAVE.look)?'Step on the ✂️ pad to sit in the barber chair 💈':'This barber shop is for guys 💈 Try the 🪞 glam mirror at the ⭐ Star Model Agency!'),1600);
+    if(!closetOpen&&curZone===STOR)setTimeout(()=>toast('Step on the 👔 pad by the mirror to try on clothes and glasses!'),1600);}
+  {const [lx,lz]=BARB.toLocal(p.x,p.z),d=Math.hypot(lx-BARB.bpad.lx,lz-BARB.bpad.lz);if(d<BARB.bpad.r&&player.onGround&&!closetOpen){if(!onBBPad){onBBPad=true;openBarber();}}else if(d>1.3)onBBPad=false;}
+  {const [lx,lz]=STOR.toLocal(p.x,p.z),d=Math.hypot(lx-STOR.spad.lx,lz-STOR.spad.lz);if(d<STOR.spad.r&&player.onGround&&!closetOpen){if(!onSTPad){onSTPad=true;openStore();}}else if(d>1.3)onSTPad=false;}});
+
+/* ---------- 💈 the barber chair ---------- */
+const BARBER_TABS=[['cut','✂️','Haircut'],['beard','🧔','Beard'],['bface','🙂','Face']];
+let barberPrevTab='tops';
+const BVIEW={cut:.45,beard:.2,bface:0};
+function openBarber(){if(closetOpen)return;buildShopNPCs();const m=shopNPC.max;
+  if(!isGuy(SAVE.look)){say(m,'Hi! This shop is for guys 💈');toast('💇‍♀️ For hair and makeup, try the 🪞 glam mirror at the ⭐ Star Model Agency!');return;}
+  closeTalk();barberOpen=closetOpen=true;barberPrevTab=ctab;ctab='cut';bview=BVIEW.cut;czoom='body';barbCam.init=false;
+  player.pos.copy(zW(BARB,BARB.seat[0],0,BARB.seat[1]));player.vy=0;player.speed=0;player.face=zFace(BARB,0,-1);cam.closetYaw=cam.cy=player.face;cam.fv=null;
+  joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';document.body.classList.add('dressing');$('#ctitle').textContent='💈 Barber Shop';BARB.bpad.lbl.visible=false;
+  m.pos.copy(zW(BARB,.75,0,BARB.seat[1]+.1));m.face=zFace(BARB,-1,0);say(m,rnd(['Take a seat! 💈','What can I do for you? ✂️','Looking for a fresh cut? 💈']));m.a.play('wave');
+  av.play('chair');chairBack(false);renderCloset();$('#closet').classList.add('show');$('#ccontent').scrollTop=0;sfx('tada');}
+// the chair's back hides while you sit, so the camera can go all the way round your head
+const chairBack=v=>BARB.chairs[1].userData.back.forEach(m=>m.visible=v);
+function closeBarber(){if(!barberOpen)return;barberOpen=closetOpen=false;ctab=barberPrevTab;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');$('#ctitle').textContent='👗 My closet';BARB.bpad.lbl.visible=true;chairBack(true);
+  av.dress(SAVE.look);persist();const m=shopNPC.max;if(m){m.pos.copy(zW(BARB,m.home[0],0,m.home[1]));m.face=m.home[2];}
+  player.pos.copy(zW(BARB,0,0,BARB.bpad.lz+.9));player.face=zFace(BARB,0,1);cam.yaw=cam.cy=player.face+Math.PI;cam.fv=null;av.play('twirl');
+  did('barber');if(Date.now()-(SAVE.barberPaid||0)>6e5){SAVE.barberPaid=Date.now();persist();setTimeout(()=>earn(5,'Fresh cut!'),700);}
+  toast('Looking sharp! 💈 The 👔 Clothing Store is past the Runway.');}
+// the camera circles your head; the buttons (or a drag) turn it
+const barbCam={p:new THREE.Vector3(),t:new THREE.Vector3(),init:false};
+function barberCam(dt){if(!barberOpen)return;const T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,ctab==='beard'?-.03:0,0));const k=Math.min(1,dt*5);
+  // turn round the head (not through it) to the angle you picked
+  const want=player.face+bview;if(!barbCam.init){barbCam.a=want;barbCam.d=.7;barbCam.t.copy(T);barbCam.init=true;}barbCam.a=angDamp(barbCam.a,want,k);barbCam.d+=((ctab==='cut'?.7:.55)-barbCam.d)*k;barbCam.t.lerp(T,k);
+  const a=barbCam.a;camera.position.copy(barbCam.t).add(new THREE.Vector3(Math.sin(a)*barbCam.d,.06,Math.cos(a)*barbCam.d));camera.lookAt(barbCam.t);}
+function snipFx(c){const h=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.12,0));burst(h,c||'#3a2618',26,1.2,.05);
+  tone(140,.5,'sawtooth',.03,0,170);setTimeout(()=>{tone(2400,.04,'square',.04);tone(1800,.04,'square',.04,.05);},120);
+  const m=shopNPC.max;if(m){m.a.play(rnd(['magic','clap']));if(Math.random()<.6)say(m,rnd(['Fresh! 💈','Looking sharp! ✂️','Nice cut! 😎','That suits you! 👍','Clean! ✨']));}}
+const viewChips=()=>`<div class="chips"><button data-bview="1.3">⬅️ Side</button><button data-bview="0">🙂 Front</button><button data-bview="-1.3">➡️ Other side</button><button data-bview="3.14">🔙 Back</button></div>`;
+function barberHTML(){const L=SAVE.look,H=L.hair,Bd=L.beard||{id:'none'};const grid=(list,cur,key)=>`<div class="grid">${list.map(([id,e,n])=>`<button class="item${cur===id?' on':''}" data-${key}="${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`;
+  const sws=(list,cur,key)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-${key}="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
+  if(ctab==='cut')return viewChips()+`<h3>✨ Barber specials</h3>${grid(BCUTS,H.id,'bcut')}<p class="drawhint">Get a special once and it's in your 👕 closet's Hair too.</p><h3>💇‍♂️ Classic cuts</h3>${grid(GUY_HAIRS,H.id,'bcut')}<h3>Hair color</h3>`+sws(myColors(HAIRC),H.c,'bhc');
+  if(ctab==='beard')return viewChips()+`<h3>🧔 Facial hair</h3>${grid(BEARDS,Bd.id,'bbeard')}<h3>Beard color</h3><div class="chips"><button data-bbc="${H.c}">🎯 Match my hair</button></div><div style="height:8px"></div>`+sws(HAIRC,Bd.c||H.c,'bbc');
+  if(ctab==='bface')return `<p class="drawhint">🙂 Design your face. Tap a shape to try it.</p>`+FACEOPT.filter(o=>o[0]!=='lips').map(([k,t,opts])=>`<h3>${t}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${faceVal(L,k)===v?' on':''}" data-bface="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('')+
+    `<h3>Skin tone</h3>`+sws(SKIN,L.skin,'bskin')+`<h3>Eye color</h3>`+sws(EYES,L.eyes,'beyes');
+  return '';}
+function barberSeat(){av.g.position.copy(player.pos);av.g.rotation.y=player.face;av.play('chair');}
+function barberClick(b){const L=SAVE.look,d=b.dataset;
+  if(d.bview!=null){bview=+d.bview;sfx('pop');return true;}
+  if(d.bcut){L.hair={id:d.bcut,c:L.hair.c};if(BCUT[d.bcut]){SAVE.cuts=SAVE.cuts||{};if(!SAVE.cuts[d.bcut]){SAVE.cuts[d.bcut]=true;setTimeout(()=>toast('✨ New cut! It\'s in your closet now too.'),600);}}
+    persist();av.dress(L);barberSeat();snipFx(L.hair.c);did('barber',d.bcut);renderCloset();return true;}
+  if(d.bhc){L.hair.c=d.bhc;persist();av.dress(L);barberSeat();snipFx(d.bhc);renderCloset();return true;}
+  if(d.bbeard){L.beard={id:d.bbeard,c:(L.beard&&L.beard.c)||L.hair.c};persist();av.dress(L);barberSeat();snipFx(L.beard.c);renderCloset();return true;}
+  if(d.bbc){L.beard=Object.assign({id:'none'},L.beard,{c:d.bbc});if(L.beard.id==='none')toast('Pick a beard first, then its color 🧔');persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
+  if(d.bface){const [k,v]=d.bface.split(':');L.face=Object.assign({},L.face,{[k]:v});persist();rebuildPlayer();barberSeat();sfx('pop');const m=shopNPC.max;if(m&&Math.random()<.5)say(m,rnd(['Great look! 😎','Nice! 👍']));renderCloset();return true;}
+  if(d.bskin){L.skin=d.bskin;persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
+  if(d.beyes){L.eyes=d.beyes;persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
+  return false;}
+
+/* ---------- 👔 the clothing store ---------- */
+const STORE_TABS=[['glasses','🕶️','Glasses'],['tops','👕','Tops'],['bottoms','👖','Bottoms'],['shoes','👟','Shoes'],['hats','🧢','Hats'],['extras','⌚','Extras']];
+const storeTabs=()=>isGuy(SAVE.look)?STORE_TABS:STORE_TABS.slice(0,1);
+let storePrevTab='tops';
+function openStore(){if(closetOpen)return;buildShopNPCs();closeTalk();storeOpen=closetOpen=true;storePrevTab=ctab;ctab='glasses';storePick=null;setZoom('face');
+  player.pos.copy(zW(STOR,STOR.spad.lx,0,STOR.spad.lz));player.vy=0;player.speed=0;player.face=zFace(STOR,0,1);cam.closetYaw=player.face;cam.fv=null;
+  joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';document.body.classList.add('dressing');$('#ctitle').textContent='👔 Clothing Store';STOR.spad.lbl.visible=false;
+  const j=shopNPC.jay;if(j){say(j,isGuy(SAVE.look)?rnd(['Welcome in! 👔','Try anything on! 😎','New stuff just came in! ✨']):'Hi! Try on some glasses! 🕶️');j.a.play('wave');}
+  if(!isGuy(SAVE.look))setTimeout(()=>toast('The clothes here are for guys, but anyone can try on glasses! 🕶️'),900);
+  renderCloset();$('#closet').classList.add('show');$('#ccontent').scrollTop=0;sfx('tada');}
+function closeStore(){if(!storeOpen)return;storeOpen=closetOpen=false;storePick=null;ctab=storePrevTab;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');$('#ctitle').textContent='👗 My closet';STOR.spad.lbl.visible=true;
+  av.dress(SAVE.look);player.pos.copy(zW(STOR,STOR.spad.lx,0,STOR.spad.lz+1));player.face=zFace(STOR,0,1);cam.yaw=cam.cy=player.face+Math.PI;cam.fv=null;av.play('twirl');did('store');}
+// try something on: it shows on you, but it's only yours once you buy it
+function tryOn(id){storePick=id;const L=JSON.parse(JSON.stringify(SAVE.look));applyItem(L,id);av.dress(L);av.play('twirl');sfx('pop');renderCloset();}
+function storeHTML(){const list=STORE_CAT[ctab]||[],have=SAVE.coins||0;let h=`<p class="drawhint">🪙 You have <b>${have}</b> coins. Tap something to try it on!</p>`;
+  if(storePick){const s=shopItem('look:'+storePick),mine=owns(s.k),L=SAVE.look,wearing=L.extras&&L.extras[storePick]||[L.top,L.bottom,L.shoes,L.hat].some(x=>x&&x.id===storePick);
+    h+=`<div class="earn"><div><b>${s.e}</b><span><b>${s.n}</b><br>${s.d}</span><em>${mine?'✅ Yours':`🪙 ${s.p}`}</em></div></div><div class="chips" style="margin:8px 0">`+
+      (mine?(wearing?`<button class="on">✅ You're wearing it</button>`:`<button data-swear="${storePick}">✨ Wear it</button>`)
+        :have>=s.p?`<button class="on" data-sbuy="${storePick}">🛍️ Buy for ${s.p} 🪙</button>`:`<button disabled>🪙 You need ${s.p-have} more</button>`)+`<button data-sback="1">↩️ Take it off</button></div>`;
+    if(!mine&&have<s.p)h+=`<p class="drawhint">Earn coins by finding ⭐ stars, taking care of your pet and helping the townspeople. Tap 🪙 at the top to see more ways.</p>`;}
+  h+=`<div class="grid">${list.map(([id,e,n])=>{const s=shopItem('look:'+id),m=owns(s.k);return `<button class="item${storePick===id?' on':''}" data-spick="${id}"><b>${e}</b><span>${n}</span><em class="${m?'got':''}">${m?'✅ Yours':`🪙 ${s.p}`}</em></button>`;}).join('')}</div>`;
+  if(!isGuy(SAVE.look))h+=`<p class="drawhint">The clothes here are for guys. Girls' outfits are in the 🪙 coin shop and your 👗 closet.</p>`;
+  return h;}
+function storeClick(b){const d=b.dataset;
+  if(d.spick){tryOn(d.spick);return true;}
+  if(d.sback){storePick=null;av.dress(SAVE.look);sfx('pop');renderCloset();return true;}
+  if(d.sbuy){const k='look:'+d.sbuy;buy(k);const j=shopNPC.jay;if(j&&owns(k)){say(j,rnd(['Great pick! 😎','Looks awesome on you! 👔','Enjoy! 🛍️']));j.a.play('clap');}return true;}
+  if(d.swear){wearIt('look:'+d.swear);return true;}
+  return false;}
+
+// inside a shop the camera stays under the roof (like the agency's)
+function shopCamClamp(z,tgt){const b=z.box;const [plx,plz]=z.toLocal(tgt.x,tgt.z);if(Math.abs(plx)>b.W-.3||plz<b.B+.3||plz>b.F-.7)return;
+  const [clx,clz]=z.toLocal(camera.position.x,camera.position.z);let t=1;const lim=(c,p,lo,hi)=>{if(c>hi&&c!==p)t=Math.min(t,(hi-p)/(c-p));if(c<lo&&c!==p)t=Math.min(t,(lo-p)/(c-p));};
+  lim(clx,plx,-b.W+.4,b.W-.4);lim(clz,plz,b.B+.4,b.F-.4);lim(camera.position.y,tgt.y,.3,b.H-.25);if(t<1)camera.position.lerpVectors(tgt,camera.position,Math.max(.05,t));}
+
+/* ---------- the closet panel's buttons go here while you're at the barber or the store ---------- */
+{const tabsClick=$('#tabs').onclick,contentClick=$('#ccontent').onclick;
+ $('#tabs').onclick=e=>{if(!barberOpen&&!storeOpen)return tabsClick(e);const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;sfx('pop');
+   if(barberOpen){bview=BVIEW[ctab]??0;}
+   if(storeOpen){storePick=null;av.dress(SAVE.look);setZoom(ctab==='glasses'?'face':'body');}
+   renderCloset();$('#ccontent').scrollTop=0;};
+ $('#ccontent').onclick=e=>{if(!barberOpen&&!storeOpen)return contentClick(e);const b=e.target.closest('button');if(!b)return;if(barberOpen)barberClick(b);else storeClick(b);};}
 // ---- src/24d-barn.js ----
 /* ================= HAPPY BARN: farm animals you adopt, care for and ride ================= */
 // c = price in coins, s = price in stars (the rare ones), ride = how high the saddle is (0 = too small to ride)
@@ -5871,13 +6313,14 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   cam.cy=angDamp(cam.cy,tYaw,Math.min(1,dt*(playMode?14:6)));cam.cp+=(tPitch-cam.cp)*Math.min(1,dt*6);cam.cd+=(tDist-cam.cd)*Math.min(1,dt*5);
   const want=ZM?av.head.localToWorld(tmpV.set(0,ZM[0],.1)):tmpV.set(p.x,p.y+(playMode?1.15:.82),p.z);
   if(!cam.fv){cam.fv=want.clone();}cam.fv.lerp(want,Math.min(1,dt*(playMode&&player.speed>.5?22:9)));const tgt=cam.ty.copy(cam.fv);
-  const nearT=ZM||glamOpen?.01:.1;if(camera.near!==nearT){camera.near=nearT;camera.updateProjectionMatrix();}
+  const nearT=ZM||glamOpen||barberOpen?.01:.1;if(camera.near!==nearT){camera.near=nearT;camera.updateProjectionMatrix();}
   camera.position.set(tgt.x+Math.sin(cam.cy)*Math.cos(cam.cp)*cam.cd,tgt.y+Math.sin(cam.cp)*cam.cd,tgt.z+Math.cos(cam.cy)*Math.cos(cam.cp)*cam.cd);
   const minY=groundAt(camera.position.x,camera.position.z)+.25;if(camera.position.y<minY)camera.position.y=minY;
-  if(playMode)agencyCamClamp(tgt);
+  if(playMode){agencyCamClamp(tgt);shopCamClamp(BARB,tgt);shopCamClamp(STOR,tgt);}
   camera.lookAt(tgt);
   if(parlorOpen)parlorCam(dt);
   if(glamOpen)glamCam(dt);
+  if(barberOpen)barberCam(dt);
   if(ct.on)contestCam(dt);
   if(bakeryOpen)bakeryCam(dt);
   if(garageOpen)garageCam(dt);
@@ -5914,7 +6357,7 @@ function preUpload(){const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.f
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
 /* ================= MAP ================= */
-const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff'};
+const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
