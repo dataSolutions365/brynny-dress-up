@@ -253,6 +253,7 @@ body.shopping #zoomCtl,body.talking #zoomCtl{display:none!important}
 #danceList button:active{transform:scale(.93)}
 #danceList button.last{border-color:var(--pink);background:#ffe0f0}
 @media (max-height:520px){#dances .card{max-width:560px}#danceList{grid-template-columns:repeat(4,1fr)}}
+#settings .qrow{margin:0 0 4px}#settings .qnote{margin:0 0 12px;font-size:13px;color:var(--muted);text-align:center}
 #settings .setlbl{margin:0 0 4px;font-weight:700;text-align:center}
 #map .card{max-width:min(760px,calc(100vw - 16px));width:100%;padding:12px 10px 14px;box-sizing:border-box}
 #map h2{margin:0 0 4px;font-size:22px}
@@ -333,7 +334,7 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 <div class="hud" id="banner"></div>
 <div class="hud pill" id="toast"></div>
 <button id="newver" type="button">✨ New version! Tap to refresh</button>
-<div id="glLost"><div>The 3D world took a little nap 😴</div><button type="button" onclick="location.reload()">Tap to wake it up</button><div style="font-size:15px;font-weight:500;opacity:.75;max-width:300px">It will start in light mode so it fits on this phone</div></div>
+<div id="glLost"><div>The 3D world took a little nap 😴</div><button type="button" onclick="location.reload()">Tap to wake it up</button><div style="font-size:15px;font-weight:500;opacity:.75;max-width:300px">It will start in Light mode so it fits on this phone. You can switch back in ⚙️ Settings.</div></div>
 <div class="hud" id="mkChal"><b id="mkChalT"></b><span id="mkChalTime"></span><span id="mkChalRes"></span><button id="mkChalDone">✨ Finish</button></div>
 <div id="flash"></div>
 <button class="hud" id="mini" aria-label="Open the map"><canvas id="miniCv" width="216" height="216"></canvas><small>🗺️ Map</small></button>
@@ -583,6 +584,9 @@ body.contest #closet{display:none}
   <div class="picrow" id="picRow"></div>
   <div class="setlbl">✏️ Your name</div>
   <div id="setNameRow"><input id="setName" maxlength="16" placeholder="Your name" autocomplete="off" aria-label="Your name"><button class="btn" id="setNameGo">Save</button></div>
+  <div class="setlbl">✨ Picture</div>
+  <div class="wstyle qrow"><button id="qFull" type="button">🌟<span>Full</span></button><button id="qLite" type="button">🍃<span>Light</span></button></div>
+  <p class="qnote">Light uses less memory. It turns on by itself if the 3D world naps.</p>
   <a class="btn" href="../" style="display:block">🏠 Go back to the 2D studio</a>
   <button class="btn ghost" id="setClose" style="display:block;width:calc(100% - 8px);margin-top:12px">Close</button>
 </div></div>
@@ -619,7 +623,7 @@ setTimeout(()=>{const l=document.getElementById('loading');if(l&&!window.__game)
 // iPhones can drop the 3D graphics when memory runs low or the app sits in the background; show a way back instead of a frozen picture
 const T0=Date.now();
 document.getElementById('c').addEventListener('webglcontextlost',e=>{e.preventDefault();
-  let lite=false;try{lite=!!localStorage.getItem('brynny.lite3d');localStorage.setItem('brynny.lite3d',String(Date.now()));}catch(x){}// next start uses light mode (see 3d/src/01-setup.js)
+  let lite=false;try{const v=localStorage.getItem('brynny.lite3d');lite=!!v&&v!=='off';localStorage.setItem('brynny.lite3d',String(Date.now()));}catch(x){}// next start uses light mode (see 3d/src/01-setup.js)
   const g=window.__game,dressing=document.body.classList.contains('dressing');
   window.reportProblem&&reportProblem('The 3D graphics were lost (phone memory or background)',`graphics | ${Math.round((Date.now()-T0)/1000)}s after opening${dressing?' | in the closet':''}${document.hidden?' | in background':''}${lite?' | already light mode':''}`);document.getElementById('glLost').classList.add('show');});
 </script>

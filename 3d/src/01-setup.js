@@ -87,10 +87,11 @@ const pick=a=>a[Math.floor(rand()*a.length)];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- renderer ---------- */
-// Light mode: if the phone ran out of graphics memory last time (the "took a little nap" screen), draw a lighter
-// picture for the next week: no smoothing of edges, no shadows, normal sharpness, and no "draw everything up front".
-// That keeps the phone under its limit so it doesn't nap again and again.
-const LITE=(()=>{try{return Date.now()-(+localStorage.getItem('brynny.lite3d')||0)<7*864e5;}catch(e){return false;}})();
+// Light mode: draw a lighter picture (no smoothing of edges, no shadows, normal sharpness, no "draw everything up front").
+// It turns on by itself when the phone runs out of graphics memory (the "took a little nap" screen), so the phone
+// doesn't nap again and again, and the Light / Full switch in Settings turns it on or off.
+// localStorage 'brynny.lite3d': a time = turned on by a nap, 'on' = picked in Settings, 'off' or nothing = full.
+const LITE=(()=>{try{const v=localStorage.getItem('brynny.lite3d');return !!v&&v!=='off';}catch(e){return false;}})();
 const renderer=new THREE.WebGLRenderer({canvas,antialias:!LITE,powerPreference:'high-performance'});
 const PR_MAX=LITE?1:Math.min(devicePixelRatio,isTouch?1.75:2),PR_MIN=Math.min(PR_MAX,1);let prNow=PR_MAX,slowT=0;
 renderer.setPixelRatio(PR_MAX);
