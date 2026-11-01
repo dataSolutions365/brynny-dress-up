@@ -4,8 +4,8 @@
  const grassT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e3c77a';x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(170,140,60,.4)':c<.7?'rgba(255,240,170,.55)':'rgba(140,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(-Math.PI/2+(Math.random()-.5)*.6);x.fillRect(0,0,5+Math.random()*8,1.3);x.restore();}},4);
  patch(z.r,std('#ffffff',{map:grassT,roughness:1}),z.x,z.z);
  // a short dirt path from Halloween Hollow to the gate
- {const [px,pz]=z.toWorld(0,z.r+.6);const pm=std('#ffffff',{map:grassT,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
-  const p=M(new THREE.PlaneGeometry(2.2,2.4),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
+ {const [px,pz]=z.toWorld(0,z.r+.6+z.gap/2);const pm=std('#ffffff',{map:grassT,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
+  const p=M(new THREE.PlaneGeometry(2.2,2.4+z.gap),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
  const wood=std('#9a6a43',{roughness:.85}),bark=std('#7a5236',{roughness:.9}),leafM=phys('#6fa83a',{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')});
  z.fence=5.55;ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a');
  // flat-topped acacia trees, the giraffes' favorite snack

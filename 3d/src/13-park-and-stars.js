@@ -1,16 +1,16 @@
 /* ---------- park trees ---------- */
 {const trunkM=std('#7a5236',{roughness:.9});const leafs=['#3f8f3a','#4fa645','#2f7a34','#5cb04a'].map(c=>phys(c,{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')}));
  const trees=[];let tries=0;
- while(trees.length<56&&tries++<3000){const a=rand()*Math.PI*2,d=10+rand()*33;const x=Math.sin(a)*d,w=Math.cos(a)*d;
+ while(trees.length<120&&tries++<6000){const a=rand()*Math.PI*2,d=10+Math.sqrt(rand())*(R-11.5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
    if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+2.5))continue;
-   if(ZONES.some(z=>{if(!z.d)return false;const t=(x*z.x+w*z.z)/(z.d*z.d);if(t<0||t>1)return false;return Math.hypot(x-z.x*t,w-z.z*t)<3.4;}))continue;
+   if(ZONES.some(z=>{if(!z.d)return false;const t=(x*z.x+w*z.z)/(z.d*z.d);if(t<(z.p0||0)/z.d||t>1)return false;return Math.hypot(x-z.x*t,w-z.z*t)<3.4;}))continue;
    if(trees.some(t=>Math.hypot(t[0]-x,t[1]-w)<3.2))continue;trees.push([x,w]);}
  for(const [x,w] of trees){const s=.8+rand()*.6;const tg=new THREE.Group();tg.position.set(x,0,w);tg.scale.setScalar(s);scene.add(tg);
    M(cyl(.18,.28,2.4,10),trunkM,0,1.2,0,tg);const lm=pick(leafs);
    for(let k=0;k<4;k++){const b=M(new THREE.IcosahedronGeometry(1+rand()*.4,2),lm,(rand()-.5)*1.2,2.8+rand()*1.2,(rand()-.5)*1.2,tg);b.scale.y=.85;}
    obs.push({x,z:w,r:.45*s});}
  // bushes with little flowers on the open grass
- for(let i=0;i<40;i++){const a=rand()*Math.PI*2,d=9+rand()*35;const x=Math.sin(a)*d,w=Math.cos(a)*d;if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+1))continue;
+ for(let i=0;i<90;i++){const a=rand()*Math.PI*2,d=9+Math.sqrt(rand())*(R-10);const x=Math.sin(a)*d,w=Math.cos(a)*d;if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+1))continue;
    const b=M(sph(.4+rand()*.3,12,10),pick(leafs),x,.2,w);b.scale.y=.7;}}
 
 /* ---------- stars to collect ---------- */
@@ -18,7 +18,7 @@ const starShape=new THREE.Shape();for(let i=0;i<10;i++){const a=i/10*Math.PI*2,r
 const starGeo=new THREE.ExtrudeGeometry(starShape,{depth:.06,bevelEnabled:true,bevelSize:.03,bevelThickness:.03,bevelSegments:2});starGeo.center();
 const starMat=new THREE.MeshStandardMaterial({color:'#ffd23f',metalness:.9,roughness:.15,emissive:'#ffaa00',emissiveIntensity:.9});
 const STARS=[];
-{let tries=0;while(STARS.length<24&&tries++<4000){const a=rand()*Math.PI*2,d=3+rand()*40;const x=Math.sin(a)*d,w=Math.cos(a)*d;
+{let tries=0;while(STARS.length<24&&tries++<5000){const a=rand()*Math.PI*2,d=3+Math.sqrt(rand())*(R-5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
   if(obs.some(o=>Math.hypot(o.x-x,o.z-w)<o.r+1))continue;if(STARS.some(s=>Math.hypot(s.x-x,s.z-w)<5))continue;
   const high=STARS.length%4===3;const m=M(starGeo,starMat,x,(high?2.3:1.1)+groundAt(x,w),w,scene,true,false);STARS.push({x,z:w,y:m.position.y,m,got:false});}}
 anims.push(t=>STARS.forEach((s,i)=>{if(s.got)return;s.m.rotation.y=t*2+i;s.m.position.y=s.y+Math.sin(t*2.5+i)*.12;}));

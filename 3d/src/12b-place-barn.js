@@ -15,8 +15,8 @@ function ringFence(z,FR,gateA,railM,gateM,label,fg){const g=z.g,wood=std('#b07a4
  const dirt=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#d9b77e';x.fillRect(0,0,w,h);for(let i=0;i<2600;i++){const c=Math.random();x.fillStyle=c<.4?'rgba(160,115,60,.35)':c<.75?'rgba(255,236,170,.55)':'rgba(120,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(Math.random()*Math.PI);x.fillRect(0,0,6+Math.random()*7,1.4);x.restore();}},4);
  patch(z.r,std('#ffffff',{map:dirt,roughness:1}),z.x,z.z);
  // a short dirt path from the party to the gate
- {const [px,pz]=z.toWorld(0,z.r+.6);const pm=std('#ffffff',{map:dirt,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
-  const p=M(new THREE.PlaneGeometry(2.2,2.4),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
+ {const [px,pz]=z.toWorld(0,z.r+.6+z.gap/2);const pm=std('#ffffff',{map:dirt,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
+  const p=M(new THREE.PlaneGeometry(2.2,2.4+z.gap),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
  const red=phys('#d6453d',{roughness:.55,clearcoat:.3}),white=phys('#fffaf2',{roughness:.45,clearcoat:.4}),roofM=phys('#5b4a6b',{roughness:.6,clearcoat:.3}),
    wood=std('#b07a4a',{roughness:.85}),dark=std('#3b2618',{roughness:1}),gold=std('#e8c25a',{metalness:1,roughness:.25});
  /* the barn: a gambrel (two-slope) roof like a storybook barn */
