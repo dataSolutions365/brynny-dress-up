@@ -17,14 +17,19 @@ function petCare(pt){const all=SAVE.petCare||(SAVE.petCare={});const i=PETS.inde
   let c=all[i];if(!c)c=all[i]={food:50,dirt:[1,1,1,0,0],polish:[null,null,null,null],fit:{},t:Date.now(),cleanAt:0};
   const now=Date.now(),hrs=(now-(c.t||now))/36e5;if(hrs>.01){c.food=Math.max(0,c.food-hrs*8);c.t=now;}
   if(c.cleanAt&&now-c.cleanAt>8*36e5){c.dirt=c.dirt.map(()=>1);c.cleanAt=0;}
+  if(c.polish.length===4)c.polish=c.polish.flatMap(p=>[p,p,p]);
   return c;}
 const dirtSum=c=>c.dirt.reduce((a,b)=>a+b,0);
 function petNeed(pt,world){const c=petCare(pt);if(c.food<35)return "I'm hungry! 🍖";if(dirtSum(c)>=1.5)return "I'm all muddy! 🛁";if(world)return null;if(!c.polish.some(Boolean))return 'Paint my nails? 💅';return 'Spa day! 💖';}
 function petTop(pt){return pt.g.position.clone().add(new THREE.Vector3(0,pt.tagH*.7,0));}
 
 function petExtras(pt){const D=pt.D,r=D.r,L=D.len;
-  pt.nailMats=[];pt.legs.forEach((l,i)=>{const m=phys('#f3ebe2',{roughness:.45,clearcoat:.4});pt.nailMats.push(m);
-    for(const k of [-1,0,1]){const n=M(sph(r*.095,10,8),m,k*r*.17,-D.leg+r*.15,r*.12+r*.43,l.lg,false,false);n.scale.set(1,.75,1.3);}});
+  // every claw has its own polish: claw i is paw floor(i/3)
+  pt.nailMats=[];pt.claws=[];pt.legs.forEach((l,i)=>{
+    // claws sit along the front edge of the paw, so they show up on every kind of pet
+    const pw=l.paw,R=pw.geometry.parameters.radius,sc=pw.scale,cr=Math.max(r*.07,R*.26);
+    for(const k of [-1,0,1]){const m=phys('#f3ebe2',{roughness:.45,clearcoat:.4});pt.nailMats.push(m);
+      const n=M(sph(cr,10,8),m,pw.position.x+k*R*sc.x*.5,pw.position.y+R*sc.y*.25,pw.position.z+R*sc.z*(.92-Math.abs(k)*.12),l.lg,false,false);n.scale.set(1,.7,1.25);pt.claws.push(n);}});
   const mud=std('#7a5232',{roughness:1});
   pt.dirtM=[[r*.93,r*.15,L*.25],[-r*.9,r*.3,-L*.2],[0,r*.98,-L*.05],[r*.55,r*.75,-L*.45],[-r*.6,-r*.55,L*.35]].map(([x,y,zz])=>M(sph(r*.27,10,8),mud,x*.97,y*.97,zz,pt.torso,false,false));
   pt.bubbles=[];pt.wet=0;pt.furBase=pt.furMats.map(m=>m.color.clone());pt.fitMeshes=[];}
@@ -73,7 +78,7 @@ function dressPet(pt){const F=petCare(pt).fit||{},D=pt.D,H=D.head,r=D.r,L=D.len,
 function applyPet(pt){paintNails(pt);showDirt(pt);dressPet(pt);}
 PETS.forEach(pt=>{petExtras(pt);applyPet(pt);});
 
-let parlorOpen=false,ptab='feed',ptool='soap',ppol='#ff6fae',pslot='hat',pPet=null;
+let pFocus=0,parlorOpen=false,ptab='feed',ptool='soap',ppol='#ff6fae',pslot='hat',pPet=null;
 const pcam={p:new THREE.Vector3(),t:new THREE.Vector3(),dy:0,dp:0,id:null,x:0,y:0},pTgt=new THREE.Vector3(),pWant=new THREE.Vector3();
 const rub={id:null,last:0};
 const PCAM={feed:[.55,.38,2.7,.2],bath:[.35,.6,2.6,.2],nails:[.3,.22,2.1,.12],dress:[.6,.25,2.5,.3]};
@@ -102,8 +107,8 @@ function renderParlor(){const pt=pPet,c=petCare(pt),z=Z.parlor;$('#ptitle').text
   let h='';
   if(ptab==='feed')h=`<h3>Snack time! What does ${pt.name} want?</h3><div class="grid">${PFOOD[pt.kind].concat([['🍪','Treat']],TREATS).map(([e,n])=>lockBtn('treat:'+e,e,n)||`<button class="item" data-food="${e}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><p class="drawhint">Tap a food to put it in the bowl. Watch the tummy meter fill up!</p>`;
   else if(ptab==='bath')h=`<h3 id="phint"></h3><div class="grid">${[['soap','🧼','Soap'],['rinse','🚿','Rinse'],['dry','🌬️','Blow-dry']].map(([id,e,n])=>`<button class="item${ptool===id?' on':''}" data-tool="${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div><p class="drawhint">Pick a tool, then rub ${pt.name} with your finger. Drag next to ${pt.name} to spin around and find more mud.</p>`;
-  else if(ptab==='nails')h=`<h3>💅 Pick a polish, then tap a paw</h3><div class="swatches">${POLISH.map(col=>`<button class="sw${col===ppol?' on':''}" style="background:${col}" data-pol="${col}" aria-label="polish ${col}"></button>`).join('')}<button class="sw fancy${ppol==='glitter'?' on':''}" style="background:linear-gradient(135deg,#fff3b0,#d4af37,#ffe27a)" data-pol="glitter" aria-label="glitter">✨</button><button class="sw fancy${ppol==='rainbow'?' on':''}" style="background:conic-gradient(#ff3b6b,#ffd23f,#7ee081,#4fb6ff,#ff3b6b)" data-pol="rainbow" aria-label="rainbow">🌈</button></div>
-    <div style="height:12px"></div><div class="chips"><button data-paint="all">💅 Paint all paws</button><button data-paint="clear">🧽 Take off polish</button></div>`;
+  else if(ptab==='nails')h=`<h3>💅 Pick a polish, then tap one claw at a time</h3><div class="swatches">${POLISH.map(col=>`<button class="sw${col===ppol?' on':''}" style="background:${col}" data-pol="${col}" aria-label="polish ${col}"></button>`).join('')}<button class="sw fancy${ppol==='glitter'?' on':''}" style="background:linear-gradient(135deg,#fff3b0,#d4af37,#ffe27a)" data-pol="glitter" aria-label="glitter">✨</button><button class="sw fancy${ppol==='rainbow'?' on':''}" style="background:conic-gradient(#ff3b6b,#ffd23f,#7ee081,#4fb6ff,#ff3b6b)" data-pol="rainbow" aria-label="rainbow">🌈</button></div>
+    <div style="height:12px"></div><div class="chips"><button data-paint="all">💅 Paint all claws</button><button data-paint="clear">🧽 Take off polish</button></div><p class="drawhint">👆 Use the big paw buttons to look at each paw up close.</p>`;
   else{const F=c.fit;h=PSLOTS.map(([slot,title,list])=>`<h3>${title}</h3><div class="grid"><button class="item${!F[slot]?' on':''}" data-fit="${slot}:"><b>🚫</b><span>None</span></button>${list.map(([id,e,n])=>lockBtn('pet:'+id,e,n)||`<button class="item${F[slot]&&F[slot].id===id?' on':''}" data-fit="${slot}:${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>${F[slot]&&pslot===slot?'<div style="height:8px"></div>'+sw(myColors(COLORS),F[slot].c,'fitc'):''}`).join('');}
   $('#pcontent').innerHTML=h;renderMeters();bathHint();
   z.tub.visible=ptab==='bath';z.bowl.visible=ptab==='feed';if(ptab!=='feed')z.bowlFood.visible=false;}
@@ -112,8 +117,8 @@ $('#pcontent').onclick=e=>{const b=e.target.closest('button');if(!b||!pPet)retur
   if(b.dataset.lock){askBuy(b.dataset.lock);return;}
   if(b.dataset.food)return feedPet(b.dataset.food);
   if(b.dataset.tool){ptool=b.dataset.tool;sfx('pop');renderParlor();return;}
-  if(b.dataset.pol){ppol=b.dataset.pol;sfx('pop');renderParlor();return;}
-  if(b.dataset.paint){for(let i=0;i<4;i++)paintPaw(i,b.dataset.paint==='all'?ppol:null,i<3);return;}
+  if(b.dataset.pol){ppol=b.dataset.pol;sfx('pop');renderParlor();renderNailUI();return;}
+  if(b.dataset.paint){petPaintAll(b.dataset.paint==='all'?ppol:null);return;}
   if(b.dataset.fit!=null){const [slot,id]=b.dataset.fit.split(':');const list=PSLOTS.find(s=>s[0]===slot)[2];const prev=c.fit[slot];
     c.fit[slot]=id?{id,c:prev&&prev.id===id?prev.c:list.find(x=>x[0]===id)[3]}:null;if(id)did('petdress');pslot=slot;dressPet(pt);persist();sfx('pop');pt.happy=1.5;burst(petTop(pt),'#ffd6f0',20,1.2,.08);
     if(id&&Math.random()<.6)pt.speak(rnd(['So fancy! 💖','I love it! ✨','Do I look cute?','Picture time! 📸']));renderParlor();return;}
@@ -142,12 +147,16 @@ function rubAt(e){const pt=pPet,h=petHit(e);if(!h)return;const c=petCare(pt),P=h
 function checkClean(pt){const c=petCare(pt);bathHint();if(!pt.washing)return;
   if(dirtSum(c)===0&&!pt.bubbles.length&&pt.wet<=.001){pt.washing=false;c.cleanAt=Date.now();persist();renderMeters();sfx('tada');pt.happy=2.5;pt.vy=3;pt.speak('Squeaky clean! ✨');did('bath');earn(10,'Squeaky clean');
     const P=petTop(pt);for(let k=0;k<3;k++)setTimeout(()=>burst(P.clone(),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),24,1.6,.1),k*250);floaties(P,'💖',6);}}
-function paintPaw(i,col,quiet){const pt=pPet,c=petCare(pt);c.polish[i]=col==='rainbow'?RAINBOW[i]:col;paintNails(pt);persist();
-  const P=pt.legs[i].paw.getWorldPosition(new THREE.Vector3());burst(P,col==='glitter'?'#ffd23f':col&&col!=='rainbow'?col:'#ffffff',12,.8,.07);
-  if(!quiet){sfx(col?'brush':'pop');if(col&&c.polish.every(Boolean)){pt.happy=2;pt.speak(rnd(['Pretty paws! 💅','Sparkly toes! ✨','I love my nails! 💖']));did('paws');if(Date.now()-(c.nailPaid||0)>6e5){c.nailPaid=Date.now();persist();earn(5,'Pretty paws');}}}}
-function nailTap(e){const pt=pPet,h=petHit(e);if(!h)return false;let best=-1,bd=.16;
-  pt.legs.forEach((l,i)=>{const d=l.paw.getWorldPosition(pw).distanceTo(h.point);if(d<bd){bd=d;best=i;}});
-  if(best<0){toast('Tap a paw to paint it 🐾');return true;}paintPaw(best,ppol);return true;}
+// paint one claw (0-11); quiet skips the sound and the cheer, for painting them all at once
+function paintClaw(i,col,quiet){const pt=pPet,c=petCare(pt),was=c.polish.every(Boolean);c.polish[i]=col==='rainbow'?RAINBOW[i%4]:col;paintNails(pt);persist();
+  const P=pt.claws[i].getWorldPosition(new THREE.Vector3());burst(P,col==='glitter'?'#ffd23f':col&&col!=='rainbow'?col:'#ffffff',quiet?3:10,.5,.04);
+  if(!quiet){sfx(col?'brush':'pop');if(col&&!was)petNailsDone(pt);renderNailUI();}}
+function petNailsDone(pt){const c=petCare(pt);if(!c.polish.every(Boolean))return;pt.happy=2;pt.speak(rnd(['Pretty paws! 💅','Sparkly toes! ✨','I love my nails! 💖']));sfx('tada');did('paws');if(Date.now()-(c.nailPaid||0)>6e5){c.nailPaid=Date.now();persist();earn(5,'Pretty paws');}}
+function petPaintAll(col){const pt=pPet,c=petCare(pt),was=c.polish.every(Boolean);for(let i=0;i<pt.claws.length;i++)paintClaw(i,col,true);sfx(col?'brush':'pop');if(col&&!was)petNailsDone(pt);renderNailUI();}
+function nailTap(e){const pt=pPet,s=nearestNail(e,petNailSpots(pt),50);
+  if(s){paintClaw(s.i,ppol);return true;}
+  const h=petHit(e);if(!h)return false;let best=-1,bd=.2;pt.legs.forEach((l,i)=>{const d=l.paw.getWorldPosition(pw).distanceTo(h.point);if(d<bd){bd=d;best=i;}});
+  if(best>=0&&best!==pFocus){pFocus=best;sfx('pop');renderNailUI();}else toast('Tap one little claw to paint it 💅');return true;}
 
 function parlorDown(e){const pt=pPet;if(!pt)return;const cap=()=>{try{canvas.setPointerCapture(e.pointerId);}catch(_){}};
   if(ptab==='bath'&&rub.id===null&&petHit(e)){rub.id=e.pointerId;rub.last=0;rubAt(e);cap();return;}
@@ -166,6 +175,7 @@ function parlorPet(pt,dt){const z=Z.parlor;pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0
   pt.bubbles.forEach((b,i)=>b.scale.setScalar(b.userData.s*(1+.1*Math.sin(pt.t*6+i))));
   if(pt.wet>.3&&Math.random()<dt*3)burst(petTop(pt).add(new THREE.Vector3(0,-pt.tagH*.4,0)),'#8fd8ff',3,.5,.05);}
 function parlorCam(dt){const z=Z.parlor,pt=pPet;if(!pt)return;const [yo,pi,di,ty]=PCAM[ptab],k=Math.min(1.1,Math.max(.7,pt.tagH));
+  if(ptab==='nails'){pawCam(pt,dt);return;}
   const yaw=z.rot+yo+pcam.dy,pitch=Math.min(1.25,Math.max(-.02,pi+pcam.dp)),d=di*k;
   pTgt.set(pt.pos.x,z.table.h+ty*k,pt.pos.z);pWant.set(pTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,pTgt.y+Math.sin(pitch)*d,pTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
   const a=Math.min(1,dt*5);pcam.p.lerp(pWant,a);pcam.t.lerp(pTgt,a);camera.position.copy(pcam.p);camera.lookAt(pcam.t);}

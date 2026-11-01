@@ -1,4 +1,7 @@
 /* ================= AVATAR ================= */
+// the 10 nail colors of a look ('c' = fingers, 't' = toes); old saves keep one color for all nails
+const NAIL_RB=['#ff3b6b','#ffd23f','#7ee081','#4fb6ff','#b388ff'];
+function nailCols(N,key){N=N||{};const a=N[key+'i'];if(Array.isArray(a))return Array.from({length:10},(_,i)=>a[i]||null);const c=N[key];return Array.from({length:10},(_,i)=>!c?null:c==='rainbow'?NAIL_RB[i%5]:c);}
 // hands with real slim fingers and feet with toes (one merged mesh each); nail spots are saved for manicures and pedicures
 const LIMB={};const UP=new THREE.Vector3(0,1,0);
 function limbPart(geo,pos,dir){const q=new THREE.Quaternion().setFromUnitVectors(UP,dir.clone().normalize());geo.applyQuaternion(q);geo.translate(pos.x,pos.y,pos.z);return geo;}
@@ -257,11 +260,13 @@ class Avatar{
           P(new THREE.TorusGeometry(.047,.008,8,24),m,an,0,.03,-.005).rotation.x=Math.PI/2;P(sph(.016,10,8),mat('#ffffff','gem'),an,0,.012,.085);}}}}
     /* nails: manicure and pedicure polish from the glam mirror */
     {const N=look.nails||{};const nm=(c,f)=>{const m=mat(c,{glitter:'sparkle',chrome:'metal',jelly:'gem'}[f]||'shiny');if(f==='chrome')m.roughness=.12;return m;};
-      const col=(c,i)=>c==='rainbow'?['#ff3b6b','#ffd23f','#7ee081','#4fb6ff','#b388ff'][i%5]:c;
       const nailOn=(grp,spot,m,toe)=>{const r=spot.r;const n=P(sph(1,12,8),m,grp,spot.p.x,spot.p.y,spot.p.z);n.scale.set(r*(toe?.7:.8),r*(toe?.95:1.3),r*(toe?.22:.26));
         const by=spot.d.clone().negate(),bx=new THREE.Vector3().crossVectors(by,spot.n).normalize();n.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(bx,spot.d.clone().negate(),spot.n));n.castShadow=false;};
-      if(N.c)for(const a of arms){const ms={};a.hand.userData.nails.forEach((sp,i)=>{const c=col(N.c,i);nailOn(a.hand,sp,ms[c]||(ms[c]=nm(c,N.f)),false);});}
-      if(N.t)for(const l of legs){const ms={};l.an.userData.nails.forEach((sp,i)=>{const c=col(N.t,i);nailOn(l.an,sp,ms[c]||(ms[c]=nm(c,N.tf)),true);});}}
+      // every nail keeps its own color (nails.ci for fingers, nails.ti for toes); bare nails show on you so you can tap them
+      const bare=this.paintable?mat('#f7d9d2','shiny'):null;
+      const paint=(list,key,fin,toe)=>{const cs=nailCols(N,key),ms={};list.forEach((grp,gi)=>grp.userData.nails.forEach((sp,i)=>{const c=cs[gi*5+i];
+        if(c)nailOn(grp,sp,ms[c]||(ms[c]=nm(c,fin)),toe);else if(bare)nailOn(grp,sp,bare,toe);}));};
+      paint(arms.map(a=>a.hand),'c',N.f,false);paint(legs.map(l=>l.an),'t',N.tf,true);}
     /* hats */
     {const h=look.hat;if(h){const c=h.c,id=h.id;
       if(id==='tiara'){const m=mat(c,'metal');const t=P(new THREE.TorusGeometry(.115,.008,8,40,Math.PI),m,head,0,.07,.0);t.rotation.x=-1.1;
