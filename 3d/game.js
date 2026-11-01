@@ -1533,15 +1533,18 @@ class Avatar{
     if(this.paintCv)x.drawImage(this.paintCv,0,0,W,W);
     faceExtras(this,x,at,k,mk);
     this.faceTex.needsUpdate=true;}
-  play(e){this.emote={id:e,t:0};}
+  // a guy does his own version of the girly moves (a cool pose instead of a model pose, a bow instead of a curtsy...)
+  play(e){if(this.guy&&GUY_MOVES[e])e=GUY_MOVES[e];this.emote={id:e,t:0};}
   update(dt,speed,air){
     this.t+=dt;const t=this.t;const sp=Math.min(speed/4.5,1.3);
     this.phase+=dt*(5+sp*6)*(sp>.03?1:0);
     const L=this.legs,A=this.arms;const sw=Math.sin(this.phase)*sp*this.legAmp;
     const damp=(o,k,v,r=12)=>{o[k]+=(v-o[k])*Math.min(1,dt*r);};
-    let tgt={an:0,l0:-sw,l1:sw,k0:Math.max(0,Math.sin(this.phase+1.6))*sp*.9,k1:Math.max(0,Math.sin(this.phase+1.6+Math.PI))*sp*.9,a0x:sw*1.1,a1x:-sw*1.1,a0z:-.08,a1z:.08,e0:-.2-sp*.25,e1:-.2-sp*.25,spin:0,bob:Math.abs(Math.sin(this.phase))*.035*sp,hd:0,sy:0,lean:sp*.08};
+    let tgt={an:0,l0:-sw,l1:sw,k0:Math.max(0,Math.sin(this.phase+1.6))*sp*.9,k1:Math.max(0,Math.sin(this.phase+1.6+Math.PI))*sp*.9,a0x:sw*1.1,a1x:-sw*1.1,a0z:-.08,a1z:.08,e0:-.2-sp*.25,e1:-.2-sp*.25,spin:0,bob:Math.abs(Math.sin(this.phase))*.035*sp,hd:0,sy:0,lean:sp*.08,hx:0,hr:0,sz:0,hy:0,st:0,a0y:0,l0z:0,l1z:0,tilt:0,a1y:0};
     if(air){tgt.l0=-.5;tgt.l1=.15;tgt.k0=.9;tgt.k1=.35;tgt.a0z=-1.6;tgt.a1z=1.6;tgt.a0x=0;tgt.a1x=0;}
     const breathe=Math.sin(t*2)*.01;
+    // walking the runway in the model contest: girls do a catwalk, guys a confident stride (24-model-agency.js sets runwayT)
+    if(this.runwayT>0){this.runwayT-=dt;if(sp>.03)runwayWalk(this,tgt,sp);}
     const e=this.emote;let ext=0;
     if(e){e.t+=dt;const k=e.t;
       if(e.id==='wave'){tgt.a0z=-2.7;tgt.e0=0;tgt.a0x=0;ext=Math.sin(k*12)*.5;tgt.hd=.12;if(k>2)this.emote=null;}
@@ -1561,12 +1564,15 @@ class Avatar{
         if(sp>.15)this.emote=null;}
       // riding a barn animal (24d-barn.js): sit tall, legs around its sides, hands on the reins
       if(e.id==='ride'){tgt.bob=-(this.hip-(.46+this.legX));tgt.l0=tgt.l1=-.95;tgt.k0=tgt.k1=1.05;tgt.a0x=tgt.a1x=-.75;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.7;tgt.lean=.05+sp*.08;tgt.hd=Math.sin(k*2)*.03;}
+      // the dances you pick from the Dance list (14d-dances.js), and the guy versions of moves
+      const DM=MOVE_ANIMS[e.id];if(DM){DM.go(k,tgt,this);if(k>DM.t||sp>.15)this.emote=null;}
       if(e.id==='magic'){tgt.a0z=-2.9;tgt.a1z=2.9;tgt.e0=tgt.e1=0;tgt.a0x=tgt.a1x=0;tgt.spin=Math.min(1,k/1.8)*Math.PI*2;tgt.bob=Math.sin(Math.min(1,k/1.8)*Math.PI)*.25;if(k>1.9)this.emote=null;}}
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);
-    damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);A[0].el.rotation.z=ext;
+    damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;
     damp(this.hips.position,'y',this.hip+this.lift+tgt.bob,20);damp(this.spine.rotation,'x',tgt.lean+breathe,6);damp(this.hips.rotation,'y',tgt.sy,8);damp(this.head.rotation,'z',tgt.hd,8);
-    this.hips.rotation.x=this.emote&&this.emote.id==='flip'?this.flip:0;this.spinY=e&&(e.id==='twirl'||e.id==='magic')?tgt.spin:0;
+    damp(this.hips.position,'x',tgt.hx,14);damp(this.hips.rotation,'z',tgt.hr,10);damp(this.spine.rotation,'z',tgt.sz,10);damp(this.head.rotation,'y',tgt.hy,12);damp(L[0].hp.rotation,'z',tgt.l0z,12);damp(L[1].hp.rotation,'z',tgt.l1z,12);damp(A[1].el.rotation,'z',tgt.a1y,12);damp(this.spine.rotation,'y',tgt.st,10);this.tilt=(this.tilt||0)+(tgt.tilt-(this.tilt||0))*Math.min(1,dt*8);
+    this.hips.rotation.x=this.emote&&this.emote.id==='flip'?this.flip:(this.tilt||0);this.spinY=e&&(e.id==='twirl'||e.id==='magic'||MOVE_ANIMS[e.id])?tgt.spin:0;
     // blink
     this.blink-=dt;const bl=this.blink<0?Math.max(.08,Math.abs(this.blink+.07)/.07):1;if(this.blink<-.14)this.blink=2+Math.random()*3.5;this.eyes.forEach(g=>g.scale.y=bl*(g.scale.x||1));
     for(const w of this.wings)w.wg.rotation.y=w.s*(.5+Math.sin(t*(air?16:5))*.35);
@@ -2118,6 +2124,100 @@ const GUY_SPORT_LOOKS={
   court:{top:{id:'bballjersey',c:'#d62839'},bottom:{id:'bballshorts',c:'#d62839'},shoes:{id:'courtkicks',c:'#ffffff'},hat:{id:'sweatband',c:'#ffffff'}},
   batting:{top:{id:'baseballtop',c:'#ffffff'},bottom:{id:'baseballpants',c:'#ffffff'},shoes:{id:'ballcleats',c:'#2d2d3a'},hat:{id:'helmet',c:'#3a5bd9'},glove:'#a0622d'}};
 const sportLook=zid=>(isGuy(SAVE.look)?GUY_SPORT_LOOKS:SPORT_LOOKS)[zid];
+// ---- src/14d-dances.js ----
+/* ================= DANCES AND GUY MOVES ================= */
+// Tap Dance in the action buttons to pick a dance from the list (19c-dance-picker.js). Each dance here moves the
+// avatar's joints over time: go(k,tgt,av) gets the seconds since the dance started (k) and sets the targets the
+// avatar eases toward (tgt, see Avatar.update in 14-avatar.js), and t is how long it lasts. Walking stops a dance.
+// Joints: l0/l1 legs forward(-)/back(+), k0/k1 knees, l0z/l1z legs out to the side, an ankles,
+// a0x/a1x arms forward(-)/back(+), a0z/a1z arms out and up (arm 0 goes negative, arm 1 positive), e0/e1 elbows bend,
+// a0y/a1y elbows bend sideways, bob hips up/down, hx hips side to side, sy turn the body, st twist the shoulders,
+// lean bend forward, sz bend sideways, hr tilt the hips, hd tilt the head, hy turn the head, spin whole turns
+// (end on a full turn), tilt the whole body forward.
+// The same dances work for girls and guys.
+const DANCES=[['dance','💃','Party'],['floss','🧵','The floss'],['twostep','🤠','Two step'],['breakdance','🔄','Breakdance'],['robot','🤖','Robot'],
+  ['runningman','🏃','Running man'],['disco','🪩','Disco'],['sprinkler','💦','Sprinkler'],['macarena','🎶','Macarena'],['dab','😎','Dab'],['ballet','🩰','Ballet']];
+const DANCE_IDS=new Set(DANCES.map(d=>d[0]));
+const dEase=x=>x<=0?0:x>=1?1:x*x*(3-2*x),dPos=x=>Math.max(0,x);
+// one arm in a named spot; side 0 is arm 0, side 1 mirrors it
+const ARM_AT={down:[0,-.08,-.1,0],out:[-1.5,0,0,0],shoulder:[-.95,.75,-1.3,0],head:[-.2,-2.5,0,-1.5],hip:[-.55,.55,-.6,0],pocket:[.15,-.55,-.2,1.5]};
+function armAt(tgt,side,spot){const [x,z,e,y]=ARM_AT[spot],m=side?-1:1;tgt['a'+side+'x']=x;tgt['a'+side+'z']=z*m;tgt['e'+side]=e;tgt['a'+side+'y']=y*m;}
+
+const MOVE_ANIMS={
+  // the floss: straight arms swing side to side, one in front and one behind, hips swing the other way
+  floss:{t:4.4,go(k,tgt){const f=Math.sin(k*7);tgt.a0z=tgt.a1z=f*.85;tgt.a0x=-.5*f;tgt.a1x=.5*f;tgt.e0=tgt.e1=-.08;
+    tgt.hx=-f*.06;tgt.l0z=tgt.l1z=f*.13;tgt.sz=f*.05;tgt.bob=-Math.abs(f)*.02;tgt.hd=f*.06;tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=.05;}},
+  // two step: step side to side with a bounce, elbows bent and snapping
+  twostep:{t:4.8,go(k,tgt){const w=k*Math.PI*1.8,s=Math.sin(w),b=Math.abs(Math.cos(w));tgt.hx=s*.08;tgt.l0z=-dPos(-s)*.22;tgt.l1z=dPos(s)*.22;
+    tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=.15+.15*b;tgt.bob=-.02-.035*b;tgt.e0=tgt.e1=-1.5;tgt.a0x=-.25+s*.25;tgt.a1x=-.25-s*.25;tgt.a0z=-.2;tgt.a1z=.2;
+    tgt.sy=s*.18;tgt.hd=s*.08;tgt.sz=-s*.05;}},
+  // breakdance: toprock steps, drop down, spin on the floor with the legs out, then freeze with a hand in the air
+  breakdance:{t:5.6,go(k,tgt){
+    if(k<1.5){const s=Math.sin(k*7);tgt.l0=-.5*dPos(s);tgt.k0=.7*dPos(s);tgt.l1=-.5*dPos(-s);tgt.k1=.7*dPos(-s);tgt.sy=s*.35;tgt.st=-s*.2;
+      tgt.a0z=-.7-.3*s;tgt.a1z=.7-.3*s;tgt.a0x=tgt.a1x=-.3;tgt.e0=tgt.e1=-1.2;tgt.bob=-.05;tgt.lean=.12;return;}
+    if(k<1.9){const u=dEase((k-1.5)/.4);tgt.bob=-.5*u;tgt.l0=tgt.l1=-1.3*u;tgt.k0=tgt.k1=1.9*u;tgt.lean=.4*u;tgt.a0x=tgt.a1x=-.7*u;tgt.e0=tgt.e1=-.3;return;}
+    if(k<4.4){const u=k-1.9;tgt.spin=dEase(u/2.5)*Math.PI*6;tgt.bob=-.5;tgt.tilt=.25;tgt.lean=.35;
+      tgt.l0=-1.1+.35*Math.sin(u*12);tgt.l1=-.5-.35*Math.sin(u*12);tgt.k0=.3;tgt.k1=.5;tgt.l0z=-.6;tgt.l1z=.6;
+      tgt.a0x=-.5;tgt.a0z=-.5;tgt.e0=0;tgt.a1z=1.2;tgt.a1x=-.2;tgt.e1=-.4;tgt.hd=.1;return;}
+    tgt.spin=Math.PI*6;tgt.bob=-.45;tgt.a1z=2.7;tgt.e1=0;tgt.a1x=0;tgt.a0x=-.3;tgt.a0z=-.6;tgt.e0=0;
+    tgt.l0=-1.4;tgt.k0=1.8;tgt.l1=-.6;tgt.k1=.4;tgt.l1z=.5;tgt.tilt=.15;tgt.sz=-.25;tgt.hd=-.2;}},
+  // robot: stiff, choppy poses with the elbows bent at right angles
+  robot:{t:4.8,go(k,tgt){const q=Math.floor(k*2.5)%4;tgt.a0x=tgt.a1x=0;tgt.a0z=-.1;tgt.a1z=.1;tgt.e0=tgt.e1=-1.57;tgt.k0=tgt.k1=.08;tgt.l0=tgt.l1=0;
+    if(q===0)tgt.hy=.45;
+    if(q===1){tgt.a0z=-1.57;tgt.a0y=-1.57;tgt.e0=0;tgt.sy=.3;tgt.hy=-.2;}
+    if(q===2){tgt.a1z=1.57;tgt.a1y=1.57;tgt.e1=0;tgt.sy=-.3;tgt.hy=.2;}
+    if(q===3){tgt.hy=-.45;tgt.bob=-.06;tgt.k0=tgt.k1=.3;tgt.l0=tgt.l1=-.15;tgt.a0x=tgt.a1x=-.3;}}},
+  // running man: one knee comes up while the other foot slides back, arms pumping
+  runningman:{t:4.4,go(k,tgt){const s=Math.sin(k*Math.PI*2.2);tgt.l0=-.9*dPos(s)+.3*dPos(-s);tgt.k0=1.3*dPos(s)+.1;tgt.l1=-.9*dPos(-s)+.3*dPos(s);tgt.k1=1.3*dPos(-s)+.1;
+    tgt.bob=.03*Math.abs(s)-.06;tgt.a0x=.55*s;tgt.a1x=-.55*s;tgt.e0=tgt.e1=-1.6;tgt.a0z=-.15;tgt.a1z=.15;tgt.lean=.1;tgt.hd=s*.05;}},
+  // disco: point up to the sky, then down across the hips, the other hand on the hip
+  disco:{t:4.6,go(k,tgt){const w=k*Math.PI*1.8,u=(Math.sin(w)+1)/2;tgt.a0z=.5-2.9*u;tgt.a0x=-.35;tgt.e0=0;tgt.hy=-.3*u;
+    tgt.a1z=.6;tgt.a1y=-1.5;tgt.e1=-.2;tgt.a1x=0;tgt.sy=(u-.5)*.3;tgt.hx=(.5-u)*.05;tgt.k0=.25*u;tgt.l0=-.1*u;tgt.k1=.05;tgt.l1=0;
+    tgt.bob=-.02-.03*Math.abs(Math.cos(w*2));tgt.hd=(u-.5)*-.15;}},
+  // sprinkler: one hand behind the head, the other arm out front, click-click-click around and sweep back
+  sprinkler:{t:4.8,go(k,tgt){const c=k%2.4;let r;if(c<1.6)r=-.7+Math.floor(c/.27)*.28;else r=.7-dEase((c-1.6)/.8)*1.4;
+    tgt.sy=r;tgt.a1z=2.5;tgt.a1y=1.6;tgt.a1x=.2;tgt.e1=0;tgt.a0x=-1.5;tgt.a0z=-.1;tgt.e0=0;tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=.2;
+    tgt.bob=-.03-(c<1.6?.02*Math.abs(Math.sin(c*Math.PI/.27)):0);tgt.hd=.1;}},
+  // macarena: arms out, flip, shoulders, behind the head, hips, back pockets, wiggle and hop
+  macarena:{t:6.4,go(k,tgt){const c=Math.floor(k*2.5)%16,frac=k*2.5%1;
+    const R=['out','out','shoulder','head','hip','pocket'],r=Math.min(5,Math.floor(c/2)),l=Math.min(5,Math.floor((c-1)/2));
+    armAt(tgt,1,R[r]);armAt(tgt,0,c<1?'down':R[l]);tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=.08;
+    if(c>=12&&c<15){tgt.hr=Math.sin(k*14)*.12;tgt.sy=Math.sin(k*14)*.15;tgt.bob=-.04;}
+    if(c===15){tgt.bob=Math.sin(frac*Math.PI)*.08;tgt.k0=tgt.k1=.35;}
+    if(c===2||c===3)tgt.hd=.05*(c===2?1:-1);}},
+  // dab: duck your head into one elbow and throw the other arm up, then switch sides
+  dab:{t:4,go(k,tgt){const c=k%2,d=Math.floor(k/2)%2;tgt.l0=tgt.l1=0;
+    if(c<.5){const b=Math.sin(c/.5*Math.PI);tgt.bob=-.06*b;tgt.k0=tgt.k1=.3*b;tgt.e0=tgt.e1=-.6;tgt.a0x=tgt.a1x=-.2;return;}
+    const up=d?0:1,bent=d?1:0,m=up?1:-1;tgt['a'+up+'z']=2.2*m;tgt['a'+up+'x']=-.3;tgt['e'+up]=0;
+    tgt['a'+bent+'x']=-1.9;tgt['a'+bent+'z']=.7*m;tgt['e'+bent]=-1.5;tgt.hd=.3*m;tgt.hy=.35*m;tgt.lean=.25;tgt.sy=-.2*m;tgt.bob=-.03;}},
+  // ballet: a pirouette on your toes with arms over your head, then an arabesque
+  ballet:{t:5,go(k,tgt){
+    if(k<2.6){const u=dEase(k/2.4);tgt.spin=u*Math.PI*4;tgt.a0z=-2.7;tgt.a1z=2.7;tgt.a0x=tgt.a1x=-.25;tgt.e0=tgt.e1=-.5;tgt.a0y=-.6;tgt.a1y=.6;
+      tgt.l0=0;tgt.k0=0;tgt.l1=-.8;tgt.k1=1.7;tgt.l1z=.45;tgt.an=.4;tgt.bob=.04;tgt.hd=0;return;}
+    tgt.spin=Math.PI*4;tgt.lean=.55;tgt.l1=1.15;tgt.k1=0;tgt.l0=0;tgt.k0=.05;tgt.a0x=-1.5;tgt.a0z=-.1;tgt.e0=0;tgt.a1z=1.4;tgt.a1x=.2;tgt.e1=-.2;tgt.hd=-.1;tgt.bob=-.02;}},
+
+  /* the guy versions of the girly moves (Avatar.play swaps them in through GUY_MOVES) */
+  // cool pose: arms crossed, chin up, standing wide at an angle
+  coolpose:{t:2.4,go(k,tgt){tgt.a0x=tgt.a1x=-.6;tgt.a0z=-.15;tgt.a1z=.15;tgt.e0=tgt.e1=-1.55;tgt.a0y=1.1;tgt.a1y=-1.1;tgt.lean=-.06;tgt.sy=.3;tgt.hy=-.25;tgt.hd=.08;
+    tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=0;tgt.l0z=-.12;tgt.l1z=.12;tgt.bob=-.01+Math.sin(Math.min(k,.5)*Math.PI*2)*.01;}},
+  // finger guns: point both hands forward and "pew pew"
+  guns:{t:1.6,go(k,tgt){const r=dPos(Math.sin(k*10))*.25;tgt.a0x=tgt.a1x=-1.45+r;tgt.a0z=.15;tgt.a1z=-.15;tgt.e0=tgt.e1=-.15;tgt.sy=.25;tgt.hd=-.1;tgt.hy=-.15;tgt.lean=-.04;}},
+  // bow: one hand on the chest, the other behind the back
+  gbow:{t:1.8,go(k,tgt){const b=Math.sin(Math.min(1,k/1.6)*Math.PI);tgt.lean=b*.6;tgt.bob=-b*.04;tgt.a0x=-.9;tgt.a0z=.45;tgt.e0=-1.6;tgt.a1x=.5;tgt.a1z=-.1;tgt.e1=-1.2;
+    tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=0;}},
+  // spin: a quick turn that ends pointing up
+  spin:{t:1.4,go(k,tgt){const u=dEase(k/.9);tgt.spin=u*Math.PI*2;tgt.a0z=-.5;tgt.a1z=.5+(k>.9?1.9:0);tgt.a0x=tgt.a1x=0;tgt.e0=-.8;tgt.e1=k>.9?0:-.8;tgt.bob=-.03;}},
+  // flex: show off both arms
+  flex:{t:2,go(k,tgt){const p=Math.sin(Math.min(k,1.8)*8)*.08;tgt.a0z=-1.5;tgt.a0y=-1.7-p;tgt.a1z=1.5;tgt.a1y=1.7+p;tgt.e0=tgt.e1=0;tgt.a0x=tgt.a1x=0;
+    tgt.l0z=-.12;tgt.l1z=.12;tgt.bob=-.04;tgt.lean=-.05;tgt.hd=Math.sin(k*3)*.06;}}};
+
+// girls' move -> guys' move
+const GUY_MOVES={pose:'coolpose',kiss:'guns',bow:'gbow',twirl:'spin'};
+
+// walking the runway: girls put one foot in front of the other with swinging hips, guys stride with their shoulders
+function runwayWalk(a,tgt,sp){const s=Math.sin(a.phase),k=Math.min(1,sp);
+  if(a.guy){tgt.st=-s*.16*k;tgt.sy=s*.05*k;tgt.a0x*=1.35;tgt.a1x*=1.35;tgt.a0z=-.2;tgt.a1z=.2;tgt.e0=tgt.e1=-.4;tgt.lean=-.05;tgt.l0z=-.04;tgt.l1z=.04;tgt.hd=0;tgt.hy=0;return;}
+  tgt.l0z=.08*k;tgt.l1z=-.08*k;tgt.hr=s*.09*k;tgt.hx=s*.025*k;tgt.sy=s*.12*k;tgt.st=-s*.06*k;tgt.a0x*=.6;tgt.a1x*=.6;tgt.a0z=-.16;tgt.a1z=.16;tgt.e0=tgt.e1=-.25;tgt.lean=-.03;tgt.hd=-s*.03;}
 // ---- src/15-player-friends-townspeople.js ----
 /* ================= PLAYER ================= */
 if(!SAVE.look)SAVE.look=defaultLook();
@@ -2557,8 +2657,11 @@ let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.classList.
 let bannerT;function banner(t){const el=$('#banner');el.textContent=t;el.classList.add('show');clearTimeout(bannerT);bannerT=setTimeout(()=>el.classList.remove('show'),1800);}
 /* action buttons around the jump button */
 const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','Twirl'],['kiss','😘','Kiss'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♀️','Sit'],['pose','✨','Pose'],['bow','👑','Curtsy'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
+// guys get their own buttons: the same ids (so quests and challenges still count them), guy names, and a Flex.
+// Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
+const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>ACTIONS.concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+const allActs=()=>(isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -2568,17 +2671,23 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
   for(let i=0;i<n;i++){const s=sprite(heartTex[emoji],.2,.2);s.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*.4,Math.random()*.2,(Math.random()-.5)*.4));scene.add(s);const v=new THREE.Vector3((Math.random()-.5)*.6,.9+Math.random()*.6,(Math.random()-.5)*.6);let life=1.4+Math.random()*.5;
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
-function doAction(id){if(closetOpen||!started)return;const P=player.pos;questEvent('act',id);
+function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  if(id==='dance'&&!picked){openDances();return;}
+  // a dance picked from the Dance list counts as dancing for quests and challenges
+  const dancing=DANCE_IDS.has(id);questEvent('act',dancing?'dance':id);const G=isGuy(av.look);
   if(id==='flip'){if(!player.onGround)return;player.vy=7.6;player.onGround=false;sfx('jump');}
   if(id==='cheer'||id==='jumpjack'){if(player.onGround){player.vy=5;player.onGround=false;}}
   if(id==='jumpjack'){av.play('cheer');burst(new THREE.Vector3(P.x,P.y+1.2,P.z),'#ffd23f',30,2.5,.18);return;}
   av.play(id);
-  if(id==='twirl')burst(new THREE.Vector3(P.x,P.y+1,P.z),'#ffb3e0',30,2,.18);
-  if(id==='kiss')setTimeout(()=>floaties(headPos(),'💖',7),650);
+  if(id==='twirl')burst(new THREE.Vector3(P.x,P.y+1,P.z),G?'#8fd8ff':'#ffb3e0',30,2,.18);
+  if(id==='kiss')setTimeout(()=>floaties(headPos(),G?'😎':'💖',G?4:7),G?250:650);
+  if(id==='flex')setTimeout(()=>floaties(headPos(),'💪',4),400);
+  if(id==='breakdance')setTimeout(()=>burst(new THREE.Vector3(P.x,P.y+.4,P.z),'#8fd8ff',40,2.5,.16),1900);
+  if(dancing)setTimeout(()=>floaties(headPos(),'🎵',4),300);
   if(id==='clap')setTimeout(()=>floaties(headPos(),'✨',4),300);
   if(id==='magic')for(let k=0;k<4;k++)setTimeout(()=>burst(new THREE.Vector3(P.x,P.y+1.4,P.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#c6a6ff']),36,3,.2),k*350);
-  if(id==='dance'||id==='wave')for(const f of FRIENDS)if(f.pos.distanceTo(P)<6){setTimeout(()=>{f.play(id);if(id==='wave')friendBubble(f,`Hi ${SAVE.name||'friend'}! 👋`);},300+Math.random()*500);}
-  if(myPet()&&myPet().pos.distanceTo(P)<5&&(id==='dance'||id==='cheer'||id==='magic'))myPet().happy=1.5;}
+  if(dancing||id==='wave')for(const f of FRIENDS)if(f.pos.distanceTo(P)<6){setTimeout(()=>{f.play(id);if(id==='wave')friendBubble(f,`Hi ${SAVE.name||'friend'}! 👋`);},300+Math.random()*500);}
+  if(myPet()&&myPet().pos.distanceTo(P)<5&&(dancing||id==='cheer'||id==='magic'))myPet().happy=1.5;}
 renderActions();
 function updateStars(){did('stars');}
 (SAVE.stars||[]).forEach(i=>{if(STARS[i]){STARS[i].got=true;STARS[i].m.visible=false;}});updateStars();
@@ -2643,7 +2752,7 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!tabsOf().some(t=>t[0]==
       h+=`<div class="grid">${none}${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
       if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
   $('#ccontent').innerHTML=h;}
-function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;}
+function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
 $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
@@ -2795,6 +2904,19 @@ function dressPetMore(pt,F,add,cloth,shiny){const D=pt.D,H=D.head,r=D.r,L=D.len,
 // the ✨ stars spin around their pet
 const sparkPets=new Set();
 anims.push((t,dt)=>{for(const pt of sparkPets){if(!pt.sparkG||!pt.sparkG.parent){sparkPets.delete(pt);continue;}pt.sparkG.rotation.y+=dt*1.2;}});
+// ---- src/19c-dance-picker.js ----
+/* ================= DANCE LIST ================= */
+// Tapping Dance opens a list of dances to pick from (the dances themselves are in 14d-dances.js).
+// Your last dance is marked so it's easy to do it again. Friends nearby join in with the same dance.
+let lastDance=SAVE.lastDance||'dance';
+function renderDances(){const G=isGuy(SAVE.look);$('#dancesT').textContent=(G?'🕺':'💃')+' Pick a dance';
+  $('#danceList').innerHTML=DANCES.map(d=>`<button data-dance="${d[0]}" class="${d[0]===lastDance?'last':''}">${d[0]==='dance'&&G?'🕺':d[1]}<span>${d[2]}</span></button>`).join('');}
+function openDances(){if(closetOpen||!started)return;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';renderDances();$('#dances').classList.add('show');sfx('pop');}
+function closeDances(){$('#dances').classList.remove('show');}
+$('#danceList').addEventListener('click',e=>{const b=e.target.closest('[data-dance]');if(!b)return;const id=b.dataset.dance;
+  lastDance=SAVE.lastDance=id;persist();closeDances();doAction(id,true);});
+$('#dancesClose').onclick=closeDances;
+$('#dances').onclick=e=>{if(e.target.id==='dances')closeDances();};
 // ---- src/20-pet-parlor.js ----
 /* ================= PET PARLOR (feed, bath, nails, dress up) ================= */
 const PFOOD={cat:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],dog:[['🦴','Bone'],['🍖','Meat'],['🥕','Carrot']],squirrel:[['🌰','Acorn'],['🥜','Peanuts'],['🍓','Berry']],monkey:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],hedgehog:[['🐛','Mealworm'],['🍓','Berry'],['🥚','Egg']],bunny:[['🥕','Carrot'],['🥬','Lettuce'],['🍎','Apple']]};
@@ -3989,7 +4111,7 @@ $('#topts').addEventListener('click',e=>{const b=e.target.closest('button');cons
   else if(t[0]==='a'&&talkMode==='qa'){const a=f.qa.a[+t.slice(1)];talkMode='main';tsay(f,a[1]);if(!f.qaHeart){f.qaHeart=true;addHeart(f);}}
   else if(t==='nice'){const line=rnd(PLAYER_COMPLIMENTS(f));av.play('kiss');friendBubble(f,'💖');$('#tsay').textContent='';
     setTimeout(()=>{if(talkF!==f)return;tsay(f,`"${line}"\n\n${rnd(THANKS)}`);const now=performance.now();if(!f.niceT||now-f.niceT>60000){f.niceT=now;addHeart(f);}},500);}
-  else if(t==='dance'){av.play('dance');f.play('dance');floaties(headPos(),'🎵',4);$('#tsay').textContent=rnd(['Dance party! 💃🕺','Woo! Look at us go! 🎶','You\'ve got moves! ✨']);questEvent('act','dance');
+  else if(t==='dance'){const dn=rnd(DANCES)[0];av.play(dn);f.play(dn);floaties(headPos(),'🎵',4);$('#tsay').textContent=rnd(['Dance party! 💃🕺','Woo! Look at us go! 🎶','You\'ve got moves! ✨']);questEvent('act','dance');
     if(!f.danced){f.danced=true;addHeart(f);}}
   else if(t==='wave'){av.play('wave');f.play('wave');$('#tsay').textContent=`Hi ${SAVE.name||'friend'}! 👋`;}
   else if(t==='quest'){const Q=questOf(f);
@@ -4325,7 +4447,7 @@ function renderContest(){const C=SAVE.contest||{};let h='';$('#cttitle').textCon
       <h3>What the judges want <span class="ctstars">${star5(T.T)}</span></h3><div class="ctwant">${want.map(([v,e,t])=>`<div><b>${ck(v)}</b><span>${e} ${t}</span></div>`).join('')}</div>
       <h3>Glam check <span class="ctstars">${star5(G.G)}</span></h3><div class="ctwant"><div><b>${ck(G.mk>=3)}</b><span>💄 Makeup (${G.mk} of 3: eyeshadow, liner, lashes, lipstick, gloss, gems)</span></div><div><b>${ck(G.hair)}</b><span>💇 Salon hair or glossy blow-dry</span></div><div><b>${ck(G.nails)}</b><span>💅 Manicure</span></div><div><b>${ck(G.toes)}</b><span>🦶 Pedicure</span></div></div>
       <div class="ctbtns"><button class="btn ghost" data-ct="closet">👗 Change outfit</button><button class="btn ghost" data-ct="glam">🪞 Glam mirror</button></div>
-      <div class="ctbtns"><button class="btn big" data-ct="walk">💃 Walk the runway!</button></div>`;}
+      <div class="ctbtns"><button class="btn big" data-ct="walk">${isGuy(SAVE.look)?'🕺':'💃'} Walk the runway!</button></div>`;}
   else if(ct.phase==='result'||ct.phase==='final'){const rows=[{n:SAVE.name||'You',you:true,r:ct.you},...ag.rivals.map((o,i)=>({n:o.name,r:ct.riv[i]}))].map(x=>({...x,last:x.r[ct.round].sum,tot:x.r.reduce((a,b)=>a+b.sum,0)}));
     const fin=ct.phase==='final';rows.sort((a,b)=>(fin?b.tot-a.tot:b.last-a.last)||(a.you?-1:b.you?1:0));const max=fin?90:30;const place=rows.findIndex(r=>r.you);
     const medal=['🥇','🥈','🥉','🎀'];
@@ -4357,8 +4479,8 @@ function startShow(){ct.phase='show';$('#contest').classList.remove('show');show
 function nextWalker(){const k=ct.queue.shift();if(k===undefined){ct.phase='result';ct.walker=null;showHud(false);renderContest();$('#contest').classList.add('show');$('#ctcontent').scrollTop=0;return;}
   clearCards();const you=k==='you',o=you?null:ag.rivals[k];ct.w={k,you,o,st:'in',t:0};ct.walker=o;
   const P=agW(0,rw().h,rw().z0+.45);if(you){player.pos.copy(P);player.face=agFace(0,1);}else{o.pos.copy(P);o.face=agFace(0,1);o.a.emote=null;}
-  $('#ctTop').textContent=you?`💃 Your turn, ${SAVE.name||'superstar'}!`:`${themeNow().e} ${o.name} walks the runway`;$('#ctSkip').style.display=you?'none':'block';
-  if(you)banner('💃 Your turn!');}
+  $('#ctTop').textContent=you?`${isGuy(SAVE.look)?'🕺':'💃'} Your turn, ${SAVE.name||'superstar'}!`:`${themeNow().e} ${o.name} walks the runway`;$('#ctSkip').style.display=you?'none':'block';
+  if(you)banner((isGuy(SAVE.look)?'🕺':'💃')+' Your turn!');}
 $('#ctSkip').onclick=()=>{sfx('pop');const w=ct.w;if(!w||w.you)return;
   // score everyone who has not walked yet, then jump to your turn
   [w.k,...ct.queue.filter(x=>x!=='you')].forEach(i=>{if(!ct.riv[i][ct.round])scoreRival(i);const o=ag.rivals[i];o.pos.copy(agW(o.home[0],0,o.home[1]));o.face=o.home[2];o.sp=0;});
@@ -4369,6 +4491,7 @@ function clearCards(){ct.cards.forEach(s=>{s.parent&&s.parent.remove(s);s.materi
 function showCard(j,n,delay){setTimeout(()=>{if(!ct.on)return;const o=ag.judges[j];const s=sprite(labelTex(String(n),{w:160,h:160,size:96,fg:n>=8?'#ff3b8d':n>=5?'#8e6cff':'#8a7499',border:'#e8c25a'}),.42,.42);s.position.set(0,1.62,0);o.g.add(s);ct.cards.push(s);o.a.play(n>=8?'clap':'chair');setTimeout(()=>{if(ct.on&&o.a.emote&&o.a.emote.id==='clap')o.a.play('chair');},1500);sfx('pop');tone(500+n*60,.18,'triangle',.12);},delay);}
 const WALK_SP=2.5;
 function contestStep(dt){const w=ct.w;if(!ct.on||ct.phase!=='show'||!w)return;w.t+=dt;const R=rw(),end=agW(0,R.h,R.z1-.5),start=agW(0,R.h,R.z0+.45);
+  if(w.st==='in'||w.st==='out')(w.you?av:w.o.a).runwayT=.25;// catwalk for girls, a confident stride for guys (runwayWalk in 14d-dances.js)
   const mover=w.you?{get pos(){return player.pos;},set face(v){player.face=v;},get face(){return player.face;},a:av}:w.o;const pos=w.you?player.pos:w.o.pos;let sp=0;
   const walkTo=(tgt)=>{tmpV.subVectors(tgt,pos);tmpV.y=0;const d=tmpV.length();if(d<.05)return true;tmpV.normalize();pos.addScaledVector(tmpV,Math.min(d,WALK_SP*dt));sp=WALK_SP;const f=Math.atan2(tmpV.x,tmpV.z);if(w.you)player.face=angDamp(player.face,f,Math.min(1,dt*10));else w.o.face=angDamp(w.o.face,f,Math.min(1,dt*10));return false;};
   if(w.st==='in'){if(walkTo(end)){w.st='pose';w.t=0;if(w.you)startPoses();else{w.o.a.play(rnd(['pose','kiss','twirl','cheer']));camFlash();burst(w.o.pos.clone().add(new THREE.Vector3(0,1.2,0)),'#ffd6f0',40,2.2,.12);}}}
@@ -5812,7 +5935,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
     if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(8,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
     else f.face=angDamp(f.face,player.face,dt*4);}
   else if(dP<2.4&&started){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*5);if(f.cool<=0){f.cool=14;f.play('wave');friendBubble(f,questReady(f)?'Come talk to me! 💬':rnd(f.info.hi));}}
-  else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave']));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
+  else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave',rnd(DANCES)[0]]));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
   f.cool-=dt;if(f.say){f.sayT-=dt;if(f.sayT<0){f.g.remove(f.say);f.say=null;}}
   const gy=groundAt(f.pos.x,f.pos.z);f.pos.y+=(gy-f.pos.y)*Math.min(1,dt*12);
   f.g.position.copy(f.pos);f.g.rotation.y=f.face+(f.spinY||0);f.update(dt,sp,false);}

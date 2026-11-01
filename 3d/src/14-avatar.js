@@ -368,15 +368,18 @@ class Avatar{
     if(this.paintCv)x.drawImage(this.paintCv,0,0,W,W);
     faceExtras(this,x,at,k,mk);
     this.faceTex.needsUpdate=true;}
-  play(e){this.emote={id:e,t:0};}
+  // a guy does his own version of the girly moves (a cool pose instead of a model pose, a bow instead of a curtsy...)
+  play(e){if(this.guy&&GUY_MOVES[e])e=GUY_MOVES[e];this.emote={id:e,t:0};}
   update(dt,speed,air){
     this.t+=dt;const t=this.t;const sp=Math.min(speed/4.5,1.3);
     this.phase+=dt*(5+sp*6)*(sp>.03?1:0);
     const L=this.legs,A=this.arms;const sw=Math.sin(this.phase)*sp*this.legAmp;
     const damp=(o,k,v,r=12)=>{o[k]+=(v-o[k])*Math.min(1,dt*r);};
-    let tgt={an:0,l0:-sw,l1:sw,k0:Math.max(0,Math.sin(this.phase+1.6))*sp*.9,k1:Math.max(0,Math.sin(this.phase+1.6+Math.PI))*sp*.9,a0x:sw*1.1,a1x:-sw*1.1,a0z:-.08,a1z:.08,e0:-.2-sp*.25,e1:-.2-sp*.25,spin:0,bob:Math.abs(Math.sin(this.phase))*.035*sp,hd:0,sy:0,lean:sp*.08};
+    let tgt={an:0,l0:-sw,l1:sw,k0:Math.max(0,Math.sin(this.phase+1.6))*sp*.9,k1:Math.max(0,Math.sin(this.phase+1.6+Math.PI))*sp*.9,a0x:sw*1.1,a1x:-sw*1.1,a0z:-.08,a1z:.08,e0:-.2-sp*.25,e1:-.2-sp*.25,spin:0,bob:Math.abs(Math.sin(this.phase))*.035*sp,hd:0,sy:0,lean:sp*.08,hx:0,hr:0,sz:0,hy:0,st:0,a0y:0,l0z:0,l1z:0,tilt:0,a1y:0};
     if(air){tgt.l0=-.5;tgt.l1=.15;tgt.k0=.9;tgt.k1=.35;tgt.a0z=-1.6;tgt.a1z=1.6;tgt.a0x=0;tgt.a1x=0;}
     const breathe=Math.sin(t*2)*.01;
+    // walking the runway in the model contest: girls do a catwalk, guys a confident stride (24-model-agency.js sets runwayT)
+    if(this.runwayT>0){this.runwayT-=dt;if(sp>.03)runwayWalk(this,tgt,sp);}
     const e=this.emote;let ext=0;
     if(e){e.t+=dt;const k=e.t;
       if(e.id==='wave'){tgt.a0z=-2.7;tgt.e0=0;tgt.a0x=0;ext=Math.sin(k*12)*.5;tgt.hd=.12;if(k>2)this.emote=null;}
@@ -396,12 +399,15 @@ class Avatar{
         if(sp>.15)this.emote=null;}
       // riding a barn animal (24d-barn.js): sit tall, legs around its sides, hands on the reins
       if(e.id==='ride'){tgt.bob=-(this.hip-(.46+this.legX));tgt.l0=tgt.l1=-.95;tgt.k0=tgt.k1=1.05;tgt.a0x=tgt.a1x=-.75;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.7;tgt.lean=.05+sp*.08;tgt.hd=Math.sin(k*2)*.03;}
+      // the dances you pick from the Dance list (14d-dances.js), and the guy versions of moves
+      const DM=MOVE_ANIMS[e.id];if(DM){DM.go(k,tgt,this);if(k>DM.t||sp>.15)this.emote=null;}
       if(e.id==='magic'){tgt.a0z=-2.9;tgt.a1z=2.9;tgt.e0=tgt.e1=0;tgt.a0x=tgt.a1x=0;tgt.spin=Math.min(1,k/1.8)*Math.PI*2;tgt.bob=Math.sin(Math.min(1,k/1.8)*Math.PI)*.25;if(k>1.9)this.emote=null;}}
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);
-    damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);A[0].el.rotation.z=ext;
+    damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;
     damp(this.hips.position,'y',this.hip+this.lift+tgt.bob,20);damp(this.spine.rotation,'x',tgt.lean+breathe,6);damp(this.hips.rotation,'y',tgt.sy,8);damp(this.head.rotation,'z',tgt.hd,8);
-    this.hips.rotation.x=this.emote&&this.emote.id==='flip'?this.flip:0;this.spinY=e&&(e.id==='twirl'||e.id==='magic')?tgt.spin:0;
+    damp(this.hips.position,'x',tgt.hx,14);damp(this.hips.rotation,'z',tgt.hr,10);damp(this.spine.rotation,'z',tgt.sz,10);damp(this.head.rotation,'y',tgt.hy,12);damp(L[0].hp.rotation,'z',tgt.l0z,12);damp(L[1].hp.rotation,'z',tgt.l1z,12);damp(A[1].el.rotation,'z',tgt.a1y,12);damp(this.spine.rotation,'y',tgt.st,10);this.tilt=(this.tilt||0)+(tgt.tilt-(this.tilt||0))*Math.min(1,dt*8);
+    this.hips.rotation.x=this.emote&&this.emote.id==='flip'?this.flip:(this.tilt||0);this.spinY=e&&(e.id==='twirl'||e.id==='magic'||MOVE_ANIMS[e.id])?tgt.spin:0;
     // blink
     this.blink-=dt;const bl=this.blink<0?Math.max(.08,Math.abs(this.blink+.07)/.07):1;if(this.blink<-.14)this.blink=2+Math.random()*3.5;this.eyes.forEach(g=>g.scale.y=bl*(g.scale.x||1));
     for(const w of this.wings)w.wg.rotation.y=w.s*(.5+Math.sin(t*(air?16:5))*.35);

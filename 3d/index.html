@@ -241,6 +241,13 @@ body.shopping #zoomCtl,body.talking #zoomCtl{display:none!important}
 #setName{flex:1;min-width:0;font-size:18px;padding:10px 14px;border-radius:14px;border:3px solid var(--pink2);text-align:center;color:var(--ink);outline:none;font-family:inherit}
 #setName:focus{border-color:var(--pink)}
 #setNameRow .btn{width:auto;margin:0;padding:10px 16px}
+#dances .card{max-width:380px;padding:18px 16px}
+#danceList{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#danceList button{background:#fff0f7;border:2px solid #ffd6ea;border-radius:16px;padding:9px 4px 7px;font-size:26px;line-height:1.1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink)}
+#danceList button span{font-size:12.5px;font-weight:700}
+#danceList button:active{transform:scale(.93)}
+#danceList button.last{border-color:var(--pink);background:#ffe0f0}
+@media (max-height:520px){#dances .card{max-width:560px}#danceList{grid-template-columns:repeat(4,1fr)}}
 #settings .setlbl{margin:0 0 4px;font-weight:700;text-align:center}
 #map .card{max-width:min(760px,calc(100vw - 16px));width:100%;padding:12px 10px 14px;box-sizing:border-box}
 #map h2{margin:0 0 4px;font-size:22px}
@@ -535,6 +542,11 @@ body.contest #closet{display:none}
 .catRow button{flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#f3eaf8;font-size:16px}
 .catLink{width:100%;margin:2px 0 8px;padding:9px;border-radius:14px;background:#f3eaf8;font-weight:700;font-size:14px;color:var(--ink)}
 </style>
+<div class="modal" id="dances"><div class="card">
+  <h2 style="margin:0 0 12px" id="dancesT">💃 Pick a dance</h2>
+  <div id="danceList"></div>
+  <button class="btn" id="dancesClose" style="margin-top:12px">Close</button>
+</div></div>
 <div class="modal" id="settings"><div class="card">
   <h2 style="margin:0 0 14px">⚙️ Settings</h2>
   <div class="setlbl">🖼️ Your picture</div>
