@@ -314,9 +314,11 @@ class Avatar{
       if(ex.pearls){const m=mat(ex.pearls,'shiny');for(let i=0;i<18;i++){const a=i/18*Math.PI*2;P(sph(.0145,12,8),m,spine,Math.sin(a)*.068,.45-Math.max(0,Math.cos(a))*.035,Math.cos(a)*.058);}P(sph(.021,14,10),m,spine,0,.41,.066);}
       if(ex.scarf){const m=mat(ex.scarf);P(new THREE.TorusGeometry(.065,.03,10,24),m,spine,0,.46,0).rotation.x=Math.PI/2;const tail=P(capTop(.03,.16),m,spine,.04,.46,.07);tail.scale.z=.4;tail.rotation.x=-.15;}}
     /* holiday costumes: their 3D pieces live in seasons.js (window.__costumes[id](kit,color)) */
-    {const C=window.__costumes;if(C){const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,av:this};
-      for(const slot of ['dress','top','hat']){const it=look[slot];if(it&&C[it.id])C[it.id](kit,it.c);}
-      for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
+    /* outfits brought over from the 2D game live in 14b-outfits-2d.js (OUTFITS2D[id](kit,color)) */
+    {const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,decal,av:this};
+      for(const C of [OUTFITS2D,window.__costumes])if(C){
+        for(const slot of ['dress','top','bottom','shoes','hat']){const it=look[slot];if(look.dress&&(slot==='top'||slot==='bottom'))continue;if(it&&C[it.id])C[it.id](kit,it.c);}
+        for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
       this.lipM.color.set(mk.lips||(this.glam?'#c96f7c':'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
