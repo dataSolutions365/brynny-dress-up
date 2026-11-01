@@ -58,6 +58,24 @@ input{font-family:inherit}
 .chips button.on{background:var(--pink);color:#fff}
 .sw.none{background:#fff!important;display:grid;place-items:center;font-size:18px}
 .drawhint{font-size:13px;color:var(--muted);margin:2px 2px 6px}
+/* nail painting: big round buttons and a progress bar over the game (like a salon game) */
+#nailui{position:fixed;z-index:7;left:0;right:0;top:0;bottom:min(47vh,430px);pointer-events:none;display:none}
+#nailui.show{display:block}
+@media (orientation:landscape) and (min-aspect-ratio:5/4){#nailui{bottom:0;right:min(48vw,460px)}}
+#nailui .nprog{position:absolute;top:calc(12px + env(safe-area-inset-top));right:14px;display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap}
+#nailui .nprog b{background:linear-gradient(#ff9ccf,#ff6fae);color:#fff;font-size:15px;padding:3px 16px;border-radius:999px;border:3px solid #fff;box-shadow:0 3px 10px rgba(194,24,91,.3);text-shadow:0 1px 2px rgba(150,0,70,.45)}
+#nailui .nprog i{display:block;width:120px;height:11px;background:#fff;border-radius:999px;padding:2px;box-shadow:0 2px 6px rgba(194,24,91,.25)}
+#nailui .nprog u{display:block;height:100%;background:#ff7eb6;border-radius:999px;transition:width .25s}
+#nailui .nprog span{font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(80,20,60,.7)}
+#nailui .nbar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:10px;pointer-events:auto}
+#nailui .nbar button{width:68px;height:68px;border-radius:24px;border:3px solid #fff;background:linear-gradient(#ffb3d9,#ff6fae);box-shadow:0 5px 0 #d9468c,0 8px 16px rgba(194,24,91,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:0;color:#fff;font:inherit;cursor:pointer}
+#nailui .nbar button b{font-size:28px;line-height:1.1}
+#nailui .nbar button span{font-size:10.5px;font-weight:800;text-shadow:0 1px 2px rgba(150,0,70,.5);white-space:nowrap}
+#nailui .nbar button.on{background:linear-gradient(#8e5cc8,#5b2a86);box-shadow:0 5px 0 #3b1a5a,0 8px 16px rgba(59,26,90,.35)}
+#nailui .nbar button:active{transform:translateY(3px);box-shadow:0 2px 0 #d9468c}
+#nailui .nbar .bottle u{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;border:3px solid #fff;font-size:16px;text-decoration:none;box-shadow:inset 0 -4px 6px rgba(0,0,0,.15)}
+@media not ((orientation:landscape) and (min-aspect-ratio:5/4)){#nailui .nprog{top:calc(108px + env(safe-area-inset-top))}}
+@media (max-width:420px),(max-height:420px){#nailui .nbar{gap:7px;bottom:10px}#nailui .nbar button{width:56px;height:56px;border-radius:20px}#nailui .nbar button b{font-size:22px}#nailui .nbar button span{font-size:9px}}
 /* closet */
 #closet,#parlor{position:fixed;z-index:8;left:0;right:0;bottom:0;height:min(47vh,430px);background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(59,35,87,.25);display:flex;flex-direction:column;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1);padding-bottom:env(safe-area-inset-bottom)}
 #closet.show,#parlor.show{transform:none}
@@ -227,6 +245,7 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 <div id="flash"></div>
 <button class="hud" id="mini" aria-label="Open the map"><canvas id="miniCv" width="216" height="216"></canvas><small>🗺️ Map</small></button>
 
+<div id="nailui" aria-label="Nail painting"></div>
 <div id="closet" aria-label="Closet">
   <div class="chead"><h2 id="ctitle">👗 My closet</h2><button id="done">Done</button></div>
   <div class="tabs" id="tabs"></div>

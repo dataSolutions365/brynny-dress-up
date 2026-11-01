@@ -30,12 +30,13 @@ let glamOpen=false,onGPad=false,onCPad=false,glamPrevTab='dresses';
 const GTABS=[['makeup','💄','Makeup'],['hair','💇','Hair salon'],['nails','💅','Manicure'],['toes','🦶','Pedicure']];
 const NAILF=[['shiny','💅 Shiny'],['glitter','✨ Glitter'],['chrome','🪩 Chrome'],['jelly','💎 Jelly']];
 const gcam={p:new THREE.Vector3(),t:new THREE.Vector3(),init:false};
-function nailsHTML(key,fkey,title){const N=SAVE.look.nails||{},cur=N[key],fin=N[fkey]||'shiny';
-  return `<h3>${title}</h3><div class="swatches"><button class="sw none${!cur?' on':''}" data-nail="${key}" data-c="" aria-label="no polish">🚫</button>${myColors(POLISH).map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-nail="${key}" data-c="${c}" aria-label="polish ${c}"></button>`).join('')}<button class="sw fancy${cur==='rainbow'?' on':''}" style="background:linear-gradient(135deg,#ff3b6b,#ffd23f,#7ee081,#4fb6ff,#b388ff)" data-nail="${key}" data-c="rainbow" aria-label="rainbow">🌈</button></div>
-    <h3>Finish</h3><div class="chips">${NAILF.map(([v,n])=>`<button class="${fin===v?'on':''}" data-nf="${fkey}" data-v="${v}">${n}</button>`).join('')}</div>`;}
+function nailsHTML(key,fkey,title){const N=SAVE.look.nails||{},cur=nailBrush[key],fin=N[fkey]||'shiny';
+  return `<h3>${title}</h3><div class="swatches"><button class="sw none${!cur?' on':''}" data-nail="${key}" data-c="" aria-label="polish remover">🧽</button>${myColors(POLISH).map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-nail="${key}" data-c="${c}" aria-label="polish ${c}"></button>`).join('')}<button class="sw fancy${cur==='rainbow'?' on':''}" style="background:linear-gradient(135deg,#ff3b6b,#ffd23f,#7ee081,#4fb6ff,#b388ff)" data-nail="${key}" data-c="rainbow" aria-label="rainbow">🌈</button></div>
+    <h3>Finish</h3><div class="chips">${NAILF.map(([v,n])=>`<button class="${fin===v?'on':''}" data-nf="${fkey}" data-v="${v}">${n}</button>`).join('')}</div>
+    <div style="height:10px"></div><div class="chips"><button data-nailall="${key}">💅 Paint them all</button><button data-nailoff="${key}">🧽 Take off all polish</button></div>`;}
 function glamHTML(){const L=SAVE.look;
-  if(ctab==='nails')return `<p class="drawhint">Rest your hands on the table and pick a color. Gigi paints every nail! 💅</p>`+nailsHTML('c','f','💅 Nail polish');
-  if(ctab==='toes')return `<p class="drawhint">Feet up on the pouf! Shoes come off for your pedicure. Sandals 🩴 show off your toes later.</p>`+nailsHTML('t','tf','🦶 Toe polish');
+  if(ctab==='nails')return `<p class="drawhint">👆 Pick a color, then tap one nail at a time to paint it. The big buttons switch hands.</p>`+nailsHTML('c','f','💅 Nail polish');
+  if(ctab==='toes')return `<p class="drawhint">👆 Feet up on the pouf! Pick a color, then tap one toenail at a time. Sandals 🩴 show off your toes later.</p>`+nailsHTML('t','tf','🦶 Toe polish');
   if(ctab==='hair')return hairHTML();
   if(ctab==='makeup')return makeupHTML();
   return null;}
@@ -59,11 +60,14 @@ function closeGlam(){if(!glamOpen)return;hideHTool();glamOpen=false;closetOpen=f
   toast('Looking fabulous! ✨ Now try the 🏆 model contest!');}
 function glamCam(dt){if(!glamOpen||ctab==='makeup')return;const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
   if(ctab==='hair'){T=hTool==='braid'?braidLook():av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=player.face+hairView;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
+  else if(nailCamAt(ctab==='nails'?'c':'t',fwd)){T=nailCamT;Pp=nailCamP;}
   else if(ctab==='nails'){player.face=agFace(-1,0);T=av.arms[0].hand.getWorldPosition(new THREE.Vector3()).add(av.arms[1].hand.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);Pp=T.clone().addScaledVector(fwd,.2).add(new THREE.Vector3(0,.27,0));}
   else{player.face=agFace(0,1);T=av.legs[0].an.getWorldPosition(new THREE.Vector3()).add(av.legs[1].an.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).addScaledVector(fwd,.1);Pp=T.clone().addScaledVector(fwd,.12).add(new THREE.Vector3(0,.36,0));}
   if(!gcam.init){gcam.p.copy(Pp);gcam.t.copy(T);gcam.init=true;}const k=Math.min(1,dt*5);gcam.p.lerp(Pp,k);gcam.t.lerp(T,k);camera.position.copy(gcam.p);camera.lookAt(gcam.t);}
 function glamClick(b){const L=SAVE.look;if(beautyClick(b))return true;
-  if(b.dataset.nail){L.nails=Object.assign({},L.nails);L.nails[b.dataset.nail]=b.dataset.c||null;persist();glamSeat(true);sfx('pop');renderCloset();return true;}
+  if(b.dataset.nail){nailBrush[b.dataset.nail]=b.dataset.c||'';sfx('pop');renderCloset();renderNailUI();return true;}
+  if(b.dataset.nailall){youPaintAll(b.dataset.nailall,nailBrush[b.dataset.nailall]);glamSeat(true);renderCloset();return true;}
+  if(b.dataset.nailoff){youPaintAll(b.dataset.nailoff,'');sfx('pop');renderCloset();return true;}
   if(b.dataset.nf){L.nails=Object.assign({},L.nails);L.nails[b.dataset.nf]=b.dataset.v;persist();glamSeat(true);sfx('pop');renderCloset();return true;}
   if(b.dataset.shine){L.hair.shine=b.dataset.shine==='1';persist();glamSeat(true);sfx('pop');renderCloset();return true;}
   return false;}
@@ -240,6 +244,7 @@ function braidRelease(e){if(!braidDrag)return;const d=braidDrag,[sx,sy]=d.start,
 function tieBraid(){if(braidP<BRAID_N)return;const P=brAt(0,brYB()).applyMatrix4(braidG.matrixWorld);burst(P,'#ffd6ea',20,1,.07);
   const H=SAVE.look.hair;H.id='sidebraid';H.len=1;resetBraid();hTool='brush';persist();hairDirty=1;toast('🪢 You braided it yourself!');did('braid');sfx('tada');}
 function beautyDown(e){if(!glamOpen)return false;
+  if(ctab==='nails'||ctab==='toes')return youNailTap(e);
   if(ctab==='hair'){hstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0};hairStroke(e,true);try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}
   if(ctab==='makeup'&&mTool!=='paint'){mstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0,done:{}};if(mkStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}mstroke=null;return false;}
   return false;}
@@ -267,7 +272,7 @@ function themeCheck(L,th){const r={};const ok=(o,list)=>!!o&&list.includes(o.id)
   else{r.outfit=L.dress?(ok(L.dress,th.dress)?2:0):(ok(L.top,th.top)?1:0)+(ok(L.bottom,th.bottom)?1:0);r.shoes=ok(L.shoes,th.shoes)?1:0;r.hat=ok(L.hat,th.hat)?1:0;r.extra=Object.keys(L.extras||{}).some(k=>th.extras.includes(k))?1:0;const m=L.dress||L.top;r.color=m&&th.fams.includes(fam(m.c))?1:0;}
   r.T=(r.outfit+r.shoes+r.hat+r.extra+r.color)/6;return r;}
 function glamCheck(L){const mk=L.makeup||{},N=L.nails||{};const n=[!!mk.shadow,mk.liner&&mk.liner!=='none',mk.lashes&&mk.lashes!=='natural',!!mk.lips,!!(mk.gloss||mk.lipLiner),!!mk.gems].filter(Boolean).length;
-  const r={mk:Math.min(3,n),nails:N.c?1:0,toes:N.t?1:0,hair:L.hair.shine||SALON.has(L.hair.id)?1:0};r.G=(r.mk+r.nails+r.toes+r.hair)/6;return r;}
+  const r={mk:Math.min(3,n),nails:nailCols(N,'c').some(Boolean)?1:0,toes:nailCols(N,'t').some(Boolean)?1:0,hair:L.hair.shine||SALON.has(L.hair.id)?1:0};r.G=(r.mk+r.nails+r.toes+r.hair)/6;return r;}
 function judgeCards(T,G,W){return JUDGES.map(j=>{const v=j.w[0]*T+j.w[1]*G+j.w[2]*W;return Math.max(1,Math.min(10,Math.round(1.6+v*8.4+(Math.random()-.5)*1.2)));});}
 function themeLook(base,th,q){const l=JSON.parse(JSON.stringify(base));const yes=()=>Math.random()<q;const cols=COLORS.filter(c=>th.fams.includes(fam(c)));const tc=()=>yes()&&cols.length?rnd(cols):rnd(COLORS);
   const pick=(arr,list)=>{arr=inSeason(arr);const good=arr.filter(x=>list.includes(x[0]));return yes()&&good.length?rnd(good):rnd(arr);};
