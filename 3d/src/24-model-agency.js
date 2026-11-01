@@ -76,7 +76,9 @@ function glamClick(b){const L=SAVE.look;if(beautyClick(b))return true;
 const HTOOLS=[['brush','🪮','Brush','Brush down the hair to make it smooth, straight and shiny.'],['straight','🔥','Straightener','Glide the flat iron down the hair to make it super straight and shiny.'],['curl','🌀','Curling iron','Rub the curling iron on the hair to curl it. Rub more for big curls!'],['cut','✂️','Scissors','Drag the scissors over the hair to cut it shorter. Long hair turns into a bob, then short.'],
   ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['braid','🪢','Braid','Tap her hair to start braiding. Drag the glowing strand over the middle one, left then right, back and forth!'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
 const MTOOLS=[['lips','💄','Lipstick','Rub on the lips.'],['gloss','✨','Gloss','Rub on the lips to make them shiny.'],['shadow','👁️','Eyeshadow','Rub on the eyelids.'],['liner','✏️','Eyeliner','Swipe across the eyes.'],['lashes','🪶','Mascara','Brush the lashes. Each swipe makes them longer.'],
-  ['blush','🌸','Blush','Rub on the cheeks.'],['gems','💎','Face gems','Tap beside the eyes.'],['paint','🖌️','Paint','Draw anything on the face.']];
+  ['blush','🌸','Blush','Rub on the cheeks.'],['gems','💎','Face gems','Tap beside the eyes.'],
+  ['brows','〰️','Brows','Pick a color, then rub on the eyebrows.'],['tan','🧴','Spray tan','Spray all over the face for a sun-kissed glow. Spray more for a deeper tan.'],['freckles','🟤','Freckles','Dab on the nose and cheeks. Dab more for more freckles.'],['stickers','💖','Stickers','Pick a sticker, then tap the face to stick it on.'],
+  ['soap','🧼','Soap','Rub the soap all over the face to make bubbles.'],['rinse','🚿','Rinse','Rub the water over the bubbles to wash all the makeup off.'],['paint','🖌️','Paint','Draw anything on the face.']];
 let hairView=.75,hTool='brush',mTool='lips',sprayC='#ff7eb6',clipC='#ff6fae',hstroke=null,mstroke=null;const MKC={lips:MK_LIPS,gloss:null,shadow:MK_SHADOW,liner:['#2b1d16','#000000','#6a3df0','#3a5bd9','#2fd1c5','#d4af37','#ff3b6b'],lashes:null,blush:[['pink','#ff8fb0'],['peach','#ffab85'],['rose','#dc6080']],gems:null};
 let mkColor={lips:'#ff3b6b',shadow:'#b388ff',liner:'#2b1d16',blush:'pink'};
 const meter=(n,v)=>`<div class="meter"><span>${n}</span><i><b style="width:${Math.round(v*100)}%"></b></i></div>`;
@@ -89,21 +91,23 @@ function hairHTML(){const H=SAVE.look.hair,t=HTOOLS.find(x=>x[0]===hTool);
     <div class="chips" style="margin-top:10px"><button data-hreset="all">↩️ Wash out (reset length, curls, volume)</button></div>`;
   return h;}
 function makeupHTML(){const mk=SAVE.look.makeup,t=MTOOLS.find(x=>x[0]===mTool),cols=MKC[mTool];
-  let h=`<div class="zoomrow">${[['eyes','👁️ Eyes'],['lips','👄 Lips'],['face','🙂 Face']].map(([z,n])=>`<button class="${czoom===z?'on':''}" data-zoom="${z}">${n}</button>`).join('')}</div>
+  let h=mkTopHTML()+`<div class="zoomrow">${[['eyes','👁️ Eyes'],['lips','👄 Lips'],['face','🙂 Face']].map(([z,n])=>`<button class="${czoom===z?'on':''}" data-zoom="${z}">${n}</button>`).join('')}</div>
     <div class="chips tools">${MTOOLS.map(([id,e,n])=>`<button class="${mTool===id?'on':''}" data-mtool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${t[3]} You can tap too.</p>`;
   if(mTool==='paint')return h+`<div class="chips">${[['thin','✏️ Thin'],['medium','🖍️ Medium'],['thick','🎨 Thick']].map(([v,n])=>`<button class="${!brush.erase&&brush.size===v?'on':''}" data-brush="${v}">${n}</button>`).join('')}<button class="${brush.erase?'on':''}" data-brush="erase">🧽 Eraser</button><button data-brush="undo">↩️ Undo</button><button data-brush="clear">🗑️ Clear</button></div><div style="height:8px"></div><div class="swatches">${MK_BRUSH.map(c=>`<button class="sw${!brush.erase&&c===brush.c?' on':''}" style="background:${c}" data-sw="brush" data-c="${c}"></button>`).join('')}</div>`+faceShapes();
+  if(MKX[mTool])return h+mkExtraHTML()+faceShapes();
   if(cols)h+=`<div class="swatches">${cols.map(c=>{const [v,cc]=Array.isArray(c)?c:[c,c];return `<button class="sw${mkColor[mTool]===v?' on':''}" style="background:${cc}" data-mkc="${v}"></button>`;}).join('')}</div>`;
   h+=`<div class="chips" style="margin-top:8px"><button data-mkoff="${mTool}">🧼 Wipe off ${t[2].toLowerCase()}</button><button data-mkoff="all">🧼 Wipe off everything</button></div>`;
+  if(['shadow','liner','lashes'].includes(mTool))h+=eyeLooksHTML();
   return h+faceShapes();}
 function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute')return '';const F=L.face||{};
   return FACEOPT.filter(([k])=>k!=='nose').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
-function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
+function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;if(mkExtraClick(b))return true;
   if(b.dataset.htool){hTool=b.dataset.htool;if(hTool==='clip'&&!b.classList.contains('on')){}else if(hTool==='clip'){}sfx('pop');renderCloset();return true;}
   if(b.dataset.hview){hairView=+b.dataset.hview;sfx('pop');return true;}
   if(b.dataset.spray){sprayC=b.dataset.spray;sfx('pop');renderCloset();return true;}
   if(b.dataset.clipc){clipC=b.dataset.clipc;sfx('pop');renderCloset();return true;}
   if(b.dataset.hreset){if(b.dataset.hreset==='clips')H.clips=[];else{delete H.len;delete H.curl;delete H.vol;H.clips=[];}persist();glamSeat(true);renderCloset();return true;}
-  if(b.dataset.mtool){mTool=b.dataset.mtool;setZoom({lips:'lips',gloss:'lips',shadow:'eyes',liner:'eyes',lashes:'eyes'}[mTool]||'face');sfx('pop');renderCloset();return true;}
+  if(b.dataset.mtool){mTool=b.dataset.mtool;setZoom({lips:'lips',gloss:'lips',shadow:'eyes',liner:'eyes',lashes:'eyes',brows:'eyes'}[mTool]||'face');sfx('pop');renderCloset();return true;}
   if(b.dataset.mkc){mkColor[mTool]=b.dataset.mkc;sfx('pop');renderCloset();return true;}
   if(b.dataset.mkoff){const k=b.dataset.mkoff;const d=defaultMakeup();if(k==='all')L.makeup=Object.assign(d,{blush:'none'});else if(k==='lips'){mk.lips=null;mk.lipLiner=null;}else if(k==='blush')mk.blush='none';else mk[k]=d[k];persist();av.dress(SAVE.look);sfx('splash');renderCloset();return true;}
   return false;}
@@ -127,8 +131,8 @@ function hairStroke(e,first){if(hTool==='braid'){if(first&&hairHit(e))openBraid(
 // makeup strokes
 function mkRegion(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);const h=ray.intersectObject(av.overlay,false)[0];if(!h)return null;
   const p=av.head.worldToLocal(h.point.clone()),ax=Math.abs(p.x);let r='face';
-  if(ax<.04&&p.y<-.035&&p.y>-.085)r='lips';else if(ax>.012&&ax<.09&&p.y>-.012&&p.y<.05)r='eyes';else if(ax>.035&&p.y<-.005&&p.y>-.07)r='cheeks';return {r,p:h.point,sx:Math.sign(p.x)};}
-function mkStroke(e,first){const g=mkRegion(e);if(!g)return false;const mk=SAVE.look.makeup;const d=first?0:Math.hypot(e.clientX-mstroke.x,e.clientY-mstroke.y);mstroke.x=e.clientX;mstroke.y=e.clientY;mstroke.go+=d;
+  if(ax<.04&&p.y<-.035&&p.y>-.085)r='lips';else if(ax>.008&&ax<.1&&p.y>=.04&&p.y<.085)r='brows';else if(ax>.012&&ax<.09&&p.y>-.012&&p.y<.05)r='eyes';else if(ax>.035&&p.y<-.005&&p.y>-.07)r='cheeks';return {r,p:h.point,lp:p,sx:Math.sign(p.x)};}
+function mkStroke(e,first){const g=mkRegion(e);if(!g)return false;if(MKX[mTool])return mkExtraStroke(e,first,g);const mk=SAVE.look.makeup;const d=first?0:Math.hypot(e.clientX-mstroke.x,e.clientY-mstroke.y);mstroke.x=e.clientX;mstroke.y=e.clientY;mstroke.go+=d;
   const want={lips:'lips',gloss:'lips',shadow:'eyes',liner:'eyes',lashes:'eyes',blush:'cheeks',gems:'eyes'}[mTool];if(g.r!==want&&!(mTool==='gems'&&g.r==='cheeks')){if(first)toast({lips:'👄 Rub on the lips',eyes:'👁️ Rub on the eyes',cheeks:'🌸 Rub on the cheeks'}[want]);return true;}
   let ch=false;const key=mTool+g.r+(g.sx||0);
   if(!mstroke.done[key]&&(first||mstroke.go>18)){mstroke.done[key]=1;ch=true;
@@ -239,7 +243,7 @@ function beautyDown(e){if(!glamOpen)return false;
   if(ctab==='makeup'&&mTool!=='paint'){mstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0,done:{}};if(mkStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}mstroke=null;return false;}
   return false;}
 function beautyMove(e){if(hstroke&&e.pointerId===hstroke.id){hairStroke(e,false);return true;}if(mstroke&&e.pointerId===mstroke.id){mkStroke(e,false);return true;}return false;}
-function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){hstroke=null;clearTimeout(htoolHide);htoolHide=setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;renderCloset();}}
+function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){hstroke=null;clearTimeout(htoolHide);htoolHide=setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;if(mkDirty){mkDirty=0;persist();}renderCloset();}}
 let hairT=0;anims.push((t)=>{if(hairDirty&&glamOpen&&t-hairT>.12){hairDirty=0;hairT=t;av.dress(ctab==='toes'?Object.assign({},SAVE.look,{shoes:null}):SAVE.look);}});
 
 /* ---------- the model contest ---------- */
