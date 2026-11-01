@@ -48,7 +48,7 @@ $('#topts').addEventListener('click',e=>{const b=e.target.closest('button');cons
   else if(t[0]==='a'&&talkMode==='qa'){const a=f.qa.a[+t.slice(1)];talkMode='main';tsay(f,a[1]);if(!f.qaHeart){f.qaHeart=true;addHeart(f);}}
   else if(t==='nice'){const line=rnd(PLAYER_COMPLIMENTS(f));av.play('kiss');friendBubble(f,'💖');$('#tsay').textContent='';
     setTimeout(()=>{if(talkF!==f)return;tsay(f,`"${line}"\n\n${rnd(THANKS)}`);const now=performance.now();if(!f.niceT||now-f.niceT>60000){f.niceT=now;addHeart(f);}},500);}
-  else if(t==='dance'){av.play('dance');f.play('dance');floaties(headPos(),'🎵',4);$('#tsay').textContent=rnd(['Dance party! 💃🕺','Woo! Look at us go! 🎶','You\'ve got moves! ✨']);questEvent('act','dance');
+  else if(t==='dance'){const dn=rnd(DANCES)[0];av.play(dn);f.play(dn);floaties(headPos(),'🎵',4);$('#tsay').textContent=rnd(['Dance party! 💃🕺','Woo! Look at us go! 🎶','You\'ve got moves! ✨']);questEvent('act','dance');
     if(!f.danced){f.danced=true;addHeart(f);}}
   else if(t==='wave'){av.play('wave');f.play('wave');$('#tsay').textContent=`Hi ${SAVE.name||'friend'}! 👋`;}
   else if(t==='quest'){const Q=questOf(f);

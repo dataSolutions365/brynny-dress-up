@@ -306,7 +306,7 @@ function renderContest(){const C=SAVE.contest||{};let h='';$('#cttitle').textCon
       <h3>What the judges want <span class="ctstars">${star5(T.T)}</span></h3><div class="ctwant">${want.map(([v,e,t])=>`<div><b>${ck(v)}</b><span>${e} ${t}</span></div>`).join('')}</div>
       <h3>Glam check <span class="ctstars">${star5(G.G)}</span></h3><div class="ctwant"><div><b>${ck(G.mk>=3)}</b><span>💄 Makeup (${G.mk} of 3: eyeshadow, liner, lashes, lipstick, gloss, gems)</span></div><div><b>${ck(G.hair)}</b><span>💇 Salon hair or glossy blow-dry</span></div><div><b>${ck(G.nails)}</b><span>💅 Manicure</span></div><div><b>${ck(G.toes)}</b><span>🦶 Pedicure</span></div></div>
       <div class="ctbtns"><button class="btn ghost" data-ct="closet">👗 Change outfit</button><button class="btn ghost" data-ct="glam">🪞 Glam mirror</button></div>
-      <div class="ctbtns"><button class="btn big" data-ct="walk">💃 Walk the runway!</button></div>`;}
+      <div class="ctbtns"><button class="btn big" data-ct="walk">${isGuy(SAVE.look)?'🕺':'💃'} Walk the runway!</button></div>`;}
   else if(ct.phase==='result'||ct.phase==='final'){const rows=[{n:SAVE.name||'You',you:true,r:ct.you},...ag.rivals.map((o,i)=>({n:o.name,r:ct.riv[i]}))].map(x=>({...x,last:x.r[ct.round].sum,tot:x.r.reduce((a,b)=>a+b.sum,0)}));
     const fin=ct.phase==='final';rows.sort((a,b)=>(fin?b.tot-a.tot:b.last-a.last)||(a.you?-1:b.you?1:0));const max=fin?90:30;const place=rows.findIndex(r=>r.you);
     const medal=['🥇','🥈','🥉','🎀'];
@@ -338,8 +338,8 @@ function startShow(){ct.phase='show';$('#contest').classList.remove('show');show
 function nextWalker(){const k=ct.queue.shift();if(k===undefined){ct.phase='result';ct.walker=null;showHud(false);renderContest();$('#contest').classList.add('show');$('#ctcontent').scrollTop=0;return;}
   clearCards();const you=k==='you',o=you?null:ag.rivals[k];ct.w={k,you,o,st:'in',t:0};ct.walker=o;
   const P=agW(0,rw().h,rw().z0+.45);if(you){player.pos.copy(P);player.face=agFace(0,1);}else{o.pos.copy(P);o.face=agFace(0,1);o.a.emote=null;}
-  $('#ctTop').textContent=you?`💃 Your turn, ${SAVE.name||'superstar'}!`:`${themeNow().e} ${o.name} walks the runway`;$('#ctSkip').style.display=you?'none':'block';
-  if(you)banner('💃 Your turn!');}
+  $('#ctTop').textContent=you?`${isGuy(SAVE.look)?'🕺':'💃'} Your turn, ${SAVE.name||'superstar'}!`:`${themeNow().e} ${o.name} walks the runway`;$('#ctSkip').style.display=you?'none':'block';
+  if(you)banner((isGuy(SAVE.look)?'🕺':'💃')+' Your turn!');}
 $('#ctSkip').onclick=()=>{sfx('pop');const w=ct.w;if(!w||w.you)return;
   // score everyone who has not walked yet, then jump to your turn
   [w.k,...ct.queue.filter(x=>x!=='you')].forEach(i=>{if(!ct.riv[i][ct.round])scoreRival(i);const o=ag.rivals[i];o.pos.copy(agW(o.home[0],0,o.home[1]));o.face=o.home[2];o.sp=0;});
@@ -350,6 +350,7 @@ function clearCards(){ct.cards.forEach(s=>{s.parent&&s.parent.remove(s);s.materi
 function showCard(j,n,delay){setTimeout(()=>{if(!ct.on)return;const o=ag.judges[j];const s=sprite(labelTex(String(n),{w:160,h:160,size:96,fg:n>=8?'#ff3b8d':n>=5?'#8e6cff':'#8a7499',border:'#e8c25a'}),.42,.42);s.position.set(0,1.62,0);o.g.add(s);ct.cards.push(s);o.a.play(n>=8?'clap':'chair');setTimeout(()=>{if(ct.on&&o.a.emote&&o.a.emote.id==='clap')o.a.play('chair');},1500);sfx('pop');tone(500+n*60,.18,'triangle',.12);},delay);}
 const WALK_SP=2.5;
 function contestStep(dt){const w=ct.w;if(!ct.on||ct.phase!=='show'||!w)return;w.t+=dt;const R=rw(),end=agW(0,R.h,R.z1-.5),start=agW(0,R.h,R.z0+.45);
+  if(w.st==='in'||w.st==='out')(w.you?av:w.o.a).runwayT=.25;// catwalk for girls, a confident stride for guys (runwayWalk in 14d-dances.js)
   const mover=w.you?{get pos(){return player.pos;},set face(v){player.face=v;},get face(){return player.face;},a:av}:w.o;const pos=w.you?player.pos:w.o.pos;let sp=0;
   const walkTo=(tgt)=>{tmpV.subVectors(tgt,pos);tmpV.y=0;const d=tmpV.length();if(d<.05)return true;tmpV.normalize();pos.addScaledVector(tmpV,Math.min(d,WALK_SP*dt));sp=WALK_SP;const f=Math.atan2(tmpV.x,tmpV.z);if(w.you)player.face=angDamp(player.face,f,Math.min(1,dt*10));else w.o.face=angDamp(w.o.face,f,Math.min(1,dt*10));return false;};
   if(w.st==='in'){if(walkTo(end)){w.st='pose';w.t=0;if(w.you)startPoses();else{w.o.a.play(rnd(['pose','kiss','twirl','cheer']));camFlash();burst(w.o.pos.clone().add(new THREE.Vector3(0,1.2,0)),'#ffd6f0',40,2.2,.12);}}}
