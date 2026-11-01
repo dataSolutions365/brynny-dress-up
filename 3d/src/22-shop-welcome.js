@@ -86,7 +86,7 @@ window.__shop={earn,openShop,closeShop,buy,askBuy,SHOP};
 $('#wname').value=SAVE.name||'';
 const wsRender=()=>document.querySelectorAll('[data-ws]').forEach(b=>b.classList.toggle('on',b.dataset.ws===(SAVE.look.style||'glam')));wsRender();
 document.querySelector('.wstyle').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
-$('#play').onclick=()=>{const n=$('#wname').value.trim()||'Brynny';SAVE.name=n;persist();
+$('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);
   scene.remove(av.g);av=new Avatar(SAVE.look,n,'#ff4d8d',true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
   curTrack='sparkle-room';startMusic();
