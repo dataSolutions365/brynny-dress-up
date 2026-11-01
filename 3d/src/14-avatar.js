@@ -37,7 +37,7 @@ const HIP=.82;
 function lookMat(color,kind='fabric'){const c=new THREE.Color(color);
   switch(kind){
     case 'skin':return new THREE.MeshPhysicalMaterial({color:c,roughness:.5,sheen:.6,sheenColor:new THREE.Color('#ffb0a0'),sheenRoughness:.6,clearcoat:.08});
-    case 'hair':return new THREE.MeshPhysicalMaterial({color:c,roughness:.38,sheen:1,sheenColor:c.clone().offsetHSL(0,0,.25),sheenRoughness:.3});
+    case 'hair':return new THREE.MeshPhysicalMaterial({color:c,map:hairTex(),bumpMap:hairTex(),bumpScale:.25,roughness:.38,sheen:1,sheenColor:c.clone().offsetHSL(0,0,.25),sheenRoughness:.3});
     case 'shiny':return new THREE.MeshPhysicalMaterial({color:c,roughness:.22,clearcoat:1,clearcoatRoughness:.08});
     case 'sparkle':return new THREE.MeshPhysicalMaterial({color:c,map:TEX.glitter,metalness:.55,roughness:.28,iridescence:.4,sheen:.5});
     case 'galaxy':{if(!TEX.galaxy){TEX.galaxy=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#000';x.fillRect(0,0,w,h);for(let i=0;i<260;i++){const r=Math.random();x.fillStyle=r<.15?'#ffe27a':r<.3?'#ffb3e6':'#ffffff';x.globalAlpha=.4+Math.random()*.6;const z=Math.random()<.9?1+Math.random()*1.6:3;x.beginPath();x.arc(Math.random()*w,Math.random()*h,z,0,7);x.fill();}
@@ -94,7 +94,7 @@ class Avatar{
     B(sph(.13,24,16),hips).scale.set(1.05,.75,.8);
     const spine=this.spine=new THREE.Group();hips.add(spine);
     const chest=B(new THREE.CapsuleGeometry(.12,.2,6,20),spine,0,.24,0);chest.scale.set(this.look.style!=='cute'?1.0:1.12,1,this.look.style!=='cute'?.74:.78);
-    B(this.look.style!=='cute'?cyl(.036,.044,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
+    B(this.look.style!=='cute'?cyl(.039,.047,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
     const head=this.head=new THREE.Group();head.position.y=.68;spine.add(head);
     const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?new THREE.Vector3(.9,1.06,.98):new THREE.Vector3(1,1.08,1);
     let surf;
@@ -103,7 +103,7 @@ class Avatar{
       surf=(x,y,off=0)=>{headRay.set(new THREE.Vector3(x,y,.5),new THREE.Vector3(0,0,-1));const h=headRay.intersectObject(tmp,false)[0];return (h?h.point.z:.1)+off;};}
     else{B(sph(.13,40,30),head).scale.copy(HS);surf=(x,y,off=0)=>HS.z*Math.sqrt(Math.max(0,.0169-(x/HS.x)**2-(y/HS.y)**2))+off;}
     for(const sx of [-1,1])B(sph(.025,10,8),head,sx*.127*HS.x,-.005,0).scale.set(.6,1,.8);
-    this.eyes=[];this.iris=new THREE.MeshPhysicalMaterial({color:this.look.eyes,roughness:.35,clearcoat:.6,clearcoatRoughness:.15});
+    this.eyes=[];this.iris=new THREE.MeshPhysicalMaterial({color:this.look.eyes,roughness:.3,clearcoat:.8,clearcoatRoughness:.1});
     const white=new THREE.MeshPhysicalMaterial({color:'#ffffff',roughness:.25,clearcoat:.6,emissive:'#ffffff',emissiveIntensity:.18}),dark=new THREE.MeshStandardMaterial({color:'#111',roughness:.2}),shine=new THREE.MeshBasicMaterial({color:'#ffffff'});
     const lash=this.lashM=new THREE.MeshStandardMaterial({color:'#2b1d16',roughness:.6});
     this.lipM=new THREE.MeshPhysicalMaterial({color:'#d77a86',roughness:.45,clearcoat:.3});this.linerM=new THREE.MeshPhysicalMaterial({color:'#c2185b',roughness:.5});this.lipLiner=[];
@@ -111,24 +111,26 @@ class Avatar{
     if(glam){
       // fashion-doll face: almond eyes tilted up, thick lash line with a wing, arched brows, small nose, full lips
       this.eyeR=[.036,.024];
-      this.browM=new THREE.MeshStandardMaterial({color:'#3a2618',roughness:.7});
+      this.browM=new THREE.MeshStandardMaterial({color:'#3a2618',roughness:.8});
+      const lidM=new THREE.MeshStandardMaterial({color:'#6b4a44',roughness:.8,transparent:true,opacity:.28,depthWrite:false}),lowM=new THREE.MeshStandardMaterial({color:'#7a5244',roughness:.7});
       const ES={almond:[1.22,.76,.12,.92],round:[1.1,.92,.04,.95],cat:[1.36,.64,.3,.9],doe:[1.18,.88,-.04,1.0]}[F.eyes]||[1.22,.76,.12,.92];
       for(const sx of [-1,1]){const eg=new THREE.Group();eg.position.set(sx*.044,.008,surf(.044,.008,-.011));eg.rotation.z=sx*ES[2];eg.rotation.y=sx*.2;eg.scale.setScalar(ES[3]);head.add(eg);
         M(sph(.03,24,16),white,0,0,0,eg,false).scale.set(ES[0],ES[1],.5);
-        M(sph(.0185,20,14),this.iris,0,-.001,.0085,eg,false).scale.set(1,1,.45);
-        const ring=M(new THREE.TorusGeometry(.0172,.0022,8,28),dark,0,-.001,.0122,eg,false);ring.material=new THREE.MeshStandardMaterial({color:'#2a1a12',roughness:.4,transparent:true,opacity:.55});
-        M(sph(.0088,14,10),dark,0,-.001,.0135,eg,false).scale.set(1,1,.4);
-        M(sph(.0028,8,6),shine,.0065,.0065,.0172,eg,false);M(sph(.0014,8,6),shine,-.006,-.007,.016,eg,false);
-        const up=M(new THREE.TorusGeometry(.03,.0042,8,28,Math.PI),lash,0,.0005,.0035,eg,false);up.scale.set(ES[0],ES[1]*1.03,1);
-        const wing=M(new THREE.CapsuleGeometry(.0028,F.eyes==='cat'?.018:.012,4,8),lash,sx*.0325*ES[0],.006,.0035,eg,false);wing.rotation.z=-sx*1.0;
-        const low=M(new THREE.TorusGeometry(.03,.0016,6,24,Math.PI),new THREE.MeshStandardMaterial({color:'#5a3a2a',roughness:.7}),0,-.001,.003,eg,false);low.scale.set(ES[0]*.98,ES[1],1);low.rotation.z=Math.PI;
+        // a big shaded iris (pupil, streaks and dark rim are in the texture), tucked a little under the upper lid
+        this.iris.map=irisTex();M(irisGeo(.0205),this.iris,0,-.0025,.0075,eg,false).scale.set(1,1,.45);
+        M(sph(.0032,8,6),shine,.0072,.0055,.0168,eg,false);M(sph(.0015,8,6),shine,-.0068,-.0085,.0158,eg,false);
+        // soft lid shadow on the top of the eye white, a thick lash line with a little flick, and a soft lower lid
+        M(new THREE.SphereGeometry(.03,24,10,0,Math.PI*2,0,1.05),lidM,0,0,0,eg,false).scale.set(ES[0]*1.01,ES[1]*1.01,.51);
+        const up=M(new THREE.TorusGeometry(.03,.0048,8,32,Math.PI),lash,0,.0005,.0035,eg,false);up.scale.set(ES[0],ES[1]*1.05,1);
+        const wing=M(new THREE.CapsuleGeometry(.0026,F.eyes==='cat'?.016:.009,4,8),lash,sx*.0315*ES[0],.0045,.0035,eg,false);wing.rotation.z=-sx*1.15;
+        const low=M(new THREE.TorusGeometry(.03,.0014,6,24,Math.PI),lowM,0,-.001,.003,eg,false);low.scale.set(ES[0]*.98,ES[1],1);low.rotation.z=Math.PI;
         eg.userData.sx=sx;eg.userData.rx=.03*ES[0];eg.userData.ry=.03*ES[1];this.eyes.push(eg);
-        const pts=[[.016,.047],[.036,.057],[.055,.0595],[.074,.052],[.085,.043]].map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0025)));
-        const tube=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),20,.0024,6,false);const tp=tube.attributes.position;
-        M(tube,this.browM,0,0,0,head,false);}
+        const pts=[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]].map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0022)));
+        M(browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
       const LS={full:[1,1,1],heart:[.85,1.05,1.2],soft:[1.12,.8,.82],pout:[.92,1.2,1.15]}[F.lips]||[1,1,1];
-      const ux=.0072*LS[0];lip(.0135,-ux,-.0525,surf(ux,-.0525,-.0052),1.18*LS[0],.44*LS[1],.5,.13);lip(.0135,ux,-.0525,surf(ux,-.0525,-.0052),1.18*LS[0],.44*LS[1],.5,-.13);
-      lip(.019,0,-.0638,surf(0,-.0638,-.0072),1.1*LS[0],.5*LS[2],.55);
+      // full, glossy, sculpted lips: an upper lip with a cupid's bow and a fuller lower lip
+      const W=.031*LS[0];for(const [up,h,d,cy] of [[true,.0078*LS[1],.007,-.0528],[false,.0108*LS[2],.0098,-.065]]){const geo=lipGeo(up,W,h,d,cy,(x,y)=>surf(x,y));
+        M(geo,this.lipM,0,0,0,head,false);const l=M(geo,this.linerM,0,-cy*.04,-.0012,head,false);l.scale.set(1.07,1.04,1);l.visible=false;this.lipLiner.push(l);}
     }else{
       this.eyeR=[.03,.034];
       B(sph(.013,10,8),head,0,-.028,.13);
@@ -319,10 +321,13 @@ class Avatar{
       for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
-      this.lipM.color.set(mk.lips||(this.glam?'#c96f7c':'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
+      this.lipM.color.set(mk.lips||(this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
       this.lipLiner.forEach(l=>{l.visible=!!mk.lipLiner;});if(mk.lipLiner)this.linerM.color.set(mk.lipLiner);
       this.lashM.color.set(mk.lashes==='bold'?'#0d0a0a':'#2b1d16');
-      if(mk.lashes==='long'||mk.lashes==='bold'){const n=mk.lashes==='bold'?8:6,h=mk.lashes==='bold'?.014:.01;const lg=new THREE.ConeGeometry(.0014,h,4);
+      // glam faces always get a fan of curled lashes; mascara makes them longer and darker
+      if(this.glam){const L=mk.lashes==='bold'?[15,.017,1.8]:mk.lashes==='long'?[13,.014,1.5]:[11,.011,1.3];
+        for(const eg of this.eyes){const m=P(lashFan(eg.userData.rx,eg.userData.ry*1.04,eg.userData.sx,L[0],L[1],L[2]),this.lashM,eg,0,.0005,0);m.castShadow=false;}}
+      else if(mk.lashes==='long'||mk.lashes==='bold'){const n=mk.lashes==='bold'?8:6,h=mk.lashes==='bold'?.014:.01;const lg=new THREE.ConeGeometry(.0014,h,4);
         for(const eg of this.eyes){const sx=eg.userData.sx;for(let i=0;i<n;i++){const a=.25+i/(n-1)*(Math.PI-.5);const m=P(lg.clone(),this.lashM,eg,Math.cos(a)*eg.userData.rx,.002+Math.sin(a)*eg.userData.ry,.006);m.rotation.z=a-Math.PI/2+sx*.15*(Math.cos(a));m.rotation.x=.5;m.castShadow=false;}}}
       if(this.glam&&mk.liner&&mk.liner!=='none'){const lm=new THREE.MeshStandardMaterial({color:mk.linerC||'#2b1d16',roughness:.55});this.mats.push(lm);const tk=mk.liner==='thin'?.0055:.0072;
         for(const eg of this.eyes){const sx=eg.userData.sx;const t=P(new THREE.TorusGeometry(.0305,tk,8,28,Math.PI),lm,eg,0,.001,.003);t.scale.set(eg.userData.rx/.03,eg.userData.ry/.03*1.05,.6);t.castShadow=false;
@@ -335,13 +340,17 @@ class Avatar{
     const at=(a,b,c)=>faceXY(a,b,c,W,this.hs);
     if(this.glam){const soft=(px,py,rx,ry,col,a)=>{x.save();x.translate(px,py);x.scale(1,ry/rx);const g=x.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);x.fillStyle=g;x.beginPath();x.arc(0,0,rx,0,Math.PI*2);x.fill();x.restore();};
       for(const sx of [-1,1]){let [px,py]=at(sx*.07,-.045,.09);soft(px,py,120*k,55*k,'120,70,50',.16);[px,py]=at(sx*.062,-.014,.105);soft(px,py,70*k,40*k,'255,245,235',.28);
-        if(!mk.shadow){[px,py]=at(sx*.046,.03,.115);soft(px,py,120*k,60*k,'190,120,110',.35);}
-}
-      const [nx,ny]=at(0,-.01,.13);soft(nx,ny,22*k,70*k,'255,250,240',.3);
+        // soft sculpting: cheekbone contour, a warm crease above the eye, deeper at the outer corner, and a soft lower lid
+        [px,py]=at(sx*.088,-.05,.08);soft(px,py,120*k,38*k,'150,80,60',.2);
+        if(!mk.shadow){[px,py]=at(sx*.046,.03,.115);soft(px,py,125*k,58*k,'175,100,100',.42);[px,py]=at(sx*.074,.016,.1);soft(px,py,55*k,45*k,'120,62,62',.32);}
+        [px,py]=at(sx*.05,-.022,.115);soft(px,py,80*k,22*k,'150,90,90',.22);}
+      const [nx,ny]=at(0,-.01,.13);soft(nx,ny,18*k,60*k,'255,250,240',.18);
       for(const sx of [-1,1]){let [px,py]=at(sx*.013,-.018,.12);soft(px,py,16*k,70*k,'130,80,60',.2);[px,py]=at(sx*.011,-.036,.12);soft(px,py,16*k,12*k,'110,60,50',.28);}
       let [px,py]=at(0,-.04,.12);soft(px,py,30*k,10*k,'110,60,50',.3);[px,py]=at(0,-.031,.14);soft(px,py,12*k,10*k,'255,255,250',.4);
       [px,py]=at(0,-.072,.115);soft(px,py,40*k,12*k,'120,70,55',.22);[px,py]=at(0,-.084,.11);soft(px,py,30*k,16*k,'255,245,235',.18);}
-    if(mk.blush&&BLUSH[mk.blush])for(const sx of [-1,1]){const [cx,cy]=at(sx*.072,-.03,.1);const g=x.createRadialGradient(cx,cy,0,cx,cy,95*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},.42)`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,95*k,80*k,0,0,Math.PI*2);x.fill();}
+    if(mk.blush&&BLUSH[mk.blush]){const R=this.glam?115:95,A=this.glam?.5:.42;for(const sx of [-1,1]){const [cx,cy]=at(sx*.07,this.glam?-.026:-.03,.1);const g=x.createRadialGradient(cx,cy,0,cx,cy,R*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},${A})`);g.addColorStop(.6,`rgba(${BLUSH[mk.blush]},${A*.45})`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,R*k,R*.75*k,0,0,Math.PI*2);x.fill();}
+      // glam blush sweeps lightly over the nose too
+      if(this.glam){const [cx,cy]=at(0,-.018,.13);const g=x.createRadialGradient(cx,cy,0,cx,cy,70*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},.22)`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,70*k,35*k,0,0,Math.PI*2);x.fill();}}
     if(mk.shadow)for(const sx of [-1,1]){const [cx,cy]=at(sx*.047,.028,.115);x.save();x.translate(cx,cy);x.scale(1,.55);const g=x.createRadialGradient(0,0,0,0,0,155*k);const rgb2=rgbOf(mk.shadow);
       g.addColorStop(0,`rgba(${rgb2},.85)`);g.addColorStop(.55,`rgba(${rgb2},.55)`);g.addColorStop(1,`rgba(${rgb2},0)`);x.fillStyle=g;x.beginPath();x.arc(0,0,155*k,0,Math.PI*2);x.fill();x.restore();}
     if(!this.glam&&mk.liner&&mk.liner!=='none'){x.strokeStyle=mk.linerC||'#2b1d16';x.lineCap='round';x.lineJoin='round';x.lineWidth=(mk.liner==='thin'?7:12)*k;
