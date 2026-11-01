@@ -862,7 +862,7 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
   M(cyl(.22,.19,.4,18),phys('#ff3b6b',{roughness:.5}),-2.4,.2,B.PLATE-.6,g);for(let i=0;i<6;i++)M(sph(.05,10,8),phys('#ffffff',{roughness:.6}),-2.4+Math.sin(i*1.1)*.11,.42,B.PLATE-.6+Math.cos(i*1.1)*.11,g,false,false);z.ob(-2.4,B.PLATE-.6,.3);}
  z.pad=spPad(z,-2.9,5.2,'#4fd16a','⚾','⚾ Batting practice!','#2f8f3a');
  signpost(z);}
-// ---- src/12c-place-zoo.js ----
+// ---- src/12d-place-zoo.js ----
 /* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes and rhinos live in 24d-barn.js) ===== */
 // local layout: +z points back toward Halloween Hollow (the gate)
 {const z=Z.zoo,g=z.g;
@@ -4458,7 +4458,7 @@ const FARM=[
   {k:'monkey',e:'🐒',n:'Baby monkey',nm:'Coco',c:60,ride:0,pal:'walk',scale:.55,about:'A cheeky baby monkey with a curly tail. Takes walks with you around town.',food:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],say:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌']},
   {k:'longneck',e:'🦕',n:'Long-neck dino',nm:'Skye',s:20,ride:2.15,about:'Super rare! A giant long-neck dinosaur. Ride way up high!',food:[['🌿','Ferns'],['🍃','Tree leaves'],['🍐','Pear']],say:['Hrrrooo! 🦕','*big gentle hum*','I can see the whole town!']},
 ];
-// zoo animals (12c-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
+// zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
 const ZOOA=[
   {k:'zebra',e:'🦓',n:'Zebra',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
     facts:[['🥗','Diet','Herbivore. Mostly grass, plus some leaves, bark and shoots.'],['🌍','Habitat','Grasslands and savannas of eastern and southern Africa.'],['⏳','Lifespan','About 20 to 25 years in the wild, and up to 40 in zoos.'],['✨','Fun fact','No two zebras have the same stripes, just like fingerprints!']]},
@@ -4877,7 +4877,7 @@ function farmPic(k,S=160,yaw=.6){if(!picKit){const sc=new THREE.Scene();sc.add(n
 function thumbsSoon(){if(thumbBusy)return;const todo=FARM.concat(ZOOA).filter(f=>!FTHUMB[f.k]);if(!todo.length)return;thumbBusy=true;
   const one=()=>{const f=todo.shift();if(!f){thumbBusy=false;if(barnOpen)renderBarn();if(catOpen)renderCatalog();return;}try{FTHUMB[f.k]=farmPic(f.k);}catch(e){}setTimeout(one,30);};setTimeout(one,50);}
 
-/* ---------- the safari zoo (12c-place-zoo.js): walk up to an animal, pet it, feed it and learn about it ---------- */
+/* ---------- the safari zoo (12d-place-zoo.js): walk up to an animal, pet it, feed it and learn about it ---------- */
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
