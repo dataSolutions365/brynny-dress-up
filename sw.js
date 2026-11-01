@@ -4,7 +4,7 @@
 // the 2D studio, the pet page, the 3D world, the 3D engine, fonts, and all the music.
 //
 // How it decides what to use:
-// - Game pages and game code: try the internet first so updates show up right away,
+// - Game pages and game code: try the internet first (always checking for a newer copy) so updates show up right away,
 //   and use the saved copy when there is no internet.
 // - Music and sounds: use the saved copy (they never change), and save each song the first time it loads.
 // - The 3D engine and fonts (from cdn.jsdelivr.net and Google Fonts): saved copy first, they never change.
@@ -82,7 +82,9 @@ self.addEventListener('fetch', e => {
 async function internetFirst(req) {
   const cache = await caches.open(CACHE);
   try {
-    const res = await fetch(req);
+    // no-cache: always ask the server if the file changed (cheap when it hasn't), so a page and
+    // its game code never come from two different versions after an update goes live
+    const res = await fetch(req, { cache: 'no-cache' });
     if (res.ok) cache.put(req, res.clone());
     return res;
   } catch (err) {

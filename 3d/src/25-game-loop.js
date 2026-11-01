@@ -48,7 +48,8 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
-    const spd=(curZone===PARK?6.5:5)*mag*rideBoost();// a bit quicker on the open grass between places, normal speed inside themconst old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
+    const spd=(curZone===PARK?6.5:5)*mag*rideBoost();// a bit quicker on the open grass between places, normal speed inside them
+    const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
     const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
     player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;}else player.speed*=.8;
   // vertical
