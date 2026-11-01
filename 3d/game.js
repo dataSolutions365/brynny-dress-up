@@ -2571,7 +2571,7 @@ function closeGlam(){if(!glamOpen)return;hideHTool();glamOpen=false;closetOpen=f
   did('glam');if(Date.now()-(SAVE.glamPaid||0)>6e5){SAVE.glamPaid=Date.now();persist();setTimeout(()=>earn(5,'Glam time!'),700);}
   toast('Looking fabulous! ✨ Now try the 🏆 model contest!');}
 function glamCam(dt){if(!glamOpen||ctab==='makeup')return;const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
-  if(ctab==='hair'){T=hTool==='braid'?braidLook():av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=player.face+hairView;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
+  if(ctab==='hair'){T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=player.face+hairView;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
   else if(nailCamAt(ctab==='nails'?'c':'t',fwd)){T=nailCamT;Pp=nailCamP;}
   else if(ctab==='nails'){player.face=agFace(-1,0);T=av.arms[0].hand.getWorldPosition(new THREE.Vector3()).add(av.arms[1].hand.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);Pp=T.clone().addScaledVector(fwd,.2).add(new THREE.Vector3(0,.27,0));}
   else{player.face=agFace(0,1);T=av.legs[0].an.getWorldPosition(new THREE.Vector3()).add(av.legs[1].an.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).addScaledVector(fwd,.1);Pp=T.clone().addScaledVector(fwd,.12).add(new THREE.Vector3(0,.36,0));}
@@ -2586,14 +2586,14 @@ function glamClick(b){const L=SAVE.look;if(beautyClick(b))return true;
 
 /* ---------- hands-on beauty: style hair and put on makeup with your finger ---------- */
 const HTOOLS=[['brush','🪮','Brush','Brush down the hair to make it smooth, straight and shiny.'],['straight','🔥','Straightener','Glide the flat iron down the hair to make it super straight and shiny.'],['curl','🌀','Curling iron','Rub the curling iron on the hair to curl it. Rub more for big curls!'],['cut','✂️','Scissors','Drag the scissors over the hair to cut it shorter. Long hair turns into a bob, then short.'],
-  ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['braid','🪢','Braid','Drag the glowing strand over the middle one. Left, then right, back and forth, just like real braiding!'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
+  ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['braid','🪢','Braid','Tap her hair to start braiding. Drag the glowing strand over the middle one, left then right, back and forth!'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
 const MTOOLS=[['lips','💄','Lipstick','Rub on the lips.'],['gloss','✨','Gloss','Rub on the lips to make them shiny.'],['shadow','👁️','Eyeshadow','Rub on the eyelids.'],['liner','✏️','Eyeliner','Swipe across the eyes.'],['lashes','🪶','Mascara','Brush the lashes. Each swipe makes them longer.'],
   ['blush','🌸','Blush','Rub on the cheeks.'],['gems','💎','Face gems','Tap beside the eyes.'],['paint','🖌️','Paint','Draw anything on the face.']];
 let hairView=.75,hTool='brush',mTool='lips',sprayC='#ff7eb6',clipC='#ff6fae',hstroke=null,mstroke=null;const MKC={lips:MK_LIPS,gloss:null,shadow:MK_SHADOW,liner:['#2b1d16','#000000','#6a3df0','#3a5bd9','#2fd1c5','#d4af37','#ff3b6b'],lashes:null,blush:[['pink','#ff8fb0'],['peach','#ffab85'],['rose','#dc6080']],gems:null};
 let mkColor={lips:'#ff3b6b',shadow:'#b388ff',liner:'#2b1d16',blush:'pink'};
 const meter=(n,v)=>`<div class="meter"><span>${n}</span><i><b style="width:${Math.round(v*100)}%"></b></i></div>`;
 function hairHTML(){const H=SAVE.look.hair,t=HTOOLS.find(x=>x[0]===hTool);
-  let h=`<div class="chips tools">${HTOOLS.map(([id,e,n])=>`<button class="${hTool===id?'on':''}" data-htool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${hTool==='braid'&&braidP>=BRAID_N?'Beautiful braid! Tie it off with a bow.':hTool==='braid'?`Drag the glowing ${brSideName()} strand over the middle one. Left, then right, back and forth!`:t[3]}</p>${hTool==='braid'?`<div class="hmeters">${meter('Braid',braidP/BRAID_N)}</div><div class="chips">${braidP>=BRAID_N?'<button data-braid="tie">🎀 Tie it off!</button>':''}${braidP?'<button data-braid="redo">↩️ Start the braid over</button>':''}</div>`:''}<div class="chips"><button data-hview="1.2">⬅️ Her right side</button><button data-hview="0">🙂 Front</button><button data-hview="-1.2">➡️ Her left side</button><button data-hview="3.14">🔙 Back</button></div>`;
+  let h=`<div class="chips tools">${HTOOLS.map(([id,e,n])=>`<button class="${hTool===id?'on':''}" data-htool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${t[3]}</p><div class="chips"><button data-hview="1.2">⬅️ Her right side</button><button data-hview="0">🙂 Front</button><button data-hview="-1.2">➡️ Her left side</button><button data-hview="3.14">🔙 Back</button></div>`;
   h+=`<div class="hmeters">${meter('Length',((H.len||1)-.35)/.95)}${meter('Curls',H.curl||0)}${meter('Volume',H.vol||0)}</div>`;
   if(hTool==='spray')h+=`<h3>Spray color</h3><div class="swatches">${myColors(HAIRC.concat(['#ffd23f','#7ee081','#ff3b6b'])).map(c=>`<button class="sw${c===sprayC?' on':''}" style="background:${c}" data-spray="${c}"></button>`).join('')}</div>`;
   if(hTool==='clip')h+=`<h3>Clip color</h3><div class="swatches">${['#ff6fae','#ffd23f','#4fb6ff','#b388ff','#ffffff','#7ee081','#d4af37'].map(c=>`<button class="sw${c===clipC?' on':''}" style="background:${c}" data-clipc="${c}"></button>`).join('')}</div><div class="chips" style="margin-top:8px"><button data-hreset="clips">🧹 Take clips off</button></div>`;
@@ -2611,7 +2611,6 @@ function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute')return '';
   return FACEOPT.filter(([k])=>k!=='nose').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
 function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
   if(b.dataset.htool){hTool=b.dataset.htool;if(hTool==='clip'&&!b.classList.contains('on')){}else if(hTool==='clip'){}sfx('pop');renderCloset();return true;}
-  if(b.dataset.braid){if(b.dataset.braid==='tie')tieBraid();else{resetBraid();sfx('pop');}renderCloset();return true;}
   if(b.dataset.hview){hairView=+b.dataset.hview;sfx('pop');return true;}
   if(b.dataset.spray){sprayC=b.dataset.spray;sfx('pop');renderCloset();return true;}
   if(b.dataset.clipc){clipC=b.dataset.clipc;sfx('pop');renderCloset();return true;}
@@ -2623,7 +2622,7 @@ function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
 // hair strokes
 function hairHit(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);return ray.intersectObjects(av.hairMeshes||[],false)[0]||null;}
 let hairDirty=0;
-function hairStroke(e,first){if(hTool==='braid')return braidPtr(e,first);const h=hairHit(e);if(!h)return false;if(hTool!=='clip'){showHTool(h.point);hwRoot=h.point.clone();}const H=SAVE.look.hair,P=h.point;if(!hstroke.ld&&['curl','straight','brush','dry','grow'].includes(hTool)&&!['long','waves'].includes(H.id)&&!(hTool==='grow'&&['bob','pixie'].includes(H.id))){H.id=H.curl>.45||hTool==='curl'?'waves':'long';H.len=1;hairDirty=1;toast('💁‍♀️ Let her hair down so you can style it!');}if(!hstroke.ld&&hTool==='cut'&&!['long','waves','bob','pixie'].includes(H.id)){H.id='long';H.len=1;hairDirty=1;}hstroke.ld=1;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
+function hairStroke(e,first){if(hTool==='braid'){if(first&&hairHit(e))openBraid();return true;}const h=hairHit(e);if(!h)return false;if(hTool!=='clip'){showHTool(h.point);hwRoot=h.point.clone();}const H=SAVE.look.hair,P=h.point;if(!hstroke.ld&&['curl','straight','brush','dry','grow'].includes(hTool)&&!['long','waves'].includes(H.id)&&!(hTool==='grow'&&['bob','pixie'].includes(H.id))){H.id=H.curl>.45||hTool==='curl'?'waves':'long';H.len=1;hairDirty=1;toast('💁‍♀️ Let her hair down so you can style it!');}if(!hstroke.ld&&hTool==='cut'&&!['long','waves','bob','pixie'].includes(H.id)){H.id='long';H.len=1;hairDirty=1;}hstroke.ld=1;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
   const k=d*.0016,cl=v=>Math.min(1,Math.max(0,v));let fx='#ffffff';
   if(hTool==='straight'){H.curl=cl((H.curl||0)-k*2.4);H.vol=cl((H.vol||0)-k*.8);if(hstroke.go>90&&!H.shine){H.shine=true;toast('✨ Sleek and shiny!');}fx='#ffe0b0';if(d&&Math.random()<.25)tone(220,.1,'sine',.025,0,180);}
   else if(hTool==='brush'){H.curl=cl((H.curl||0)-k*1.3);H.vol=cl((H.vol||0)-k*.4);if(hstroke.go>140&&!H.shine){H.shine=true;toast('✨ So shiny!');}if(d)sfx('brush');}
@@ -2695,73 +2694,64 @@ function wrapStrands(t){hwrap.children.forEach(o=>o.geometry.dispose());hwrap.cl
   else {hwrap.visible=false;}}
 anims.push((t)=>wrapStrands(t));
 
-/* braid it yourself, like the 2D salon: grab the glowing outside strand and drag it over the middle one, left then right, back and forth */
-const braidG=new THREE.Group();braidG.matrixAutoUpdate=false;scene.add(braidG);
-const BRAID_N=8,BR_STEP=.032,BR_SP=.045,BR_LOOSE=.24,BR_R=.012;
-const brMat=[0,1,2].map(()=>new THREE.MeshStandardMaterial({roughness:.5,metalness:.04}));
-const brGlow=new THREE.MeshBasicMaterial({color:'#ffd23f',transparent:true,opacity:.45,depthWrite:false});
-const brLobeG=new THREE.SphereGeometry(1,14,10);
-let braidP=0,braidSide=1,braidOrder=[0,1,2],braidLobes=[],braidDrag=null,braidDirty=1,braidCol='';
-// the strands hang beside her face and fan out sideways as you look at them (brLat points to your right, brFwd toward you)
-const brLat=new THREE.Vector3(1,0,0),brFwd=new THREE.Vector3(0,0,1),BR_Y0=-.03,brYB=()=>BR_Y0-braidP*BR_STEP;
-const brBase=()=>new THREE.Vector3(braidSide*.15,0,.03).addScaledVector(brFwd,.035);
-const brAt=(lat,y)=>brBase().addScaledVector(brLat,lat).setY(y);
-const brTop=s=>brAt((s-1)*BR_SP*.3,brYB());
-const brEnd=s=>brAt((s-1)*BR_SP,brYB()-BR_LOOSE);
-const brExpect=()=>braidP%2?2:0,brSideName=()=>braidP%2?'right':'left';
-function brCurve(s){const a=brTop(s),d=braidDrag&&braidDrag.slot===s,e=d?braidDrag.end.clone():brEnd(s);
-  // a strand being carried over the middle lifts toward you, so it really goes over the top
-  const m=a.clone().lerp(e,.5);if(d)m.add(braidDrag.lift);else m.x+=(s-1)*BR_SP*.15;
-  return new THREE.CatmullRomCurve3([a,a.clone().lerp(m,.5),m,e]);}
-function resetBraid(){braidP=0;braidOrder=[0,1,2];braidLobes=[];braidDrag=null;braidDirty=1;}
-function buildBraid(){braidG.children.forEach(o=>{if(o.geometry!==brLobeG)o.geometry.dispose();});braidG.clear();braidDirty=0;
-  const done=braidP>=BRAID_N;
-  // the woven part: one plump lobe per crossing, leaning left then right like a real three-strand braid
-  braidLobes.forEach((ci,i)=>{const lean=i%2?1:-1,o=new THREE.Mesh(brLobeG,brMat[ci]);o.scale.set(.026,.03,.015);o.position.copy(brAt(lean*.007,BR_Y0-(i+.55)*BR_STEP));o.rotation.set(0,Math.atan2(brFwd.x,brFwd.z),lean*.6,'YXZ');braidG.add(o);});
-  if(done){// a little tail with a bow band, ready to tie
-    const yb=brYB();for(let s=0;s<3;s++){const ci=braidOrder[s],c=new THREE.CatmullRomCurve3([brAt((s-1)*.006,yb+.006),brAt((s-1)*.018,yb-.06)]);braidG.add(new THREE.Mesh(new THREE.TubeGeometry(c,6,BR_R*.8,6,false),brMat[ci]));}
-    return;}
-  for(let s=0;s<3;s++){const cv=brCurve(s),ci=braidOrder[s];
-    braidG.add(new THREE.Mesh(new THREE.TubeGeometry(cv,24,BR_R,8,false),brMat[ci]));
-    if(s===brExpect()&&!braidDrag){const g=new THREE.Mesh(new THREE.TubeGeometry(cv,24,BR_R*1.9,8,false),brGlow);g.renderOrder=2;braidG.add(g);}}}
-anims.push((t)=>{if(!glamOpen||hTool!=='braid'||ctab!=='hair'){braidG.visible=false;braidDrag=null;return;}
-  braidG.visible=true;av.head.updateWorldMatrix(true,false);braidG.matrix.copy(av.head.matrixWorld);braidG.matrixWorldNeedsUpdate=true;braidG.updateMatrixWorld(true);
-  if(!braidDrag){const f=camera.position.clone().applyMatrix4(braidG.matrixWorld.clone().invert()).sub(brBase()).setY(0);
-    if(f.lengthSq()>1e-6){f.normalize();if(f.distanceTo(brFwd)>.02){brFwd.copy(f);brLat.set(f.z,0,-f.x);braidDirty=1;}}}
-  const c=SAVE.look.hair.c;if(c!==braidCol){braidCol=c;const cs=c==='rainbow'?['#ff6fae','#ffd23f','#4fb6ff']:[0,1,2].map(i=>'#'+new THREE.Color(c).offsetHSL(0,0,[.15,0,-.1][i]).getHexString());brMat.forEach((m,i)=>m.color.set(cs[i]));}
-  brGlow.opacity=.25+.25*Math.sin(t*5);if(braidDirty)buildBraid();});
-// while braiding, the camera follows the loose strands down so they stay above the panel
-const braidLook=()=>{const h=av.head.getWorldPosition(new THREE.Vector3());if(!braidG.visible)return h.add(new THREE.Vector3(0,.02,0));const done=braidP>=BRAID_N,b=brAt(0,done?BR_Y0-BRAID_N*BR_STEP*.4:brYB()-BR_LOOSE*.4).applyMatrix4(braidG.matrixWorld);return h.lerp(b,done?.55:.8);};
-const brScr=v=>{const p=v.clone().applyMatrix4(braidG.matrixWorld).project(camera);return [(p.x+1)/2*innerWidth,(1-p.y)/2*innerHeight];};
-function brPick(e){let best=-1,bd=1e9;for(let s=0;s<3;s++){const cv=brCurve(s);for(let i=2;i<=10;i++){const [x,y]=brScr(cv.getPoint(i/10)),d=Math.hypot(e.clientX-x,e.clientY-y);if(d<bd){bd=d;best=s;}}}return bd<44?best:-1;}
-function brDragTo(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);
-  const P0=brEnd(1).applyMatrix4(braidG.matrixWorld),n=camera.getWorldDirection(new THREE.Vector3()),hit=new THREE.Vector3();
-  if(!ray.ray.intersectPlane(new THREE.Plane().setFromNormalAndCoplanarPoint(n,P0),hit))return;
-  const lp=hit.applyMatrix4(braidG.matrixWorld.clone().invert());lp.y=Math.min(lp.y,brYB()-.05);braidDrag.end.copy(lp);braidDirty=1;}
-// pointer down/move while the braid tool is out
-function braidPtr(e,first){if(!first){if(braidDrag)brDragTo(e);return true;}
-  if(braidP>=BRAID_N){toast('🎀 Tap “Tie it off” to finish your braid');return true;}
-  braidG.updateMatrixWorld(true);const s=brPick(e);
-  if(s<0){if(braidP===0){const h=hairHit(e);if(h){const lp=av.head.worldToLocal(h.point.clone()),sd=lp.x<0?-1:1;if(sd!==braidSide){braidSide=sd;braidDirty=1;}toast('🪢 Grab the glowing strand and drag it over the middle one!');}}return true;}
-  if(s===1){toast('✋ Grab an outside strand');return true;}
-  if(s!==brExpect()){toast(`✨ Now it's the glowing ${brSideName()} strand`);return true;}
-  const cam=camera.position.clone().applyMatrix4(braidG.matrixWorld.clone().invert()),mid=brEnd(1);
-  braidDrag={slot:s,end:brEnd(s),lift:cam.sub(mid).normalize().multiplyScalar(.018),start:brScr(brEnd(s)),mid:brScr(mid)};brDragTo(e);sfx('pop');return true;}
-function braidRelease(e){if(!braidDrag)return;const d=braidDrag,[sx,sy]=d.start,[mx,my]=d.mid,vx=mx-sx,vy=my-sy,L2=vx*vx+vy*vy||1;
-  const k=((e.clientX-sx)*vx+(e.clientY-sy)*vy)/L2;braidDrag=null;braidDirty=1;
-  if(k<.7){toast('👉 Pull it all the way over the middle strand');return;}
-  const s=d.slot;[braidOrder[s],braidOrder[1]]=[braidOrder[1],braidOrder[s]];braidLobes.push(braidOrder[1]);braidP++;tone(500+braidP*60,.09,'triangle',.08);
-  if(braidP>=BRAID_N){sfx('tada');toast('🪢 Beautiful braid! Now tie it off 🎀');}
-  else toast(`🪢 ${braidP}/${BRAID_N}! Now the ${brSideName()} strand over the middle`);}
-function tieBraid(){if(braidP<BRAID_N)return;const P=brAt(0,brYB()).applyMatrix4(braidG.matrixWorld);burst(P,'#ffd6ea',20,1,.07);
-  const H=SAVE.look.hair;H.id='sidebraid';H.len=1;resetBraid();hTool='brush';persist();hairDirty=1;toast('🪢 You braided it yourself!');did('braid');sfx('tada');}
+/* braid it yourself: the same braiding game as the 2D salon. Tap her hair with the braid tool and a big close-up opens:
+   drag the glowing outside strand over the middle one, left then right, back and forth, then tie it off with a bow */
+const BR={k:0,order:[0,1,2],need:8,drag:null,cols:[]};const BX=[112,150,188];
+const braidSvg=$('#braidSvg');
+function openBraid(){const c=SAVE.look.hair.c,sh=(v)=>'#'+new THREE.Color(c).lerp(new THREE.Color(v>0?'#ffffff':'#000000'),Math.abs(v)).getHexString();
+  BR.k=0;BR.order=[0,1,2];BR.drag=null;BR.cols=c==='rainbow'?['#ff6fae','#ffd23f','#4fb6ff']:[sh(.18),c,sh(-.22)];
+  $('#braidTie').style.display='none';$('#braidModal').classList.add('show');drawBraid();sfx('pop');}
+function closeBraid(){$('#braidModal').classList.remove('show');BR.drag=null;}
+function drawBraid(px,py){
+  const y0=46+BR.k*28,expect=BR.k%2?2:0;let s='';
+  s+=`<path d="M70 0 L230 0 L230 30 Q150 56 70 30 Z" fill="${BR.cols[1]}"/>`;
+  for(let i=0;i<BR.k;i++){const y=48+i*28,lean=i%2?1:-1;
+    s+=`<ellipse cx="${150+lean*7}" cy="${y}" rx="24" ry="15" fill="${BR.cols[i%3]}" stroke="rgba(0,0,0,.25)" stroke-width="2" transform="rotate(${lean*-28} ${150+lean*7} ${y})"/><path d="M${138+lean*7} ${y-6} Q${150+lean*7} ${y-12} ${162+lean*7} ${y-6}" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/>`;}
+  if(BR.k<BR.need){
+    for(let slot=0;slot<3;slot++){
+      const ci=BR.order[slot],top=[150+(BX[slot]-150)*.35,y0],drag=BR.drag&&BR.drag.slot===slot;
+      const ex=drag?px:BX[slot],ey=drag?py:400;
+      const d=`M${top[0]} ${top[1]} Q${(top[0]+ex)/2+(drag?0:(BX[slot]-150)*.3)} ${(top[1]+ey)/2} ${ex} ${ey}`;
+      if(slot===expect&&!BR.drag)s+=`<path d="${d}" stroke="#ffd23f" stroke-width="30" stroke-linecap="round" fill="none" opacity=".55"><animate attributeName="opacity" values=".2;.7;.2" dur="1.2s" repeatCount="indefinite"/></path>`;
+      s+=`<path d="${d}" stroke="${BR.cols[ci]}" stroke-width="20" stroke-linecap="round" fill="none"/><path d="${d}" stroke="#fff" stroke-opacity=".25" stroke-width="4" stroke-linecap="round" fill="none" transform="translate(-4 0)"/>`;
+    }
+    const hx=expect===0?60:240;
+    s+=`<text x="${hx}" y="330" font-size="34" text-anchor="middle">${expect===0?'👉':'👈'}</text>`;
+  }else{
+    s+=`<path d="M138 ${y0-4} L128 ${y0+40} L150 ${y0+24} L172 ${y0+40} L162 ${y0-4} Z" fill="${BR.cols[1]}"/>`;
+  }
+  braidSvg.innerHTML=s;
+  $('#braidBar').style.width=Math.round(BR.k/BR.need*100)+'%';
+  $('#braidHint').textContent=BR.k>=BR.need?'Beautiful braid! Now tie it off.':`Drag the glowing ${BR.k%2?'right':'left'} strand over the middle one. (${BR.k}/${BR.need})`;
+}
+function braidPt(ev){const pt=braidSvg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(braidSvg.getScreenCTM().inverse());return [q.x,q.y];}
+braidSvg.addEventListener('pointerdown',ev=>{
+  if(BR.k>=BR.need)return;const [x,y]=braidPt(ev),y0=46+BR.k*28;if(y<y0)return;
+  let best=0,bd=1e9;for(let i=0;i<3;i++){const t=(y-y0)/(400-y0),sx=(150+(BX[i]-150)*.35)*(1-t)+BX[i]*t,d=Math.abs(x-sx);if(d<bd){bd=d;best=i;}}
+  if(bd>32)return;
+  if(best===1){toast('✋ Grab an outside strand');return;}
+  const expect=BR.k%2?2:0;if(best!==expect){toast(`✨ Try the glowing ${expect?'right':'left'} strand`);return;}
+  ev.preventDefault();try{braidSvg.setPointerCapture(ev.pointerId);}catch(e){}
+  BR.drag={slot:best,id:ev.pointerId};drawBraid(x,y);
+});
+braidSvg.addEventListener('pointermove',ev=>{if(!BR.drag||ev.pointerId!==BR.drag.id)return;ev.preventDefault();const [x,y]=braidPt(ev);drawBraid(x,y);});
+const braidUp=ev=>{
+  if(!BR.drag||ev.pointerId!==BR.drag.id)return;const [x]=braidPt(ev),slot=BR.drag.slot;BR.drag=null;
+  const crossed=slot===0?x>140:x<160;
+  if(crossed){[BR.order[slot],BR.order[1]]=[BR.order[1],BR.order[slot]];BR.k++;tone(500+BR.k*60,.09,'triangle',.08);if(BR.k>=BR.need){$('#braidTie').style.display='block';sfx('tada');}}
+  drawBraid();
+};
+braidSvg.addEventListener('pointerup',braidUp);braidSvg.addEventListener('pointercancel',braidUp);
+$('#braidClose').onclick=closeBraid;
+$('#braidTie').onclick=()=>{closeBraid();const H=SAVE.look.hair;H.id='sidebraid';H.len=1;hTool='brush';persist();hairDirty=1;
+  burst(av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.1,0)),'#ffd6ea',30,1.2,.08);did('braid');sfx('tada');toast('🪢 You braided it yourself!');renderCloset();};
 function beautyDown(e){if(!glamOpen)return false;
   if(ctab==='nails'||ctab==='toes')return youNailTap(e);
   if(ctab==='hair'){hstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0};hairStroke(e,true);try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}
   if(ctab==='makeup'&&mTool!=='paint'){mstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0,done:{}};if(mkStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}mstroke=null;return false;}
   return false;}
 function beautyMove(e){if(hstroke&&e.pointerId===hstroke.id){hairStroke(e,false);return true;}if(mstroke&&e.pointerId===mstroke.id){mkStroke(e,false);return true;}return false;}
-function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){if(hTool==='braid')braidRelease(e);hstroke=null;clearTimeout(htoolHide);htoolHide=setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;renderCloset();}}
+function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){hstroke=null;clearTimeout(htoolHide);htoolHide=setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;renderCloset();}}
 let hairT=0;anims.push((t)=>{if(hairDirty&&glamOpen&&t-hairT>.12){hairDirty=0;hairT=t;av.dress(ctab==='toes'?Object.assign({},SAVE.look,{shoes:null}):SAVE.look);}});
 
 /* ---------- the model contest ---------- */
@@ -3175,4 +3165,4 @@ onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('ta
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
   sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
-Object.assign(window.__game,{braidInfo:()=>({n:braidP,need:BRAID_N,order:braidOrder.slice(),slots:[0,1,2].map(i=>brScr(brCurve(i).getPoint(.8)))}),glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
+Object.assign(window.__game,{openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
