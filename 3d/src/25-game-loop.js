@@ -149,5 +149,6 @@ function warmUp(){scene.updateMatrixWorld(true);let c;try{c=compileWait();
   Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
 // The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
 // while thousands of them were sent over. Draw everything once, behind the loading screen, so they are all there already.
-function preUpload(){const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});renderer.render(scene,camera);}catch(e){}off.forEach(o=>o.frustumCulled=true);}
+function preUpload(){if(LITE)return;const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;// skip the shadow pass for this one giant frame
+  try{renderer.render(scene,camera);}finally{renderer.shadowMap.autoUpdate=au;renderer.shadowMap.needsUpdate=true;}}catch(e){}off.forEach(o=>o.frustumCulled=true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);

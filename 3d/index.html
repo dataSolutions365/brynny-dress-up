@@ -333,7 +333,7 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 <div class="hud" id="banner"></div>
 <div class="hud pill" id="toast"></div>
 <button id="newver" type="button">✨ New version! Tap to refresh</button>
-<div id="glLost"><div>The 3D world took a little nap 😴</div><button type="button" onclick="location.reload()">Tap to wake it up</button></div>
+<div id="glLost"><div>The 3D world took a little nap 😴</div><button type="button" onclick="location.reload()">Tap to wake it up</button><div style="font-size:15px;font-weight:500;opacity:.75;max-width:300px">It will start in light mode so it fits on this phone</div></div>
 <div class="hud" id="mkChal"><b id="mkChalT"></b><span id="mkChalTime"></span><span id="mkChalRes"></span><button id="mkChalDone">✨ Finish</button></div>
 <div id="flash"></div>
 <button class="hud" id="mini" aria-label="Open the map"><canvas id="miniCv" width="216" height="216"></canvas><small>🗺️ Map</small></button>
@@ -617,7 +617,11 @@ setTimeout(()=>{const l=document.getElementById('loading');if(l&&!window.__game)
   document.getElementById('newver').onclick=()=>location.reload();
   addEventListener('load',check);document.addEventListener('visibilitychange',check);setInterval(check,5*60*1000);})();
 // iPhones can drop the 3D graphics when memory runs low or the app sits in the background; show a way back instead of a frozen picture
-document.getElementById('c').addEventListener('webglcontextlost',e=>{e.preventDefault();window.reportProblem&&reportProblem('The 3D graphics were lost (phone memory or background)','graphics');document.getElementById('glLost').classList.add('show');});
+const T0=Date.now();
+document.getElementById('c').addEventListener('webglcontextlost',e=>{e.preventDefault();
+  let lite=false;try{lite=!!localStorage.getItem('brynny.lite3d');localStorage.setItem('brynny.lite3d',String(Date.now()));}catch(x){}// next start uses light mode (see 3d/src/01-setup.js)
+  const g=window.__game,dressing=document.body.classList.contains('dressing');
+  window.reportProblem&&reportProblem('The 3D graphics were lost (phone memory or background)',`graphics | ${Math.round((Date.now()-T0)/1000)}s after opening${dressing?' | in the closet':''}${document.hidden?' | in background':''}${lite?' | already light mode':''}`);document.getElementById('glLost').classList.add('show');});
 </script>
 <script>
 // save the game for offline play (see sw.js)

@@ -89,15 +89,19 @@ const pick=a=>a[Math.floor(rand()*a.length)];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 
 /* ---------- renderer ---------- */
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-const PR_MAX=Math.min(devicePixelRatio,isTouch?1.75:2),PR_MIN=Math.min(PR_MAX,1);let prNow=PR_MAX,slowT=0;
+// Light mode: if the phone ran out of graphics memory last time (the "took a little nap" screen), draw a lighter
+// picture for the next week: no smoothing of edges, no shadows, normal sharpness, and no "draw everything up front".
+// That keeps the phone under its limit so it doesn't nap again and again.
+const LITE=(()=>{try{return Date.now()-(+localStorage.getItem('brynny.lite3d')||0)<7*864e5;}catch(e){return false;}})();
+const renderer=new THREE.WebGLRenderer({canvas,antialias:!LITE,powerPreference:'high-performance'});
+const PR_MAX=LITE?1:Math.min(devicePixelRatio,isTouch?1.75:2),PR_MIN=Math.min(PR_MAX,1);let prNow=PR_MAX,slowT=0;
 renderer.setPixelRatio(PR_MAX);
 // If the game keeps running slowly (an older phone, or one that has warmed up), draw the picture a little less sharp
 // so it stays smooth. Short hiccups don't count, only being slow for a couple of seconds in a row.
 function adaptRes(raw){if(raw>.25||prNow<=PR_MIN)return;if(raw>1/40)slowT+=raw;else slowT=Math.max(0,slowT-raw*.5);
   if(slowT>2){prNow=Math.max(PR_MIN,prNow-.25);slowT=0;renderer.setPixelRatio(prNow);renderer.setSize(innerWidth,innerHeight,false);}}
 renderer.setSize(innerWidth,innerHeight,false);
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=!LITE;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 const scene=new THREE.Scene();
@@ -6519,7 +6523,8 @@ function warmUp(){scene.updateMatrixWorld(true);let c;try{c=compileWait();
   Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
 // The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
 // while thousands of them were sent over. Draw everything once, behind the loading screen, so they are all there already.
-function preUpload(){const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});renderer.render(scene,camera);}catch(e){}off.forEach(o=>o.frustumCulled=true);}
+function preUpload(){if(LITE)return;const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;// skip the shadow pass for this one giant frame
+  try{renderer.render(scene,camera);}finally{renderer.shadowMap.autoUpdate=au;renderer.shadowMap.needsUpdate=true;}}catch(e){}off.forEach(o=>o.frustumCulled=true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
 /* ================= MAP ================= */
