@@ -39,6 +39,8 @@ const LIST = [
   // 🧁 Sweet Bakery
   { id: 'cake', tab: 'bakery', e: '🎂', t: 'Design a cake', r: 1, go: 'bakery', ev: { k: 'cake' } },
   { id: 'tallCake', tab: 'bakery', e: '🍰', t: 'Make a cake with 3 layers or more', r: 2, go: 'bakery', ev: { k: 'cake', a: n => n >= 3 } },
+  { id: 'cakeContest', tab: 'bakery', e: '⏱️', t: 'Enter a cake contest', r: 1, go: 'bakery', ev: { k: 'cakect' } },
+  { id: 'cakeWin', tab: 'bakery', e: '👑', t: 'Win a cake contest', r: 2, go: 'bakery', ev: { k: 'cakect', a: p => p === 0 } },
   { id: 'wish', tab: 'bakery', e: '🕯️', t: 'Blow out the candles and make a wish', r: 1, go: 'bakery', ev: { k: 'wish' } },
   // ⭐ Star Model Agency
   { id: 'glam', tab: 'agency', e: '💄', t: 'Sit at the glam mirror', r: 1, go: 'agency', ev: { k: 'glam' } },
@@ -128,7 +130,7 @@ function drain() {
   if (!G.started()) { setTimeout(drain, 1000); return; }
   busy = true; const q = queue.shift();
   const before = rank(); C.stars = (C.stars || 0) + q.r; persist(); showStars(true);
-  G.banner(`🌟 Challenge done! +${q.r} ⭐`); G.toast(`${q.e} ${q.t}`); G.sfx('tada');
+  G.banner(q.b ? `${q.b} +${q.r} ⭐` : `🌟 Challenge done! +${q.r} ⭐`); G.toast(`${q.e} ${q.t}`); G.sfx('tada');
   try { const p = G.player.pos; for (let k = 0; k < 3; k++) setTimeout(() => G.burst(new G.THREE.Vector3(p.x + (Math.random() - .5) * 2, p.y + 2, p.z + (Math.random() - .5) * 2), ['#ffd23f', '#ff8fc8', '#8fd8ff'][k], 40, 3), k * 200); } catch (e) {}
   dispatchEvent(new CustomEvent('brynny:earn', { detail: { n: q.r * COINS_PER_STAR, why: 'Challenge!' } }));
   const after = rank(); if (after !== before) setTimeout(() => { G.banner(`${after[1]} You're a ${after[2]}!`); G.sfx('tada'); }, 1900);
@@ -157,6 +159,8 @@ addEventListener('brynny:did', e => {
   for (const ch of allCh()) count(ch, k, a);
   check();
 });
+// prizes from contests (the bakery cake contest gives ⭐ for 1st, 2nd and 3rd place)
+addEventListener('brynny:prize', e => { const d = e.detail || {}; const n = Math.max(0, Math.min(5, Math.round(+d.n || 0))); if (!n) return; queue.push({ e: d.e || '🏆', t: String(d.t || 'Prize!'), r: n, b: d.b ? String(d.b) : '' }); drain(); });
 function check() { for (const ch of allCh()) if (ch.poll && !isDone(ch) && progress(ch) >= goalOf(ch)) award(ch); }
 setInterval(() => { if (G.started()) check(); }, 700);
 
