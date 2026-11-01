@@ -394,6 +394,8 @@ class Avatar{
         if(e.id==='mani'){tgt.a0x=tgt.a1x=-1.15;tgt.a0z=.2;tgt.a1z=-.2;tgt.e0=tgt.e1=-.35;tgt.lean=.1;tgt.hd=0;}
         if(e.id==='pedi'){tgt.l0=tgt.l1=-1.47;tgt.k0=tgt.k1=.05;tgt.an=1.05;tgt.a0z=-.3;tgt.a1z=.3;tgt.a0x=tgt.a1x=.25;tgt.e0=tgt.e1=-.2;tgt.lean=-.14;}
         if(sp>.15)this.emote=null;}
+      // riding a barn animal (24d-barn.js): sit tall, legs around its sides, hands on the reins
+      if(e.id==='ride'){tgt.bob=-(this.hip-(.46+this.legX));tgt.l0=tgt.l1=-.95;tgt.k0=tgt.k1=1.05;tgt.a0x=tgt.a1x=-.75;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.7;tgt.lean=.05+sp*.08;tgt.hd=Math.sin(k*2)*.03;}
       if(e.id==='magic'){tgt.a0z=-2.9;tgt.a1z=2.9;tgt.e0=tgt.e1=0;tgt.a0x=tgt.a1x=0;tgt.spin=Math.min(1,k/1.8)*Math.PI*2;tgt.bob=Math.sin(Math.min(1,k/1.8)*Math.PI)*.25;if(k>1.9)this.emote=null;}}
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);

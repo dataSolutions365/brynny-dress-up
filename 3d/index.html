@@ -263,11 +263,14 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 <div class="hud" id="side">
   <button class="rb" id="photoBtn" aria-label="Take a picture">📸<small>Photo</small></button>
   <button class="rb" id="musicBtn" aria-label="Music">🎵<small>Music</small></button>
+  <button class="rb" id="catBtn" aria-label="All animals">📖<small>Animals</small></button>
 </div>
 <div class="hud" id="actions"></div>
 <div class="hud pill" id="hint">Drag on the left side to walk.<br>Drag on the right side to look around.</div>
 <button class="hud" id="poseBtn">📸 Strike a pose!</button>
 <button class="hud" id="petBtn"></button>
+<button class="hud" id="rideBtn"></button>
+<button class="hud" id="zooBtn"></button>
 <button class="hud" id="talkBtn"></button>
 <div class="hud" id="zoomCtl"><button id="zoomIn" aria-label="Zoom in">➕</button><button id="zoomOut" aria-label="Zoom out">➖</button></div>
 <div class="hud" id="talk" aria-label="Talking"><div class="thead"><div id="tface">🙂</div><div class="tname"><b id="tname"></b><span id="thearts"></span></div><button id="tbye" aria-label="Say bye">✕</button></div><div id="tsay"></div><div id="topts"></div></div>
@@ -292,6 +295,42 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
   <div class="tabs" id="ptabs"></div>
   <div class="ccontent" id="pcontent"></div>
 </div>
+
+<div id="zooUI" aria-label="Safari Zoo">
+  <div class="chead"><h2 id="zooTitle">🦒 Safari Zoo</h2><button id="zooDone">Done</button></div>
+  <div class="ccontent" id="zooContent"></div>
+</div>
+<div id="barnUI" aria-label="Happy Barn">
+  <div class="chead"><h2>🐴 Happy Barn</h2><div class="pill" id="barnMoney">🪙 0</div><button id="barnDone">Done</button></div>
+  <div class="meters" id="barnMeters"></div>
+  <div class="tabs" id="barnTabs"></div>
+  <div class="ccontent" id="barnContent"></div>
+</div>
+<style>
+/* happy barn (24d-barn.js) */
+#barnUI .pill{font-size:14px;padding:6px 11px;box-shadow:none;background:#fff3e0}
+#barnDone{background:var(--pink);color:#fff;font-weight:700;padding:9px 18px;border-radius:999px;font-size:16px;box-shadow:0 3px 0 #e04a8d}
+#barnMeters{padding-top:2px;gap:10px}
+.fthumb{width:56px;height:56px;object-fit:contain;display:block}
+#barnUI .item em{font-style:normal;font-size:12px;font-weight:700;color:#b8860b}#barnUI .item em.got{color:#2fa36b}
+.farmRow{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:none}.farmRow::-webkit-scrollbar{display:none}
+.farmRow .item{flex:0 0 84px;min-height:84px}
+.farmName{display:flex;align-items:center;gap:8px;margin:6px 2px 0;font-weight:600;font-size:14px}
+.farmName input{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 12px;border-radius:999px;border:2px solid #f6e3ef;background:#fff7fb;color:var(--ink)}
+.farmBtns{justify-content:flex-start;margin-top:4px}.farmBtns .btn{font-size:15px;padding:10px 14px;margin:0}
+.farmAbout{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:#fff8ec;border-radius:18px;padding:12px;margin-top:10px;font-size:14px}
+.farmAbout b{font-size:18px}.farmAbout .btn{margin-top:4px}
+#rideBtn{left:50%;bottom:calc(env(safe-area-inset-bottom) + 310px);transform:translateX(-50%);background:linear-gradient(90deg,#ff9c6b,#d6453d);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;box-shadow:0 6px 18px rgba(214,69,61,.4);display:none;white-space:nowrap;pointer-events:auto}
+#barnUI,#zooUI{position:fixed;z-index:8;left:0;right:0;bottom:0;height:min(50vh,450px);background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(59,35,87,.25);display:flex;flex-direction:column;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1);padding-bottom:env(safe-area-inset-bottom)}
+#barnUI.show,#zooUI.show{transform:none}
+@media (orientation:landscape) and (min-aspect-ratio:5/4){#barnUI,#zooUI{left:auto;top:0;width:min(48vw,460px);height:auto;border-radius:26px 0 0 26px;transform:translateX(105%);padding-right:env(safe-area-inset-right)}}
+#zooDone{background:var(--pink);color:#fff;font-weight:700;padding:9px 18px;border-radius:999px;font-size:16px;box-shadow:0 3px 0 #e04a8d}
+.zfacts{display:flex;flex-direction:column;gap:6px;margin:4px 0 10px}
+.zfacts div{display:flex;gap:10px;align-items:flex-start;background:#fff8ec;border-radius:14px;padding:8px 12px;font-size:14px;line-height:1.3}
+.zfacts b{font-size:22px;font-weight:400;line-height:1.1}.zfacts span{flex:1}.zfacts strong{display:block;font-size:13px;color:#5a8a3a}
+#zooBtn{left:50%;bottom:calc(env(safe-area-inset-bottom) + 250px);transform:translateX(-50%);background:linear-gradient(90deg,#8bc34a,#2fa36b);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;box-shadow:0 6px 18px rgba(47,163,107,.4);display:none;white-space:nowrap;pointer-events:auto}
+body.dressing #rideBtn,body.talking #rideBtn,body.dressing #zooBtn,body.talking #zooBtn{display:none!important}
+</style>
 
 <div id="bakery" aria-label="Cake studio">
   <div class="chead"><h2>🧁 Cake Studio</h2><button id="bphoto" aria-label="Take a picture">📸</button><button id="bdone">Done</button></div>
@@ -451,6 +490,25 @@ body.contest #closet{display:none}
   <div style="height:10px;background:#f6e3ef;border-radius:999px;margin:10px 0;overflow:hidden"><div id="braidBar" style="height:100%;width:0;background:linear-gradient(90deg,#ff6fae,#8e6cff);transition:width .3s"></div></div>
   <button class="btn" id="braidTie" style="display:none;width:calc(100% - 8px)">🎀 Tie it off!</button>
 </div></div>
+<div class="modal" id="catalog" aria-label="All animals"><div class="card">
+  <div class="chead"><h2>📖 All animals</h2><div class="pill" id="catStars"></div><button id="catDone">Done</button></div>
+  <div id="catList"></div>
+</div></div>
+<style>
+#catalog .card{max-width:440px;height:min(680px,calc(100vh - 40px));height:min(680px,calc(100dvh - 40px));display:flex;flex-direction:column;padding:14px 12px 12px;text-align:left}
+#catalog .chead{padding:0 4px 6px}#catalog .pill{font-size:14px;padding:6px 11px;box-shadow:none;background:#fff3e0}
+#catDone{background:var(--pink);color:#fff;font-weight:700;padding:9px 18px;border-radius:999px;font-size:16px;box-shadow:0 3px 0 #e04a8d}
+#catList{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:flex;flex-direction:column;gap:6px;padding:2px}
+#catList h3{margin:10px 2px 2px;font-size:16px}
+#catList .cnote{font-size:13px;color:var(--muted);background:#fff7fb;border-radius:14px;padding:8px 10px;font-weight:600}
+.catRow{display:flex;align-items:center;gap:10px;background:#fff7fb;border:2px solid #f6e3ef;border-radius:16px;padding:6px 8px}
+.catRow>b{font-size:30px;font-weight:400;width:48px;text-align:center;flex:0 0 auto}.catRow .fthumb{width:48px;height:48px;flex:0 0 auto}
+.catRow span{flex:1;min-width:0;display:flex;flex-direction:column}.catRow strong{font-size:15px}.catRow small{font-size:12px;color:var(--muted);line-height:1.25}
+.catRow em{font-style:normal;font-weight:700;font-size:13px;white-space:nowrap;padding:4px 9px;border-radius:999px;background:#fff3c4;color:#8a6500}
+.catRow em.free{background:#dff7e6;color:#1f8a4c}.catRow em.star{background:#efe6ff;color:#6a4fd0}.catRow em.got{background:#ffe6f2;color:#d63384}
+.catRow button{flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#f3eaf8;font-size:16px}
+.catLink{width:100%;margin:2px 0 8px;padding:9px;border-radius:14px;background:#f3eaf8;font-weight:700;font-size:14px;color:var(--ink)}
+</style>
 <div class="modal" id="settings"><div class="card">
   <h2 style="margin:0 0 14px">⚙️ Settings</h2>
   <div class="setlbl">🖼️ Your picture</div>
