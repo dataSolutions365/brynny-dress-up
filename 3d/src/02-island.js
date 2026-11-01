@@ -35,6 +35,9 @@ const ZONES=[
   {id:'barn',name:'🐴 Happy Barn',ang:0,d:38.5,r:6,music:'spring-birds',nopath:true},
   {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:38.5,r:6,music:'city-park',nopath:true},
   {id:'garage',name:'🔧 Car Garage',ang:150,d:36,r:7,music:'fireworks'},
+  // out past the Spring Garden and the Runway (p0: where their path starts, so it doesn't run through the place in front)
+  {id:'barber',name:'💈 Barber Shop',ang:300,d:38.5,r:5.6,music:'city-park',p0:33.2},
+  {id:'store',name:'👔 Clothing Store',ang:240,d:38.5,r:6,music:'fashion-walk',p0:33.2},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -52,8 +55,8 @@ const LAMPS=[],lampMat=glow('#fff1c4',1.6);// street lights (seasons.js turns th
 const pathMat=std('#ffffff',{map:TEX.stone,roughness:.85});pathMat.polygonOffset=true;pathMat.polygonOffsetFactor=-1;pathMat.polygonOffsetUnits=-1;
 {const ring=M(new THREE.RingGeometry(6.4,7.9,72),pathMat,0,.012,0,scene,false,true);ring.rotation.x=-Math.PI/2;
  for(const z of ZONES){if(!z.d||z.nopath)continue;const g=new THREE.Group();g.rotation.y=Math.atan2(z.x,z.z);scene.add(g);
-  const len=z.d-z.r*.5-7;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,7+len/2,g,false,true);p.rotation.x=-Math.PI/2;
-  for(const s of [-1,1]){const lx=s*1.9,lz=7+len*.55;const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
+  const p0=z.p0||7,len=z.d-z.r*.5-p0;const p=M(new THREE.PlaneGeometry(2.6,len),pathMat,0,.012,p0+len/2,g,false,true);p.rotation.x=-Math.PI/2;
+  for(const s of [-1,1]){const lx=s*1.9,lz=p0+len*.55;const post=M(cyl(.06,.08,2.6,10),std('#3b2357',{roughness:.4,metalness:.6}),lx,1.3,lz,g);
     LAMPS.push(M(sph(.2,16,12),lampMat,lx,2.7,lz,g,false,false));const wp=new THREE.Vector3(lx,0,lz).applyAxisAngle(new THREE.Vector3(0,1,0),g.rotation.y);obs.push({x:wp.x,z:wp.z,r:.2});}}}
 
 /* signposts */
