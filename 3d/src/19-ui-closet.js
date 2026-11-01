@@ -3,8 +3,11 @@ let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.classList.
 let bannerT;function banner(t){const el=$('#banner');el.textContent=t;el.classList.add('show');clearTimeout(bannerT);bannerT=setTimeout(()=>el.classList.remove('show'),1800);}
 /* action buttons around the jump button */
 const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','Twirl'],['kiss','😘','Kiss'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♀️','Sit'],['pose','✨','Pose'],['bow','👑','Curtsy'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
+// guys get their own buttons: the same ids (so quests and challenges still count them), guy names, and a Flex.
+// Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
+const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>ACTIONS.concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+const allActs=()=>(isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -14,17 +17,23 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
   for(let i=0;i<n;i++){const s=sprite(heartTex[emoji],.2,.2);s.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*.4,Math.random()*.2,(Math.random()-.5)*.4));scene.add(s);const v=new THREE.Vector3((Math.random()-.5)*.6,.9+Math.random()*.6,(Math.random()-.5)*.6);let life=1.4+Math.random()*.5;
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
-function doAction(id){if(closetOpen||!started)return;const P=player.pos;questEvent('act',id);
+function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  if(id==='dance'&&!picked){openDances();return;}
+  // a dance picked from the Dance list counts as dancing for quests and challenges
+  const dancing=DANCE_IDS.has(id);questEvent('act',dancing?'dance':id);const G=isGuy(av.look);
   if(id==='flip'){if(!player.onGround)return;player.vy=7.6;player.onGround=false;sfx('jump');}
   if(id==='cheer'||id==='jumpjack'){if(player.onGround){player.vy=5;player.onGround=false;}}
   if(id==='jumpjack'){av.play('cheer');burst(new THREE.Vector3(P.x,P.y+1.2,P.z),'#ffd23f',30,2.5,.18);return;}
   av.play(id);
-  if(id==='twirl')burst(new THREE.Vector3(P.x,P.y+1,P.z),'#ffb3e0',30,2,.18);
-  if(id==='kiss')setTimeout(()=>floaties(headPos(),'💖',7),650);
+  if(id==='twirl')burst(new THREE.Vector3(P.x,P.y+1,P.z),G?'#8fd8ff':'#ffb3e0',30,2,.18);
+  if(id==='kiss')setTimeout(()=>floaties(headPos(),G?'😎':'💖',G?4:7),G?250:650);
+  if(id==='flex')setTimeout(()=>floaties(headPos(),'💪',4),400);
+  if(id==='breakdance')setTimeout(()=>burst(new THREE.Vector3(P.x,P.y+.4,P.z),'#8fd8ff',40,2.5,.16),1900);
+  if(dancing)setTimeout(()=>floaties(headPos(),'🎵',4),300);
   if(id==='clap')setTimeout(()=>floaties(headPos(),'✨',4),300);
   if(id==='magic')for(let k=0;k<4;k++)setTimeout(()=>burst(new THREE.Vector3(P.x,P.y+1.4,P.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#c6a6ff']),36,3,.2),k*350);
-  if(id==='dance'||id==='wave')for(const f of FRIENDS)if(f.pos.distanceTo(P)<6){setTimeout(()=>{f.play(id);if(id==='wave')friendBubble(f,`Hi ${SAVE.name||'friend'}! 👋`);},300+Math.random()*500);}
-  if(myPet()&&myPet().pos.distanceTo(P)<5&&(id==='dance'||id==='cheer'||id==='magic'))myPet().happy=1.5;}
+  if(dancing||id==='wave')for(const f of FRIENDS)if(f.pos.distanceTo(P)<6){setTimeout(()=>{f.play(id);if(id==='wave')friendBubble(f,`Hi ${SAVE.name||'friend'}! 👋`);},300+Math.random()*500);}
+  if(myPet()&&myPet().pos.distanceTo(P)<5&&(dancing||id==='cheer'||id==='magic'))myPet().happy=1.5;}
 renderActions();
 function updateStars(){did('stars');}
 (SAVE.stars||[]).forEach(i=>{if(STARS[i]){STARS[i].got=true;STARS[i].m.visible=false;}});updateStars();
@@ -89,7 +98,7 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!tabsOf().some(t=>t[0]==
       h+=`<div class="grid">${none}${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
       if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
   $('#ccontent').innerHTML=h;}
-function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;}
+function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
 $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};

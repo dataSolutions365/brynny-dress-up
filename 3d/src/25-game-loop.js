@@ -37,7 +37,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
     if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(8,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
     else f.face=angDamp(f.face,player.face,dt*4);}
   else if(dP<2.4&&started){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*5);if(f.cool<=0){f.cool=14;f.play('wave');friendBubble(f,questReady(f)?'Come talk to me! 💬':rnd(f.info.hi));}}
-  else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave']));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
+  else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave',rnd(DANCES)[0]]));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
   f.cool-=dt;if(f.say){f.sayT-=dt;if(f.sayT<0){f.g.remove(f.say);f.say=null;}}
   const gy=groundAt(f.pos.x,f.pos.z);f.pos.y+=(gy-f.pos.y)*Math.min(1,dt*12);
   f.g.position.copy(f.pos);f.g.rotation.y=f.face+(f.spinY||0);f.update(dt,sp,false);}
