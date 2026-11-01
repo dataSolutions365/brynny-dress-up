@@ -23,7 +23,8 @@ const GUY_TABS=[['hair','💇‍♂️','Hair'],['skin','🙂','Face'],['dresses
 const GIRL_ONLY=new Set(['ghost','elf']);
 const catOf=tab=>{if(!isGuy(SAVE.look))return CAT[tab];const base=GUY_CAT[tab]||[];
   const hol=(CAT[tab]||[]).filter(x=>{const s=shopItem('look:'+x[0]);return s&&s.hol&&!GIRL_ONLY.has(x[0])&&!base.some(b=>b[0]===x[0]);});return base.concat(hol);};
-const hairsOf=L=>isGuy(L)?GUY_HAIRS:HAIRS;
+// barber specials show up in the closet once you've had that cut at the 💈 barber
+const hairsOf=L=>isGuy(L)?GUY_HAIRS.concat(BCUTS.filter(c=>(SAVE.cuts||{})[c[0]]).map(c=>c.slice(0,3))):HAIRS;
 const tabsOf=()=>isGuy(SAVE.look)?GUY_TABS:TABS;
 const LOOK_ALL=a=>a.concat(...Object.values(GUY_CAT));
 const defaultGuyLook=(from)=>({body:'guy',style:(from&&from.style)||'glam',skin:(from&&from.skin)||'#f7cfae',eyes:(from&&from.eyes)||'#6b4a2b',hair:{id:'crop',c:'#4a2c1a'},
