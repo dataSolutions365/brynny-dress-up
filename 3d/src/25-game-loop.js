@@ -26,7 +26,7 @@ function stepPushables(p,dt){
       if(bd<mm&&bd>1e-4){const ux=bx/bd,uz=bz/bd,push=(mm-bd)/2;q.x+=ux*push;q.z+=uz*push;bq.x-=ux*push;bq.z-=uz*push;
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
-  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?48.5:R+.9;if(d>lim){p.x*=lim/d;p.z*=lim/d;}}
+  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim){p.x*=lim/d;p.z*=lim/d;}}
 const angDamp=(a,b,k)=>{let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k;};
 function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
   if(!f.tgt&&f.wait<=0&&!f.follow){const z=Math.random()<.7?f.home:rnd(ZONES);const a=Math.random()*Math.PI*2,r=Math.random()*z.r*.8;f.tgt=new THREE.Vector3(z.x+Math.sin(a)*r,0,z.z+Math.cos(a)*r);}
@@ -34,7 +34,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
   if(talkF===f){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*6);if(dP>5)closeTalk();}
   else if(f.follow){const i=FRIENDS.filter(o=>o.follow).indexOf(f),a=player.face+Math.PI+(i%2?.7:-.7)*(1+(i>>1)*.5),r=1.4+(i>>1)*.6;
     f.tgt=new THREE.Vector3(P.x+Math.sin(a)*r,0,P.z+Math.cos(a)*r);tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();
-    if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(6,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
+    if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(8,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
     else f.face=angDamp(f.face,player.face,dt*4);}
   else if(dP<2.4&&started){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*5);if(f.cool<=0){f.cool=14;f.play('wave');friendBubble(f,questReady(f)?'Come talk to me! 💬':rnd(f.info.hi));}}
   else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave']));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
@@ -48,7 +48,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
-    const spd=5*mag*rideBoost();const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
+    const spd=(curZone===PARK?6.5:5)*mag*rideBoost();// a bit quicker on the open grass between places, normal speed inside themconst old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
     const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
     player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;}else player.speed*=.8;
   // vertical

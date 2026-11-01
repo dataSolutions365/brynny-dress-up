@@ -242,11 +242,13 @@ body.shopping #zoomCtl,body.talking #zoomCtl{display:none!important}
 #setName:focus{border-color:var(--pink)}
 #setNameRow .btn{width:auto;margin:0;padding:10px 16px}
 #settings .setlbl{margin:0 0 4px;font-weight:700;text-align:center}
-#map .card{max-width:560px;padding:14px 14px 16px}
+#map .card{max-width:min(760px,calc(100vw - 16px));width:100%;padding:12px 10px 14px;box-sizing:border-box}
 #map h2{margin:0 0 4px;font-size:22px}
 #map p{margin:0 0 8px;font-size:14px;color:var(--muted)}
-#mapCv{width:min(100%,calc(100vh - 210px));aspect-ratio:1;display:block;margin:0 auto 8px;border-radius:50%;touch-action:none;cursor:pointer}
+#mapCv{width:min(100%,calc(100vh - 170px));width:min(100%,calc(100dvh - 170px));aspect-ratio:1;display:block;margin:0 auto 8px;border-radius:50%;touch-action:none;cursor:pointer}
 #map .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#map .mapz{width:auto;min-width:52px;padding-left:14px;padding-right:14px}#map .mapz:disabled{opacity:.4}
+#mapCv.zoomed{border-radius:22px;cursor:grab}
 @media (max-height:520px){#map .card{display:flex;gap:12px;align-items:center;text-align:left;max-width:640px}#mapCv{width:calc(100vh - 70px);margin:0;flex:none}#map .row{flex-direction:column}}
 #mini{pointer-events:auto}
 </style>
@@ -494,8 +496,8 @@ body.contest #closet{display:none}
 
 <div class="modal" id="map"><div class="card">
   <div><h2>🗺️ Map</h2><p id="mapTip">Tap a place and a sparkly arrow will show you the way!</p></div>
-  <canvas id="mapCv" width="640" height="640" aria-label="Map of the island"></canvas>
-  <div class="row"><button class="btn ghost" id="mapStop" style="display:none">🚫 Stop guiding</button><button class="btn ghost" id="mapClose">Close</button></div>
+  <canvas id="mapCv" width="1000" height="1000" aria-label="Map of the island"></canvas>
+  <div class="row"><button class="btn ghost mapz" id="mapOut" disabled aria-label="Zoom out">➖</button><button class="btn ghost mapz" id="mapIn" aria-label="Zoom in">➕</button><button class="btn ghost" id="mapStop" style="display:none">🚫 Stop guiding</button><button class="btn ghost" id="mapClose">Close</button></div>
 </div></div>
 <div class="modal" id="musicM"><div class="card" id="musicCard">
   <h2>🎵 Music</h2>
