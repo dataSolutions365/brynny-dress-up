@@ -1306,6 +1306,13 @@ let DB=load();
 let warnedFull=false;
 function persist(){if(!window.__applyingRemote){const c=me();if(c)c.at=Date.now();}try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){if(!warnedFull&&typeof toast==='function'){warnedFull=true;toast('😕 Storage is full. Delete some gallery photos.');}}if(typeof window.onPersist==='function')window.onPersist();}
 const me=()=>DB.chars.find(c=>c.id===DB.cur)||DB.chars[0];
+// Your name travels between this studio and the 3D world (3d/src/01b-shared-name.js). Both games keep it under
+// 'brynny.name' as {n:name,at:time}; whichever game changed it last wins, and it belongs to the girl you are playing.
+const NAME_KEY='brynny.name';
+function sharedName(){try{const s=JSON.parse(localStorage.getItem(NAME_KEY));return s&&typeof s.n==='string'&&s.n.trim()?s:null;}catch(e){return null;}}
+function pullSharedName(){const s=sharedName(),c=me();if(!s||!c||s.at<=(c.nameAt||0))return false;c.nameAt=s.at;if(c.name===s.n)return false;c.name=s.n.trim().slice(0,20);persist();return true;}
+function pushSharedName(){const c=me();if(!c||!c.name)return;const at=Date.now();c.nameAt=at;try{localStorage.setItem(NAME_KEY,JSON.stringify({n:c.name,at}));}catch(e){}}
+pullSharedName();
 const L=()=>me().look;
 let tab='me',lastExtra=null,quickOpen=false;
 
@@ -2263,11 +2270,11 @@ function renderWho(){
 }
 $('#whoCards').addEventListener('click',e=>{
   const p=e.target.closest('[data-play]'),d=e.target.closest('[data-del]');
-  if(p){DB.cur=p.dataset.play;persist();renderStage();renderPanel();$('#whoModal').classList.remove('show');}
+  if(p){DB.cur=p.dataset.play;pushSharedName();persist();renderStage();renderPanel();$('#whoModal').classList.remove('show');}
   if(d){if(d.dataset.sure){DB.chars=DB.chars.filter(c=>c.id!==d.dataset.del);if(!DB.chars.find(c=>c.id===DB.cur))DB.cur=DB.chars[0].id;persist();renderWho();renderStage();renderPanel();}else{d.dataset.sure=1;d.textContent='Sure?';d.classList.add('warn');}}
 });
-$('#whoCards').addEventListener('input',e=>{const i=e.target.closest('[data-rename]');if(!i)return;const ch=DB.chars.find(c=>c.id===i.dataset.rename);ch.name=i.value.trim()||'Friend';persist();renderStage();});
-$('#addWho').onclick=()=>{const n=$('#newName').value.trim();if(!n){$('#newName').focus();return;}const id=uid();DB.chars.push({id,name:n,look:randomLook()});DB.cur=id;$('#newName').value='';persist();renderStage();renderPanel();$('#whoModal').classList.remove('show');toast(`👋 Say hi to ${n}!`);};
+$('#whoCards').addEventListener('input',e=>{const i=e.target.closest('[data-rename]');if(!i)return;const ch=DB.chars.find(c=>c.id===i.dataset.rename);ch.name=i.value.trim()||'Friend';if(ch===me())pushSharedName();persist();renderStage();});
+$('#addWho').onclick=()=>{const n=$('#newName').value.trim();if(!n){$('#newName').focus();return;}const id=uid();DB.chars.push({id,name:n,look:randomLook()});DB.cur=id;pushSharedName();$('#newName').value='';persist();renderStage();renderPanel();$('#whoModal').classList.remove('show');toast(`👋 Say hi to ${n}!`);};
 $('#newName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#addWho').click();});
 
 function renderGallery(){
@@ -2294,6 +2301,7 @@ function exportPNG(look,name){
 
 /* welcome */
 function showWelcome(){
+  {const s=sharedName();if(s)$('#welcomeName').value=s.n.trim().slice(0,20);}
   const party={...defaultLook(),dress:{id:'party',c:'#ff8fc8'},hat:{id:'party',c:'#4fc3f7'},scene:'birthday'};
   $('#welcomeArt').innerHTML=`<svg viewBox="40 -40 220 640" xmlns="http://www.w3.org/2000/svg">${DEFS}${charInner(party)}</svg>`;
   $('#welcome').classList.add('show');
@@ -2593,7 +2601,7 @@ function partyFrame(ts){
 function partyStart(){partyStop();partyBursts=[];partyRockets=[];partyNext=0;if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;partyRaf=requestAnimationFrame(partyFrame);}
 function partyStop(){if(partyRaf)cancelAnimationFrame(partyRaf);partyRaf=0;partyBursts=[];partyRockets=[];}
 
-$('#welcomeGo').onclick=()=>{const n=$('#welcomeName').value.trim()||'Brynny';DB.chars[0].name=n;DB.chars[0].look.scene='birthday';if(!DB.welcomed)Object.assign(DB.chars[0].look,{dress:{id:'gown',c:'#ff8fc8'},hat:{id:'tiara',c:'#ffd23f'},shoes:{id:'glass',c:'#cfefff'}});DB.welcomed=true;persist();$('#welcome').classList.remove('show');renderStage();renderPanel();sparkle();if(musicStarted)applyMusic();};
+$('#welcomeGo').onclick=()=>{const n=$('#welcomeName').value.trim()||'Brynny';DB.chars[0].name=n;if(DB.chars[0]===me())pushSharedName();DB.chars[0].look.scene='birthday';if(!DB.welcomed)Object.assign(DB.chars[0].look,{dress:{id:'gown',c:'#ff8fc8'},hat:{id:'tiara',c:'#ffd23f'},shoes:{id:'glass',c:'#cfefff'}});DB.welcomed=true;persist();$('#welcome').classList.remove('show');renderStage();renderPanel();sparkle();if(musicStarted)applyMusic();};
 $('#welcomeName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#welcomeGo').click();});
 
 /* ---------- music ---------- */
@@ -2892,6 +2900,8 @@ document.addEventListener('touchend',audioRetry,{capture:true,passive:true});doc
 $('#partySound').onclick=()=>{if(DB.music.track==='off'){DB.music.track='auto';persist();}applyMusic();$('#partySound').style.display='none';};
 document.addEventListener('pointerdown',()=>{const b=$('#partySound');if(b)setTimeout(()=>{b.style.display='none';},400);},{capture:true,once:true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)Music.pause();else if(musicStarted){Music.ensure();Music.resume();}});
+// coming back from the 3D world (or another tab): pick up a name changed there
+{const nameBack=()=>{if(pullSharedName()){renderStage();renderPanel();}};document.addEventListener('visibilitychange',()=>{if(!document.hidden)nameBack();});addEventListener('pageshow',e=>{if(e.persisted)nameBack();});}
 
 $('#content').addEventListener('change',async e=>{
   const i=e.target.closest('[data-artfile]');if(!i||!i.files[0])return;const f=i.files[0];i.value='';

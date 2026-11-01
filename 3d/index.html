@@ -193,6 +193,18 @@ body.talking #actions,body.talking #jump,body.talking #petBtn,body.talking #pose
 #hint{top:calc(env(safe-area-inset-top) + 196px)}
 @media (max-height:520px){#mini{width:88px;height:88px;top:calc(env(safe-area-inset-top) + 54px)}#mini small{display:none}#hint{top:calc(env(safe-area-inset-top) + 54px);left:calc(env(safe-area-inset-left) + 112px)}}
 body.dressing #mini,body.shopping #mini{display:none!important}
+#zoomCtl{left:calc(env(safe-area-inset-left) + 12px);top:calc(env(safe-area-inset-top) + 196px);display:none;flex-direction:column;gap:10px}
+#zoomCtl.show{display:flex}
+#zoomCtl button{width:52px;height:52px;border-radius:50%;border:3px solid rgba(255,255,255,.95);background:rgba(255,255,255,.88);color:var(--ink);font-size:22px;line-height:1;padding:0;box-shadow:0 4px 14px rgba(59,35,87,.22);touch-action:none}
+#zoomCtl button:active{transform:scale(.9)}
+body.dressing #zoomCtl{top:calc(env(safe-area-inset-top) + 64px)}
+@media (max-height:520px){#zoomCtl{top:calc(env(safe-area-inset-top) + 152px);gap:8px}#zoomCtl button{width:44px;height:44px;font-size:19px}}
+body.shopping #zoomCtl,body.talking #zoomCtl{display:none!important}
+#setNameRow{display:flex;gap:8px;margin:4px 0 14px}
+#setName{flex:1;min-width:0;font-size:18px;padding:10px 14px;border-radius:14px;border:3px solid var(--pink2);text-align:center;color:var(--ink);outline:none;font-family:inherit}
+#setName:focus{border-color:var(--pink)}
+#setNameRow .btn{width:auto;margin:0;padding:10px 16px}
+#settings .setlbl{margin:0 0 4px;font-weight:700;text-align:center}
 #map .card{max-width:560px;padding:14px 14px 16px}
 #map h2{margin:0 0 4px;font-size:22px}
 #map p{margin:0 0 8px;font-size:14px;color:var(--muted)}
@@ -240,6 +252,7 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 <button class="hud" id="poseBtn">📸 Strike a pose!</button>
 <button class="hud" id="petBtn"></button>
 <button class="hud" id="talkBtn"></button>
+<div class="hud" id="zoomCtl"><button id="zoomIn" aria-label="Zoom in">➕</button><button id="zoomOut" aria-label="Zoom out">➖</button></div>
 <div class="hud" id="talk" aria-label="Talking"><div class="thead"><div id="tface">🙂</div><div class="tname"><b id="tname"></b><span id="thearts"></span></div><button id="tbye" aria-label="Say bye">✕</button></div><div id="tsay"></div><div id="topts"></div></div>
 <button class="hud" id="jump">JUMP</button>
 <div id="joy"><div id="knob"></div></div>
@@ -396,6 +409,8 @@ body.contest #closet{display:none}
 </div></div>
 <div class="modal" id="settings"><div class="card">
   <h2 style="margin:0 0 14px">⚙️ Settings</h2>
+  <div class="setlbl">✏️ Your name</div>
+  <div id="setNameRow"><input id="setName" maxlength="16" placeholder="Your name" autocomplete="off" aria-label="Your name"><button class="btn" id="setNameGo">Save</button></div>
   <a class="btn" href="../" style="display:block">🏠 Go back to the 2D studio</a>
   <button class="btn ghost" id="setClose" style="display:block;width:calc(100% - 8px);margin-top:12px">Close</button>
 </div></div>
@@ -406,7 +421,7 @@ body.contest #closet{display:none}
   <input id="wname" maxlength="16" placeholder="Your name" autocomplete="off">
   <div class="wstyle"><button data-ws="glam">💃<span>Glam girl</span></button><button data-ws="cute">🧸<span>Cute cartoon</span></button></div>
   <button class="btn" id="play">▶ Play</button>
-  <div class="how"><div><b>👆</b>Drag on the left to walk</div><div><b>🔄</b>Drag on the right to look</div><div><b>👗</b>Tap the dress to change clothes</div><div><b>🐾</b>Take your pet to the Pet Parlor</div><div><b>💬</b>Tap people to talk</div></div>
+  <div class="how"><div><b>👆</b>Drag on the left to walk</div><div><b>🔄</b>Drag on the right to look</div><div><b>💗</b>Stand on the pink Dress up circle to change clothes</div><div><b>🐾</b>Take your pet to the Pet Parlor</div><div><b>💬</b>Tap people to talk</div></div>
   <a href="../" style="display:inline-block;margin-top:14px;color:var(--muted);font-weight:600;font-size:14px">← Back to the 2D studio</a>
 </div></div>
 
