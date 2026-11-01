@@ -59,8 +59,9 @@ function skirtGeo(r0,r1,y0,y1,{curve=.8,folds=.05,k=12,seg=48,mermaid=false}={})
 /* face makeup layer: a thin see-through shell over the front of the face that we paint on */
 const FACE={p0:Math.PI/2-.8,pl:1.6,t0:.75,tl:1.75,r:.1312};
 function faceXY(x,y,z,W,hs){x/=hs?hs.x:1;y/=hs?hs.y:1.08;z/=hs?hs.z:1;const r=Math.hypot(x,y,z);return [(Math.atan2(z,-x)-FACE.p0)/FACE.pl*W,(Math.acos(y/r)-FACE.t0)/FACE.tl*W];}
-const defaultMakeup=()=>({shadow:null,liner:'none',linerC:'#2b1d16',lashes:'natural',lips:null,lipLiner:null,gloss:false,blush:'pink',gems:false});
+const defaultMakeup=()=>({shadow:null,liner:'none',linerC:'#2b1d16',lashes:'natural',lips:null,lipLiner:null,gloss:false,blush:'pink',gems:false,tan:0,browC:null,freckles:0,stickers:[]});
 const rgbOf=h=>{const n=parseInt(h.slice(1),16);return `${n>>16&255},${n>>8&255},${n&255}`;};
+const TAN_C=new THREE.Color('#9a5a2e');
 const BLUSH={pink:'255,110,150',peach:'255,150,110',rose:'220,80,110'};
 /* sculpted doll head: a sphere pushed in and out along each direction (nose, cheekbones, eye sockets, jaw, chin) */
 const FACEOPT=[['eyes','Eye shape',[['almond','👁️','Almond'],['doe','🦌','Doe'],['cat','🐱','Cat eye'],['round','⚪','Round']]],['nose','Nose',[['straight','👃','Straight'],['petite','✨','Petite'],['button','🔘','Button']]],['lips','Lips',[['full','💋','Full'],['pout','😗','Pouty'],['heart','💗','Heart'],['soft','🙂','Soft']]]];
@@ -159,7 +160,7 @@ class Avatar{
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
     for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;
-    this.skin.color.set(look.skin);this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
+    this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
     const {spine,hips,head,arms,legs}=this;
@@ -323,7 +324,7 @@ class Avatar{
         for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
-      this.lipM.color.set(mk.lips||(this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
+      this.lipM.color.set(mk.lips||(this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(mk.browC||new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
       this.lipLiner.forEach(l=>{l.visible=!!mk.lipLiner;});if(mk.lipLiner)this.linerM.color.set(mk.lipLiner);
       this.lashM.color.set(mk.lashes==='bold'?'#0d0a0a':'#2b1d16');
       // glam faces always get a fan of curled lashes; mascara makes them longer and darker
@@ -359,6 +360,7 @@ class Avatar{
       for(const sx of [-1,1]){const cx=sx*.046;x.beginPath();for(let i=0;i<=20;i++){const a=i/20*Math.PI;const [px,py]=at(cx+Math.cos(a)*(this.eyeR[0]+.004),(this.glam?.009:.006)+Math.sin(a)*(this.eyeR[1]+.004),.11);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
         if(mk.liner==='wing'){const [ax,ay]=at(cx+sx*.032,.012,.11),[bx,by]=at(cx+sx*.055,.03,.1);x.beginPath();x.moveTo(ax,ay);x.lineTo(bx,by);x.lineWidth=10*k;x.stroke();x.lineWidth=12*k;}}}
     if(this.paintCv)x.drawImage(this.paintCv,0,0,W,W);
+    faceExtras(this,x,at,k,mk);
     this.faceTex.needsUpdate=true;}
   play(e){this.emote={id:e,t:0};}
   update(dt,speed,air){

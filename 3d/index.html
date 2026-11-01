@@ -44,6 +44,16 @@ input{font-family:inherit}
 #banner.show{opacity:1;transform:scale(1)}
 #toast{left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%) translateY(-10px);opacity:0;transition:.3s;pointer-events:none!important;max-width:80vw;white-space:normal;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%)}
+#mkChal{left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);display:none;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;max-width:min(560px,calc(100vw - 32px));padding:8px 10px 8px 16px;border-radius:22px;background:linear-gradient(90deg,#ff6fae,#ff9ccf);color:#fff;box-shadow:0 6px 18px rgba(255,77,141,.35);z-index:12}
+#mkChal.show{display:flex}
+#mkChal b{font-size:17px}
+#mkChalTime{background:#fff;color:#c2185b;font-weight:700;border-radius:999px;padding:3px 10px;font-size:14px}
+#mkChalTime:empty,#mkChalRes:empty{display:none}
+#mkChalTime.hurry{background:#ffd23f;color:#3b2357;animation:actpop .5s infinite alternate}
+#mkChalRes{font-weight:600;font-size:14px;width:100%;text-align:center}
+#mkChalDone{background:#fff;color:#c2185b;font-weight:700;border-radius:999px;padding:6px 14px;font-size:14px}
+.elooks .eprev{width:52px;height:38px;border-radius:14px;position:relative;display:block}
+.elooks .eprev i{position:absolute;left:12px;right:12px;top:15px;height:12px;border:3px solid;border-bottom:none;border-radius:50% 50% 0 0/100% 100% 0 0;background:radial-gradient(circle at 50% 100%,#3b2357 0 4px,#fff 5px)}
 #actions{inset:0}
 .act{position:fixed;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 4px 14px rgba(59,35,87,.22);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:23px;line-height:1;transition:transform .15s,opacity .2s;border:2px solid rgba(255,214,234,.9)}
 .act span{font-size:9.5px;font-weight:700;color:var(--ink);margin-top:2px}
@@ -258,6 +268,7 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 <div id="joy"><div id="knob"></div></div>
 <div class="hud" id="banner"></div>
 <div class="hud pill" id="toast"></div>
+<div class="hud" id="mkChal"><b id="mkChalT"></b><span id="mkChalTime"></span><span id="mkChalRes"></span><button id="mkChalDone">✨ Finish</button></div>
 <div id="flash"></div>
 <button class="hud" id="mini" aria-label="Open the map"><canvas id="miniCv" width="216" height="216"></canvas><small>🗺️ Map</small></button>
 
