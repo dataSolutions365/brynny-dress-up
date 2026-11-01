@@ -194,6 +194,7 @@ css.textContent = `
 .crank div{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
 .crank strong{font-size:17px}.crank span{font-size:13px;color:var(--muted);font-weight:600}
 .crank i{display:block;height:9px;border-radius:9px;background:rgba(255,255,255,.8);overflow:hidden}.crank i u{display:block;height:100%;background:linear-gradient(90deg,#ffd23f,#ff6fae);border-radius:9px}
+.cspend{background:#efe6ff;border-radius:14px;padding:7px 12px;margin:0 2px 4px;font-size:14px;font-weight:600;color:#4a3a86}.cspend small{display:block;font-size:12px;font-weight:500;color:var(--muted)}
 .crank em{font-style:normal;font-weight:700;font-size:22px;white-space:nowrap}
 #chal .tabs{margin:0 -14px;padding:6px 10px}
 #chal .tab{position:relative}
@@ -234,7 +235,7 @@ document.body.insertAdjacentHTML('beforeend', `<div class="modal" id="chal" aria
 let panelOpen = false, tab = 'today';
 function render() {
   const r = rank(), nx = RANKS[RANKS.indexOf(r) + 1], s = C.stars || 0;
-  $('#chalRank').innerHTML = `<div class="crank"><b>${r[1]}</b><div><strong>${r[2]}</strong>${nx ? `<i><u style="width:${Math.round((s - r[0]) / (nx[0] - r[0]) * 100)}%"></u></i><span>${nx[0] - s} more ⭐ to ${nx[2]} ${nx[1]}</span>` : '<span>You are a legend! 🌈</span>'}</div><em>⭐ ${s}</em></div>`;
+  $('#chalRank').innerHTML = `<div class="crank"><b>${r[1]}</b><div><strong>${r[2]}</strong>${nx ? `<i><u style="width:${Math.round((s - r[0]) / (nx[0] - r[0]) * 100)}%"></u></i><span>${nx[0] - s} more ⭐ to ${nx[2]} ${nx[1]}</span>` : '<span>You are a legend! 🌈</span>'}</div><em>⭐ ${s}</em></div><div class="cspend">🛒 <b>⭐ ${Math.max(0, s - ((SAVE.barn && SAVE.barn.spent) || 0))}</b> left to spend on rare animals at the 🐴 Happy Barn<small>⭐ ${s} is every star you ever earned (your rank). It never goes down when you spend.</small></div>`;
   $('#chalTabs').innerHTML = TABS.map(([id, e, n]) => {
     const list = id === 'today' ? todays() : LIST.filter(c => c.tab === id), open = list.filter(c => !isDone(c)).length;
     return `<button class="tab${tab === id ? ' on' : ''}" data-tab="${id}"><b>${e}</b>${n}${open && id === 'today' ? '<s></s>' : ''}</button>`;
