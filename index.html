@@ -28,6 +28,7 @@ header.top{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:
 #whoName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}#whoName::after{content:" ▾"}
 .who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:38vw}
 .spacer{flex:1}
+.picrow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.picrow button{font-size:26px;width:46px;height:46px;border-radius:14px;background:#fff7fb;border:3px solid #f6e3ef}.picrow button.on{border-color:#ff4d8d;background:#ffe6f2}.picrow button.auto{width:auto;padding:0 10px;font-size:14px;font-weight:700}
 .tbtn{background:#fff;color:var(--ink);border-radius:999px;padding:8px 13px;font-weight:600;font-size:15px;box-shadow:0 2px 0 rgba(0,0,0,.12);display:flex;gap:5px;align-items:center;white-space:nowrap}
 .tbtn:active{transform:translateY(1px)}
 @media (max-width:560px){header.top{gap:6px;padding-left:8px;padding-right:8px}.who{flex:0 0 auto;width:72px;flex-direction:column;gap:0;padding:6px 4px;border-radius:16px;font-size:13px;line-height:1.15}.who span{max-width:100%}.who>:first-child{font-size:22px}.acts{min-width:0;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.acts .tbtn{position:relative;min-width:0;gap:3px;padding:7px 4px;font-size:15px;border-radius:14px}.acts .tbtn .lbl{font-size:12px;font-weight:800}.acts .tbtn .badge{position:absolute;top:-5px;right:-3px}}
@@ -225,7 +226,7 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
 </head>
 <body>
 <header class="top">
-  <button class="who" id="whoBtn" aria-label="Choose who is playing, music and sign in"><span>👧</span><span id="whoName">Brynny</span></button>
+  <button class="who" id="whoBtn" aria-label="Choose who is playing, music and sign in"><span id="whoPic">👧</span><span id="whoName">Brynny</span></button>
   <div class="acts">
     <button class="tbtn" id="randBtn" title="Surprise me">🎲 <span class="lbl">Surprise</span></button>
     <button class="tbtn" id="saveBtn" title="Save this look">📸 <span class="lbl">Save</span></button>
@@ -252,6 +253,8 @@ h3{margin:14px 2px 8px;font-size:16px;font-weight:600}
     <a class="tbtn" id="petsLink" href="pets.html" style="text-decoration:none">🐾 <span class="lbl">Pet Parlor 🚧</span></a>
     <a class="tbtn" id="world3dLink" href="3d/" style="text-decoration:none">🌍 <span class="lbl">3D World</span></a>
   </div>
+  <h2>Your picture</h2>
+  <div class="picrow" id="picRow"></div>
   <h2>Who's getting dressed up?</h2>
   <div class="cards" id="whoCards"></div>
   <div class="addrow">
@@ -2262,6 +2265,15 @@ $('#randBtn').onclick=()=>{const keep=L();me().look=randomLook(keep);persist();r
 $('#saveBtn').onclick=()=>{DB.gallery.unshift({id:uid(),name:me().name,look:JSON.parse(JSON.stringify(L())),at:Date.now()});DB.gallery=DB.gallery.slice(0,80);persist();toast('📸 Saved to your Gallery!');sparkle();Music.sfx('snap');};
 $('#galBtn').onclick=()=>{renderGallery();$('#galModal').classList.add('show');};
 $('#whoBtn').onclick=()=>{renderWho();$('#whoModal').classList.add('show');};
+/* your picture at the top left: one you pick, or a girl or guy to match the 3D world (shared in localStorage with the 3D game) */
+const PIC_KEY='brynny.pic',BODY_KEY='brynny.body',PICS=['👧','👦','🧒','👩','👨','👸','🤴','🧚‍♀️','🧙‍♂️','🦸‍♀️','🦸‍♂️','🥷','🧑‍🚀','🧑‍🎤','🐱','🐶','🦄','🐻','⚽','🏀','🎮','🌟'];
+const readLS=k=>{try{return JSON.parse(localStorage.getItem(k))||null;}catch(e){return null;}};
+const autoPic=()=>{const b=readLS(BODY_KEY);return b&&b.b==='guy'?'👦':'👧';};
+const myPic=()=>{const p=readLS(PIC_KEY);return p&&p.e?p.e:autoPic();};
+function renderPic(){$('#whoPic').textContent=myPic();const p=readLS(PIC_KEY),cur=p&&p.e;
+  $('#picRow').innerHTML=`<button class="auto${cur?'':' on'}" data-pic="">${autoPic()} Match my 3D look</button>`+PICS.map(e=>`<button class="${cur===e?'on':''}" data-pic="${e}" aria-label="Picture ${e}">${e}</button>`).join('');}
+$('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;try{if(b.dataset.pic)localStorage.setItem(PIC_KEY,JSON.stringify({e:b.dataset.pic,at:Date.now()}));else localStorage.removeItem(PIC_KEY);}catch(er){}renderPic();});
+renderPic();document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderPic();});
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m||e.target.hasAttribute('data-close'))m.classList.remove('show');}));
 
 function renderWho(){

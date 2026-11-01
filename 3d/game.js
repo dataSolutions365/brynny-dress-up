@@ -1444,7 +1444,9 @@ function switchBody(b){const cur=isGuy(SAVE.look)?'guy':'girl';if(b===cur)return
   SAVE.look=nx&&nx.look?nx.look:b==='guy'?defaultGuyLook(SAVE.look):Object.assign(defaultLook(),{style:SAVE.look.style||'glam',skin:SAVE.look.skin,eyes:SAVE.look.eyes,makeup:defaultMakeup()});
   if(nx&&nx.paint)SAVE.facePaint=nx.paint;else delete SAVE.facePaint;
   if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();
-  persist();did('body',b);return true;}
+  persist();did('body',b);shareBody();return true;}
+// tell the 2D studio whether you play a girl or a guy (its top-left picture matches unless you pick your own)
+function shareBody(){try{localStorage.setItem('brynny.body',JSON.stringify({b:isGuy(SAVE.look)?'guy':'girl',at:Date.now()}));}catch(e){}}
 
 /* ---------- guy hair: added on top of the short cap every hair style starts with ---------- */
 const GUY_HAIR={
@@ -1659,7 +1661,7 @@ const GUY_WEAR={
 if(!SAVE.look)SAVE.look=defaultLook();
 if(!SAVE.name)SAVE.name='';
 const player={pos:new THREE.Vector3(0,.15,2.6),vy:0,face:Math.PI,onGround:true,speed:0};
-if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();if(!SAVE.look.style)SAVE.look.style='glam';
+if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();if(!SAVE.look.style)SAVE.look.style='glam';shareBody();
 function loadPaint(a){if(!SAVE.facePaint||!a.paintCv)return;const im=new Image();im.onload=()=>{a.paintCv.getContext('2d').drawImage(im,0,0);a.renderFace();};im.src=SAVE.facePaint;}
 let av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
 const cam={yaw:0,pitch:.3,dist:5.2,cy:0,cp:.3,cd:5.2,closetYaw:0,vo:0,mode:'play',ty:new THREE.Vector3()};

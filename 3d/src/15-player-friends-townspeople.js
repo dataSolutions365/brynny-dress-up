@@ -2,7 +2,7 @@
 if(!SAVE.look)SAVE.look=defaultLook();
 if(!SAVE.name)SAVE.name='';
 const player={pos:new THREE.Vector3(0,.15,2.6),vy:0,face:Math.PI,onGround:true,speed:0};
-if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();if(!SAVE.look.style)SAVE.look.style='glam';
+if(!SAVE.look.makeup)SAVE.look.makeup=defaultMakeup();if(!SAVE.look.style)SAVE.look.style='glam';shareBody();
 function loadPaint(a){if(!SAVE.facePaint||!a.paintCv)return;const im=new Image();im.onload=()=>{a.paintCv.getContext('2d').drawImage(im,0,0);a.renderFace();};im.src=SAVE.facePaint;}
 let av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
 const cam={yaw:0,pitch:.3,dist:5.2,cy:0,cp:.3,cd:5.2,closetYaw:0,vo:0,mode:'play',ty:new THREE.Vector3()};
