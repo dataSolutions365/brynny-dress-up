@@ -29,6 +29,8 @@ const ZONES=[
   {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:36,r:7,music:'clouds'},
   {id:'bakery',name:'🧁 Sweet Bakery',ang:330,d:36,r:7,music:'valentine-day'},
   {id:'agency',name:'⭐ Star Model Agency',ang:270,d:36,r:7.5,music:'fashion-show'},
+  {id:'court',name:'🏀 Basketball Court',ang:90,d:36,r:7.5,music:'stadium'},
+  {id:'batting',name:'⚾ Batting Cage',ang:210,d:36,r:7.5,music:'stadium-cheer'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;

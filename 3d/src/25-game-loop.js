@@ -45,7 +45,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
 function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elapsedTime;if(started)adaptRes(rawDt);
   // movement input
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
-  let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started)mag=0;
+  let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=5*mag;const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
@@ -105,6 +105,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   if(bakeryOpen)bakeryCam(dt);
   cakeContestCam(dt);
   petContestCam(dt);
+  sportsCam(dt);
   // shift the picture so the avatar is not hidden behind the closet
   const land=innerWidth>innerHeight*1.25;const voT=closetOpen?1:0;cam.vo+=(voT-cam.vo)*Math.min(1,dt*6);
   if(cam.vo>.002){const W=innerWidth,H=innerHeight;if(land)camera.setViewOffset(W,H,W*.24*cam.vo,0,W,H);else camera.setViewOffset(W,H,0,H*.2*cam.vo,W,H);}else if(camera.view&&camera.view.enabled)camera.clearViewOffset();
