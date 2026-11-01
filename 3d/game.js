@@ -2582,6 +2582,8 @@ $('#photoClose').onclick=()=>$('#photo').classList.remove('show');
 $('#setBtn').onclick=()=>{joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#setName').value=SAVE.name||'';$('#settings').classList.add('show');renderMe();};
 /* you at the top left: your picture (the same choice as the 2D studio, kept by pics.js) and your name */
 const PIC=window.BrynnyPic||{current:()=>'',html:()=>isGuy(SAVE.look)?'👦':'👧',picker:()=>'',set(){}};
+// "Match my look" here is the live close-up of your 3D character (26b-portrait.js)
+if(window.BrynnyPic)BrynnyPic.match=()=>{const im=BrynnyPic.liveImg('@me3d');return im?`<img class="picimg" src="${im}" alt="">`:null;};
 function renderMe(){$('#mePic').innerHTML=PIC.html(PIC.current());$('#meName').textContent=SAVE.name||'Me';if($('#settings').classList.contains('show'))$('#picRow').innerHTML=PIC.picker(true);}
 $('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;PIC.set(b.dataset.pic);sfx('pop');renderMe();});
 addEventListener('storage',e=>{if(!e.key||e.key.startsWith('brynny.'))renderMe();});
