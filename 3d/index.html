@@ -1526,12 +1526,12 @@ class Pet{
 const PETS=[['cat','#f4a259','Pumpkin','spring'],['cat','#3a3540','Midnight','halloween'],['dog','#d9a35b','Biscuit','beach'],['dog','#8b5a2b','Cocoa','birthday'],['squirrel','#9a9a9a','Nutmeg','christmas'],['bunny','#f5efe6','Snowball','spring'],['dog','#f3ece2','Marshmallow','studio'],['cat','#9aa0a6','Smokey','runway'],
   // more dogs! (new pets go at the end so saved pets keep their spot)
   // the family's own two dogs, waiting to be adopted at the Pet Parlor
-  ['dog','#1e1714',FAMILY_DOGS[0],'parlor',{real:1,light:'#b8773d',brows:1,collar:'#ff6a1f',ear:'#17110f'}],
-  ['dog','#dcb57a',FAMILY_DOGS[1],'parlor',{real:1,fluffy:1,face:'#fbf6ec',light:'#f2e2c2',ear:'#d8ad6a'}],
-  ['squirrel','#857558',FAMILY_SQUIRREL,'parlor',{real:1,light:'#ffffff',ear:'#b08a70',tail:'#8f8a84'}],
-  ['dog','#f7f4ef','Oreo','christmas',{spots:'#1d1a1a',light:'#ffffff'}],
-  ['dog','#6f6a66','Pepper','runway',{light:'#cfc9c2'}],
-  ['dog','#d8a24e','Waffles','bakery',{fluffy:1,light:'#f3d79e'}]].map(([k,c,n,h,o],i)=>{
+  ['dog','#1e1714',FAMILY_DOGS[0],'parlor',{stars:5,real:1,light:'#b8773d',brows:1,collar:'#ff6a1f',ear:'#17110f'}],
+  ['dog','#dcb57a',FAMILY_DOGS[1],'parlor',{stars:5,real:1,fluffy:1,face:'#fbf6ec',light:'#f2e2c2',ear:'#d8ad6a'}],
+  ['squirrel','#857558',FAMILY_SQUIRREL,'parlor',{stars:5,real:1,light:'#ffffff',ear:'#b08a70',tail:'#8f8a84'}],
+  ['dog','#f7f4ef','Oreo','christmas',{stars:3,spots:'#1d1a1a',light:'#ffffff'}],
+  ['dog','#6f6a66','Pepper','runway',{stars:3,light:'#cfc9c2'}],
+  ['dog','#d8a24e','Waffles','bakery',{stars:3,fluffy:1,light:'#f3d79e'}]].map(([k,c,n,h,o],i)=>{
   const pt=new Pet(k,c,n,Z[h],o);const a=i*2.3,r=Z[h].r*.6;pt.pos.set(Z[h].x+Math.sin(a)*r,0,Z[h].z+Math.cos(a)*r);collide(pt.pos,.3);scene.add(pt.g);return pt;});
 const myPet=()=>PETS.find(p=>p.owned);
 function adopt(pt){did('adopt');if(!SAVE.adoptPaid){SAVE.adoptPaid=1;setTimeout(()=>earn(10,'New pet'),900);}const old=myPet();if(old&&old!==pt){old.owned=false;old.setTag();}pt.owned=true;pt.setTag();SAVE.pet=PETS.indexOf(pt);persist();pt.happy=2;pt.speak(rnd(PET_SAY[pt.kind]));
@@ -1549,10 +1549,14 @@ function stepPet(pt,dt){if(pt.inParlor){parlorPet(pt,dt);return;}let spd=0;const
   pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0){pt.y=0;pt.vy=0;}
   const gy=groundAt(pt.pos.x,pt.pos.z);pt.pos.y+=(gy-pt.pos.y)*Math.min(1,dt*12);
   pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);}
+// some pets need a few ⭐ stars (from star challenges and hidden stars) before you can adopt them; stars are not used up
+const myStars=()=>(SAVE.chal&&SAVE.chal.stars)||0;
+const starsShort=pt=>pt.owned?0:Math.max(0,((pt.o&&pt.o.stars)||0)-myStars());
 let petNear=null;
 function petButton(){const P=player.pos;let best=null,bd=2.1;for(const pt of PETS){const d=Math.hypot(P.x-pt.pos.x,P.z-pt.pos.z);if(d<bd){bd=d;best=pt;}}
-  if(best!==petNear||(best&&best.owned!==petNear._o)){petNear=best;const b=$('#petBtn');if(best){best._o=best.owned;b.textContent=best.owned?`💖 Pet ${best.name}`:`🐾 Adopt ${best.name}`;b.style.display='block';}else b.style.display='none';}}
-$('#petBtn').onclick=()=>{const pt=petNear;if(!pt)return;if(pt.owned){pt.happy=2;pt.vy=3;const need=petNeed(pt,true);if(need){pt.speak(need);toast(`Take ${pt.name} to the 🐾 Pet Parlor!`);}else pt.speak(rnd(PET_SAY[pt.kind]));floaties(pt.g.position.clone().add(new THREE.Vector3(0,pt.tagH*.8,0)),'💖',5);sfx('pop');}else adopt(pt);petNear=null;petButton();};
+  if(best!==petNear||(best&&best.owned!==petNear._o)){petNear=best;const b=$('#petBtn');if(best){best._o=best.owned;b.textContent=best.owned?`💖 Pet ${best.name}`:starsShort(best)?`🔒 Adopt ${best.name} · ⭐ ${best.o.stars}`:`🐾 Adopt ${best.name}`;b.style.display='block';}else b.style.display='none';}}
+$('#petBtn').onclick=()=>{const pt=petNear;if(!pt)return;if(pt.owned){pt.happy=2;pt.vy=3;const need=petNeed(pt,true);if(need){pt.speak(need);toast(`Take ${pt.name} to the 🐾 Pet Parlor!`);}else pt.speak(rnd(PET_SAY[pt.kind]));floaties(pt.g.position.clone().add(new THREE.Vector3(0,pt.tagH*.8,0)),'💖',5);sfx('pop');}else if(starsShort(pt)){const n=starsShort(pt);pt.speak(rnd(PET_SAY[pt.kind]));sfx('pop');toast(`${pt.name} needs ⭐ ${pt.o.stars} stars to adopt. Get ${n} more ${n===1?'star':'stars'} from star challenges or hidden stars!`);}
+  else adopt(pt);petNear=null;petButton();};
 if(SAVE.pet!=null&&PETS[SAVE.pet]){const pt=PETS[SAVE.pet];pt.owned=true;pt.setTag();pt.pos.set(player.pos.x+.8,0,player.pos.z+.8);}
 
 /* ================= INPUT ================= */
