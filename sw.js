@@ -17,7 +17,7 @@ const CACHE = 'dressup-offline-v1';
 const CORE = [
   './', 'index.html', 'pets.html', 'manifest.webmanifest',
   'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
-  '3d/', '3d/index.html', '3d/game.js', '3d/online.js', '3d/challenges.js', '3d/seasons.js',
+  'family.js', '3d/', '3d/index.html', '3d/game.js', '3d/online.js', '3d/challenges.js', '3d/seasons.js',
 ];
 
 const MUSIC = [
