@@ -6,6 +6,10 @@
 <title>Pet Parlor</title>
 <meta name="description" content="Dress up a pet cat, dog or squirrel. Under construction.">
 <meta name="theme-color" content="#ff8fc1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dress-Up">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -349,6 +353,10 @@ $('#content').addEventListener('click',e=>{const b=e.target.closest('[data-act]'
 $('#randBtn').onclick=()=>{if(S.mode==='care'){S.mode='dress';S.tool=null;}const r=a=>a[Math.random()*a.length|0],fit=S.fit[S.kind];fit.body=r(COSTUMES.slice(1)).id;fit.hat=r(HATS).id;fit.neck=r(NECKS).id;fit.c=r(COLORS);save();render();};
 tick();setInterval(()=>{tick();updateBars();},60000);
 render();
+</script>
+<script>
+// save the game for offline play (see sw.js)
+if ('serviceWorker' in navigator && location.protocol !== 'file:') addEventListener('load', () => navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {}));
 </script>
 </body>
 </html>
