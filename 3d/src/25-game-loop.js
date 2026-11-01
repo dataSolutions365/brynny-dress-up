@@ -111,7 +111,8 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   sky.position.copy(camera.position);
   sun.position.copy(p).add(SUN_OFF);sun.target.position.copy(p);
   renderer.render(scene,camera);
-  if(wantPhoto){wantPhoto=false;takePhoto();}}
+  if(wantPhoto){wantPhoto=false;takePhoto();}
+  portraitTick();}
 
 function resize(){camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<innerHeight?62:55;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);}
 addEventListener('resize',resize);resize();
