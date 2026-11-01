@@ -3,11 +3,16 @@
 // New animals go at the end so saves keep working.
 const FARM=[
   {k:'chicken',e:'🐔',n:'Chicken',nm:'Nugget',c:15,ride:0,about:'Clucks, pecks and flaps her wings when she is happy.',food:[['🌽','Corn'],['🪱','Worm'],['🍓','Berry']],say:['Bawk bawk! 🐔','*peck peck*','Cluck? 💛']},
+  {k:'duck',e:'🦆',n:'Duckling',nm:'Puddles',c:15,ride:0,about:'A fluffy yellow duckling who quacks and waddles everywhere.',food:[['🌽','Corn'],['🥬','Lettuce'],['🍉','Melon']],say:['Quack quack! 🦆','*waddle waddle*','Splash time? 💦']},
+  {k:'bunny',e:'🐰',n:'Barn bunny',nm:'Clover',c:20,ride:0,about:'A soft lop-eared bunny with a cotton-ball tail. Loves to hop!',food:[['🥕','Carrot'],['🥬','Lettuce'],['🍓','Berry']],say:['*nose wiggle* 🐰','Hop hop! 💖','*binky!*']},
+  {k:'turkey',e:'🦃',n:'Turkey',nm:'Gobbles',c:25,ride:0,about:'A proud turkey with a rainbow fan of tail feathers.',food:[['🌽','Corn'],['🌾','Seeds'],['🍓','Berry']],say:['Gobble gobble! 🦃','*shows off feathers*','Gobble? 💛']},
   {k:'pig',e:'🐷',n:'Piglet',nm:'Peaches',c:25,ride:0,about:'A pink piglet with a curly tail who loves snacks.',food:[['🍎','Apple'],['🌽','Corn'],['🥔','Potato']],say:['Oink oink! 🐷','*happy snort*','Squee! 💗']},
   {k:'lamb',e:'🐑',n:'Lamb',nm:'Cotton',c:25,ride:0,about:'The fluffiest little lamb, soft as a cloud.',food:[['🌾','Hay'],['🍀','Clover'],['🥕','Carrot']],say:['Baaa! 🐑','*fluffy wiggle*','Baa-baa 💖']},
   {k:'goat',e:'🐐',n:'Goat',nm:'Pebbles',c:30,ride:0,about:'A bouncy goat with a tiny beard. Loves to hop.',food:[['🌾','Hay'],['🥬','Lettuce'],['🍎','Apple']],say:['Meeeh! 🐐','*hop hop*','Can I eat your hat?']},
   {k:'cow',e:'🐮',n:'Highland cow',nm:'Fluffy',c:40,ride:.98,about:'A shaggy orange cow with long horns and bangs over her eyes.',food:[['🌾','Hay'],['🌽','Corn'],['🍀','Clover']],say:['Moooo! 🐮','*fluffy moo*','Mooo 💖']},
   {k:'alpaca',e:'🦙',n:'Alpaca',nm:'Cocoa',c:45,ride:0,about:'A fuzzy alpaca with a fluffy hairdo. Hums when happy.',food:[['🌾','Hay'],['🥕','Carrot'],['🍏','Apple']],say:['Hmmmm? 🦙','*happy hum*','Fluffiest friend!']},
+  {k:'donkey',e:'🫏',n:'Donkey',nm:'Biscuit',c:45,ride:.85,about:'A gentle gray donkey with big fuzzy ears. You can ride him!',food:[['🥕','Carrot'],['🍎','Apple'],['🌾','Hay']],say:['Hee-haw! 🫏','*ear wiggle*','Hee-haw 💖']},
+  {k:'llama',e:'🦙',n:'Llama',nm:'Mocha',c:50,ride:0,about:'A tall, friendly llama with a two-tone coat and banana ears.',food:[['🌾','Hay'],['🥕','Carrot'],['🍏','Apple']],say:['Mmmmm? 🦙','*proud hum*','Llama llama! 💖']},
   {k:'pony',e:'🐴',n:'Pony',nm:'Buttercup',c:50,ride:.82,about:'A sweet little pony. You can ride her around town!',food:[['🥕','Carrot'],['🍎','Apple'],['🌾','Hay']],say:['Neigh! 🐴','*happy whinny*','Ride with me! 💛']},
   {k:'horse',e:'🐎',n:'Horse',nm:'Star',c:70,ride:1.2,about:'A tall, fast horse. Ride her and gallop around town!',food:[['🥕','Carrot'],['🍎','Apple'],['🌾','Hay']],say:['Neeeigh! 🐎','*proud snort*','Let\'s gallop! 💨']},
   {k:'unicorn',e:'🦄',n:'Unicorn',nm:'Sparkle',s:10,ride:1.2,about:'Rare! A magic unicorn with a rainbow mane and a golden horn.',food:[['🍓','Strawberry'],['🍭','Lollipop'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*sparkle sparkle*','I love you! 🦄']},
@@ -81,6 +86,9 @@ class FarmAnimal{
       maneM.forEach((m,i)=>{const s=(i-(maneM.length-1)/2)*.03*sc;taperTube([fV(s,0,0),fV(s,-.08*sc,-.14*sc),fV(s*1.5,-.35*sc,-.2*sc),fV(s*2,-.6*sc,-.16*sc)],q=>(.07-.035*q)*sc*(maneM.length>1?.6:1),m,tail,20,8);});
       Object.assign(o,{neck,head,tail,nTilt:.78,size:sc,h:by+nl+.35*sc,rad:.45*sc,dustR:[r,r,len*.7]});return {fur,head,H,neck};};
     if(k==='horse'){const h=horseLike(1.05,'#9a5f34','#3b2416',{light:'#c48a5c'});M(sph(h.H*.3,10,8),fm('#ffffff'),0,h.H*.35,h.H*.95,h.head).scale.set(.5,1.2,.4);}
+    if(k==='donkey'){const h=horseLike(.88,'#9d968f','#4a4440',{short:true,light:'#ece6df',hoof:'#3b2a22'});
+      for(const sx of [-1,1]){const e=M(new THREE.CapsuleGeometry(h.H*.17,h.H*.95,6,10),h.fur,sx*h.H*.42,h.H*1.15,-h.H*.15,h.head);e.rotation.z=-sx*.3;e.scale.z=.6;M(new THREE.CapsuleGeometry(h.H*.09,h.H*.75,6,8),fm('#4a4440'),sx*h.H*.44,h.H*1.15,-h.H*.06,h.head).rotation.z=-sx*.3;}
+      M(sph(h.H*.62,14,10),fm('#ece6df'),0,-h.H*.32,h.H*.9,h.head).scale.set(1,.85,1.25);}
     if(k==='pony'){horseLike(.82,'#f0cf8a','#fff6e2',{short:true,light:'#fff3d6',hoof:'#a0784a'});}
     if(k==='unicorn'){const h=horseLike(1.05,'#ffffff',['#ff6fae','#ffd23f','#7ee081','#4fb6ff','#b388ff'],{light:'#fff6fb',hoof:'#ffb3d1'});
       const horn=M(new THREE.ConeGeometry(h.H*.16,h.H*.95,18),phys('#ffd86b',{map:TEX.glitter,metalness:.6,roughness:.25,clearcoat:1,iridescence:.6}),0,h.H*1.15,h.H*.65,h.head);horn.rotation.x=.5;
@@ -101,6 +109,15 @@ class FarmAnimal{
         const ear=M(sph(H*.25,10,8),fur,sx*H*1.05,H*.12,-H*.05,head);ear.scale.set(1.4,.6,.8);}
       const tail=new THREE.Group();tail.position.set(0,by+r*.4,-(len/2+r*.9));g.add(tail);taperTube([fV(0,0,0),fV(0,-.2,-.08),fV(0,-.45,-.1)],q=>.03+q*.02,fur,tail,12,8);M(sph(.07,10,8),dark,0,-.47,-.1,tail).scale.y=1.6;
       Object.assign(o,{neck,head,tail,nTilt:1.1,size:1,h:by+.5,rad:.6,dustR:[r,r,len*.8]});}
+    if(k==='bunny'){const by=.2,fur=fm('#f2e6d8'),light=fm('#ffffff'),pink=fShiny('#ffb3c1',{roughness:.5});
+      body.position.y=by;M(sph(.17,16,12),fur,0,0,0,body).scale.set(1,.95,1.2);M(sph(.13,12,10),light,0,-.04,.07,body).scale.set(.9,.85,1.1);
+      fLegs(this,g,.07,.09,.09,.09,.04,fur,light);
+      const neck=new THREE.Group();neck.position.set(0,by+.12,.13);g.add(neck);
+      const head=new THREE.Group();head.position.set(0,.04,0);neck.add(head);const H=.12;M(sph(H,18,14),fur,0,0,0,head);M(sph(H*.5,12,10),light,0,-H*.35,H*.7,head).scale.set(1.2,.8,.8);M(sph(H*.13,8,6),pink,0,-H*.15,H*1.02,head);
+      for(const sx of [-1,1]){const e=M(new THREE.CapsuleGeometry(H*.22,H*1.1,6,10),fur,sx*H*.38,H*1.25,-H*.15,head);e.rotation.z=-sx*.22;e.scale.z=.5;const i=M(new THREE.CapsuleGeometry(H*.12,H*.85,6,8),pink,sx*H*.39,H*1.25,-H*.07,head);i.rotation.z=-sx*.22;i.scale.z=.3;}
+      fEyes(this,head,H,.45,.18,.78,.4,.22);fBlush(head,H,.6,-.18,.72);
+      const tail=new THREE.Group();tail.position.set(0,by+.02,-.2);g.add(tail);M(sph(.06,10,8),light,0,0,0,tail);
+      Object.assign(o,{neck,head,tail,nTilt:0,size:.4,h:.45,rad:.22,dustR:[.17,.17,.2]});}
     if(k==='pig'){const r=.27,len=.3,leg=.16,by=leg+r*.75,fur=fm('#ffb3c1',{roughness:.6}),pink=fShiny('#ff8fa8',{roughness:.45});
       body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),fur,0,0,0,body);t.rotation.x=Math.PI/2;
       fLegs(this,g,r*.55,len*.45,leg+.04,leg+.04,.06,fur,fShiny('#d0707f'));
@@ -136,29 +153,31 @@ class FarmAnimal{
       fEyes(this,head,H,.45,.18,.78,.4,.22,'#7a5a1a');fBlush(head,H,.6,-.15,.72);
       const tail=new THREE.Group();tail.position.set(0,by+r*.6,-(len/2+r*.9));g.add(tail);M(new THREE.ConeGeometry(.04,.12,8),fur,0,.05,0,tail).rotation.x=-.5;
       Object.assign(o,{neck,head,tail,nTilt:.5,size:.7,h:by+.55,rad:.35,dustR:[r,r,len*.8]});}
-    if(k==='alpaca'){const leg=.42,by=leg+.2,fur=fm('#f3e1c6',{roughness:1}),dark=fm('#e6cfae');
-      body.position.y=by;M(sph(.26,16,12),fur,0,0,0,body).scale.set(1,.9,1.3);fFluff(body,fur,.26,.24,.34,30,.11);
+    if(k==='alpaca'||k==='llama'){const ll=k==='llama',leg=ll?.52:.42,by=leg+.2,fur=fm(ll?'#ffffff':'#f3e1c6',{roughness:1}),dark=fm(ll?'#8a5a3b':'#e6cfae');
+      body.position.y=by;M(sph(.26,16,12),fur,0,0,0,body).scale.set(1,.9,1.3);fFluff(body,ll?dark:fur,.26,.24,.34,ll?18:30,ll?.08:.11);
       fLegs(this,g,.12,.17,leg+.03,leg+.03,.05,dark,fShiny('#5a4a3a'));
-      const neck=new THREE.Group();neck.position.set(0,by+.12,.27);neck.rotation.x=.12;g.add(neck);const nl=.5;M(new THREE.CapsuleGeometry(.1,nl,6,14),fur,0,nl/2,0,neck);fFluff(neck,fur,.1,nl*.5,.1,12,.07,nl*.5);
+      const neck=new THREE.Group();neck.position.set(0,by+.12,.27);neck.rotation.x=.12;g.add(neck);const nl=ll?.62:.5;M(new THREE.CapsuleGeometry(.1,nl,6,14),fur,0,nl/2,0,neck);fFluff(neck,fur,.1,nl*.5,.1,12,.07,nl*.5);
       const head=new THREE.Group();head.position.set(0,nl+.08,.02);head.rotation.x=-.12;neck.add(head);const H=.13;
       M(sph(H,20,14),fur,0,0,0,head);M(sph(H*.6,14,10),dark,0,-H*.35,H*.75,head).scale.set(1,.8,1);M(sph(H*.09,8,6),std('#5a3a3a'),0,-H*.28,H*1.3,head,false,false);
-      fFluff(head,fm('#fffaf0',{roughness:1}),H*.6,H*.35,H*.55,14,H*.32,H*.75,-H*.05);
+      if(!ll)fFluff(head,fm('#fffaf0',{roughness:1}),H*.6,H*.35,H*.55,14,H*.32,H*.75,-H*.05);
       for(const sx of [-1,1]){const e=M(new THREE.CapsuleGeometry(H*.13,H*.6,6,10),fur,sx*H*.5,H*1.1,-H*.15,head);e.rotation.z=-sx*.25;e.rotation.x=-.15;}
       fEyes(this,head,H,.45,.12,.78,.4,.24);fBlush(head,H,.6,-.15,.72);
       const tail=new THREE.Group();tail.position.set(0,by+.08,-.36);g.add(tail);fFluff(tail,fur,.05,.05,.05,4,.06);
-      Object.assign(o,{neck,head,tail,nTilt:.12,size:.85,h:by+.8,rad:.38,dustR:[.26,.24,.33]});}
-    if(k==='chicken'){const by=.3,f=fm('#fffaf2'),red=fShiny('#e0263b',{roughness:.4}),yel=fShiny('#ffb020',{roughness:.4});
+      Object.assign(o,{neck,head,tail,nTilt:.12,size:.85,h:by+(ll?.95:.8),rad:.38,dustR:[.26,.24,.33]});}
+    if(k==='chicken'||k==='duck'||k==='turkey'){const dk=k==='duck',tk=k==='turkey',by=tk?.36:.3,f=fm(dk?'#ffe066':tk?'#8a5a3b':'#fffaf2'),red=fShiny('#e0263b',{roughness:.4}),yel=fShiny(dk?'#ff8a1f':'#ffb020',{roughness:.4});
+      if(tk){body.scale.setScalar(1.25);const fan=['#c0392b','#ff8a1f','#ffd23f','#8a5a3b','#c0392b','#ff8a1f','#ffd23f'];for(let i=0;i<7;i++){const a=(i/6-.5)*2.2;const fe=M(sph(.09,10,8),fm(fan[i]),Math.sin(a)*.17,.1+Math.cos(a)*.17,-.15,body);fe.scale.set(.55,1.5,.25);fe.rotation.z=-a;}}
       body.position.y=by;M(sph(.16,18,14),f,0,0,0,body).scale.set(.95,.95,1.15);
       for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*.14,.02,-.01);body.add(w);M(sph(.1,12,10),f,0,0,-.03,w).scale.set(.35,.75,1.2);(this.wings||(this.wings=[])).push({w,sx});}
-      for(let i=0;i<3;i++){const c=M(sph(.06,10,8),f,(i-1)*.04,.1+i%2*.02,-.17,body);c.scale.set(.5,1.6,.6);c.rotation.x=-.6;}
+      if(!tk)for(let i=0;i<3;i++){const c=M(sph(.06,10,8),f,(i-1)*.04,.1+i%2*.02,-.17,body);c.scale.set(.5,1.6,.6);c.rotation.x=dk?-1.1:-.6;}
       const neck=new THREE.Group();neck.position.set(0,by+.1,.1);g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.1,.02);neck.add(head);const H=.09;M(sph(H,16,12),f,0,0,0,head);
-      M(new THREE.ConeGeometry(H*.28,H*.55,10),yel,0,-H*.08,H*1.1,head).rotation.x=Math.PI/2;M(sph(H*.18,8,6),red,0,-H*.5,H*.8,head).scale.y=1.6;
-      for(let i=0;i<3;i++)M(sph(H*.2,8,6),red,0,H*.95+(i===1?H*.1:0),(i-1)*H*.28,head);
+      const head=new THREE.Group();head.position.set(0,.1,.02);neck.add(head);const H=dk?.1:.09;M(sph(H,16,12),tk?fm('#7aa6d8'):f,0,0,0,head);
+      if(dk){const b=M(sph(H*.42,12,10),yel,0,-H*.2,H*1,head);b.scale.set(1.2,.35,1.3);}
+      else{M(new THREE.ConeGeometry(H*.28,H*.55,10),yel,0,-H*.08,H*1.1,head).rotation.x=Math.PI/2;M(sph(H*.18,8,6),red,0,-H*.5,H*.8,head).scale.y=tk?2.6:1.6;}
+      if(!dk&&!tk)for(let i=0;i<3;i++)M(sph(H*.2,8,6),red,0,H*.95+(i===1?H*.1:0),(i-1)*H*.28,head);
       fEyes(this,head,H,.5,.15,.72,.5,.24,'#2a1a10');fBlush(head,H,.6,-.18,.72);
       this.legs=[];for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.06,.2,0);g.add(lg);M(cyl(.012,.012,.2,6),yel,0,-.1,0,lg);
         for(const a of [-.5,0,.5]){const toe=M(cyl(.008,.008,.07,5),yel,Math.sin(a)*.03,-.2,Math.cos(a)*.03,lg);toe.rotation.x=Math.PI/2;toe.rotation.z=-a;}this.legs.push({g:lg,ph});}
-      Object.assign(o,{neck,head,tail:null,nTilt:0,size:.45,h:.6,rad:.22,biped:true,dustR:[.15,.15,.18]});}
+      Object.assign(o,{neck,head,tail:null,nTilt:0,size:tk?.55:.45,h:tk?.75:.6,rad:tk?.3:.22,biped:true,dustR:[.15,.15,.18]});}
     if(k==='dragon'){const by=.75,skin=fm('#b388ff',{roughness:.5}),belly=fm('#ffe0a8'),wingM=phys('#ff8fc8',{roughness:.5,side:THREE.DoubleSide,transparent:true,opacity:.9}),hornM=fShiny('#fff4dc');
       body.position.y=by;const t=M(new THREE.CapsuleGeometry(.24,.3,8,18),skin,0,0,0,body);t.rotation.x=Math.PI/2+.3;M(sph(.2,14,10),belly,0,-.07,.08,body).scale.set(.9,.9,1.3);
       for(let i=0;i<4;i++)M(new THREE.ConeGeometry(.05,.12,6),fShiny('#ff6fae'),0,.24-i*.03,.1-i*.13,body);
@@ -353,7 +372,8 @@ function palStep(a,dt){if(barnOpen&&a===barnSel){if(a.along){a.along=false;[a.lx
 
 /* ---------- the barn sheet ---------- */
 const fCoins=()=>SAVE.coins||0;
-function barnMoney(){$('#barnMoney').textContent=`🪙 ${fCoins()} · ⭐ ${starsLeft()}`;}
+const starsEarned=()=>(SAVE.chal&&SAVE.chal.stars)||0;
+function barnMoney(){$('#barnMoney').textContent=`🪙 ${fCoins()} · ⭐ ${starsLeft()} to spend`;}
 function openBarn(){if(closetOpen||!started)return;closeTalk();barnOpen=closetOpen=true;BZ.padLbl.visible=false;
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
   const mine=Object.keys(BS.own);barnTab=mine.length?'mine':'adopt';if(!barnSel||!BS.own[barnSel.k])barnSel=mine.length?farmAnimal(BS.sel&&BS.own[BS.sel]?BS.sel:mine[0]):null;
@@ -384,7 +404,7 @@ function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
           <h3>Care</h3><div class="ctbtns farmBtns"><button class="btn ghost" data-fdo="brush">🪮 Brush</button><button class="btn ghost" data-fdo="hug">💖 Hug</button><button class="btn ghost" data-fdo="water">💧 Water</button></div>
           ${F.pal?`<div class="ctbtns"><button class="btn big" data-fdo="along">${BS.pal===a.k?`🏠 ${esc(BS.own[a.k].n)} stays at the barn`:`🐾 Take ${esc(BS.own[a.k].n)} with you!`}</button></div><p class="drawhint">${F.pal==='fly'?'Flies along behind you everywhere you go!':'Follows you all around town!'}</p>`:F.ride?`<div class="ctbtns"><button class="btn big" data-fdo="ride">🏇 Ride ${esc(BS.own[a.k].n)}!</button></div>`:`<p class="drawhint">${F.n}s are too little to ride, but they love hugs!</p>`}`;}}}
   else{const list=tabList(barnTab);
-    h=`<button class="catLink" data-fbook="1">📖 See every animal in the game</button>`+(barnTab==='rare'?`<p class="drawhint">Rare animals cost ⭐ stars. Earn stars from ⭐🏆 challenges. Spending them never lowers your star rank!</p>`:'')+
+    h=`<button class="catLink" data-fbook="1">📖 See every animal in the game</button>`+(barnTab==='adopt'?`<button class="dinoLink" data-ftabgo="rare">🦖 Looking for dinosaurs and the unicorn? Tap here for ⭐ Rare!</button><button class="dinoLink" data-ftabgo="pals">🐉 Baby dragon and mini dinos that follow you? Tap here for Buddies!</button>`:'')+(barnTab==='rare'?`<div class="starNote">⭐ <b>${starsEarned()}</b> earned · <b>${starsLeft()}</b> left to spend<small>The ⭐ at the top counts every star you ever earned (that's your rank), so it never goes down. Rare animals use stars from "left to spend". Earn more from ⭐🏆 challenges!</small></div>`:'')+
       `<div class="grid">${list.map(f=>{const own=!!BS.own[f.k];return `<button class="item${a&&a.k===f.k?' on':''}" data-fpick="${f.k}">${fThumb(f)}<span>${f.n}</span><em class="${own?'got':''}">${own?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`}</em></button>`;}).join('')}</div>`;
     if(a&&list.includes(F)){const own=!!BS.own[a.k],have=F.s?starsLeft():fCoins(),cost=F.s||F.c,cur=F.s?'⭐':'🪙';
       h+=`<div class="farmAbout"><b>${F.e} ${F.n}</b><span>${F.about}</span>${F.ride?'<span>🏇 You can ride this one!</span>':''}
@@ -400,6 +420,7 @@ $('#barnContent').onclick=e=>{const b=e.target.closest('button');if(!b||!barnOpe
   if(d.fsel){clearPreview();barnTab='mine';barnSel=farmAnimal(d.fsel);BS.sel=d.fsel;persist();barnSel.speak(farmNeed(d.fsel)||rnd(barnSel.F.say));sfx('pop');renderBarn();return;}
   if(d.fpick){previewFarm(d.fpick);sfx('pop');renderBarn();return;}
   if(d.fadopt)return adoptFarm(d.fadopt);
+  if(d.ftabgo){barnTab=d.ftabgo;const l=tabList(barnTab);previewFarm((l.find(f=>!BS.own[f.k])||l[0]).k);sfx('pop');renderBarn();$('#barnContent').scrollTop=0;return;}
   if(d.fbook){closeBarn();setTimeout(openCatalog,350);return;}
   const a=barnSel;if(!a||!BS.own[a.k])return;const c=farmCare(a.k),top=()=>a.g.position.clone().add(new THREE.Vector3(0,a.h*.75,0));
   if(d.ffeed!=null){const [fe,fn]=a.F.food[+d.ffeed];c.food=Math.min(100,c.food+34);a.graze=1;a.eatT=1.4;floaties(top(),fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('farmfeed',a.k);}
@@ -476,13 +497,13 @@ function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div
   const pets=PETS.map(pt=>{const need=(pt.o&&pt.o.stars)||0,z=pt.home;
     return row(`<b>${PET_E[pt.kind]||'🐾'}</b>`,esc(pt.name),`A ${pt.kind} who lives at ${z?z.name:'town'}`,pt.owned?'💖 Your pet':need?(st>=need?`✅ ⭐ ${need} reached`:`🔒 ⭐ ${need} stars`):'Free!',pt.owned?'got':need?(st>=need?'got':'star'):'free',z&&z.id);});
   const farm=f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`,BS.own[f.k]?'got':f.s?'star':'coin','barn');
-  $('#catList').innerHTML=`<div class="cnote">Pets are free to adopt. Some need a certain number of ⭐ stars first (you keep your stars). Barn animals and little buddies cost 🪙 coins, and the rare ones cost ⭐ stars (spending stars never lowers your rank).</div>
+  $('#catList').innerHTML=`<div class="cnote">You've earned ⭐ ${st} stars and have ⭐ ${starsLeft()} left to spend. Pets are free to adopt. Some need a certain number of ⭐ stars first (you keep your stars). Barn animals and little buddies cost 🪙 coins, and the rare ones cost ⭐ stars (spending stars never lowers your rank).</div>
     <h3>🐾 Pets around town</h3>${pets.join('')}
     <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt').map(farm).join('')}
     <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
     <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
     <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}`;
-  $('#catStars').textContent=`⭐ ${st} · 🪙 ${fCoins()}`;}
+  $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
 function closeCatalog(){catOpen=false;$('#catalog').classList.remove('show');}
 $('#catBtn').onclick=openCatalog;$('#catDone').onclick=closeCatalog;
@@ -497,7 +518,7 @@ function barnStep(p,dt){
   rideStep(dt);
   // the glowing horseshoe pad opens the barn
   {const [lx,lz]=BZ.toLocal(p.x,p.z),d=Math.hypot(lx-BZ.bpad.lx,lz-BZ.bpad.lz);if(d<BZ.bpad.r&&player.onGround&&!closetOpen&&!barnRide){if(!onFPad&&started){onFPad=true;openBarn();}}else if(d>1.3)onFPad=false;}
-  const inZ=Math.hypot(p.x-BZ.x,p.z-BZ.z)<BZ.r+1;if(inZ&&!barnZoneIn&&started&&!closetOpen&&!barnRide){setTimeout(()=>toast(Object.keys(BS.own).length?'Step on the glowing horseshoe to take care of your animals 🐴':'Step on the glowing horseshoe to adopt a barn animal 🐴'),1600);
+  const inZ=Math.hypot(p.x-BZ.x,p.z-BZ.z)<BZ.r+1;if(inZ&&!barnZoneIn&&started&&!closetOpen&&!barnRide){setTimeout(()=>toast(Object.keys(BS.own).length?'Step on the glowing horseshoe to take care of your animals 🐴':'Step on the glowing horseshoe to adopt farm animals and dinosaurs 🐴🦖'),1600);
     for(const k in BS.own){const n=farmNeed(k);if(n&&FA[k]){FA[k].speak(n);break;}}}barnZoneIn=inZ;}
 const fcam={p:new THREE.Vector3(),t:new THREE.Vector3(),dy:0},fWant=new THREE.Vector3(),fTgt=new THREE.Vector3();
 function barnCam(dt){const a=barnOpen?barnSel:zooOpen?zooSel:null;if(!a)return;const s=Math.max(.55,a.h);const yaw=a.Z.rot+a.face+.55,pitch=.22,d=1.25+s*(a.h>2?1.8:1.55);
