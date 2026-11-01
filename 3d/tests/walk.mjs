@@ -36,8 +36,11 @@ try {
   // never send test runs to the real error list
   await page.route(/gstatic\.com\/firebasejs|firestore\.googleapis\.com/, r => r.abort());
 
+  const t0 = Date.now();
   await page.goto(url, { waitUntil: 'load', timeout: 120_000 });
-  await page.waitForFunction(() => window.__game && window.__game.player, null, { timeout: 120_000 });
+  // wait for the loading screen to finish and the welcome card to show, like a player would
+  await page.waitForFunction(() => window.__game && document.querySelector('#welcome.show') && !document.querySelector('#loading:not(.done)'), null, { timeout: 120_000 });
+  console.log(`loading screen took ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   await page.evaluate(() => document.querySelector('#play').click());
   await page.waitForTimeout(1500);
 

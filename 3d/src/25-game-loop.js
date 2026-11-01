@@ -137,8 +137,14 @@ function showWorld(){renderer.setAnimationLoop(tick);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const l=$('#loading');if(l){l.classList.add('done');setTimeout(()=>l.remove(),600);}$('#welcome').classList.add('show');}));}
 // The glam-room mirror draws the world a second time into its own picture, and that picture needs its own set of
 // shaders. Build those now too, or the game freezes for a few seconds the first time the mirror comes into view.
-function warmUp(){scene.updateMatrixWorld(true);let c;try{c=renderer.compileAsync?renderer.compileAsync(scene,camera):null;
-    const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=renderer.compileAsync?renderer.compileAsync(scene,camera):null;renderer.setRenderTarget(null);if(c&&c2)c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
+// Like three's compileAsync, but a material that gets thrown away while its shader is still building is skipped.
+// three's own version crashes on that (only on phones and computers that build shaders in the background),
+// so the loading screen sat there for the full 25 seconds below.
+function compileWait(){const mats=renderer.compile(scene,camera);return new Promise(res=>{const check=()=>{
+    try{mats.forEach(m=>{const pr=renderer.properties.get(m).currentProgram;if(!pr||pr.isReady())mats.delete(m);});}catch(e){mats.clear();}
+    if(mats.size)setTimeout(check,10);else res();};setTimeout(check,10);});}
+function warmUp(){scene.updateMatrixWorld(true);let c;try{c=compileWait();
+    const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=compileWait();renderer.setRenderTarget(null);c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
   // never wait forever: if building the shaders takes too long, just start (the first frame finishes the job)
   Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
 // The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
