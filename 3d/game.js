@@ -673,6 +673,68 @@ function groundAt(x,z){let h=0;if(x*x+z*z<6.2*6.2)h=.15;
   return h;}
 function onDock(x,z){const b=Z.beach;const [lx,lz]=b.toLocal(x,z);return Math.abs(lx-b.dock.lx)<1&&lz<b.dock.lz0+.3&&lz>b.dock.lz1;}
 
+// ---- src/13b-doll-polish.js ----
+/* ================= POLISHED DOLL LOOK ================= */
+// Shared textures and shapes that give the people soft, detailed faces and silky hair:
+// shaded irises, a fan of curled lashes, thick tapered brows, sculpted glossy lips and hair strands.
+// Every texture here is made once and shared by everyone, so it costs no extra memory per person.
+
+// iris: the sphere is turned so its pole looks forward, so canvas rows are rings (pupil in the middle,
+// dark rim outside) and canvas columns go around the eye (left half of the canvas is the bottom of the eye).
+// It is white and grey, so the eye color tints it.
+let IRIS_TEX=null;
+function irisTex(){if(IRIS_TEX)return IRIS_TEX;IRIS_TEX=canvasTex(256,256,(x,w,h)=>{
+  for(let y=0;y<h;y++){const th=y/h*Math.PI,s=th<Math.PI/2?Math.sin(th):1;let c;
+    if(s<.4)c=8;else if(s<.47)c=8+(s-.4)/.07*150;else if(s<.84)c=255-(s-.47)/.37*95;else if(s<.93)c=160-(s-.84)/.09*120;else c=40;
+    x.fillStyle=`rgb(${c|0},${c|0},${c|0})`;x.fillRect(0,y,w,1);}
+  // little streaks around the iris
+  const r0=h*Math.asin(.47)/Math.PI,r1=h*Math.asin(.86)/Math.PI;
+  for(let i=0;i<220;i++){const u=Math.random()*w,a=Math.random();x.strokeStyle=a<.5?`rgba(255,255,255,${.25+Math.random()*.35})`:`rgba(40,30,30,${.12+Math.random()*.2})`;x.lineWidth=1+Math.random()*1.5;
+    x.beginPath();x.moveTo(u,r0+Math.random()*4);x.lineTo(u+(Math.random()-.5)*3,r1-Math.random()*8);x.stroke();}
+  // light comes in from below, the upper lid shades the top
+  let g=x.createLinearGradient(0,0,w,0);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.25,'rgba(255,255,255,.35)');g.addColorStop(.5,'rgba(255,255,255,0)');g.addColorStop(.75,'rgba(0,0,0,.45)');g.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=g;x.fillRect(0,r0,w,r1-r0);});IRIS_TEX.anisotropy=4;return IRIS_TEX;}
+function irisGeo(r){const g=new THREE.SphereGeometry(r,32,20);g.rotateX(Math.PI/2);return g;}
+
+// a fan of curled lashes along the upper lid (and a few under the outer corner), merged into one mesh.
+// rx, ry: the eye's half width and height; sx: which side (outer corner is at x = sx*rx); n, len: how many and how long
+function lashFan(rx,ry,sx,n,len,thick=1){const parts=[];
+  const one=(px,py,ang,L,curl,r)=>{const g=new THREE.ConeGeometry(r,L,4,3);g.translate(0,L/2,0);const p=g.attributes.position;
+    for(let i=0;i<p.count;i++){const t=p.getY(i)/L;p.setZ(i,p.getZ(i)+curl*L*t*t);}   // curl forward, like curled lashes
+    g.rotateZ(ang);g.translate(px,py,.003);parts.push(g);};
+  for(let i=0;i<n;i++){const f=(i+.5)/n,a=Math.PI*(sx>0?.06+f*.86:.94-f*.86);const px=Math.cos(a)*rx,py=Math.sin(a)*ry;
+    const out=Math.max(0,Math.cos(a)*sx);   // 0 at the inner corner side, 1 at the outer corner
+    const nx=Math.cos(a)/rx,ny=Math.sin(a)/ry;const ang=Math.atan2(-nx,ny)-sx*(.25+.35*out);
+    one(px,py,ang,len*(.55+.6*out)*(1+(i%2)*.12),.55,.0012*thick);
+    if(i%2&&out>.3)one(px,py,ang-sx*.18,len*(.5+.5*out),.5,.001*thick);}   // little clumps, fuller at the outer corner
+  for(let i=0;i<4;i++){const a=-Math.PI/2+sx*(.55+i*.22);const px=Math.cos(a)*rx*.98,py=Math.sin(a)*ry*.95;one(px,py,Math.atan2(-sx*.6,-1),len*.3,-.3,.0007*thick);}
+  const g=mergeGeometries(parts);parts.forEach(p=>p.dispose());g.computeVertexNormals();return g;}
+
+// a thick brow that tapers to a fine tail. pts: points in head space from the inner end to the tail
+function browGeo(pts,r0,r1,flat=.45){const c=new THREE.CatmullRomCurve3(pts),seg=24,rad=8,g=new THREE.TubeGeometry(c,seg,1,rad,false),p=g.attributes.position,v=new THREE.Vector3();
+  for(let i=0;i<=seg;i++){const t=i/seg,P=c.getPointAt(t);let R=r0+(r1-r0)*Math.pow(t,.9);if(t<.15)R*=.6+.4*Math.sin(t/.15*Math.PI/2);
+    for(let j=0;j<=rad;j++){const k=i*(rad+1)+j;v.set(p.getX(k),p.getY(k),p.getZ(k)).sub(P).multiplyScalar(R);v.z*=flat;v.add(P);p.setXYZ(k,v.x,v.y,v.z);}}
+  g.computeVertexNormals();return g;}
+
+// sculpted lips: a squashed sphere bent into a lip shape. Upper lips get a cupid's bow and a little dip in the middle
+// of the bottom edge; lower lips are fuller in the middle. z(x,y) is the face surface there.
+function lipGeo(upper,w,h,d,cy,z){const g=new THREE.SphereGeometry(1,40,20),p=g.attributes.position;
+  const zs=[];for(let i=0;i<=8;i++){const X=(i/8*2-1)*w;zs.push(z(X,cy));}const zAt=X=>{const f=(X/w+1)/2*8,i=Math.max(0,Math.min(7,Math.floor(f)));return zs[i]+(zs[i+1]-zs[i])*(f-i);};
+  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),zz=p.getZ(i);let Y,f;
+    if(upper){f=Math.max(.18,1-.62*x*x);Y=y*h*f;if(y>0)Y+=y*h*(.35*Math.exp(-(((Math.abs(x)-.3)/.2)**2))-.5*Math.exp(-((x/.12)**2)));else Y-=-y*h*.28*Math.exp(-((x/.28)**2));}
+    else{f=Math.max(.16,Math.pow(1-x*x,.7));Y=y*h*f;if(y<0)Y-=-y*h*.12*Math.exp(-((x/.4)**2));}
+    const X=x*w;p.setXYZ(i,X,cy+Y,zAt(X)-d*.55+zz*d*f-d*.9*x*x*x*x);}
+  g.computeVertexNormals();return g;}
+
+// silky hair: fine light and dark strands running along the hair (down the cylinders, from the crown on the cap)
+let HAIR_TEX=null;
+function hairTex(){if(HAIR_TEX)return HAIR_TEX;HAIR_TEX=canvasTex(512,256,(x,w,h)=>{x.fillStyle='#e6e6e6';x.fillRect(0,0,w,h);
+  for(let i=0;i<500;i++){const u=Math.random()*w,l=1+Math.random()*2.5;const d=Math.random();x.strokeStyle=d<.5?`rgba(255,255,255,${.08+Math.random()*.18})`:`rgba(60,60,60,${.05+Math.random()*.1})`;x.lineWidth=l;
+    x.beginPath();x.moveTo(u,0);x.bezierCurveTo(u+(Math.random()-.5)*6,h*.35,u+(Math.random()-.5)*6,h*.7,u+(Math.random()-.5)*4,h);x.stroke();}
+  // a soft shiny band, like light on silky hair
+  const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.22,'rgba(255,255,255,.18)');g.addColorStop(.32,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,w,h);});
+  HAIR_TEX.wrapS=HAIR_TEX.wrapT=THREE.RepeatWrapping;HAIR_TEX.repeat.set(2,1);return HAIR_TEX;}
+
 // ---- src/14-avatar.js ----
 /* ================= AVATAR ================= */
 // the 10 nail colors of a look ('c' = fingers, 't' = toes); old saves keep one color for all nails
@@ -713,7 +775,7 @@ const HIP=.82;
 function lookMat(color,kind='fabric'){const c=new THREE.Color(color);
   switch(kind){
     case 'skin':return new THREE.MeshPhysicalMaterial({color:c,roughness:.5,sheen:.6,sheenColor:new THREE.Color('#ffb0a0'),sheenRoughness:.6,clearcoat:.08});
-    case 'hair':return new THREE.MeshPhysicalMaterial({color:c,roughness:.38,sheen:1,sheenColor:c.clone().offsetHSL(0,0,.25),sheenRoughness:.3});
+    case 'hair':return new THREE.MeshPhysicalMaterial({color:c,map:hairTex(),bumpMap:hairTex(),bumpScale:.25,roughness:.38,sheen:1,sheenColor:c.clone().offsetHSL(0,0,.25),sheenRoughness:.3});
     case 'shiny':return new THREE.MeshPhysicalMaterial({color:c,roughness:.22,clearcoat:1,clearcoatRoughness:.08});
     case 'sparkle':return new THREE.MeshPhysicalMaterial({color:c,map:TEX.glitter,metalness:.55,roughness:.28,iridescence:.4,sheen:.5});
     case 'galaxy':{if(!TEX.galaxy){TEX.galaxy=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#000';x.fillRect(0,0,w,h);for(let i=0;i<260;i++){const r=Math.random();x.fillStyle=r<.15?'#ffe27a':r<.3?'#ffb3e6':'#ffffff';x.globalAlpha=.4+Math.random()*.6;const z=Math.random()<.9?1+Math.random()*1.6:3;x.beginPath();x.arc(Math.random()*w,Math.random()*h,z,0,7);x.fill();}
@@ -770,7 +832,7 @@ class Avatar{
     B(sph(.13,24,16),hips).scale.set(1.05,.75,.8);
     const spine=this.spine=new THREE.Group();hips.add(spine);
     const chest=B(new THREE.CapsuleGeometry(.12,.2,6,20),spine,0,.24,0);chest.scale.set(this.look.style!=='cute'?1.0:1.12,1,this.look.style!=='cute'?.74:.78);
-    B(this.look.style!=='cute'?cyl(.036,.044,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
+    B(this.look.style!=='cute'?cyl(.039,.047,.16,14):cyl(.042,.048,.14,14),spine,0,.52,0);
     const head=this.head=new THREE.Group();head.position.y=.68;spine.add(head);
     const glam=this.glam=this.look.style!=='cute';const HS=this.hs=glam?new THREE.Vector3(.9,1.06,.98):new THREE.Vector3(1,1.08,1);
     let surf;
@@ -779,7 +841,7 @@ class Avatar{
       surf=(x,y,off=0)=>{headRay.set(new THREE.Vector3(x,y,.5),new THREE.Vector3(0,0,-1));const h=headRay.intersectObject(tmp,false)[0];return (h?h.point.z:.1)+off;};}
     else{B(sph(.13,40,30),head).scale.copy(HS);surf=(x,y,off=0)=>HS.z*Math.sqrt(Math.max(0,.0169-(x/HS.x)**2-(y/HS.y)**2))+off;}
     for(const sx of [-1,1])B(sph(.025,10,8),head,sx*.127*HS.x,-.005,0).scale.set(.6,1,.8);
-    this.eyes=[];this.iris=new THREE.MeshPhysicalMaterial({color:this.look.eyes,roughness:.35,clearcoat:.6,clearcoatRoughness:.15});
+    this.eyes=[];this.iris=new THREE.MeshPhysicalMaterial({color:this.look.eyes,roughness:.3,clearcoat:.8,clearcoatRoughness:.1});
     const white=new THREE.MeshPhysicalMaterial({color:'#ffffff',roughness:.25,clearcoat:.6,emissive:'#ffffff',emissiveIntensity:.18}),dark=new THREE.MeshStandardMaterial({color:'#111',roughness:.2}),shine=new THREE.MeshBasicMaterial({color:'#ffffff'});
     const lash=this.lashM=new THREE.MeshStandardMaterial({color:'#2b1d16',roughness:.6});
     this.lipM=new THREE.MeshPhysicalMaterial({color:'#d77a86',roughness:.45,clearcoat:.3});this.linerM=new THREE.MeshPhysicalMaterial({color:'#c2185b',roughness:.5});this.lipLiner=[];
@@ -787,24 +849,26 @@ class Avatar{
     if(glam){
       // fashion-doll face: almond eyes tilted up, thick lash line with a wing, arched brows, small nose, full lips
       this.eyeR=[.036,.024];
-      this.browM=new THREE.MeshStandardMaterial({color:'#3a2618',roughness:.7});
+      this.browM=new THREE.MeshStandardMaterial({color:'#3a2618',roughness:.8});
+      const lidM=new THREE.MeshStandardMaterial({color:'#6b4a44',roughness:.8,transparent:true,opacity:.28,depthWrite:false}),lowM=new THREE.MeshStandardMaterial({color:'#7a5244',roughness:.7});
       const ES={almond:[1.22,.76,.12,.92],round:[1.1,.92,.04,.95],cat:[1.36,.64,.3,.9],doe:[1.18,.88,-.04,1.0]}[F.eyes]||[1.22,.76,.12,.92];
       for(const sx of [-1,1]){const eg=new THREE.Group();eg.position.set(sx*.044,.008,surf(.044,.008,-.011));eg.rotation.z=sx*ES[2];eg.rotation.y=sx*.2;eg.scale.setScalar(ES[3]);head.add(eg);
         M(sph(.03,24,16),white,0,0,0,eg,false).scale.set(ES[0],ES[1],.5);
-        M(sph(.0185,20,14),this.iris,0,-.001,.0085,eg,false).scale.set(1,1,.45);
-        const ring=M(new THREE.TorusGeometry(.0172,.0022,8,28),dark,0,-.001,.0122,eg,false);ring.material=new THREE.MeshStandardMaterial({color:'#2a1a12',roughness:.4,transparent:true,opacity:.55});
-        M(sph(.0088,14,10),dark,0,-.001,.0135,eg,false).scale.set(1,1,.4);
-        M(sph(.0028,8,6),shine,.0065,.0065,.0172,eg,false);M(sph(.0014,8,6),shine,-.006,-.007,.016,eg,false);
-        const up=M(new THREE.TorusGeometry(.03,.0042,8,28,Math.PI),lash,0,.0005,.0035,eg,false);up.scale.set(ES[0],ES[1]*1.03,1);
-        const wing=M(new THREE.CapsuleGeometry(.0028,F.eyes==='cat'?.018:.012,4,8),lash,sx*.0325*ES[0],.006,.0035,eg,false);wing.rotation.z=-sx*1.0;
-        const low=M(new THREE.TorusGeometry(.03,.0016,6,24,Math.PI),new THREE.MeshStandardMaterial({color:'#5a3a2a',roughness:.7}),0,-.001,.003,eg,false);low.scale.set(ES[0]*.98,ES[1],1);low.rotation.z=Math.PI;
+        // a big shaded iris (pupil, streaks and dark rim are in the texture), tucked a little under the upper lid
+        this.iris.map=irisTex();M(irisGeo(.0205),this.iris,0,-.0025,.0075,eg,false).scale.set(1,1,.45);
+        M(sph(.0032,8,6),shine,.0072,.0055,.0168,eg,false);M(sph(.0015,8,6),shine,-.0068,-.0085,.0158,eg,false);
+        // soft lid shadow on the top of the eye white, a thick lash line with a little flick, and a soft lower lid
+        M(new THREE.SphereGeometry(.03,24,10,0,Math.PI*2,0,1.05),lidM,0,0,0,eg,false).scale.set(ES[0]*1.01,ES[1]*1.01,.51);
+        const up=M(new THREE.TorusGeometry(.03,.0048,8,32,Math.PI),lash,0,.0005,.0035,eg,false);up.scale.set(ES[0],ES[1]*1.05,1);
+        const wing=M(new THREE.CapsuleGeometry(.0026,F.eyes==='cat'?.016:.009,4,8),lash,sx*.0315*ES[0],.0045,.0035,eg,false);wing.rotation.z=-sx*1.15;
+        const low=M(new THREE.TorusGeometry(.03,.0014,6,24,Math.PI),lowM,0,-.001,.003,eg,false);low.scale.set(ES[0]*.98,ES[1],1);low.rotation.z=Math.PI;
         eg.userData.sx=sx;eg.userData.rx=.03*ES[0];eg.userData.ry=.03*ES[1];this.eyes.push(eg);
-        const pts=[[.016,.047],[.036,.057],[.055,.0595],[.074,.052],[.085,.043]].map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0025)));
-        const tube=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),20,.0024,6,false);const tp=tube.attributes.position;
-        M(tube,this.browM,0,0,0,head,false);}
+        const pts=[[.013,.045],[.03,.0535],[.05,.0585],[.069,.0565],[.085,.0475]].map(([x,y])=>new THREE.Vector3(sx*x,y,surf(x,y,.0022)));
+        M(browGeo(pts,.0046,.0015),this.browM,0,0,0,head,false);}
       const LS={full:[1,1,1],heart:[.85,1.05,1.2],soft:[1.12,.8,.82],pout:[.92,1.2,1.15]}[F.lips]||[1,1,1];
-      const ux=.0072*LS[0];lip(.0135,-ux,-.0525,surf(ux,-.0525,-.0052),1.18*LS[0],.44*LS[1],.5,.13);lip(.0135,ux,-.0525,surf(ux,-.0525,-.0052),1.18*LS[0],.44*LS[1],.5,-.13);
-      lip(.019,0,-.0638,surf(0,-.0638,-.0072),1.1*LS[0],.5*LS[2],.55);
+      // full, glossy, sculpted lips: an upper lip with a cupid's bow and a fuller lower lip
+      const W=.031*LS[0];for(const [up,h,d,cy] of [[true,.0078*LS[1],.007,-.0528],[false,.0108*LS[2],.0098,-.065]]){const geo=lipGeo(up,W,h,d,cy,(x,y)=>surf(x,y));
+        M(geo,this.lipM,0,0,0,head,false);const l=M(geo,this.linerM,0,-cy*.04,-.0012,head,false);l.scale.set(1.07,1.04,1);l.visible=false;this.lipLiner.push(l);}
     }else{
       this.eyeR=[.03,.034];
       B(sph(.013,10,8),head,0,-.028,.13);
@@ -997,10 +1061,13 @@ class Avatar{
         for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
-      this.lipM.color.set(mk.lips||(this.glam?'#c96f7c':'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
+      this.lipM.color.set(mk.lips||(this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
       this.lipLiner.forEach(l=>{l.visible=!!mk.lipLiner;});if(mk.lipLiner)this.linerM.color.set(mk.lipLiner);
       this.lashM.color.set(mk.lashes==='bold'?'#0d0a0a':'#2b1d16');
-      if(mk.lashes==='long'||mk.lashes==='bold'){const n=mk.lashes==='bold'?8:6,h=mk.lashes==='bold'?.014:.01;const lg=new THREE.ConeGeometry(.0014,h,4);
+      // glam faces always get a fan of curled lashes; mascara makes them longer and darker
+      if(this.glam){const L=mk.lashes==='bold'?[15,.017,1.8]:mk.lashes==='long'?[13,.014,1.5]:[11,.011,1.3];
+        for(const eg of this.eyes){const m=P(lashFan(eg.userData.rx,eg.userData.ry*1.04,eg.userData.sx,L[0],L[1],L[2]),this.lashM,eg,0,.0005,0);m.castShadow=false;}}
+      else if(mk.lashes==='long'||mk.lashes==='bold'){const n=mk.lashes==='bold'?8:6,h=mk.lashes==='bold'?.014:.01;const lg=new THREE.ConeGeometry(.0014,h,4);
         for(const eg of this.eyes){const sx=eg.userData.sx;for(let i=0;i<n;i++){const a=.25+i/(n-1)*(Math.PI-.5);const m=P(lg.clone(),this.lashM,eg,Math.cos(a)*eg.userData.rx,.002+Math.sin(a)*eg.userData.ry,.006);m.rotation.z=a-Math.PI/2+sx*.15*(Math.cos(a));m.rotation.x=.5;m.castShadow=false;}}}
       if(this.glam&&mk.liner&&mk.liner!=='none'){const lm=new THREE.MeshStandardMaterial({color:mk.linerC||'#2b1d16',roughness:.55});this.mats.push(lm);const tk=mk.liner==='thin'?.0055:.0072;
         for(const eg of this.eyes){const sx=eg.userData.sx;const t=P(new THREE.TorusGeometry(.0305,tk,8,28,Math.PI),lm,eg,0,.001,.003);t.scale.set(eg.userData.rx/.03,eg.userData.ry/.03*1.05,.6);t.castShadow=false;
@@ -1013,13 +1080,17 @@ class Avatar{
     const at=(a,b,c)=>faceXY(a,b,c,W,this.hs);
     if(this.glam){const soft=(px,py,rx,ry,col,a)=>{x.save();x.translate(px,py);x.scale(1,ry/rx);const g=x.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);x.fillStyle=g;x.beginPath();x.arc(0,0,rx,0,Math.PI*2);x.fill();x.restore();};
       for(const sx of [-1,1]){let [px,py]=at(sx*.07,-.045,.09);soft(px,py,120*k,55*k,'120,70,50',.16);[px,py]=at(sx*.062,-.014,.105);soft(px,py,70*k,40*k,'255,245,235',.28);
-        if(!mk.shadow){[px,py]=at(sx*.046,.03,.115);soft(px,py,120*k,60*k,'190,120,110',.35);}
-}
-      const [nx,ny]=at(0,-.01,.13);soft(nx,ny,22*k,70*k,'255,250,240',.3);
+        // soft sculpting: cheekbone contour, a warm crease above the eye, deeper at the outer corner, and a soft lower lid
+        [px,py]=at(sx*.088,-.05,.08);soft(px,py,120*k,38*k,'150,80,60',.2);
+        if(!mk.shadow){[px,py]=at(sx*.046,.03,.115);soft(px,py,125*k,58*k,'175,100,100',.42);[px,py]=at(sx*.074,.016,.1);soft(px,py,55*k,45*k,'120,62,62',.32);}
+        [px,py]=at(sx*.05,-.022,.115);soft(px,py,80*k,22*k,'150,90,90',.22);}
+      const [nx,ny]=at(0,-.01,.13);soft(nx,ny,18*k,60*k,'255,250,240',.18);
       for(const sx of [-1,1]){let [px,py]=at(sx*.013,-.018,.12);soft(px,py,16*k,70*k,'130,80,60',.2);[px,py]=at(sx*.011,-.036,.12);soft(px,py,16*k,12*k,'110,60,50',.28);}
       let [px,py]=at(0,-.04,.12);soft(px,py,30*k,10*k,'110,60,50',.3);[px,py]=at(0,-.031,.14);soft(px,py,12*k,10*k,'255,255,250',.4);
       [px,py]=at(0,-.072,.115);soft(px,py,40*k,12*k,'120,70,55',.22);[px,py]=at(0,-.084,.11);soft(px,py,30*k,16*k,'255,245,235',.18);}
-    if(mk.blush&&BLUSH[mk.blush])for(const sx of [-1,1]){const [cx,cy]=at(sx*.072,-.03,.1);const g=x.createRadialGradient(cx,cy,0,cx,cy,95*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},.42)`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,95*k,80*k,0,0,Math.PI*2);x.fill();}
+    if(mk.blush&&BLUSH[mk.blush]){const R=this.glam?115:95,A=this.glam?.5:.42;for(const sx of [-1,1]){const [cx,cy]=at(sx*.07,this.glam?-.026:-.03,.1);const g=x.createRadialGradient(cx,cy,0,cx,cy,R*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},${A})`);g.addColorStop(.6,`rgba(${BLUSH[mk.blush]},${A*.45})`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,R*k,R*.75*k,0,0,Math.PI*2);x.fill();}
+      // glam blush sweeps lightly over the nose too
+      if(this.glam){const [cx,cy]=at(0,-.018,.13);const g=x.createRadialGradient(cx,cy,0,cx,cy,70*k);g.addColorStop(0,`rgba(${BLUSH[mk.blush]},.22)`);g.addColorStop(1,`rgba(${BLUSH[mk.blush]},0)`);x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,70*k,35*k,0,0,Math.PI*2);x.fill();}}
     if(mk.shadow)for(const sx of [-1,1]){const [cx,cy]=at(sx*.047,.028,.115);x.save();x.translate(cx,cy);x.scale(1,.55);const g=x.createRadialGradient(0,0,0,0,0,155*k);const rgb2=rgbOf(mk.shadow);
       g.addColorStop(0,`rgba(${rgb2},.85)`);g.addColorStop(.55,`rgba(${rgb2},.55)`);g.addColorStop(1,`rgba(${rgb2},0)`);x.fillStyle=g;x.beginPath();x.arc(0,0,155*k,0,Math.PI*2);x.fill();x.restore();}
     if(!this.glam&&mk.liner&&mk.liner!=='none'){x.strokeStyle=mk.linerC||'#2b1d16';x.lineCap='round';x.lineJoin='round';x.lineWidth=(mk.liner==='thin'?7:12)*k;
@@ -1272,6 +1343,8 @@ const FAMILY_DOGS=['Titus','Artemis'];
 const FAMILY_SQUIRREL='Tiereyn';
 // the monkey and the hedgehog: change these names to rename them in the game
 const EXOTIC_NAMES=['Mango','Spike'];
+// eye colors for the cartoon pets
+const PET_EYE={cat:'#8cbf3f',dog:'#7a4a22',squirrel:'#4a2c18',bunny:'#6a4030'};
 const PET_DIM={cat:{r:.1,len:.24,leg:.17,head:.095},dog:{r:.12,len:.28,leg:.2,head:.11},squirrel:{r:.075,len:.1,leg:.07,head:.072},bunny:{r:.1,len:.08,leg:.06,head:.085}};
 const PET_SAY={cat:['Meow! 🐱','Purrr… 💖','Mrrow?'],dog:['Woof woof! 🐶','Arf! 💖','*happy wiggle*'],squirrel:['Chitter chatter! 🌰','Squeak!','Got any acorns?'],monkey:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌'],hedgehog:['*sniff sniff* 🦔','Squeak!','*happy huff*'],bunny:['*nose wiggle* 🐰','Hop hop! 💖','Squeak!']};
 // realistic body sizes for the family's own pets (built by Pet.buildReal)
@@ -1314,7 +1387,11 @@ class Pet{
     if(o.brows)for(const sx of [-1,1])M(sph(H*.1,10,8),light,sx*H*.36,H*.42,H*.86,head).scale.set(1.2,.7,.6);
     const mz=kind==='dog'?1.25:1;M(sph(H*.48,16,12),light,0,-H*.32,H*.78,head).scale.set(1.25,.85,mz);
     M(sph(H*.13,10,8),kind==='dog'?eyeM:pink,0,-H*.18,H*1.18*(kind==='dog'?1.08:.98),head).scale.set(1.3,.9,1);
-    for(const sx of [-1,1]){M(sph(H*.16,14,10),eyeM,sx*H*.42,H*.12,H*.82,head);M(sph(H*.045,8,6),shine,sx*H*.42+H*.04,H*.18,H*.97,head,false);}
+    // big shiny cartoon eyes with a colored iris, two sparkles, and soft pink cheeks
+    const irisM=phys(o.eye||PET_EYE[kind]||'#5a3a2a',{map:irisTex(),roughness:.1,clearcoat:1,clearcoatRoughness:.05}),blushM=new THREE.MeshBasicMaterial({color:'#ff8fb0',transparent:true,opacity:.4,depthWrite:false});
+    for(const sx of [-1,1]){const e=M(irisGeo(H*.17),irisM,sx*H*.4,H*.1,H*.8,head);e.rotation.y=sx*.35;e.scale.z=.75;
+      M(sph(H*.05,8,6),shine,sx*H*.4+H*.05,H*.18,H*.96,head,false);M(sph(H*.024,8,6),shine,sx*H*.4-H*.04,H*.03,H*.95,head,false);
+      M(sph(H*.15,12,8),blushM,sx*H*.56,-H*.16,H*.76,head,false,false).scale.set(1,.6,.35);}
     for(const sx of [-1,1]){
       if(kind==='cat'){const e=M(new THREE.ConeGeometry(H*.36,H*.62,12),fur,sx*H*.55,H*.82,-H*.05,head);e.rotation.z=-sx*.3;e.scale.z=.55;const i=M(new THREE.ConeGeometry(H*.22,H*.4,12),pink,sx*H*.53,H*.78,H*.05,head);i.rotation.z=-sx*.3;i.scale.z=.3;}
       if(kind==='dog'){const e=M(sph(H*.42,14,10),phys(o.ear||furC.clone().multiplyScalar(.7),{roughness:.95,sheen:1}),sx*H*.88,-H*.05,-H*.05,head);e.scale.set(.42,o.fluffy?1.45:1.15,.85);e.rotation.z=sx*.25;if(o.fluffy)e.position.y-=H*.12;}
@@ -2716,7 +2793,7 @@ function closeGlam(){if(!glamOpen)return;hideHTool();glamOpen=false;closetOpen=f
   did('glam');if(Date.now()-(SAVE.glamPaid||0)>6e5){SAVE.glamPaid=Date.now();persist();setTimeout(()=>earn(5,'Glam time!'),700);}
   toast('Looking fabulous! ✨ Now try the 🏆 model contest!');}
 function glamCam(dt){if(!glamOpen||ctab==='makeup')return;const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
-  if(ctab==='hair'){T=hTool==='braid'?braidLook():av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=player.face+hairView;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
+  if(ctab==='hair'){T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=player.face+hairView;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
   else if(nailCamAt(ctab==='nails'?'c':'t',fwd)){T=nailCamT;Pp=nailCamP;}
   else if(ctab==='nails'){player.face=agFace(-1,0);T=av.arms[0].hand.getWorldPosition(new THREE.Vector3()).add(av.arms[1].hand.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);Pp=T.clone().addScaledVector(fwd,.2).add(new THREE.Vector3(0,.27,0));}
   else{player.face=agFace(0,1);T=av.legs[0].an.getWorldPosition(new THREE.Vector3()).add(av.legs[1].an.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).addScaledVector(fwd,.1);Pp=T.clone().addScaledVector(fwd,.12).add(new THREE.Vector3(0,.36,0));}
@@ -2731,14 +2808,14 @@ function glamClick(b){const L=SAVE.look;if(beautyClick(b))return true;
 
 /* ---------- hands-on beauty: style hair and put on makeup with your finger ---------- */
 const HTOOLS=[['brush','🪮','Brush','Brush down the hair to make it smooth, straight and shiny.'],['straight','🔥','Straightener','Glide the flat iron down the hair to make it super straight and shiny.'],['curl','🌀','Curling iron','Rub the curling iron on the hair to curl it. Rub more for big curls!'],['cut','✂️','Scissors','Drag the scissors over the hair to cut it shorter. Long hair turns into a bob, then short.'],
-  ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['braid','🪢','Braid','Drag the glowing strand over the middle one. Left, then right, back and forth, just like real braiding!'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
+  ['grow','🌱','Grow','Rub on the magic grow cream to make the hair longer.'],['dry','💨','Blow-dryer','Blow-dry the hair for big, fluffy volume.'],['spray','🎨','Color spray','Pick a color, then spray it on the hair.'],['braid','🪢','Braid','Tap her hair to start braiding. Drag the glowing strand over the middle one, left then right, back and forth!'],['clip','🎀','Clips','Tap the hair to put a clip on it. Tap the clip button again to take them all off.']];
 const MTOOLS=[['lips','💄','Lipstick','Rub on the lips.'],['gloss','✨','Gloss','Rub on the lips to make them shiny.'],['shadow','👁️','Eyeshadow','Rub on the eyelids.'],['liner','✏️','Eyeliner','Swipe across the eyes.'],['lashes','🪶','Mascara','Brush the lashes. Each swipe makes them longer.'],
   ['blush','🌸','Blush','Rub on the cheeks.'],['gems','💎','Face gems','Tap beside the eyes.'],['paint','🖌️','Paint','Draw anything on the face.']];
 let hairView=.75,hTool='brush',mTool='lips',sprayC='#ff7eb6',clipC='#ff6fae',hstroke=null,mstroke=null;const MKC={lips:MK_LIPS,gloss:null,shadow:MK_SHADOW,liner:['#2b1d16','#000000','#6a3df0','#3a5bd9','#2fd1c5','#d4af37','#ff3b6b'],lashes:null,blush:[['pink','#ff8fb0'],['peach','#ffab85'],['rose','#dc6080']],gems:null};
 let mkColor={lips:'#ff3b6b',shadow:'#b388ff',liner:'#2b1d16',blush:'pink'};
 const meter=(n,v)=>`<div class="meter"><span>${n}</span><i><b style="width:${Math.round(v*100)}%"></b></i></div>`;
 function hairHTML(){const H=SAVE.look.hair,t=HTOOLS.find(x=>x[0]===hTool);
-  let h=`<div class="chips tools">${HTOOLS.map(([id,e,n])=>`<button class="${hTool===id?'on':''}" data-htool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${hTool==='braid'&&braidP>=BRAID_N?'Beautiful braid! Tie it off with a bow.':hTool==='braid'?`Drag the glowing ${brSideName()} strand over the middle one. Left, then right, back and forth!`:t[3]}</p>${hTool==='braid'?`<div class="hmeters">${meter('Braid',braidP/BRAID_N)}</div><div class="chips">${braidP>=BRAID_N?'<button data-braid="tie">🎀 Tie it off!</button>':''}${braidP?'<button data-braid="redo">↩️ Start the braid over</button>':''}</div>`:''}<div class="chips"><button data-hview="1.2">⬅️ Her right side</button><button data-hview="0">🙂 Front</button><button data-hview="-1.2">➡️ Her left side</button><button data-hview="3.14">🔙 Back</button></div>`;
+  let h=`<div class="chips tools">${HTOOLS.map(([id,e,n])=>`<button class="${hTool===id?'on':''}" data-htool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${t[3]}</p><div class="chips"><button data-hview="1.2">⬅️ Her right side</button><button data-hview="0">🙂 Front</button><button data-hview="-1.2">➡️ Her left side</button><button data-hview="3.14">🔙 Back</button></div>`;
   h+=`<div class="hmeters">${meter('Length',((H.len||1)-.35)/.95)}${meter('Curls',H.curl||0)}${meter('Volume',H.vol||0)}</div>`;
   if(hTool==='spray')h+=`<h3>Spray color</h3><div class="swatches">${myColors(HAIRC.concat(['#ffd23f','#7ee081','#ff3b6b'])).map(c=>`<button class="sw${c===sprayC?' on':''}" style="background:${c}" data-spray="${c}"></button>`).join('')}</div>`;
   if(hTool==='clip')h+=`<h3>Clip color</h3><div class="swatches">${['#ff6fae','#ffd23f','#4fb6ff','#b388ff','#ffffff','#7ee081','#d4af37'].map(c=>`<button class="sw${c===clipC?' on':''}" style="background:${c}" data-clipc="${c}"></button>`).join('')}</div><div class="chips" style="margin-top:8px"><button data-hreset="clips">🧹 Take clips off</button></div>`;
@@ -2756,7 +2833,6 @@ function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute')return '';
   return FACEOPT.filter(([k])=>k!=='nose').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
 function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
   if(b.dataset.htool){hTool=b.dataset.htool;if(hTool==='clip'&&!b.classList.contains('on')){}else if(hTool==='clip'){}sfx('pop');renderCloset();return true;}
-  if(b.dataset.braid){if(b.dataset.braid==='tie')tieBraid();else{resetBraid();sfx('pop');}renderCloset();return true;}
   if(b.dataset.hview){hairView=+b.dataset.hview;sfx('pop');return true;}
   if(b.dataset.spray){sprayC=b.dataset.spray;sfx('pop');renderCloset();return true;}
   if(b.dataset.clipc){clipC=b.dataset.clipc;sfx('pop');renderCloset();return true;}
@@ -2768,7 +2844,7 @@ function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;
 // hair strokes
 function hairHit(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);return ray.intersectObjects(av.hairMeshes||[],false)[0]||null;}
 let hairDirty=0;
-function hairStroke(e,first){if(hTool==='braid')return braidPtr(e,first);const h=hairHit(e);if(!h)return false;if(hTool!=='clip'){showHTool(h.point);hwRoot=h.point.clone();}const H=SAVE.look.hair,P=h.point;if(!hstroke.ld&&['curl','straight','brush','dry','grow'].includes(hTool)&&!['long','waves'].includes(H.id)&&!(hTool==='grow'&&['bob','pixie'].includes(H.id))){H.id=H.curl>.45||hTool==='curl'?'waves':'long';H.len=1;hairDirty=1;toast('💁‍♀️ Let her hair down so you can style it!');}if(!hstroke.ld&&hTool==='cut'&&!['long','waves','bob','pixie'].includes(H.id)){H.id='long';H.len=1;hairDirty=1;}hstroke.ld=1;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
+function hairStroke(e,first){if(hTool==='braid'){if(first&&hairHit(e))openBraid();return true;}const h=hairHit(e);if(!h)return false;if(hTool!=='clip'){showHTool(h.point);hwRoot=h.point.clone();}const H=SAVE.look.hair,P=h.point;if(!hstroke.ld&&['curl','straight','brush','dry','grow'].includes(hTool)&&!['long','waves'].includes(H.id)&&!(hTool==='grow'&&['bob','pixie'].includes(H.id))){H.id=H.curl>.45||hTool==='curl'?'waves':'long';H.len=1;hairDirty=1;toast('💁‍♀️ Let her hair down so you can style it!');}if(!hstroke.ld&&hTool==='cut'&&!['long','waves','bob','pixie'].includes(H.id)){H.id='long';H.len=1;hairDirty=1;}hstroke.ld=1;const d=first?0:Math.hypot(e.clientX-hstroke.x,e.clientY-hstroke.y);hstroke.x=e.clientX;hstroke.y=e.clientY;hstroke.go+=d;
   const k=d*.0016,cl=v=>Math.min(1,Math.max(0,v));let fx='#ffffff';
   if(hTool==='straight'){H.curl=cl((H.curl||0)-k*2.4);H.vol=cl((H.vol||0)-k*.8);if(hstroke.go>90&&!H.shine){H.shine=true;toast('✨ Sleek and shiny!');}fx='#ffe0b0';if(d&&Math.random()<.25)tone(220,.1,'sine',.025,0,180);}
   else if(hTool==='brush'){H.curl=cl((H.curl||0)-k*1.3);H.vol=cl((H.vol||0)-k*.4);if(hstroke.go>140&&!H.shine){H.shine=true;toast('✨ So shiny!');}if(d)sfx('brush');}
@@ -2840,73 +2916,64 @@ function wrapStrands(t){hwrap.children.forEach(o=>o.geometry.dispose());hwrap.cl
   else {hwrap.visible=false;}}
 anims.push((t)=>wrapStrands(t));
 
-/* braid it yourself, like the 2D salon: grab the glowing outside strand and drag it over the middle one, left then right, back and forth */
-const braidG=new THREE.Group();braidG.matrixAutoUpdate=false;scene.add(braidG);
-const BRAID_N=8,BR_STEP=.032,BR_SP=.045,BR_LOOSE=.24,BR_R=.012;
-const brMat=[0,1,2].map(()=>new THREE.MeshStandardMaterial({roughness:.5,metalness:.04}));
-const brGlow=new THREE.MeshBasicMaterial({color:'#ffd23f',transparent:true,opacity:.45,depthWrite:false});
-const brLobeG=new THREE.SphereGeometry(1,14,10);
-let braidP=0,braidSide=1,braidOrder=[0,1,2],braidLobes=[],braidDrag=null,braidDirty=1,braidCol='';
-// the strands hang beside her face and fan out sideways as you look at them (brLat points to your right, brFwd toward you)
-const brLat=new THREE.Vector3(1,0,0),brFwd=new THREE.Vector3(0,0,1),BR_Y0=-.03,brYB=()=>BR_Y0-braidP*BR_STEP;
-const brBase=()=>new THREE.Vector3(braidSide*.15,0,.03).addScaledVector(brFwd,.035);
-const brAt=(lat,y)=>brBase().addScaledVector(brLat,lat).setY(y);
-const brTop=s=>brAt((s-1)*BR_SP*.3,brYB());
-const brEnd=s=>brAt((s-1)*BR_SP,brYB()-BR_LOOSE);
-const brExpect=()=>braidP%2?2:0,brSideName=()=>braidP%2?'right':'left';
-function brCurve(s){const a=brTop(s),d=braidDrag&&braidDrag.slot===s,e=d?braidDrag.end.clone():brEnd(s);
-  // a strand being carried over the middle lifts toward you, so it really goes over the top
-  const m=a.clone().lerp(e,.5);if(d)m.add(braidDrag.lift);else m.x+=(s-1)*BR_SP*.15;
-  return new THREE.CatmullRomCurve3([a,a.clone().lerp(m,.5),m,e]);}
-function resetBraid(){braidP=0;braidOrder=[0,1,2];braidLobes=[];braidDrag=null;braidDirty=1;}
-function buildBraid(){braidG.children.forEach(o=>{if(o.geometry!==brLobeG)o.geometry.dispose();});braidG.clear();braidDirty=0;
-  const done=braidP>=BRAID_N;
-  // the woven part: one plump lobe per crossing, leaning left then right like a real three-strand braid
-  braidLobes.forEach((ci,i)=>{const lean=i%2?1:-1,o=new THREE.Mesh(brLobeG,brMat[ci]);o.scale.set(.026,.03,.015);o.position.copy(brAt(lean*.007,BR_Y0-(i+.55)*BR_STEP));o.rotation.set(0,Math.atan2(brFwd.x,brFwd.z),lean*.6,'YXZ');braidG.add(o);});
-  if(done){// a little tail with a bow band, ready to tie
-    const yb=brYB();for(let s=0;s<3;s++){const ci=braidOrder[s],c=new THREE.CatmullRomCurve3([brAt((s-1)*.006,yb+.006),brAt((s-1)*.018,yb-.06)]);braidG.add(new THREE.Mesh(new THREE.TubeGeometry(c,6,BR_R*.8,6,false),brMat[ci]));}
-    return;}
-  for(let s=0;s<3;s++){const cv=brCurve(s),ci=braidOrder[s];
-    braidG.add(new THREE.Mesh(new THREE.TubeGeometry(cv,24,BR_R,8,false),brMat[ci]));
-    if(s===brExpect()&&!braidDrag){const g=new THREE.Mesh(new THREE.TubeGeometry(cv,24,BR_R*1.9,8,false),brGlow);g.renderOrder=2;braidG.add(g);}}}
-anims.push((t)=>{if(!glamOpen||hTool!=='braid'||ctab!=='hair'){braidG.visible=false;braidDrag=null;return;}
-  braidG.visible=true;av.head.updateWorldMatrix(true,false);braidG.matrix.copy(av.head.matrixWorld);braidG.matrixWorldNeedsUpdate=true;braidG.updateMatrixWorld(true);
-  if(!braidDrag){const f=camera.position.clone().applyMatrix4(braidG.matrixWorld.clone().invert()).sub(brBase()).setY(0);
-    if(f.lengthSq()>1e-6){f.normalize();if(f.distanceTo(brFwd)>.02){brFwd.copy(f);brLat.set(f.z,0,-f.x);braidDirty=1;}}}
-  const c=SAVE.look.hair.c;if(c!==braidCol){braidCol=c;const cs=c==='rainbow'?['#ff6fae','#ffd23f','#4fb6ff']:[0,1,2].map(i=>'#'+new THREE.Color(c).offsetHSL(0,0,[.15,0,-.1][i]).getHexString());brMat.forEach((m,i)=>m.color.set(cs[i]));}
-  brGlow.opacity=.25+.25*Math.sin(t*5);if(braidDirty)buildBraid();});
-// while braiding, the camera follows the loose strands down so they stay above the panel
-const braidLook=()=>{const h=av.head.getWorldPosition(new THREE.Vector3());if(!braidG.visible)return h.add(new THREE.Vector3(0,.02,0));const done=braidP>=BRAID_N,b=brAt(0,done?BR_Y0-BRAID_N*BR_STEP*.4:brYB()-BR_LOOSE*.4).applyMatrix4(braidG.matrixWorld);return h.lerp(b,done?.55:.8);};
-const brScr=v=>{const p=v.clone().applyMatrix4(braidG.matrixWorld).project(camera);return [(p.x+1)/2*innerWidth,(1-p.y)/2*innerHeight];};
-function brPick(e){let best=-1,bd=1e9;for(let s=0;s<3;s++){const cv=brCurve(s);for(let i=2;i<=10;i++){const [x,y]=brScr(cv.getPoint(i/10)),d=Math.hypot(e.clientX-x,e.clientY-y);if(d<bd){bd=d;best=s;}}}return bd<44?best:-1;}
-function brDragTo(e){ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,camera);
-  const P0=brEnd(1).applyMatrix4(braidG.matrixWorld),n=camera.getWorldDirection(new THREE.Vector3()),hit=new THREE.Vector3();
-  if(!ray.ray.intersectPlane(new THREE.Plane().setFromNormalAndCoplanarPoint(n,P0),hit))return;
-  const lp=hit.applyMatrix4(braidG.matrixWorld.clone().invert());lp.y=Math.min(lp.y,brYB()-.05);braidDrag.end.copy(lp);braidDirty=1;}
-// pointer down/move while the braid tool is out
-function braidPtr(e,first){if(!first){if(braidDrag)brDragTo(e);return true;}
-  if(braidP>=BRAID_N){toast('🎀 Tap “Tie it off” to finish your braid');return true;}
-  braidG.updateMatrixWorld(true);const s=brPick(e);
-  if(s<0){if(braidP===0){const h=hairHit(e);if(h){const lp=av.head.worldToLocal(h.point.clone()),sd=lp.x<0?-1:1;if(sd!==braidSide){braidSide=sd;braidDirty=1;}toast('🪢 Grab the glowing strand and drag it over the middle one!');}}return true;}
-  if(s===1){toast('✋ Grab an outside strand');return true;}
-  if(s!==brExpect()){toast(`✨ Now it's the glowing ${brSideName()} strand`);return true;}
-  const cam=camera.position.clone().applyMatrix4(braidG.matrixWorld.clone().invert()),mid=brEnd(1);
-  braidDrag={slot:s,end:brEnd(s),lift:cam.sub(mid).normalize().multiplyScalar(.018),start:brScr(brEnd(s)),mid:brScr(mid)};brDragTo(e);sfx('pop');return true;}
-function braidRelease(e){if(!braidDrag)return;const d=braidDrag,[sx,sy]=d.start,[mx,my]=d.mid,vx=mx-sx,vy=my-sy,L2=vx*vx+vy*vy||1;
-  const k=((e.clientX-sx)*vx+(e.clientY-sy)*vy)/L2;braidDrag=null;braidDirty=1;
-  if(k<.7){toast('👉 Pull it all the way over the middle strand');return;}
-  const s=d.slot;[braidOrder[s],braidOrder[1]]=[braidOrder[1],braidOrder[s]];braidLobes.push(braidOrder[1]);braidP++;tone(500+braidP*60,.09,'triangle',.08);
-  if(braidP>=BRAID_N){sfx('tada');toast('🪢 Beautiful braid! Now tie it off 🎀');}
-  else toast(`🪢 ${braidP}/${BRAID_N}! Now the ${brSideName()} strand over the middle`);}
-function tieBraid(){if(braidP<BRAID_N)return;const P=brAt(0,brYB()).applyMatrix4(braidG.matrixWorld);burst(P,'#ffd6ea',20,1,.07);
-  const H=SAVE.look.hair;H.id='sidebraid';H.len=1;resetBraid();hTool='brush';persist();hairDirty=1;toast('🪢 You braided it yourself!');did('braid');sfx('tada');}
+/* braid it yourself: the same braiding game as the 2D salon. Tap her hair with the braid tool and a big close-up opens:
+   drag the glowing outside strand over the middle one, left then right, back and forth, then tie it off with a bow */
+const BR={k:0,order:[0,1,2],need:8,drag:null,cols:[]};const BX=[112,150,188];
+const braidSvg=$('#braidSvg');
+function openBraid(){const c=SAVE.look.hair.c,sh=(v)=>'#'+new THREE.Color(c).lerp(new THREE.Color(v>0?'#ffffff':'#000000'),Math.abs(v)).getHexString();
+  BR.k=0;BR.order=[0,1,2];BR.drag=null;BR.cols=c==='rainbow'?['#ff6fae','#ffd23f','#4fb6ff']:[sh(.18),c,sh(-.22)];
+  $('#braidTie').style.display='none';$('#braidModal').classList.add('show');drawBraid();sfx('pop');}
+function closeBraid(){$('#braidModal').classList.remove('show');BR.drag=null;}
+function drawBraid(px,py){
+  const y0=46+BR.k*28,expect=BR.k%2?2:0;let s='';
+  s+=`<path d="M70 0 L230 0 L230 30 Q150 56 70 30 Z" fill="${BR.cols[1]}"/>`;
+  for(let i=0;i<BR.k;i++){const y=48+i*28,lean=i%2?1:-1;
+    s+=`<ellipse cx="${150+lean*7}" cy="${y}" rx="24" ry="15" fill="${BR.cols[i%3]}" stroke="rgba(0,0,0,.25)" stroke-width="2" transform="rotate(${lean*-28} ${150+lean*7} ${y})"/><path d="M${138+lean*7} ${y-6} Q${150+lean*7} ${y-12} ${162+lean*7} ${y-6}" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/>`;}
+  if(BR.k<BR.need){
+    for(let slot=0;slot<3;slot++){
+      const ci=BR.order[slot],top=[150+(BX[slot]-150)*.35,y0],drag=BR.drag&&BR.drag.slot===slot;
+      const ex=drag?px:BX[slot],ey=drag?py:400;
+      const d=`M${top[0]} ${top[1]} Q${(top[0]+ex)/2+(drag?0:(BX[slot]-150)*.3)} ${(top[1]+ey)/2} ${ex} ${ey}`;
+      if(slot===expect&&!BR.drag)s+=`<path d="${d}" stroke="#ffd23f" stroke-width="30" stroke-linecap="round" fill="none" opacity=".55"><animate attributeName="opacity" values=".2;.7;.2" dur="1.2s" repeatCount="indefinite"/></path>`;
+      s+=`<path d="${d}" stroke="${BR.cols[ci]}" stroke-width="20" stroke-linecap="round" fill="none"/><path d="${d}" stroke="#fff" stroke-opacity=".25" stroke-width="4" stroke-linecap="round" fill="none" transform="translate(-4 0)"/>`;
+    }
+    const hx=expect===0?60:240;
+    s+=`<text x="${hx}" y="330" font-size="34" text-anchor="middle">${expect===0?'👉':'👈'}</text>`;
+  }else{
+    s+=`<path d="M138 ${y0-4} L128 ${y0+40} L150 ${y0+24} L172 ${y0+40} L162 ${y0-4} Z" fill="${BR.cols[1]}"/>`;
+  }
+  braidSvg.innerHTML=s;
+  $('#braidBar').style.width=Math.round(BR.k/BR.need*100)+'%';
+  $('#braidHint').textContent=BR.k>=BR.need?'Beautiful braid! Now tie it off.':`Drag the glowing ${BR.k%2?'right':'left'} strand over the middle one. (${BR.k}/${BR.need})`;
+}
+function braidPt(ev){const pt=braidSvg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(braidSvg.getScreenCTM().inverse());return [q.x,q.y];}
+braidSvg.addEventListener('pointerdown',ev=>{
+  if(BR.k>=BR.need)return;const [x,y]=braidPt(ev),y0=46+BR.k*28;if(y<y0)return;
+  let best=0,bd=1e9;for(let i=0;i<3;i++){const t=(y-y0)/(400-y0),sx=(150+(BX[i]-150)*.35)*(1-t)+BX[i]*t,d=Math.abs(x-sx);if(d<bd){bd=d;best=i;}}
+  if(bd>32)return;
+  if(best===1){toast('✋ Grab an outside strand');return;}
+  const expect=BR.k%2?2:0;if(best!==expect){toast(`✨ Try the glowing ${expect?'right':'left'} strand`);return;}
+  ev.preventDefault();try{braidSvg.setPointerCapture(ev.pointerId);}catch(e){}
+  BR.drag={slot:best,id:ev.pointerId};drawBraid(x,y);
+});
+braidSvg.addEventListener('pointermove',ev=>{if(!BR.drag||ev.pointerId!==BR.drag.id)return;ev.preventDefault();const [x,y]=braidPt(ev);drawBraid(x,y);});
+const braidUp=ev=>{
+  if(!BR.drag||ev.pointerId!==BR.drag.id)return;const [x]=braidPt(ev),slot=BR.drag.slot;BR.drag=null;
+  const crossed=slot===0?x>140:x<160;
+  if(crossed){[BR.order[slot],BR.order[1]]=[BR.order[1],BR.order[slot]];BR.k++;tone(500+BR.k*60,.09,'triangle',.08);if(BR.k>=BR.need){$('#braidTie').style.display='block';sfx('tada');}}
+  drawBraid();
+};
+braidSvg.addEventListener('pointerup',braidUp);braidSvg.addEventListener('pointercancel',braidUp);
+$('#braidClose').onclick=closeBraid;
+$('#braidTie').onclick=()=>{closeBraid();const H=SAVE.look.hair;H.id='sidebraid';H.len=1;hTool='brush';persist();hairDirty=1;
+  burst(av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.1,0)),'#ffd6ea',30,1.2,.08);did('braid');sfx('tada');toast('🪢 You braided it yourself!');renderCloset();};
 function beautyDown(e){if(!glamOpen)return false;
   if(ctab==='nails'||ctab==='toes')return youNailTap(e);
   if(ctab==='hair'){hstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0};hairStroke(e,true);try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}
   if(ctab==='makeup'&&mTool!=='paint'){mstroke={id:e.pointerId,x:e.clientX,y:e.clientY,go:0,done:{}};if(mkStroke(e,true)){try{canvas.setPointerCapture(e.pointerId);}catch(_){}return true;}mstroke=null;return false;}
   return false;}
 function beautyMove(e){if(hstroke&&e.pointerId===hstroke.id){hairStroke(e,false);return true;}if(mstroke&&e.pointerId===mstroke.id){mkStroke(e,false);return true;}return false;}
-function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){if(hTool==='braid')braidRelease(e);hstroke=null;clearTimeout(htoolHide);htoolHide=setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;renderCloset();}}
+function beautyUp(e){if(hstroke&&e.pointerId===hstroke.id){hstroke=null;clearTimeout(htoolHide);htoolHide=setTimeout(hideHTool,350);persist();renderCloset();}if(mstroke&&e.pointerId===mstroke.id){mstroke=null;renderCloset();}}
 let hairT=0;anims.push((t)=>{if(hairDirty&&glamOpen&&t-hairT>.12){hairDirty=0;hairT=t;av.dress(ctab==='toes'?Object.assign({},SAVE.look,{shoes:null}):SAVE.look);}});
 
 /* ---------- the model contest ---------- */
@@ -3320,4 +3387,4 @@ onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('ta
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
   sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
-Object.assign(window.__game,{braidInfo:()=>({n:braidP,need:BRAID_N,order:braidOrder.slice(),slots:[0,1,2].map(i=>brScr(brCurve(i).getPoint(.8)))}),glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
+Object.assign(window.__game,{openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});

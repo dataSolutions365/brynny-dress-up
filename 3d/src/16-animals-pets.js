@@ -5,6 +5,8 @@ const FAMILY_DOGS=['Titus','Artemis'];
 const FAMILY_SQUIRREL='Tiereyn';
 // the monkey and the hedgehog: change these names to rename them in the game
 const EXOTIC_NAMES=['Mango','Spike'];
+// eye colors for the cartoon pets
+const PET_EYE={cat:'#8cbf3f',dog:'#7a4a22',squirrel:'#4a2c18',bunny:'#6a4030'};
 const PET_DIM={cat:{r:.1,len:.24,leg:.17,head:.095},dog:{r:.12,len:.28,leg:.2,head:.11},squirrel:{r:.075,len:.1,leg:.07,head:.072},bunny:{r:.1,len:.08,leg:.06,head:.085}};
 const PET_SAY={cat:['Meow! 🐱','Purrr… 💖','Mrrow?'],dog:['Woof woof! 🐶','Arf! 💖','*happy wiggle*'],squirrel:['Chitter chatter! 🌰','Squeak!','Got any acorns?'],monkey:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌'],hedgehog:['*sniff sniff* 🦔','Squeak!','*happy huff*'],bunny:['*nose wiggle* 🐰','Hop hop! 💖','Squeak!']};
 // realistic body sizes for the family's own pets (built by Pet.buildReal)
@@ -47,7 +49,11 @@ class Pet{
     if(o.brows)for(const sx of [-1,1])M(sph(H*.1,10,8),light,sx*H*.36,H*.42,H*.86,head).scale.set(1.2,.7,.6);
     const mz=kind==='dog'?1.25:1;M(sph(H*.48,16,12),light,0,-H*.32,H*.78,head).scale.set(1.25,.85,mz);
     M(sph(H*.13,10,8),kind==='dog'?eyeM:pink,0,-H*.18,H*1.18*(kind==='dog'?1.08:.98),head).scale.set(1.3,.9,1);
-    for(const sx of [-1,1]){M(sph(H*.16,14,10),eyeM,sx*H*.42,H*.12,H*.82,head);M(sph(H*.045,8,6),shine,sx*H*.42+H*.04,H*.18,H*.97,head,false);}
+    // big shiny cartoon eyes with a colored iris, two sparkles, and soft pink cheeks
+    const irisM=phys(o.eye||PET_EYE[kind]||'#5a3a2a',{map:irisTex(),roughness:.1,clearcoat:1,clearcoatRoughness:.05}),blushM=new THREE.MeshBasicMaterial({color:'#ff8fb0',transparent:true,opacity:.4,depthWrite:false});
+    for(const sx of [-1,1]){const e=M(irisGeo(H*.17),irisM,sx*H*.4,H*.1,H*.8,head);e.rotation.y=sx*.35;e.scale.z=.75;
+      M(sph(H*.05,8,6),shine,sx*H*.4+H*.05,H*.18,H*.96,head,false);M(sph(H*.024,8,6),shine,sx*H*.4-H*.04,H*.03,H*.95,head,false);
+      M(sph(H*.15,12,8),blushM,sx*H*.56,-H*.16,H*.76,head,false,false).scale.set(1,.6,.35);}
     for(const sx of [-1,1]){
       if(kind==='cat'){const e=M(new THREE.ConeGeometry(H*.36,H*.62,12),fur,sx*H*.55,H*.82,-H*.05,head);e.rotation.z=-sx*.3;e.scale.z=.55;const i=M(new THREE.ConeGeometry(H*.22,H*.4,12),pink,sx*H*.53,H*.78,H*.05,head);i.rotation.z=-sx*.3;i.scale.z=.3;}
       if(kind==='dog'){const e=M(sph(H*.42,14,10),phys(o.ear||furC.clone().multiplyScalar(.7),{roughness:.95,sheen:1}),sx*H*.88,-H*.05,-H*.05,head);e.scale.set(.42,o.fluffy?1.45:1.15,.85);e.rotation.z=sx*.25;if(o.fluffy)e.position.y-=H*.12;}
