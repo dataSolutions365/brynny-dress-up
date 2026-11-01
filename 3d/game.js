@@ -1778,6 +1778,12 @@ BOTTOMS.push(['bballshorts','🏀','Basketball shorts','#8e6cff'],['baseballpant
 SHOES.push(['courtkicks','🏀','Basketball sneakers','#ff6fae'],['ballcleats','⚾','Baseball cleats','#2d2d3a']);
 HATS.push(['helmet','⛑️','Batting helmet','#3a5bd9']);
 EXTRAS.push(['glove','🧤','Baseball glove','#a0622d']);
+// guys get the same sports gear in their closet (14c-guy.js)
+GUY_TOPS.push(['bballjersey','🏀','Basketball jersey','#d62839'],['baseballtop','⚾','Baseball jersey','#ffffff']);
+GUY_BOTTOMS.push(['bballshorts','🏀','Basketball shorts','#d62839'],['baseballpants','⚾','Baseball pants','#ffffff']);
+GUY_SHOES.push(['courtkicks','🏀','Basketball sneakers','#ffffff'],['ballcleats','⚾','Baseball cleats','#2d2d3a']);
+GUY_HATS.push(['helmet','⛑️','Batting helmet','#3a5bd9']);
+GUY_EXTRAS.push(['glove','🧤','Baseball glove','#a0622d']);
 // the trim color: white on colored clothes, pink on white ones
 const sportTrim=c=>{const h={};new THREE.Color(c).getHSL(h);return h.l>.85?'#ff4d8d':'#ffffff';};
 // thin up-and-down pinstripes for the baseball uniform
@@ -1826,6 +1832,10 @@ Object.assign(OUTFITS2D,{
 const SPORT_LOOKS={
   court:{top:{id:'bballjersey',c:'#8e6cff'},bottom:{id:'bballshorts',c:'#8e6cff'},shoes:{id:'courtkicks',c:'#ff6fae'},hat:{id:'sweatband',c:'#ff4d8d'}},
   batting:{top:{id:'baseballtop',c:'#ffffff'},bottom:{id:'baseballpants',c:'#ffffff'},shoes:{id:'ballcleats',c:'#2d2d3a'},hat:{id:'helmet',c:'#ff4d8d'},glove:'#a0622d'}};
+const GUY_SPORT_LOOKS={
+  court:{top:{id:'bballjersey',c:'#d62839'},bottom:{id:'bballshorts',c:'#d62839'},shoes:{id:'courtkicks',c:'#ffffff'},hat:{id:'sweatband',c:'#ffffff'}},
+  batting:{top:{id:'baseballtop',c:'#ffffff'},bottom:{id:'baseballpants',c:'#ffffff'},shoes:{id:'ballcleats',c:'#2d2d3a'},hat:{id:'helmet',c:'#3a5bd9'},glove:'#a0622d'}};
+const sportLook=zid=>(isGuy(SAVE.look)?GUY_SPORT_LOOKS:SPORT_LOOKS)[zid];
 // ---- src/15-player-friends-townspeople.js ----
 /* ================= PLAYER ================= */
 if(!SAVE.look)SAVE.look=defaultLook();
@@ -4412,8 +4422,8 @@ function spMade(b){const C=SPC,z=Z.court;b.made=true;z.hoop.swish=1;tone(880,.12
 function spBoard(){const zb=Z.court.board;if(SP.mode==='ft')zb.draw(SP.score,10-SP.shots,'🎯 MADE · LEFT');else if(SP.mode==='shoot')zb.draw(SP.score,Math.ceil(SP.left),'🔥 POINTS · TIME');else if(SP.mode==='v1')zb.draw(SP.score,SP.opp,'YOU · KAI');else zb.draw('0','0');}
 
 /* ---------- the computer player for 1-on-1 ---------- */
-function spCpu(){if(SP.cpu)return SP.cpu;const L=Object.assign(defaultLook(),{style:'cute',skin:'#b97a4f',eyes:'#3d2a1a',hair:{id:'pixie',c:'#2b1d16'},dress:null,
-    top:{id:'bballjersey',c:'#4fb6ff'},bottom:{id:'bballshorts',c:'#4fb6ff'},shoes:{id:'courtkicks',c:'#ffffff'},hat:{id:'sweatband',c:'#4fb6ff'},extras:{},makeup:defaultMakeup()});
+function spCpu(){if(SP.cpu)return SP.cpu;const L=Object.assign(defaultGuyLook(),{skin:'#b97a4f',eyes:'#3d2a1a',hair:{id:'crop',c:'#2b1d16'},dress:null,
+    top:{id:'bballjersey',c:'#4fb6ff'},bottom:{id:'bballshorts',c:'#4fb6ff'},shoes:{id:'courtkicks',c:'#ffffff'},hat:{id:'sweatband',c:'#4fb6ff'},extras:{}});
   const a=new Avatar(L,'Kai','#2f7fd9');a.g.visible=false;Z.court.g.add(a.g);
   return SP.cpu={a,p:new THREE.Vector3(0,0,0),vy:0,face:0,sp:0,plan:null,t:0,shootT:-1,air:false};}
 function spCpuJump(c,v){if(c.p.y<=.01){c.vy=v;}}
@@ -4432,13 +4442,14 @@ function spOpenMenu(zid){if(SP.mode||SP.menu)return;SP.menu=true;const S=SAVE.sp
   c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{spCloseMenu();spStart(b.dataset.m);});
   $('#spNo').onclick=spCloseMenu;$('#spMenu').classList.add('show');sfx('pop');}
 // "Suit up": put on the sport's outfit in one tap (your old outfit is kept so you can switch back after)
-const spWearing=zid=>{const L=SPORT_LOOKS[zid],l=SAVE.look;return !l.dress&&l.top&&l.top.id===L.top.id&&l.bottom&&l.bottom.id===L.bottom.id;};
+const spWearing=zid=>{const L=sportLook(zid),l=SAVE.look;return !l.dress&&l.top&&l.top.id===L.top.id&&l.bottom&&l.bottom.id===L.bottom.id;};
 function spSuitBtn(c,zid){if(spWearing(zid))return;const b=document.createElement('button');b.className='btn';b.style.cssText='display:block;width:calc(100% - 8px);margin:2px 4px 8px';
   b.textContent=zid==='court'?'👕 Suit up in basketball clothes':'👕 Suit up in a baseball uniform';c.querySelector('p').after(b);
-  b.onclick=()=>{const L=SPORT_LOOKS[zid],l=SAVE.look;if(!SAVE.sports.prev)SAVE.sports.prev=JSON.parse(JSON.stringify(l));
+  b.onclick=()=>{const L=sportLook(zid),l=SAVE.look;if(!spCanUnsuit())SAVE.sports.prev=JSON.parse(JSON.stringify(l));
     l.dress=null;l.top={...L.top};l.bottom={...L.bottom};l.shoes={...L.shoes};l.hat={...L.hat};l.extras={...(l.extras||{})};if(L.glove)l.extras.glove=L.glove;else delete l.extras.glove;
     persist();rebuildPlayer();sfx('star');b.textContent='✅ Suited up! Pick a game';b.disabled=true;b.style.opacity=.7;did('dress','sports');};}
-function spUnsuit(){const P=SAVE.sports.prev;if(!P)return;SAVE.look=P;delete SAVE.sports.prev;persist();rebuildPlayer();sfx('pop');}
+const spCanUnsuit=()=>{const P=SAVE.sports.prev;return !!P&&isGuy(P)===isGuy(SAVE.look);};
+function spUnsuit(){const P=SAVE.sports.prev;if(!spCanUnsuit())return;SAVE.look=P;delete SAVE.sports.prev;persist();rebuildPlayer();sfx('pop');}
 function spCloseMenu(){SP.menu=false;$('#spMenu').classList.remove('show');}
 $('#spMenu').addEventListener('click',e=>{if(e.target.id==='spMenu'&&!SP.mode)spCloseMenu();});
 function spStart(m){const C=SPC;spCloseMenu();SP.mode=m;SP.z=m==='bat'?Z.batting:Z.court;SP.score=0;SP.opp=0;SP.shots=0;SP.t=0;SP.hold=null;SP.dunk=null;SP.next=0;SP.poss=null;SP.cam.init=false;SP.msgT=0;
@@ -4473,8 +4484,8 @@ function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;S
   if(quit)coins=0;
   if(coins>0)earn(coins,'sports');if(coins>0)h+=`<p>🪙 +${coins} coins</p>`;
   const zid=m==='bat'?'batting':'court';
-  $('#spCard').innerHTML=h+`<button class="btn" id="spAgain">🔁 Play again</button> <button class="btn ghost" id="spDone">Done</button>`+(SAVE.sports.prev?`<br><button class="btn ghost" id="spUnsuit">👗 Back to my outfit</button>`:'');
-  if(SAVE.sports.prev)$('#spUnsuit').onclick=()=>{spUnsuit();spCloseMenu();};
+  $('#spCard').innerHTML=h+`<button class="btn" id="spAgain">🔁 Play again</button> <button class="btn ghost" id="spDone">Done</button>`+(spCanUnsuit()?`<br><button class="btn ghost" id="spUnsuit">👗 Back to my outfit</button>`:'');
+  if(spCanUnsuit())$('#spUnsuit').onclick=()=>{spUnsuit();spCloseMenu();};
   $('#spAgain').onclick=()=>{spCloseMenu();if(zid==='court')spOpenMenu('court');else spStart('bat');};$('#spDone').onclick=spCloseMenu;
   SP.menu=true;$('#spMenu').classList.add('show');if(coins>=10||best)sfx('tada');}
 $('#spLeave').onclick=()=>spEnd(true,true);

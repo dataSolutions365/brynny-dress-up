@@ -6,6 +6,12 @@ BOTTOMS.push(['bballshorts','🏀','Basketball shorts','#8e6cff'],['baseballpant
 SHOES.push(['courtkicks','🏀','Basketball sneakers','#ff6fae'],['ballcleats','⚾','Baseball cleats','#2d2d3a']);
 HATS.push(['helmet','⛑️','Batting helmet','#3a5bd9']);
 EXTRAS.push(['glove','🧤','Baseball glove','#a0622d']);
+// guys get the same sports gear in their closet (14c-guy.js)
+GUY_TOPS.push(['bballjersey','🏀','Basketball jersey','#d62839'],['baseballtop','⚾','Baseball jersey','#ffffff']);
+GUY_BOTTOMS.push(['bballshorts','🏀','Basketball shorts','#d62839'],['baseballpants','⚾','Baseball pants','#ffffff']);
+GUY_SHOES.push(['courtkicks','🏀','Basketball sneakers','#ffffff'],['ballcleats','⚾','Baseball cleats','#2d2d3a']);
+GUY_HATS.push(['helmet','⛑️','Batting helmet','#3a5bd9']);
+GUY_EXTRAS.push(['glove','🧤','Baseball glove','#a0622d']);
 // the trim color: white on colored clothes, pink on white ones
 const sportTrim=c=>{const h={};new THREE.Color(c).getHSL(h);return h.l>.85?'#ff4d8d':'#ffffff';};
 // thin up-and-down pinstripes for the baseball uniform
@@ -54,3 +60,7 @@ Object.assign(OUTFITS2D,{
 const SPORT_LOOKS={
   court:{top:{id:'bballjersey',c:'#8e6cff'},bottom:{id:'bballshorts',c:'#8e6cff'},shoes:{id:'courtkicks',c:'#ff6fae'},hat:{id:'sweatband',c:'#ff4d8d'}},
   batting:{top:{id:'baseballtop',c:'#ffffff'},bottom:{id:'baseballpants',c:'#ffffff'},shoes:{id:'ballcleats',c:'#2d2d3a'},hat:{id:'helmet',c:'#ff4d8d'},glove:'#a0622d'}};
+const GUY_SPORT_LOOKS={
+  court:{top:{id:'bballjersey',c:'#d62839'},bottom:{id:'bballshorts',c:'#d62839'},shoes:{id:'courtkicks',c:'#ffffff'},hat:{id:'sweatband',c:'#ffffff'}},
+  batting:{top:{id:'baseballtop',c:'#ffffff'},bottom:{id:'baseballpants',c:'#ffffff'},shoes:{id:'ballcleats',c:'#2d2d3a'},hat:{id:'helmet',c:'#3a5bd9'},glove:'#a0622d'}};
+const sportLook=zid=>(isGuy(SAVE.look)?GUY_SPORT_LOOKS:SPORT_LOOKS)[zid];
