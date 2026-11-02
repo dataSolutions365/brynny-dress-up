@@ -224,6 +224,8 @@ class Avatar{
         if(sleeve==='long'){P(capTop(.049,.17),m,a.sh);P(capTop(.043,.15),m,a.el);}
         if(sleeve==='puff')P(sph(.072,18,14),m,a.sh,0,-.03,0);
         if(sleeve==='strap'){const st=P(box(.025,.12,.012),m,spine,a.sx*.07,.41,0);st.scale.z=8;}}
+      // a guy's shoulders are wider than the top, so every top with sleeves fills in the top of each shoulder (14c-guy.js)
+      if(this.guy&&sleeve!=='strap')shirtShoulders({P,arms,spine},m);
       return c;};
     const decal=(emoji)=>{const t=canvasTex(128,128,(x)=>{x.font='96px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,64,72);});const dm=new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.7,depthWrite:false});this.mats.push(dm);P(new THREE.PlaneGeometry(.12,.12),dm,spine,0,.29,.106).castShadow=false;};
     const waist=(m)=>P(sph(.136,24,16),m,hips).scale.set(1.06,.8,.84);

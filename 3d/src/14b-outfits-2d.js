@@ -93,7 +93,7 @@ const OUTFITS2D={
   moto(k,c){const m=k.mat(c,'shiny');k.topShell(m,'long');k.P(box(.07,.2,.01),k.mat('#ffffff'),k.spine,0,.31,.1);k.P(box(.006,.22,.012),k.mat('#e8e8ff','metal'),k.spine,.042,.3,.104);k.P(sph(.008,8,6),k.mat('#ff3b6b','shiny'),k.spine,0,.32,.107);
     for(const s of [-1,1]){const l=k.P(box(.035,.09,.01),m,k.spine,s*.05,.38,.102);l.rotation.z=s*.35;}},
   // 🏈 Varsity jacket: red body, white sleeves, a gold B
-  varsity(k,c){const m=k.mat(c),w=k.mat('#ffffff');k.topShell(m,'strap');for(const a of k.arms){k.P(capTop(.049,.17),w,a.sh);k.P(capTop(.043,.15),w,a.el);beltRing(k,m,a.el,.045,.011,-.16);}
+  varsity(k,c){const m=k.mat(c),w=k.mat('#ffffff');k.topShell(m,'strap');if(k.av.guy)shirtShoulders(k,m,w);for(const a of k.arms){k.P(capTop(.049,.17),w,a.sh);k.P(capTop(.043,.15),w,a.el);beltRing(k,m,a.el,.045,.011,-.16);}
     beltRing(k,w,k.spine,.064,.012,.45);buttons(k,w,k.spine,.02,[.36,.3,.24,.18],.104);frontText(k,'B','#ffd23f',.33,.07);},
   // 📣 Cheer top: a tank with a white and gold chevron
   cheertop(k,c){const m=k.mat(c);k.topShell(m,'strap');for(const [col,dy] of [['#ffffff',0],['#ffd23f',-.03]])for(const s of [-1,1]){const v=k.P(box(.012,.11,.01),k.mat(col,'shiny'),k.spine,s*.032,.3+dy,.1);v.rotation.z=s*.95;}},
