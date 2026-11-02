@@ -4,6 +4,10 @@
 // own closet. Each body keeps its own saved look in SAVE.looks, so switching back and forth never loses an outfit.
 // The clothes work like OUTFITS2D: each one is a function (kit,color) that adds its pieces to the avatar.
 const isGuy=L=>!!L&&L.body==='guy';
+// 🛹 a skateboard deck: long with round nose and tail ends (a stadium shape), soft edges, centered.
+// Built lying flat (width x, length y, thickness z); turn it to fit where it goes.
+function deckGeo(w,len,th){const r=w/2,h=len/2-r,sh=new THREE.Shape();sh.moveTo(-r,-h);sh.lineTo(-r,h);sh.absarc(0,h,r,Math.PI,0,true);sh.lineTo(r,-h);sh.absarc(0,-h,r,0,Math.PI,true);
+  const b=Math.min(th*.3,.004),g=new THREE.ExtrudeGeometry(sh,{depth:th-b*2,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:2,curveSegments:16});g.translate(0,0,-(th-b*2)/2);return g;}
 const tagColor=L=>isGuy(L)?'#2f7be5':'#ff4d8d';
 
 const GUY_HAIRS=[['crop','💇‍♂️','Crew cut'],['buzz','🪒','Buzz cut'],['quiff','😎','Swoop'],['sidepart','👔','Side part'],['curltop','🌀','Curly top'],['spiky','⚡','Spiky'],['flow','🏄','Surfer flow'],['manbun','🥷','Man bun'],['afro','☁️','Afro']];
@@ -258,12 +262,18 @@ const GUY_WEAR={
     for(const s of [-1,1]){frontStrip(k,dk,lineOf(s*.075,.45,s*.085,.2,.012,.012,6),.006);const t=k.P(new THREE.TorusGeometry(.04,.012,6,16,Math.PI),dk,k.spine,s*.08,.45,-.03);t.rotation.y=Math.PI/2;}},
   // 💪 Wristbands on both wrists
   wristbands(k,c){const m=k.mat(c);for(const a of k.arms){const w=k.P(new THREE.CylinderGeometry(.042,.042,.04,20),m,a.el,0,-.19,0);}},
-  // 🛹 Skateboard carried in the right hand. A second board waits under the feet for riding (17c-skateboard.js
-  // shows one or the other, and hides the one in the hand during sports and other hands-on games).
-  skateboard(k,c){const a=k.arms[0];const g=new THREE.Group();g.position.set(a.sx*.03,-.06,0);g.rotation.z=a.sx*.08;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};k.av.board=g;
+  // 🛹 Skateboard carried in the right hand, the way skaters carry one: the hand grips the nose and the board hangs
+  // down along the leg, deck upright, wheels facing out, the bottom end trailing back a little. A second board waits
+  // under the feet for riding (17c-skateboard.js shows one or the other, and hides the one in the hand during sports,
+  // other hands-on games, and while wearing roller skates).
+  skateboard(k,c){const a=k.arms[0];const g=new THREE.Group();g.position.set(-a.sx*.034,-.075,0);g.rotation.set(.34,0,a.sx*.07);a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};k.av.board=g;
+    // the board hangs from the grip point: its nose is in the palm, the rest of it below the hand
+    const b=new THREE.Group();b.position.y=-.26;g.add(b);k.av.parts.push(b);b.geometry={dispose(){}};
     {const d=new THREE.Group();d.visible=false;k.av.g.add(d);k.av.parts.push(d);d.geometry={dispose(){}};k.av.deck=d;const wm=k.mat('#ffd23f','shiny'),tm=k.mat('#c0c0c0','metal');
-     k.P(new RoundedBoxGeometry(.2,.022,.74,3,.01),k.mat(c,'shiny'),d,0,-.011,0);k.P(new RoundedBoxGeometry(.19,.004,.7,2,.002),k.mat('#2d2d3a'),d,0,.001,0);
+     k.P(deckGeo(.2,.74,.022).rotateX(-Math.PI/2),k.mat(c,'shiny'),d,0,-.011,0);k.P(deckGeo(.186,.72,.004).rotateX(-Math.PI/2),k.mat('#2d2d3a'),d,0,.001,0);
      for(const z of [-.25,.25]){k.P(box(.14,.025,.04),tm,d,0,-.035,z);for(const x of [-.075,.075]){const w=k.P(cyl(.03,.03,.03,14),wm,d,x,-.058,z);w.rotation.z=Math.PI/2;}}}
-    k.P(new RoundedBoxGeometry(.014,.62,.18,2,.006),k.mat(c,'shiny'),g,0,0,0);k.P(new RoundedBoxGeometry(.004,.6,.17,2,.002),k.mat('#2d2d3a'),g,-a.sx*.009,0,0);
-    const wm=k.mat('#ffd23f','shiny');for(const y of [-.21,.21])for(const z of [-.06,.06]){const w=k.P(cyl(.022,.022,.02,12),wm,g,a.sx*.03,y,z);w.rotation.z=Math.PI/2;}},
+    // deck (grip tape toward the leg), trucks and wheels facing out
+    k.P(deckGeo(.18,.62,.014).rotateY(Math.PI/2),k.mat(c,'shiny'),b,0,0,0);k.P(deckGeo(.168,.605,.004).rotateY(Math.PI/2),k.mat('#2d2d3a'),b,-a.sx*.0085,0,0);
+    const wm=k.mat('#ffd23f','shiny'),tm=k.mat('#c0c0c0','metal');for(const y of [-.2,.2]){k.P(box(.025,.04,.14),tm,b,a.sx*.019,y,0);
+      for(const z of [-.075,.075]){const w=k.P(cyl(.024,.024,.024,12),wm,b,a.sx*.035,y,z);w.rotation.z=Math.PI/2;}}},
 };

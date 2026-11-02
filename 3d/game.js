@@ -1957,6 +1957,10 @@ const OUTFITS2D={
 // own closet. Each body keeps its own saved look in SAVE.looks, so switching back and forth never loses an outfit.
 // The clothes work like OUTFITS2D: each one is a function (kit,color) that adds its pieces to the avatar.
 const isGuy=L=>!!L&&L.body==='guy';
+// 🛹 a skateboard deck: long with round nose and tail ends (a stadium shape), soft edges, centered.
+// Built lying flat (width x, length y, thickness z); turn it to fit where it goes.
+function deckGeo(w,len,th){const r=w/2,h=len/2-r,sh=new THREE.Shape();sh.moveTo(-r,-h);sh.lineTo(-r,h);sh.absarc(0,h,r,Math.PI,0,true);sh.lineTo(r,-h);sh.absarc(0,-h,r,0,Math.PI,true);
+  const b=Math.min(th*.3,.004),g=new THREE.ExtrudeGeometry(sh,{depth:th-b*2,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:2,curveSegments:16});g.translate(0,0,-(th-b*2)/2);return g;}
 const tagColor=L=>isGuy(L)?'#2f7be5':'#ff4d8d';
 
 const GUY_HAIRS=[['crop','💇‍♂️','Crew cut'],['buzz','🪒','Buzz cut'],['quiff','😎','Swoop'],['sidepart','👔','Side part'],['curltop','🌀','Curly top'],['spiky','⚡','Spiky'],['flow','🏄','Surfer flow'],['manbun','🥷','Man bun'],['afro','☁️','Afro']];
@@ -2211,14 +2215,20 @@ const GUY_WEAR={
     for(const s of [-1,1]){frontStrip(k,dk,lineOf(s*.075,.45,s*.085,.2,.012,.012,6),.006);const t=k.P(new THREE.TorusGeometry(.04,.012,6,16,Math.PI),dk,k.spine,s*.08,.45,-.03);t.rotation.y=Math.PI/2;}},
   // 💪 Wristbands on both wrists
   wristbands(k,c){const m=k.mat(c);for(const a of k.arms){const w=k.P(new THREE.CylinderGeometry(.042,.042,.04,20),m,a.el,0,-.19,0);}},
-  // 🛹 Skateboard carried in the right hand. A second board waits under the feet for riding (17c-skateboard.js
-  // shows one or the other, and hides the one in the hand during sports and other hands-on games).
-  skateboard(k,c){const a=k.arms[0];const g=new THREE.Group();g.position.set(a.sx*.03,-.06,0);g.rotation.z=a.sx*.08;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};k.av.board=g;
+  // 🛹 Skateboard carried in the right hand, the way skaters carry one: the hand grips the nose and the board hangs
+  // down along the leg, deck upright, wheels facing out, the bottom end trailing back a little. A second board waits
+  // under the feet for riding (17c-skateboard.js shows one or the other, and hides the one in the hand during sports,
+  // other hands-on games, and while wearing roller skates).
+  skateboard(k,c){const a=k.arms[0];const g=new THREE.Group();g.position.set(-a.sx*.034,-.075,0);g.rotation.set(.34,0,a.sx*.07);a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};k.av.board=g;
+    // the board hangs from the grip point: its nose is in the palm, the rest of it below the hand
+    const b=new THREE.Group();b.position.y=-.26;g.add(b);k.av.parts.push(b);b.geometry={dispose(){}};
     {const d=new THREE.Group();d.visible=false;k.av.g.add(d);k.av.parts.push(d);d.geometry={dispose(){}};k.av.deck=d;const wm=k.mat('#ffd23f','shiny'),tm=k.mat('#c0c0c0','metal');
-     k.P(new RoundedBoxGeometry(.2,.022,.74,3,.01),k.mat(c,'shiny'),d,0,-.011,0);k.P(new RoundedBoxGeometry(.19,.004,.7,2,.002),k.mat('#2d2d3a'),d,0,.001,0);
+     k.P(deckGeo(.2,.74,.022).rotateX(-Math.PI/2),k.mat(c,'shiny'),d,0,-.011,0);k.P(deckGeo(.186,.72,.004).rotateX(-Math.PI/2),k.mat('#2d2d3a'),d,0,.001,0);
      for(const z of [-.25,.25]){k.P(box(.14,.025,.04),tm,d,0,-.035,z);for(const x of [-.075,.075]){const w=k.P(cyl(.03,.03,.03,14),wm,d,x,-.058,z);w.rotation.z=Math.PI/2;}}}
-    k.P(new RoundedBoxGeometry(.014,.62,.18,2,.006),k.mat(c,'shiny'),g,0,0,0);k.P(new RoundedBoxGeometry(.004,.6,.17,2,.002),k.mat('#2d2d3a'),g,-a.sx*.009,0,0);
-    const wm=k.mat('#ffd23f','shiny');for(const y of [-.21,.21])for(const z of [-.06,.06]){const w=k.P(cyl(.022,.022,.02,12),wm,g,a.sx*.03,y,z);w.rotation.z=Math.PI/2;}},
+    // deck (grip tape toward the leg), trucks and wheels facing out
+    k.P(deckGeo(.18,.62,.014).rotateY(Math.PI/2),k.mat(c,'shiny'),b,0,0,0);k.P(deckGeo(.168,.605,.004).rotateY(Math.PI/2),k.mat('#2d2d3a'),b,-a.sx*.0085,0,0);
+    const wm=k.mat('#ffd23f','shiny'),tm=k.mat('#c0c0c0','metal');for(const y of [-.2,.2]){k.P(box(.025,.04,.14),tm,b,a.sx*.019,y,0);
+      for(const z of [-.075,.075]){const w=k.P(cyl(.024,.024,.024,12),wm,b,a.sx*.035,y,z);w.rotation.z=Math.PI/2;}}},
 };
 // ---- src/14c-sports-outfits.js ----
 /* ================= SPORTS OUTFITS =================
@@ -3241,7 +3251,8 @@ function zoomTick(){const s=started&&!!zoomWhere();if(s!==zoomShown){zoomShown=s
 // ---- src/17c-skateboard.js ----
 /* ================= 🛹 SKATEBOARD =================
    The skateboard is a guy's extra (14c-guy.js). It is carried in the hand while walking around, and:
-   - it is put away (hidden) during sports and other hands-on games, so it's not in the way of the bat or the ball.
+   - it is put away (hidden) during sports and other hands-on games, so it's not in the way of the bat or the ball,
+     and while you wear roller skates (14f-roller-skates.js), since you're already on wheels.
    - tap 🛹 Ride in the moves wheel to hop on and skate around town: faster than walking, you keep rolling when
      you let go of the joystick, you lean into turns, and JUMP does an ollie. Tap 🛹 Hop off to carry it again. */
 const SK={on:false,v:0,dir:0,air:false,lean:0};
@@ -3266,9 +3277,9 @@ function skatePose(a,tgt,sp,air,t){const push=a.skating&&!air&&sp>.05&&a.skatePu
   if(push){const k=Math.max(0,Math.sin(t*5));tgt.l1=-.32+k*.6;tgt.k1=.62-k*.4;}
   if(air){tgt.k0=tgt.k1=1.1;tgt.l0=tgt.l1=-.7;tgt.bob=-.12;tgt.a0z=-1.4;tgt.a1z=1.4;}}
 anims.push((t,dt)=>{if(!started||!av)return;
-  // the board in the hand: hidden while riding it, and during games that need your hands
+  // the board in the hand: hidden while riding it, during games that need your hands, and while wearing roller skates
   if(SK.on&&(!hasBoard()||closetOpen||boardBusy()))stopSkate(true);
-  if(av.board)av.board.visible=!SK.on&&!boardBusy();
+  if(av.board)av.board.visible=!SK.on&&!boardBusy()&&!av.rollers;
   if(av.deck)av.deck.visible=SK.on;
   av.skating=SK.on;av.skatePush=SK.pushing;if(!SK.on){if(av.g.rotation.z)av.g.rotation.z=0;return;}
   // keep rolling after you let go of the joystick, slowing down little by little
@@ -7991,11 +8002,12 @@ SHOW.push({k:'ride',
   off(f,h){showFarmOff(h);const A=f.a;if(A&&A.emote&&A.emote.id==='ride')A.emote=null;}});
 
 // 🛹 the skateboard: in your hand while you walk, under your feet while you ride, put away while your hands are busy
+// (and while they wear roller skates, which their look already shows)
 SHOW.push({k:'skate',
   mine(){return hasBoard()?{on:SK.on?1:0,away:!SK.on&&boardBusy()?1:0}:null;},
   on(){return {lean:0,yaw:null,sp:0};},
   step(f,d,dt,h){const A=f.a,on=!!d.on;
-    if(A.board)A.board.visible=!on&&!d.away;if(A.deck)A.deck.visible=on;A.skating=on;
+    if(A.board)A.board.visible=!on&&!d.away&&!A.rollers;if(A.deck)A.deck.visible=on;A.skating=on;
     if(!on){if(A.g.rotation.z)A.g.rotation.z=0;h.yaw=null;return;}
     // push off when speeding up, lean into turns, and pop the nose up for an ollie
     const sp=f.sp||0;A.skatePush=sp>h.sp+.02;h.sp=sp;
@@ -8003,7 +8015,7 @@ SHOW.push({k:'skate',
     h.lean+=(Math.max(-.3,Math.min(.3,-turn/Math.max(dt,.001)*.012))-h.lean)*Math.min(1,dt*6);
     A.g.position.y+=.1;A.g.rotation.z=h.lean;
     if(A.deck)A.deck.rotation.x+=((f.air?-.28:0)-A.deck.rotation.x)*Math.min(1,dt*14);},
-  off(f){const A=f.a;if(!A)return;A.skating=false;A.skatePush=false;A.g.rotation.z=0;if(A.deck){A.deck.visible=false;A.deck.rotation.x=0;}if(A.board)A.board.visible=true;}});
+  off(f){const A=f.a;if(!A)return;A.skating=false;A.skatePush=false;A.g.rotation.z=0;if(A.deck){A.deck.visible=false;A.deck.rotation.x=0;}if(A.board)A.board.visible=!A.rollers;}});
 
 // 🚲 riding your bike (17d-bicycle.js): your friend pedals around on a bike the color you picked
 SHOW.push({k:'bike',

@@ -81,11 +81,12 @@ SHOW.push({k:'ride',
   off(f,h){showFarmOff(h);const A=f.a;if(A&&A.emote&&A.emote.id==='ride')A.emote=null;}});
 
 // 🛹 the skateboard: in your hand while you walk, under your feet while you ride, put away while your hands are busy
+// (and while they wear roller skates, which their look already shows)
 SHOW.push({k:'skate',
   mine(){return hasBoard()?{on:SK.on?1:0,away:!SK.on&&boardBusy()?1:0}:null;},
   on(){return {lean:0,yaw:null,sp:0};},
   step(f,d,dt,h){const A=f.a,on=!!d.on;
-    if(A.board)A.board.visible=!on&&!d.away;if(A.deck)A.deck.visible=on;A.skating=on;
+    if(A.board)A.board.visible=!on&&!d.away&&!A.rollers;if(A.deck)A.deck.visible=on;A.skating=on;
     if(!on){if(A.g.rotation.z)A.g.rotation.z=0;h.yaw=null;return;}
     // push off when speeding up, lean into turns, and pop the nose up for an ollie
     const sp=f.sp||0;A.skatePush=sp>h.sp+.02;h.sp=sp;
@@ -93,7 +94,7 @@ SHOW.push({k:'skate',
     h.lean+=(Math.max(-.3,Math.min(.3,-turn/Math.max(dt,.001)*.012))-h.lean)*Math.min(1,dt*6);
     A.g.position.y+=.1;A.g.rotation.z=h.lean;
     if(A.deck)A.deck.rotation.x+=((f.air?-.28:0)-A.deck.rotation.x)*Math.min(1,dt*14);},
-  off(f){const A=f.a;if(!A)return;A.skating=false;A.skatePush=false;A.g.rotation.z=0;if(A.deck){A.deck.visible=false;A.deck.rotation.x=0;}if(A.board)A.board.visible=true;}});
+  off(f){const A=f.a;if(!A)return;A.skating=false;A.skatePush=false;A.g.rotation.z=0;if(A.deck){A.deck.visible=false;A.deck.rotation.x=0;}if(A.board)A.board.visible=!A.rollers;}});
 
 // 🚲 riding your bike (17d-bicycle.js): your friend pedals around on a bike the color you picked
 SHOW.push({k:'bike',
