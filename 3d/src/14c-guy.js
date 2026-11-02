@@ -4,6 +4,10 @@
 // own closet. Each body keeps its own saved look in SAVE.looks, so switching back and forth never loses an outfit.
 // The clothes work like OUTFITS2D: each one is a function (kit,color) that adds its pieces to the avatar.
 const isGuy=L=>!!L&&L.body==='guy';
+// 🛹 a skateboard deck: long with round nose and tail ends (a stadium shape), soft edges, centered.
+// Built lying flat (width x, length y, thickness z); turn it to fit where it goes.
+function deckGeo(w,len,th){const r=w/2,h=len/2-r,sh=new THREE.Shape();sh.moveTo(-r,-h);sh.lineTo(-r,h);sh.absarc(0,h,r,Math.PI,0,true);sh.lineTo(r,-h);sh.absarc(0,-h,r,0,Math.PI,true);
+  const b=Math.min(th*.3,.004),g=new THREE.ExtrudeGeometry(sh,{depth:th-b*2,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:2,curveSegments:16});g.translate(0,0,-(th-b*2)/2);return g;}
 const tagColor=L=>isGuy(L)?'#2f7be5':'#ff4d8d';
 
 const GUY_HAIRS=[['crop','💇‍♂️','Crew cut'],['buzz','🪒','Buzz cut'],['quiff','😎','Swoop'],['sidepart','👔','Side part'],['curltop','🌀','Curly top'],['spiky','⚡','Spiky'],['flow','🏄','Surfer flow'],['manbun','🥷','Man bun'],['afro','☁️','Afro']];
@@ -266,10 +270,10 @@ const GUY_WEAR={
     // the board hangs from the grip point: its nose is in the palm, the rest of it below the hand
     const b=new THREE.Group();b.position.y=-.26;g.add(b);k.av.parts.push(b);b.geometry={dispose(){}};
     {const d=new THREE.Group();d.visible=false;k.av.g.add(d);k.av.parts.push(d);d.geometry={dispose(){}};k.av.deck=d;const wm=k.mat('#ffd23f','shiny'),tm=k.mat('#c0c0c0','metal');
-     k.P(new RoundedBoxGeometry(.2,.022,.74,3,.01),k.mat(c,'shiny'),d,0,-.011,0);k.P(new RoundedBoxGeometry(.19,.004,.7,2,.002),k.mat('#2d2d3a'),d,0,.001,0);
+     k.P(deckGeo(.2,.74,.022).rotateX(-Math.PI/2),k.mat(c,'shiny'),d,0,-.011,0);k.P(deckGeo(.186,.72,.004).rotateX(-Math.PI/2),k.mat('#2d2d3a'),d,0,.001,0);
      for(const z of [-.25,.25]){k.P(box(.14,.025,.04),tm,d,0,-.035,z);for(const x of [-.075,.075]){const w=k.P(cyl(.03,.03,.03,14),wm,d,x,-.058,z);w.rotation.z=Math.PI/2;}}}
     // deck (grip tape toward the leg), trucks and wheels facing out
-    k.P(new RoundedBoxGeometry(.014,.62,.18,2,.006),k.mat(c,'shiny'),b,0,0,0);k.P(new RoundedBoxGeometry(.004,.6,.17,2,.002),k.mat('#2d2d3a'),b,-a.sx*.009,0,0);
+    k.P(deckGeo(.18,.62,.014).rotateY(Math.PI/2),k.mat(c,'shiny'),b,0,0,0);k.P(deckGeo(.168,.605,.004).rotateY(Math.PI/2),k.mat('#2d2d3a'),b,-a.sx*.0085,0,0);
     const wm=k.mat('#ffd23f','shiny'),tm=k.mat('#c0c0c0','metal');for(const y of [-.2,.2]){k.P(box(.025,.04,.14),tm,b,a.sx*.019,y,0);
       for(const z of [-.075,.075]){const w=k.P(cyl(.024,.024,.024,12),wm,b,a.sx*.035,y,z);w.rotation.z=Math.PI/2;}}},
 };
