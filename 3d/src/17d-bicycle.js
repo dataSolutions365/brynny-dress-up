@@ -19,7 +19,8 @@ SHOP.push({k:'look:bicycle',tab:'outfits',e:'🚲',n:'Bicycle',stars:10,d:'Your 
 const rideActs=()=>RIDE_ACTS.flatMap(f=>f());
 
 /* ---------- the bike model: chunky and cute like the rest of the town ---------- */
-const BK=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
+// makeBike() builds one; friends online get their own (26c-friends-see.js)
+function makeBike(){const g=new THREE.Group();g.visible=false;scene.add(g);
   const frame=phys('#ff6fae',{roughness:.3,clearcoat:1}),tire=std('#2d2d3a',{roughness:.9}),rim=phys('#e8e8ee',{metalness:.7,roughness:.25}),
     seat=std('#3a2a30',{roughness:.6}),grip=std('#ffffff',{roughness:.5}),bask=std('#d9a066',{roughness:.9});
   const R=.27,WB=.47,BB=[0,.3,.02];// wheel radius, half the wheelbase, where the pedals turn
@@ -44,7 +45,8 @@ const BK=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
   // the pedals go round with your feet
   const crank=new THREE.Group();crank.position.set(...bb);g.add(crank);M(cyl(.06,.06,.02,16),rim,0,0,0,crank).rotation.z=Math.PI/2;
   const pedals=[];for(const s of [-1,1]){const arm=M(box(.016,.15,.03),rim,s*.05,-s*.06,0,crank,false);const pd=M(box(.08,.02,.05),tire,s*.09,-s*.13,0,crank,false);pedals.push(pd,arm);}
-  return {g,wheels,crank,frame,R};})();
+  return {g,wheels,crank,frame,R};}
+const BK=makeBike();
 
 function bikeBusy(){return closetOpen||!started||handsBusy()||!!barnRide||!hasBike();}
 function startBike(){if(BIKE.on||bikeBusy())return;if(SK.on)stopSkate(true);BIKE.on=true;BIKE.v=0;BIKE.dir=player.face;av.emote=null;
@@ -54,7 +56,7 @@ function startBike(){if(BIKE.on||bikeBusy())return;if(SK.on)stopSkate(true);BIKE
 function stopBike(quiet){if(!BIKE.on)return;BIKE.on=false;BIKE.v=0;av.biking=false;av.g.rotation.z=0;BK.g.visible=false;if(!quiet)sfx('pop');renderActions();}
 function toggleBike(){if(BIKE.on)stopBike();else startBike();}
 // sitting on the seat, feet going round on the pedals, hands on the handlebars
-function bikePose(a,tgt,sp,air,t){const c=BIKE.crank;
+function bikePose(a,tgt,sp,air,t){const c=a===av?BIKE.crank:(a.bikeCrank||0);
   tgt.bob=-(a.hip-(.66+a.legX));tgt.lean=.32;tgt.sy=0;tgt.st=0;tgt.hy=0;tgt.hd=0;tgt.spin=0;tgt.l0z=tgt.l1z=0;
   tgt.l0=-1.05-Math.sin(c)*.38;tgt.k0=1.15+Math.sin(c)*.5;tgt.l1=-1.05+Math.sin(c)*.38;tgt.k1=1.15-Math.sin(c)*.5;tgt.an=.1;
   tgt.a0x=tgt.a1x=-1.05;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.35;

@@ -3062,7 +3062,8 @@ SHOP.push({k:'look:bicycle',tab:'outfits',e:'🚲',n:'Bicycle',stars:10,d:'Your 
 const rideActs=()=>RIDE_ACTS.flatMap(f=>f());
 
 /* ---------- the bike model: chunky and cute like the rest of the town ---------- */
-const BK=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
+// makeBike() builds one; friends online get their own (26c-friends-see.js)
+function makeBike(){const g=new THREE.Group();g.visible=false;scene.add(g);
   const frame=phys('#ff6fae',{roughness:.3,clearcoat:1}),tire=std('#2d2d3a',{roughness:.9}),rim=phys('#e8e8ee',{metalness:.7,roughness:.25}),
     seat=std('#3a2a30',{roughness:.6}),grip=std('#ffffff',{roughness:.5}),bask=std('#d9a066',{roughness:.9});
   const R=.27,WB=.47,BB=[0,.3,.02];// wheel radius, half the wheelbase, where the pedals turn
@@ -3087,7 +3088,8 @@ const BK=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
   // the pedals go round with your feet
   const crank=new THREE.Group();crank.position.set(...bb);g.add(crank);M(cyl(.06,.06,.02,16),rim,0,0,0,crank).rotation.z=Math.PI/2;
   const pedals=[];for(const s of [-1,1]){const arm=M(box(.016,.15,.03),rim,s*.05,-s*.06,0,crank,false);const pd=M(box(.08,.02,.05),tire,s*.09,-s*.13,0,crank,false);pedals.push(pd,arm);}
-  return {g,wheels,crank,frame,R};})();
+  return {g,wheels,crank,frame,R};}
+const BK=makeBike();
 
 function bikeBusy(){return closetOpen||!started||handsBusy()||!!barnRide||!hasBike();}
 function startBike(){if(BIKE.on||bikeBusy())return;if(SK.on)stopSkate(true);BIKE.on=true;BIKE.v=0;BIKE.dir=player.face;av.emote=null;
@@ -3097,7 +3099,7 @@ function startBike(){if(BIKE.on||bikeBusy())return;if(SK.on)stopSkate(true);BIKE
 function stopBike(quiet){if(!BIKE.on)return;BIKE.on=false;BIKE.v=0;av.biking=false;av.g.rotation.z=0;BK.g.visible=false;if(!quiet)sfx('pop');renderActions();}
 function toggleBike(){if(BIKE.on)stopBike();else startBike();}
 // sitting on the seat, feet going round on the pedals, hands on the handlebars
-function bikePose(a,tgt,sp,air,t){const c=BIKE.crank;
+function bikePose(a,tgt,sp,air,t){const c=a===av?BIKE.crank:(a.bikeCrank||0);
   tgt.bob=-(a.hip-(.66+a.legX));tgt.lean=.32;tgt.sy=0;tgt.st=0;tgt.hy=0;tgt.hd=0;tgt.spin=0;tgt.l0z=tgt.l1z=0;
   tgt.l0=-1.05-Math.sin(c)*.38;tgt.k0=1.15+Math.sin(c)*.5;tgt.l1=-1.05+Math.sin(c)*.38;tgt.k1=1.15-Math.sin(c)*.5;tgt.an=.1;
   tgt.a0x=tgt.a1x=-1.05;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.35;
@@ -7260,7 +7262,7 @@ renderMe();
 /* ================= 👭 WHAT FRIENDS SEE ONLINE =================
    When you play online with family (online.js), everyone in the room sees you on their phone exactly like you see yourself:
    your outfit and body (online.js sends your look), plus everything in this file: the pet you adopted following you
-   (in its outfit, nail polish and mud), your barn buddy, the animal you're riding, your skateboard (in your hand or under
+   (in its outfit, nail polish and mud), your barn buddy, the animal you're riding, your bike, your skateboard (in your hand or under
    your feet), and what you're busy doing, like baking or batting, with a little sign over your head.
 
    Each thing friends can see is one entry in SHOW:
@@ -7271,7 +7273,7 @@ renderMe();
                   Return anything you want to keep (it comes back as h).
      step(f,d,dt,h)  every frame while it's shown.
      off(f,h)     take it away again (they hopped off, left the room, or it changed).
-   NEW RIDES (a bicycle, a horse...) or new things to hold: add one more entry here with SHOW.push({...}), and friends see it too.
+   NEW RIDES or new things to hold: add one more entry here with SHOW.push({...}), and friends see it too.
    A ride that is a barn animal (riding in 24d-barn.js) already shows up through the 'ride' entry below. */
 const SHOW=[];
 const showEsc=s=>String(s==null?'':s).slice(0,20);
@@ -7342,6 +7344,17 @@ SHOW.push({k:'skate',
     A.g.position.y+=.1;A.g.rotation.z=h.lean;
     if(A.deck)A.deck.rotation.x+=((f.air?-.28:0)-A.deck.rotation.x)*Math.min(1,dt*14);},
   off(f){const A=f.a;if(!A)return;A.skating=false;A.skatePush=false;A.g.rotation.z=0;if(A.deck){A.deck.visible=false;A.deck.rotation.x=0;}if(A.board)A.board.visible=true;}});
+
+// 🚲 riding your bike (17d-bicycle.js): your friend pedals around on a bike the color you picked
+SHOW.push({k:'bike',
+  mine(){return BIKE.on&&hasBike()?{c:String(SAVE.look.extras.bicycle)}:null;},
+  on(f,d){const b=makeBike();b.g.visible=true;try{b.frame.color.set(String(d.c||'#ff6fae').slice(0,30));}catch(e){}return {b,spin:0,crank:0,lean:0,yaw:null};},
+  step(f,d,dt,h){const A=f.a,b=h.b,sp=f.sp||0;A.biking=true;
+    h.crank+=dt*Math.min(9,sp*.9);A.bikeCrank=h.crank;h.spin+=sp*dt/b.R;for(const w of b.wheels)w.rotation.x=h.spin;b.crank.rotation.x=h.crank;
+    const yaw=f.cur??f.face,turn=h.yaw==null?0:((yaw-h.yaw+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;h.yaw=yaw;
+    h.lean+=(Math.max(-.25,Math.min(.25,-turn/Math.max(dt,.001)*.01))-h.lean)*Math.min(1,dt*6);
+    A.g.rotation.z=h.lean;b.g.position.copy(f.pos);b.g.rotation.set(0,yaw,0);b.g.rotateZ(h.lean);},
+  off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;}}});
 
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){
