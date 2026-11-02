@@ -6,7 +6,9 @@
 const SK={on:false,v:0,dir:0,air:false,lean:0};
 const hasBoard=()=>!!(SAVE.look&&SAVE.look.extras&&SAVE.look.extras.skateboard);
 // busy with something that needs your hands (or a seat): the board goes away until you're done
-const boardBusy=()=>!!SP.mode||garageOpen||sandOpen||bakeryOpen||parlorOpen||barnOpen||!!barnRide||glamOpen||barberOpen||ck.on||pc.on;
+const handsBusy=()=>!!SP.mode||garageOpen||sandOpen||bakeryOpen||parlorOpen||barnOpen||glamOpen||barberOpen||ck.on||pc.on||ct.on;
+// also put away while riding a horse or a bike (17d-bicycle.js)
+const boardBusy=()=>handsBusy()||!!barnRide||BIKE.on;
 const skateBoost=()=>SK.on?1.55:1;
 const skateActs=()=>hasBoard()?[['skate','🛹',SK.on?'Hop off':'Ride']]:[];
 function startSkate(){if(SK.on||!hasBoard()||closetOpen||!started||boardBusy())return;SK.on=true;SK.v=0;SK.dir=player.face;av.emote=null;
