@@ -23,6 +23,12 @@ const FARM=[
   {k:'raptor',e:'🦖',n:'Mini raptor',nm:'Zippy',s:6,ride:0,pal:'walk',scale:.42,about:'Rare! A speedy little raptor who races along beside you.',food:[['🍗','Drumstick'],['🍖','Meat'],['🥚','Egg']],say:['Skreee! 💨','*zoom zoom*','Race you!']},
   {k:'monkey',e:'🐒',n:'Baby monkey',nm:'Coco',c:60,ride:0,pal:'walk',scale:.55,about:'A cheeky baby monkey with a curly tail. Takes walks with you around town.',food:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],say:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌']},
   {k:'longneck',e:'🦕',n:'Long-neck dino',nm:'Skye',s:20,ride:2.15,about:'Super rare! A giant long-neck dinosaur. Ride way up high!',food:[['🌿','Ferns'],['🍃','Tree leaves'],['🍐','Pear']],say:['Hrrrooo! 🦕','*big gentle hum*','I can see the whole town!']},
+  // rides from the shop: bought with ⭐ in the shop's 🦖 Rides tab (mount = price), or won as a prize (prize = ⭐ stars you need to earn).
+  // They live at the barn like the others, and you call them from anywhere with the ride button (24g-mounts.js).
+  {k:'kitty',e:'🐱',n:'Big fluffy cat',nm:'Marshmallow',mount:10,ride:1.08,about:'A giant, super fluffy cat you can ride! She purrs when you hug her.',food:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],say:['Purrrrr 💕','Mrrrow! 🐱','*big fluffy stretch*']},
+  {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
+  {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,ride:1.2,about:'A lavender unicorn with feathery wings that flap when you gallop.',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
+  {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars.',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
 const ZOOA=[
@@ -282,6 +288,83 @@ class FarmAnimal{
       fEyes(this,head,H,.52,.15,.55,.6,.16);fBlush(head,H,.62,-.15,.75);
       const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.95));g.add(tail);taperTube([fV(0,0,0),fV(0,-.15,-.06),fV(0,-.3,-.05)],q=>.025,skin,tail,8,6);
       Object.assign(o,{neck,head,tail,nTilt:1.35,size:1.2,h:by+.6,rad:.75,dustR:[r,r,len*.8]});}
+    /* ---- rides from the shop (24g-mounts.js): all original designs ---- */
+    // 🐱 a giant fluffy cat: round and soft, pointy ears, green eyes, a big curly tail
+    if(k==='kitty'){const r=.36,len=.5,leg=.42,by=leg+r*.7,fur=fm('#fff3e4',{roughness:1}),peach=fm('#ffc999'),white=fm('#ffffff',{roughness:1}),pink=fShiny('#ffa3bf',{roughness:.45}),whisk=std('#b8a796');
+      body.position.y=by;const t=M(fuzz(new THREE.CapsuleGeometry(r,len,10,24),.02,30),fur,0,0,0,body);t.rotation.x=Math.PI/2;
+      fFluff(body,fur,r*.95,r*.85,len*.5+r*.8,40,r*.3);
+      for(let i=0;i<4;i++)M(sph(r*.32,12,8),peach,0,r*.92,(i/3-.5)*len*1.15,body,false,false).scale.set(1.5,.32,.55);// soft peach stripes on her back
+      M(sph(r*.75,14,10),white,0,-r*.35,len*.35,body).scale.set(.95,.8,1.1);
+      fLegs(this,g,r*.55,len*.42,leg+.05,leg+.05,.1,fur,null);
+      for(const l of this.legs)M(sph(.115,12,10),white,0,-(leg+.05)+.06,.03,l.g).scale.set(1,.6,1.25);// big round paws
+      const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.5);neck.rotation.x=.5;g.add(neck);
+      M(sph(.27,16,12),fur,0,.05,0,neck);fFluff(neck,white,.24,.2,.22,14,.09,.02,.06);// fluffy chest ruff
+      const head=new THREE.Group();head.position.set(0,.25,.05);head.rotation.x=-.5+.1;neck.add(head);const H=.3;
+      M(fuzz(sph(H,24,18),.012,40),fur,0,0,0,head).scale.set(1.1,.95,.95);
+      for(const sx of [-1,1])M(sph(H*.45,12,10),fur,sx*H*.72,-H*.32,H*.2,head).scale.set(1,.8,.9);// cheek fluff
+      M(sph(H*.38,14,10),white,0,-H*.33,H*.76,head).scale.set(1.3,.7,.7);
+      M(sph(H*.1,10,8),pink,0,-H*.13,H*.97,head,false,false).scale.set(1.4,.8,.7);
+      for(const sx of [-1,1]){const e=M(new THREE.ConeGeometry(H*.36,H*.7,12),fur,sx*H*.55,H*.84,-H*.05,head);e.rotation.z=-sx*.35;e.scale.z=.55;
+        const ei=M(new THREE.ConeGeometry(H*.22,H*.46,12),pink,sx*H*.53,H*.8,H*.06,head,false,false);ei.rotation.z=-sx*.35;ei.scale.z=.3;
+        for(let i=0;i<3;i++){const w=M(cyl(.004,.004,H*.95,4),whisk,sx*H*.82,-H*.3+(i-1)*H*.07,H*.72,head,false,false);w.rotation.z=Math.PI/2+sx*(i-1)*.18;}}
+      fEyes(this,head,H,.42,.08,.8,.38,.25,'#3fae7a');fBlush(head,H,.64,-.22,.7);
+      const tail=new THREE.Group();tail.position.set(0,by+r*.25,-(len/2+r*.85));g.add(tail);
+      const tp=[fV(0,0,0),fV(0,.28,-.2),fV(0,.62,-.16),fV(0,.86,.06)];taperTube(tp,q=>.12-.02*q,fur,tail,20,12);
+      const tc=new THREE.CatmullRomCurve3(tp);for(let i=0;i<9;i++){const p=tc.getPoint(i/8);M(sph(.13-i*.004,10,8),i>6?peach:fur,p.x,p.y,p.z,tail,true,false);}
+      Object.assign(o,{neck,head,tail,nTilt:.5,size:1,h:by+.8,rad:.6,dustR:[r,r,len*.8]});}
+    // 🦕 a duck-billed dino with a long tube crest on her head
+    if(k==='crest'){const r=.4,len=.7,leg=.4,by=leg+r*.6,skin=fm('#ff9a76',{roughness:.7}),belly=fm('#fff1c9'),spot=fm('#ffcf4a'),crestM=fShiny('#4fc9bd',{roughness:.4});
+      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.72,1.3);
+      for(let i=0;i<8;i++)M(sph(r*.13,10,8),spot,Math.sin(i*2.3)*r*.62,r*.78,(i/7-.5)*len*1.1,body,false,false).scale.set(1,.4,1);
+      for(let i=0;i<7;i++)M(sph(r*.1,10,8),crestM,0,r*.97,(i/6-.5)*len*1.2,body,false,false).scale.set(.6,.7,1.3);// little bumps down her spine
+      fLegs(this,g,r*.6,len*.42,leg+.06,leg+.06,.12,skin,fShiny('#ffe2c4'));
+      const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.45);neck.rotation.x=.55;g.add(neck);
+      taperTube([fV(0,0,0),fV(0,.2,.02),fV(0,.42,0)],q=>.18-.05*q,skin,neck,16,12);
+      const head=new THREE.Group();head.position.set(0,.44,0);head.rotation.x=-.55+.15;neck.add(head);const H=.24;
+      M(sph(H,22,16),skin,0,0,0,head).scale.set(.9,.9,1.2);
+      M(sph(H*.72,16,12),belly,0,-H*.28,H*1.02,head).scale.set(1.2,.45,1.1);// the wide duck bill
+      for(const sx of [-1,1])M(sph(H*.07,8,6),std('#a0503a'),sx*H*.22,-H*.12,H*1.55,head,false,false);
+      taperTube([fV(0,H*.55,-H*.05),fV(0,H*1.1,-H*.65),fV(0,H*1.3,-H*1.45),fV(0,H*1.05,-H*2.2)],q=>H*(.27-.15*q),crestM,head,24,12);
+      M(sph(H*.14,10,8),crestM,0,H*1.05,-H*2.2,head,false,false);
+      fEyes(this,head,H,.5,.25,.6,.55,.22,'#5a3a12');fBlush(head,H,.62,-.1,.7);
+      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.35),fV(0,-.15,-.7),fV(0,-.3,-1)],q=>.22*(1-q*.85),skin,tail,20,12);
+      Object.assign(o,{neck,head,tail,nTilt:.55,size:1.15,h:by+1,rad:.75,dustR:[r,r,len*.8]});}
+    // 🦄 a lavender unicorn with feathery wings (they flap when you gallop)
+    if(k==='pegacorn'){const sc=1.05,h=horseLike(sc,'#ece6ff',['#8fd8ff','#c6a6ff','#ffb3e0'],{light:'#faf7ff',hoof:'#c6a6ff'}),r=.3*sc,len=.62*sc;
+      const horn=M(new THREE.ConeGeometry(h.H*.16,h.H*.95,18),phys('#cfe8ff',{map:TEX.glitter,metalness:.6,roughness:.2,clearcoat:1,iridescence:.8}),0,h.H*1.15,h.H*.65,h.head);horn.rotation.x=.5;
+      const fw=fm('#ffffff'),tips=[fm('#ffd6f0'),fm('#d6ecff'),fm('#e6dbff')];this.wings=[];
+      for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.72,r*.7,len*.32);body.add(w);const up=new THREE.Group();up.rotation.z=sx*.45;w.add(up);
+        for(let i=0;i<6;i++){const L=.5-i*.045,p=new THREE.Group();p.position.z=-i*.055;p.rotation.y=sx*i*.13;up.add(p);
+          const f=M(new THREE.CapsuleGeometry(.065,L,4,10),i<2?fw:tips[i%3],sx*(L/2+.04),0,0,p,true,false);f.rotation.z=Math.PI/2;f.scale.set(.35,1,1);}
+        M(sph(.08,10,8),fw,0,0,-.12,up,true,false).scale.set(1,.6,1.8);this.wings.push({w,sx,fly:1});}
+      this.sparkle=true;}
+    // 🐉 the starlight dragon (a prize): midnight blue with glowing star spots, golden horns and big wings
+    if(k==='nova'){const r=.42,len=.75,leg=.45,by=leg+r*.6,skin=phys('#3b44a8',{roughness:.45,clearcoat:.5,sheen:.6,sheenColor:new THREE.Color('#8fb8ff')}),belly=fm('#ffe7a8'),
+        star=phys('#fff2b0',{emissive:'#ffd23f',emissiveIntensity:1.3,roughness:.3}),gold=fShiny('#ffd86b',{metalness:.5,roughness:.25}),
+        wingM=phys('#c6a6ff',{roughness:.5,side:THREE.DoubleSide,transparent:true,opacity:.88,emissive:'#7a4aff',emissiveIntensity:.15});
+      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.72,1.3);
+      for(let i=0;i<12;i++){const a=i*2.4,s=M(sph(r*.07,8,6),star,Math.sin(a)*r*.8,r*.45+Math.cos(a*1.7)*r*.3,(i/11-.5)*len*1.2,body,false,false);s.scale.set(1,.6,1);}
+      for(let i=0;i<6;i++)M(new THREE.ConeGeometry(.05,.13,6),gold,0,r*.98,len*.45-i*len*.22,body);
+      fLegs(this,g,r*.6,len*.42,leg+.06,leg+.06,.12,skin,gold);
+      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.6,r*.75,len*.3);body.add(w);
+        const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(.6,.35);sh.lineTo(.55,.05);sh.lineTo(.45,-.05);sh.lineTo(.3,-.02);sh.lineTo(.15,-.1);sh.lineTo(0,-.05);
+        const m=M(new THREE.ShapeGeometry(sh),wingM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.set(sx*1.9,1.9,1.9);
+        const bone=M(cyl(.028,.016,1.32,6),skin,sx*.57,0,-.33,w);bone.quaternion.setFromUnitVectors(fV(0,1,0),fV(sx*1.14,0,-.665).normalize());// the wing's front edge
+        this.wings.push({w,sx,fly:1});}
+      const neck=new THREE.Group();neck.position.set(0,by+r*.45,len/2+r*.4);neck.rotation.x=.6;g.add(neck);
+      taperTube([fV(0,0,0),fV(0,.25,.03),fV(0,.5,0)],q=>.18-.07*q,skin,neck,16,12);
+      for(let i=0;i<3;i++)M(new THREE.ConeGeometry(.035,.09,6),gold,0,.12+i*.15,-.14+i*.02,neck);
+      const head=new THREE.Group();head.position.set(0,.52,0);head.rotation.x=-.6+.15;neck.add(head);const H=.26;
+      M(sph(H,22,16),skin,0,0,0,head).scale.set(.95,.88,1.15);M(sph(H*.65,16,12),skin,0,-H*.22,H*.85,head).scale.set(.9,.7,1.1);
+      M(sph(H*.55,14,10),belly,0,-H*.42,H*.7,head).scale.set(.9,.4,1.1);
+      for(const sx of [-1,1]){M(sph(H*.07,8,6),std('#1c1f5a'),sx*H*.2,-H*.12,H*1.5,head,false,false);
+        taperTube([fV(sx*H*.4,H*.6,-H*.2),fV(sx*H*.55,H*1.05,-H*.6),fV(sx*H*.6,H*1.25,-H*1.1)],q=>H*(.13-.1*q),gold,head,16,10);
+        const fin=M(new THREE.ConeGeometry(H*.2,H*.5,8),wingM,sx*H*.85,H*.25,-H*.25,head);fin.rotation.z=-sx*1.2;fin.scale.z=.3;}
+      fEyes(this,head,H,.48,.2,.66,.5,.24,'#ffb020');fBlush(head,H,.62,-.1,.72);
+      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.08,-.45),fV(.12,-.25,-.9),fV(.3,-.35,-1.3)],q=>.22*(1-q*.85),skin,tail,24,12);
+      const tip=M(new THREE.OctahedronGeometry(.11),star,.32,-.36,-1.4,tail,false,false);tip.scale.set(.6,1,1.2);
+      this.sparkle=true;
+      Object.assign(o,{neck,head,tail,nTilt:.6,size:1.3,h:by+1.05,rad:.85,dustR:[r,r,len*.8]});}
     return o;}
   setTag(n){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();this.tag=null;}if(!n)return;
     this.tag=sprite(labelTex('💖 '+n,{size:58,fg:'#d6453d',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);this.tag.position.y=this.h+.15;this.g.add(this.tag);}
@@ -294,6 +377,7 @@ class FarmAnimal{
     if(this.neck){const want=this.nTilt+(this.biped?.5:.95)*this.graze;this.neck.rotation.x+=(want+Math.sin(t*1.3)*.04-this.neck.rotation.x)*Math.min(1,dt*4);}
     if(this.biped&&this.neck&&run>.05)this.neck.position.z=(this.nz0??(this.nz0=this.neck.position.z))+Math.sin(this.phase*2)*.02;
     if(this.tail)this.tail.rotation.y=Math.sin(t*(this.happy>0?9:2.2))*(this.happy>0?.5:.18);
+    if(this.F.wingsRun)this.flying=run>.3;// winged rides flap hard while you gallop
     if(this.wings)for(const w of this.wings)w.w.rotation.z=w.fly?w.sx*(-.2+Math.sin(t*(this.flying?14:6))*(this.flying?.6:.25)):w.sx*(this.happy>0||this.y>.02?.5+Math.sin(t*22)*.5:.05);
     if(this.head){this.wig=Math.max(0,this.wig-dt);this.head.rotation.z=Math.sin(t*14)*.18*this.wig;}
     this.happy=Math.max(0,this.happy-dt);
@@ -390,7 +474,7 @@ function clearPreview(){if(barnPreview&&!BS.own[barnPreview.k]){const a=barnPrev
 function previewFarm(k){if(barnPreview&&barnPreview.k===k)return;clearPreview();const a=farmAnimal(k);if(!BS.own[k]){a.lx=CARE_SPOT[0];a.lz=CARE_SPOT[1]+.6;a.face=.35;barnPreview=a;a.setTag('');}barnSel=a;
   a.speak(rnd(a.F.say));a.hop=1;placeFarm(a);}
 const FTABS=[['mine','💖','My animals'],['adopt','🪙','Adopt'],['rare','⭐','Rare'],['pals','🐉','Buddies']];
-const tabList=t=>FARM.filter(f=>t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
+const tabList=t=>FARM.filter(f=>t==='mounts'?f.mount||f.prize:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
 const fMeter=(e,n,v)=>`<div class="meter">${e} ${n}<i><b style="width:${Math.round(v)}%"></b></i></div>`;
 function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
   $('#barnTabs').innerHTML=FTABS.map(([id,e,n])=>`<button class="tab${id===barnTab?' on':''}" data-ftab="${id}"><b>${e}</b>${n}</button>`).join('');
@@ -457,7 +541,7 @@ function farmPic(k,S=160,yaw=.6){if(!picKit){const sc=new THREE.Scene();sc.add(n
     cx.putImageData(id,0,0);return cv.toDataURL('image/png');}
   finally{renderer.setRenderTarget(null);rt.dispose();sc.remove(a.g);a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
 function thumbsSoon(){if(thumbBusy)return;const todo=FARM.concat(ZOOA).filter(f=>!FTHUMB[f.k]);if(!todo.length)return;thumbBusy=true;
-  const one=()=>{const f=todo.shift();if(!f){thumbBusy=false;if(barnOpen)renderBarn();if(catOpen)renderCatalog();return;}try{FTHUMB[f.k]=farmPic(f.k);}catch(e){}setTimeout(one,30);};setTimeout(one,50);}
+  const one=()=>{const f=todo.shift();if(!f){thumbBusy=false;if(barnOpen)renderBarn();if(catOpen)renderCatalog();if($('#rides').classList.contains('show'))renderRides();return;}try{FTHUMB[f.k]=farmPic(f.k);}catch(e){}setTimeout(one,30);};setTimeout(one,50);}
 
 /* ---------- the safari zoo (12d-place-zoo.js): walk up to an animal, pet it, feed it and learn about it ---------- */
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
@@ -502,6 +586,7 @@ function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div
     <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt').map(farm).join('')}
     <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
     <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
+    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
     <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}

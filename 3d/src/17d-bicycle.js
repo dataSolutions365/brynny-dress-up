@@ -85,18 +85,22 @@ anims.push((t,dt)=>{if(!started||!av)return;
   BK.g.position.copy(p);BK.g.rotation.set(0,player.face,0);BK.g.rotateZ(BIKE.lean);
   const air=!player.onGround;if(BIKE.air&&!air)tone(220,.05,'triangle',.05);BIKE.air=air;});
 
-/* ---------- 🐎 call your horse from anywhere ---------- */
+/* ---------- 🐎 call your horse (or any ride you own) from anywhere ---------- */
 // the animal that comes when you call: the last one you rode, or else your horse, unicorn, pony... (riding: 24d-barn.js)
-const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck'];
+const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','nova'];
 function myRides(){const own=(SAVE.barn&&SAVE.barn.own)||{};return Object.keys(own).filter(k=>FK[k]&&FK[k].ride).sort((a,b)=>(STEED_ORDER.indexOf(a)+99)%99-(STEED_ORDER.indexOf(b)+99)%99);}
 function mySteed(){const r=myRides();return r.includes(SAVE.barn&&SAVE.barn.steed)?SAVE.barn.steed:r[0]||null;}
 // (the moves wheel is first drawn before the barn file has loaded, so skip the horse button until it has)
-RIDE_ACTS.push(()=>{try{if(barnRide)return [['horse',barnRide.F.e,'Hop off']];const k=mySteed();return [['horse',k?FK[k].e:'🐎',k?FK[k].n:'Horse']];}catch(e){return [];}});
+// with more than one ride (barn animals plus rides from the shop) the button says 🏇 Rides and opens a list to pick from (24g-mounts.js)
+RIDE_ACTS.push(()=>{try{if(barnRide)return [['horse',barnRide.F.e,'Hop off']];if(myRides().length>1)return [['horse','🏇','Rides']];const k=mySteed();return [['horse',k?FK[k].e:'🐎',k?FK[k].n:'Horse']];}catch(e){return [];}});
 function toggleHorse(){if(barnRide){sfx('pop');stopRide();return;}
   if(closetOpen||!started)return;
   if(handsBusy()){toast('Finish what you are doing first, then saddle up! 🐎');return;}
   const k=mySteed();
-  if(!k){setDest(Z.barn);sfx('star');toast('Adopt a horse at the 🐴 Happy Barn, then ride it anywhere! Follow the pink arrow 💗');return;}
+  if(!k){setDest(Z.barn);sfx('star');toast('Adopt a horse at the 🐴 Happy Barn, or get a ride in the 🛍️ shop, then ride it anywhere! 💗');return;}
+  if(myRides().length>1){openRides();return;}
+  callSteed(k);}
+function callSteed(k){if(barnRide||closetOpen||!started||handsBusy()||!BS.own[k]||!FK[k]||!FK[k].ride)return;
   if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);
   const a=farmAnimal(k),P=player.pos;
   // trot over from the barn with a puff of sparkles

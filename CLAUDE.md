@@ -13,6 +13,7 @@
 - Online play (`online.js`) shows each friend exactly as they are: their look, plus everything listed in `SHOW` in
   `3d/src/26c-friends-see.js` (their pet, barn buddy, ride, bike, skateboard, held bat/ball and what they're busy doing).
   When you add a new ride, a new pet, or something you hold, add an entry to `SHOW` so friends see it.
+  Rides that are barn animals (horse, dinos, and the shop rides in `3d/src/24g-mounts.js`) are already covered by the `ride` entry.
   `3d/tests/online-see.mjs` checks it with two phones in one room:
   `npm i --no-save playwright peer && npx playwright install chromium && node 3d/tests/online-see.mjs` (takes a few minutes).
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
