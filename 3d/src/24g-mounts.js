@@ -6,11 +6,11 @@
      With more than one ride the button says 🏇 Rides and opens a list to pick from.
    - They live at the 🐴 Happy Barn when you're not riding, so you can feed, brush and rename them there.
    - Friends online see you riding them through the 'ride' entry in 26c-friends-see.js (any barn animal you ride). */
-const MOUNTS=FARM.filter(f=>f.mount||f.prize);
+const MOUNTS=FARM.filter(f=>f.mount||f.prize||f.earn);// earn = 🏆 rides you earn by winning or playing days in a row (24i-earned-rides.js)
 STABS.splice(1,0,['rides','🦖','Rides']);
 SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn, and the dinosaurs and unicorn there can be ridden too.';
-for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize,
-  d:f.prize?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
+for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize||(f.earn&&f.earn.goal),earn:f.earn,
+  d:f.prize||f.earn?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
 
 // it's yours: it moves into the barn, and the ride button calls it
 function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
@@ -20,6 +20,8 @@ function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
 
 // 🏆 the prize dragon comes once you've earned enough stars (your star rank never goes down, so she stays)
 function askPrize(s){const st=starsEarned();
+  if(s.earn){const f=FK[s.k.slice(6)];$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':'Come back and play tomorrow! A day counts as soon as you start playing.'} This ride can't be bought. ${f.nm} comes to you by herself!</p><button class="btn ghost" data-b="close">OK</button>`;
+    $('#buy').dataset.k=s.k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">You've earned <b>${st}</b> of ${s.prize} ⭐</p><p>Finish ⭐🏆 challenges to earn more stars. She comes to you by herself!</p><button class="btn ghost" data-b="close">OK</button>`;
   $('#buy').dataset.k=s.k;$('#buy').classList.add('show');}
 function checkPrizes(){if(!started)return;for(const f of MOUNTS)if(f.prize&&!BS.own[f.k]&&starsEarned()>=f.prize){getMount(f.k,true);sfx('tada');
