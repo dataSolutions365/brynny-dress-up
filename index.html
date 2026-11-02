@@ -589,16 +589,18 @@ const headT=L=>{const k=headK(L);return k===1?'translate(0 0)':`translate(150 13
 function body(L){
   const sk=L.skin,d=shade(sk,-.15);
   let s='';
-  if(!RIG)s+=sym(`<polyline points="110,170 94,250 88,322" fill="none" stroke="${sk}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/><polyline points="106,176 91,250 86,316" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M94 250 Q98 254 102 250" stroke="${d}" stroke-width="1.5" fill="none" opacity=".5"/>`);
+  if(!RIG)s+=sym(`<polyline points="110,170 94,250 88,322" fill="none" stroke="${sk}" stroke-width="${20*ARMW}" stroke-linecap="round" stroke-linejoin="round"/><polyline points="106,176 91,250 86,316" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M94 250 Q98 254 102 250" stroke="${d}" stroke-width="1.5" fill="none" opacity=".5"/>`);
   s+=sym(`<path d="M106 290 L150 296 L148 300 L146 430 L142 556 L126 556 L118 430 Z" fill="${sk}"/><ellipse cx="134" cy="562" rx="11" ry="7" fill="${sk}"/><path d="M126 312 Q128 380 129 430 Q131 490 131 548" stroke="#fff" stroke-opacity=".2" stroke-width="6" fill="none" stroke-linecap="round"/>${nailDots(L.nails&&L.nails.feet,[[127,566],[131.5,567.5],[135.5,567.8],[139,567.2],[142,566]],1.4,1.3)}<path d="M122 430 Q132 436 142 430" stroke="${d}" stroke-width="2" fill="none" opacity=".6"/>`);
   s+=`<path d="M139 110 L161 110 L162 162 L138 162 Z" fill="${sk}"/><path d="M139 132 Q150 146 161 132 L161 146 Q150 156 139 146 Z" fill="${d}" opacity=".45"/>`;
   s+=`<path d="${TORSO_BODY}" fill="${sk}"/>`;
-  s+=`<path d="M118 168 Q150 180 182 168 L190 186 Q187 222 183 258 L117 258 Q113 222 110 186 Z" fill="#fff0f6"/>`;
-  s+=`<path d="M117 254 L183 254 Q196 280 196 302 L156 312 L150 324 L144 312 L104 302 Q104 280 117 254 Z" fill="#fff0f6"/>`;
+  const under=isGuy(L)?'#e4ecf7':'#fff0f6';
+  if(isGuy(L))s+=`<path d="M136 120 L164 120 L165 162 L135 162 Z" fill="${sk}"/>`;
+  s+=`<path d="M118 168 Q150 180 182 168 L190 186 Q187 222 183 258 L117 258 Q113 222 110 186 Z" fill="${under}"/>`;
+  s+=`<path d="M117 254 L183 254 Q196 280 196 302 L156 312 L150 324 L144 312 L104 302 Q104 280 117 254 Z" fill="${isGuy(L)?'#7f9fd0':under}"/>`;
   return s;
 }
 const nailDots=(set,pts,rx,ry)=>(set||[]).map((n,i)=>n&&pts[i]?`<ellipse cx="${pts[i][0]}" cy="${pts[i][1]}" rx="${rx}" ry="${ry}" fill="${n.c}"${n.g?' stroke="#fff" stroke-width=".5"':''}/>`:'').join('');
-const handRaw=L=>`<circle cx="88" cy="328" r="10" fill="${L.skin}"/>`+nailDots(L.nails&&L.nails.hands,[[79,331],[82,336],[87,338.5],[92,337.5],[96,334]],1.7,2.2);
+const handRaw=L=>`<circle cx="88" cy="328" r="${(10*Math.min(ARMW,1.12)).toFixed(1)}" fill="${L.skin}"/>`+nailDots(L.nails&&L.nails.hands,[[79,331],[82,336],[87,338.5],[92,337.5],[96,334]],1.7,2.2);
 const hands=L=>RIG?'':sym(handRaw(L));
 
 const SPOOKY=[{id:'spacepup',name:'Space pup'},{id:'vampire',name:'Vampire'},{id:'werewolf',name:'Werewolf'},{id:'mummy',name:'Mummy'},{id:'zombie',name:'Zombie'},{id:'skeleton',name:'Skeleton'},{id:'witch',name:'Witch'}];
@@ -636,10 +638,11 @@ function spookyTop(id){
 const ESHAPE={none:{rx:1,ry:1,tilt:0},almond:{rx:1.05,ry:.85,tilt:3},round:{rx:.95,ry:1.2,tilt:0},monolid:{rx:1.05,ry:.75,tilt:4},hooded:{rx:1,ry:1,tilt:0},upturned:{rx:1,ry:.92,tilt:8}};
 const NSHAPE={button:[.92,.82],wide:[1.3,.96],narrow:[.8,1.08]};
 function face(L){
-  const F=L.feat||{},es=F.eye||1,gx=F.gap||0,frx=(L.style==='glam'?38:40)*(F.fw||1),fry=(L.style==='glam'?47:46)*(F.chin||1),fcy=42+fry;
+  const guy=isGuy(L),F=guy?{...L.feat,bshape:(L.feat&&L.feat.bshape)||'straight',bw:((L.feat&&L.feat.bw)||1)*1.35}:(L.feat||{}),es=F.eye||1,gx=F.gap||0,frx=(L.style==='glam'?38:40)*(F.fw||1)*(guy?1.04:1),fry=(L.style==='glam'?47:46)*(F.chin||1),fcy=42+fry;
   const toon=L.style==='cartoon',glam=L.style==='glam',rx=(glam?11:9)*(ESHAPE[F.eshape]||ESHAPE.none).rx,ry=(toon?10:glam?8.4:5.6)*(F.open||1)*(ESHAPE[F.eshape]||ESHAPE.none).ry,ir=toon?7:glam?6.8:4.6,ey=92,esh=F.eshape;
   const sk=L.skin,d=shade(sk,-.18),bc=L.hairColor==='rainbow'?'#6b4a8a':shade(L.hairColor,-.35);
-  const m=L.makeup||{};
+  // guys wear no makeup: no lashes, eyeshadow, lipstick or blush
+  const m=guy?{}:(L.makeup||{});
   let s='<g filter="url(#vol)">'+sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
   s+=`<ellipse cx="150" cy="${fcy}" rx="${frx}" ry="${fry}" fill="${sk}"/></g><path d="M${150-frx+1} 96 Q${150-frx*.85} ${fcy+fry-6} 150 ${fcy+fry} Q${150+frx*.85} ${fcy+fry-6} ${150+frx-1} 96 Q${150+frx*.9} ${fcy+fry-12} 150 ${fcy+fry-6} Q${150-frx*.9} ${fcy+fry-12} ${150-frx+1} 96 Z" fill="${d}" opacity=".35"/><ellipse cx="136" cy="66" rx="20" ry="14" fill="url(#sheen)" opacity=".55"/>`;
   if(!(L.photo&&L.photoOn))s+=`<ellipse cx="150" cy="${fcy}" rx="${frx}" ry="${fry}" fill="url(#faceShade)"/>`;
@@ -652,18 +655,18 @@ function face(L){
     return s;
   }
   let one='';
-  if(glam){const sh=m.shadow||'#b98a9a';one+=`<path d="M${134-rx-5} ${ey+1} Q134 ${ey-ry-13} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.15} ${134-rx-5} ${ey+1} Z" fill="${sh}" opacity="${m.shadow?.8:.45}"/>`;}
+  if(glam&&!guy){const sh=m.shadow||'#b98a9a';one+=`<path d="M${134-rx-5} ${ey+1} Q134 ${ey-ry-13} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.15} ${134-rx-5} ${ey+1} Z" fill="${sh}" opacity="${m.shadow?.8:.45}"/>`;}
   else if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
   const iy=ey+(toon?1:0);
   one+=`<g class="eye"><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="#fff"/><circle cx="134" cy="${iy}" r="${ir}" fill="${L.eyes}"/><circle cx="134" cy="${iy}" r="${ir}" fill="url(#irisShade)"/><circle cx="134" cy="${iy}" r="${ir*.5}" fill="#1e1424"/><circle cx="${134+ir*.38}" cy="${iy-ir*.38}" r="${ir*.3}" fill="#fff"/><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="url(#lidShade)"/>`;
   if(toon) one+=`<circle cx="${134-ir*.4}" cy="${iy+ir*.4}" r="${ir*.15}" fill="#fff"/>`;
   if(glam) one+=`<circle cx="134" cy="${iy}" r="${ir}" fill="none" stroke="${shade(L.eyes,-.45)}" stroke-width="1.1"/><circle cx="${134-ir*.35}" cy="${iy+ir*.45}" r="${ir*.17}" fill="#fff" opacity=".85"/><path d="M${134-rx-1} ${ey+1} Q134 ${ey+ry*1.05} ${134+rx} ${ey+1}" stroke="#6a4a5a" stroke-width=".9" fill="none" opacity=".7"/>`;
-  const lash=m.lashes||(glam?'long':'natural'),lw=(lash==='bold'?3.4:lash==='long'?2.5:1.9)+(glam?.9:0);
+  const lash=guy?'natural':m.lashes||(glam?'long':'natural'),lw=guy?(glam?2:1.6):(lash==='bold'?3.4:lash==='long'?2.5:1.9)+(glam?.9:0);
   const P0=[134-rx-1,ey],P1=[134,ey-ry*(esh==='monolid'?1.2:esh==='hooded'?.95:1.65)],P2=[134+rx+1,ey];
   // hooded: skin-colored lid comes down over the top of the eye, crease sits above it
   if(esh==='hooded')one+=`<path d="M${P0[0]-1} ${ey} Q134 ${ey-ry*2.1} ${P2[0]+1} ${ey} Q134 ${ey-ry*.95} ${P0[0]-1} ${ey} Z" fill="${sk}"/><path d="M${P0[0]+1} ${ey-ry*.5} Q134 ${ey-ry*1.75} ${P2[0]-1} ${ey-ry*.5}" stroke="${d}" stroke-width="1.1" fill="none" opacity=".4"/>`;
   one+=`<path d="M${P0[0]} ${P0[1]} Q${P1[0]} ${P1[1]} ${P2[0]} ${P2[1]}" fill="none" stroke="#2b1a2e" stroke-width="${lw}" stroke-linecap="round"/>`;
-  if(glam)one+=`<path d="M${P0[0]+1} ${P0[1]-1} L${P0[0]-6} ${P0[1]-6} L${P0[0]+3} ${P0[1]-3.5} Z" fill="#2b1a2e" stroke="#2b1a2e" stroke-width="1.2" stroke-linejoin="round"/>`;
+  if(glam&&!guy)one+=`<path d="M${P0[0]+1} ${P0[1]-1} L${P0[0]-6} ${P0[1]-6} L${P0[0]+3} ${P0[1]-3.5} Z" fill="#2b1a2e" stroke="#2b1a2e" stroke-width="1.2" stroke-linejoin="round"/>`;
   if(lash!=='natural'){
     const n=lash==='bold'?4:3,len=lash==='bold'?7:5.5;
     for(let i=0;i<n;i++){const t=.06+i*.12,x=(1-t)**2*P0[0]+2*t*(1-t)*P1[0]+t*t*P2[0],y=(1-t)**2*P0[1]+2*t*(1-t)*P1[1]+t*t*P2[1];
@@ -677,11 +680,12 @@ function face(L){
   s+=sym(one);
   s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[0]} ${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[1]}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
   s+=`<g transform="translate(150 118) scale(${F.mouth||1} ${F.lips||1}) translate(-150 -118)">`;
-  const lsh=F.lshape||(glam?'full':'');
+  const lsh=guy?'':F.lshape||(glam?'full':'');
   if(lsh==='full'){const lc=m.lips||(glam?'#d4737f':'#d98a92');s+=`<path d="M138 117 Q144 110.5 150 113.8 Q156 110.5 162 117 Q156 119.5 150 119.2 Q144 119.5 138 117 Z" fill="${shade(lc,-.12)}"/><path d="M138.5 117.6 Q150 121 161.5 117.6 Q157 127.5 150 127.8 Q143 127.5 138.5 117.6 Z" fill="${lc}"/><path d="M139 117.8 Q150 120.2 161 117.8" stroke="${shade(lc,-.45)}" stroke-width="1" fill="none"/><ellipse cx="147" cy="122.8" rx="4" ry="1.5" fill="#fff" opacity=".65"/><ellipse cx="154" cy="123.4" rx="1.6" ry=".8" fill="#fff" opacity=".5"/>`;}
   else if(lsh==='heart'){const lc=m.lips||'#d98a92';s+=`<path d="M141 117.5 Q145 111.5 150 114.8 Q155 111.5 159 117.5 Q155 119 150 118.6 Q145 119 141 117.5 Z" fill="${shade(lc,-.12)}"/><path d="M142 118 Q150 120 158 118 Q156 125.5 150 125.8 Q144 125.5 142 118 Z" fill="${lc}"/><path d="M142 118.2 Q150 119.8 158 118.2" stroke="${shade(lc,-.45)}" stroke-width=".9" fill="none"/><ellipse cx="148" cy="122" rx="2.6" ry="1.1" fill="#fff" opacity=".6"/>`;}
   else if(lsh==='thin'){const lc=m.lips||'#d08a90';s+=`<path d="M139 117.5 Q150 114.5 161 117.5 Q150 121.5 139 117.5 Z" fill="${lc}"/><path d="M139 117.6 Q150 119 161 117.6" stroke="${shade(lc,-.4)}" stroke-width="1" fill="none"/><ellipse cx="147" cy="119.3" rx="2.2" ry=".6" fill="#fff" opacity=".5"/>`;}
   else if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
+  else if(guy)s+=`<path d="M141 117.5 Q150 124.5 159 117.5" fill="none" stroke="${shade(sk,-.45)}" stroke-width="2.2" stroke-linecap="round"/><path d="M145 123.5 Q150 125.5 155 123.5" fill="none" stroke="${shade(sk,-.25)}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>`;
   else s+=`<path d="M141 117 Q150 128 159 117 Q150 122 141 117 Z" fill="#e08a92" opacity=".7"/><path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="147" cy="121" rx="2.5" ry=".9" fill="#fff" opacity=".45"/>`;
   s+='</g>';
   if(F.freckles)s+=sym([[124,104],[129,107],[121,109],[127,111],[133,105],[138,108],[131,101]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1" fill="${shade(sk,-.4)}" opacity=".55"/>`).join(''))+`<circle cx="145" cy="98" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/><circle cx="155" cy="97" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/>`;
@@ -757,8 +761,28 @@ const HAIR=[
    front:`<path d="M108 96 Q102 32 150 32 Q198 32 192 96 Q192 76 186 70 Q150 64 114 70 Q108 76 108 96 Z" fill="${c}"/>`+sym(`<path d="M108 90 Q102 120 104 140 L116 140 Q112 115 115 96 Z" fill="${c}"/>`)})},
  {id:'pigtails',name:'Pigtails',d:(c,d)=>({back:sym(`<path d="M112 66 Q64 72 68 142 Q72 188 96 208 Q86 150 114 96 Z" fill="${c}"/>`),front:`<path d="${PART}" fill="${c}"/>`+sym(`<circle cx="110" cy="74" r="7" fill="#ffd23f"/>`)})},
  {id:'highbun',name:'Ballerina bun',d:(c,d)=>({back:`<circle cx="150" cy="24" r="24" fill="${c}"/><path d="M134 24 Q150 6 166 24 Q150 38 140 26" stroke="${d}" stroke-width="2" fill="none"/>`,front:`<path d="${CAP}" fill="${c}"/>`})},
+ {id:'updo',name:'Updo',d:(c,d)=>({back:`<ellipse cx="150" cy="22" rx="30" ry="20" fill="${c}"/><path d="M128 22 Q150 4 172 22 M134 30 Q150 16 166 30" stroke="${d}" stroke-width="2" fill="none" opacity=".45"/>`,front:`<path d="${CAP}" fill="${c}"/>`+sym(`<path d="M110 84 Q104 104 110 120" stroke="${c}" stroke-width="3" fill="none"/>`)})},
+ {id:'waves',name:'Beach waves',d:(c,d)=>({back:`<path d="M104 78 Q98 26 150 26 Q202 26 196 78 Q214 120 200 160 Q218 200 202 240 Q214 270 196 288 Q150 300 104 288 Q86 270 98 240 Q82 200 100 160 Q86 120 104 78 Z" fill="${c}"/><path d="M118 120 Q108 170 120 220 Q112 250 120 280 M182 120 Q192 170 180 220 Q188 250 180 280" stroke="#fff" stroke-width="5" fill="none" opacity=".18"/>`,
+   front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q186 66 160 56 Q134 64 116 76 Q109 86 108 102 Z" fill="${c}"/>`+sym(`<path d="M109 88 Q98 130 106 170 Q98 200 106 222 L118 214 Q110 190 116 166 Q108 130 115 96 Z" fill="${c}"/>`)})},
  {id:'pixie',name:'Short',d:(c,d)=>({back:`<path d="M106 80 Q102 30 150 30 Q198 30 194 80 L192 104 L108 104 Z" fill="${c}"/>`,
    front:`<path d="M108 94 Q104 32 150 32 Q196 32 192 94 L186 64 L174 72 L166 58 L152 70 L142 56 L130 70 L120 60 L112 74 Z" fill="${c}"/>`})},
+ // guy cuts (guy:1): only guys see these, see GUY below
+ {id:'crop',name:'Crew cut',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 33 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 92 Q105 38 150 35 Q195 38 190 92 Q188 70 176 60 Q150 54 124 60 Q112 70 110 92 Z" fill="${c}"/><path d="M128 46 L132 56 M146 42 L148 54 M164 44 L162 56" stroke="${d}" stroke-width="2" opacity=".35" stroke-linecap="round"/>`})},
+ {id:'buzz',name:'Buzz cut',guy:1,d:(c,d)=>({back:'',
+   front:`<path d="M111 92 Q107 40 150 39 Q193 40 189 92 Q187 70 176 62 Q150 57 124 62 Q113 70 111 92 Z" fill="${c}" opacity=".85"/>`})},
+ {id:'quiff',name:'Swoop',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 32 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 94 Q102 40 146 28 Q178 22 192 42 Q197 60 190 94 Q188 72 178 62 Q160 52 134 66 Q116 74 110 94 Z" fill="${c}"/><path d="M130 50 Q150 34 182 40 M126 60 Q150 44 186 52" stroke="${d}" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>`})},
+ {id:'sidepart',name:'Side part',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 32 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 94 Q104 38 150 32 Q196 36 190 94 Q188 70 180 62 Q160 50 132 56 L130 50 Q116 66 110 94 Z" fill="${c}"/><path d="M132 36 L130 54" stroke="${d}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/><path d="M138 44 Q160 38 184 52" stroke="${d}" stroke-width="2" fill="none" opacity=".35"/>`})},
+ {id:'flow',name:'Surfer flow',guy:1,d:(c,d)=>({back:`<path d="M106 84 Q102 30 150 30 Q198 30 194 84 L198 140 Q186 150 176 138 L124 138 Q114 150 102 140 Z" fill="${c}"/>`,
+   front:`<path d="M108 100 Q102 34 150 32 Q198 34 192 100 Q190 74 176 62 Q156 56 140 68 Q124 60 114 74 Q108 84 108 100 Z" fill="${c}"/>`+sym(`<path d="M109 92 Q104 116 108 136 L116 130 Q112 112 115 96 Z" fill="${c}"/>`)})},
+ {id:'manbun',name:'Man bun',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 33 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<ellipse cx="150" cy="22" rx="17" ry="14" fill="${c}"/><path d="M136 22 Q150 14 164 22" stroke="${d}" stroke-width="2" fill="none" opacity=".4"/><path d="M110 92 Q105 40 150 36 Q195 40 190 92 Q188 68 172 60 Q150 54 128 60 Q112 68 110 92 Z" fill="${c}"/><path d="M128 44 Q150 38 172 44" stroke="${d}" stroke-width="2" fill="none" opacity=".35"/>`})},
+ {id:'spiky',name:'Spiky',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 33 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 92 Q106 50 112 40 L114 26 L124 36 L130 18 L140 32 L150 14 L160 32 L170 18 L176 36 L186 26 L188 40 Q194 50 190 92 Q188 70 176 60 Q150 54 124 60 Q112 70 110 92 Z" fill="${c}"/>`})},
+ {id:'curltop',name:'Curly top',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 33 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 92 Q106 66 112 58 Q186 54 188 58 Q194 66 190 92 Q188 72 176 64 Q150 60 124 64 Q112 72 110 92 Z" fill="${c}"/>`+[[118,52],[130,42],[144,38],[158,38],[172,42],[184,52],[124,32],[138,28],[154,26],[168,30],[180,38],[118,42]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="${c}"/><path d="M${x-5} ${y+2} Q${x} ${y-5} ${x+5} ${y+1}" stroke="${d}" stroke-width="1.6" fill="none" opacity=".4"/>`).join('')})},
  {id:'superlong',name:'Extra long',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L206 396 Q150 410 94 396 Z" fill="${c}"/><path d="M124 120 L118 380 M176 120 L182 380 M150 130 L150 396" stroke="${d}" stroke-width="2" opacity=".35"/>`,
    front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/>`+sym(`<path d="M109 88 Q101 160 104 300 L117 292 Q112 160 115 96 Z" fill="${c}"/>`)})},
  {id:'hime',name:'Blunt bangs',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L200 300 L100 300 Z" fill="${c}"/>`,
@@ -862,7 +886,7 @@ function salonHair(L,c,d){
 
 /* ---------- clothes ---------- */
 const TORSO=(b=268,n=168)=>`M112 156 Q150 ${n} 188 156 Q199 161 199 178 Q191 222 186 ${b} L114 ${b} Q109 222 101 178 Q101 161 112 156 Z`;
-const sleeve=(c,long,w=26,op)=>RIG?(RIG.sl.push({c,long,w,op}),''):sym(op?`<polyline points="110,168 94,250 89,316" fill="none" stroke="${c}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:long?`<polyline points="110,168 94,250 89,316" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:`<line x1="110" y1="168" x2="102" y2="208" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`);
+const sleeve=(c,long,w0=26,op,w=w0*ARMW)=>RIG?(RIG.sl.push({c,long,w,op}),''):sym(op?`<polyline points="110,168 94,250 89,316" fill="none" stroke="${c}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:long?`<polyline points="110,168 94,250 89,316" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`:`<line x1="110" y1="168" x2="102" y2="208" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`);
 const neck=c=>`<path d="M130 160 Q150 176 170 160" fill="none" stroke="${shade(c,-.18)}" stroke-width="3"/>`;
 function zig(y0,y1,half,n,amp){let p=`M116 ${y0} L184 ${y0} L${150+half} ${y1}`;for(let i=1;i<=n;i++){p+=` L${(150+half-i*(2*half/n)).toFixed(1)} ${i%2?y1+amp:y1}`;}return p+' Z';}
 const PANTS='M116 258 L184 258 Q198 282 196 302 L192 430 L176 552 L155 552 L151 430 L150 322 L149 430 L145 552 L124 552 L108 430 L104 302 Q102 282 116 258 Z';
@@ -1109,8 +1133,181 @@ const SCENES=[
 const LASHES=[{id:'natural',name:'Natural'},{id:'long',name:'Long'},{id:'bold',name:'Dramatic'}];
 const PAINT=[{id:'star',name:'Stars'},{id:'heart',name:'Heart'},{id:'rainbow',name:'Rainbow'},{id:'glitter',name:'Glitter'},{id:'butterfly',name:'Butterfly'},{id:'whiskers',name:'Kitty'},{id:'pumpkin',name:'Pumpkin'},{id:'snow',name:'Snowflake'}];
 
+/* ---------- the 3D world's guy closet, drawn for the 2D studio ----------
+   Same ids as the 3D world (3d/src/14c-guy.js, 14d-barber-looks.js, 14c-sports-outfits.js) so a look matches in both games.
+   guy:1 = only guys see it here, as in 3D. Sports gear and the store's glasses are for girls too in 3D, so here too. */
+{
+const GT=(c,b=276,n=166)=>`<path d="${TORSO(b,n)}" fill="${c}"/>`;
+const belt=(c='#5a3a22')=>`<rect x="113" y="254" width="74" height="10" rx="3" fill="${c}"/><rect x="144" y="253" width="12" height="12" rx="2" fill="none" stroke="#d9c38a" stroke-width="2"/>`;
+const collarP=c=>sym(`<path d="M150 170 L132 156 L126 166 L144 178 Z" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1"/>`);
+const btns=(ys,c='#fff')=>ys.map(y=>`<circle cx="150" cy="${y}" r="2.3" fill="${c}"/>`).join('');
+const num=(t,c,s,y=236,sz=38)=>`<text x="150" y="${y}" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${sz}" fill="${c}" stroke="${s}" stroke-width="2" paint-order="stroke">${t}</text>`;
+const camo=(c,box)=>{const [x0,y0,x1,y1]=box,cs=[shade(c,-.3),shade(c,.25),'#5a4a2e'];let s='';for(let i=0;i<14;i++){const x=x0+((i*37)%(x1-x0)),y=y0+((i*53)%(y1-y0));s+=`<ellipse cx="${x}" cy="${y}" rx="${7+(i%3)*3}" ry="${4+(i%2)*3}" fill="${cs[i%3]}" transform="rotate(${(i*29)%180} ${x} ${y})" opacity=".85"/>`;}return s;};
+const plaid=(c,clip)=>{const dk=shade(c,-.35);let s='';for(let x=96;x<206;x+=14)s+=`<line x1="${x}" y1="150" x2="${x}" y2="300" stroke="${dk}" stroke-width="4" opacity=".55"/>`;for(let y=160;y<300;y+=14)s+=`<line x1="90" y1="${y}" x2="210" y2="${y}" stroke="${dk}" stroke-width="4" opacity=".45"/>`;return `<g clip-path="url(#${clip})">${s}</g>`;};
+// knee shorts and baggy legs
+const KNEE=(y=410)=>`M116 256 L184 256 Q198 282 197 302 L198 ${y} L154 ${y} L150 324 L146 ${y} L102 ${y} L103 302 Q102 282 116 256 Z`;
+const BAGGY='M114 256 L186 256 Q200 282 199 302 L201 430 L198 556 L153 556 L151 430 L150 322 L149 430 L147 556 L102 556 L99 430 L101 302 Q100 282 114 256 Z';
+const SLIM='M116 258 L184 258 Q198 282 196 302 L186 430 L176 552 L156 552 L153 430 L150 322 L147 430 L144 552 L124 552 L114 430 L104 302 Q102 282 116 258 Z';
+const shoe=(c,sole='#fff',sc='#d9d9e3')=>`<path d="M118 546 L146 546 Q151 556 151 568 L113 568 Q113 556 118 546 Z" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1.2"/><rect x="111" y="566" width="42" height="11" rx="5.5" fill="${sole}" stroke="${sc}" stroke-width="1.2"/>`;
+const laces=(y0=550,n=3,c='#fff')=>Array.from({length:n},(_,i)=>`<path d="M126 ${y0+i*5} L142 ${y0+i*5}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>`).join('');
+const lens=(c,op=.85)=>sym(`<rect x="121" y="85" width="26" height="17" rx="7" fill="${c}" opacity="${op}"/>`);
+const G=1;
+
+TOPS.push(
+ {id:'gtee',name:'T-shirt',guy:G,c:'#4fb6ff',d:c=>sleeve(c,0,28)+GT(c)+neck(c)},
+ {id:'graphictee',name:'Graphic tee',guy:G,c:'#2d2d3a',d:c=>sleeve(c,0,28)+GT(c)+neck(c)+`<path d="M156 190 L136 222 L150 222 L142 250 L166 212 L152 212 L160 190 Z" fill="#ffd23f"/>`},
+ {id:'polo',name:'Polo shirt',guy:G,c:'#2e9e4f',d:c=>sleeve(c,0,28)+GT(c)+collarP(shade(c,-.08))+`<path d="M150 170 L150 202" stroke="${shade(c,-.25)}" stroke-width="2"/>`+btns([182,194],shade(c,.5))},
+ {id:'buttonup',name:'Button-up shirt',guy:G,c:'#cfe3ff',d:c=>sleeve(c,1,27)+GT(c,280)+sym(`<rect x="80" y="304" width="20" height="10" rx="3" fill="${shade(c,-.1)}" transform="rotate(8 90 309)"/>`)+collarP('#ffffff')+`<path d="M150 172 L150 278" stroke="${shade(c,-.2)}" stroke-width="1.5"/>`+btns([186,206,226,246,266],shade(c,-.3))},
+ {id:'flannelover',name:'Flannel over tee',guy:G,c:'#c0392b',d:c=>`<defs><clipPath id="flnC"><path d="M112 156 Q128 160 136 176 L136 282 L114 282 Q109 222 101 178 Q101 161 112 156 Z M188 156 Q172 160 164 176 L164 282 L186 282 Q191 222 199 178 Q199 161 188 156 Z"/></clipPath></defs>`+sleeve(c,1,28)+GT('#f2f2f2',280)+neck('#f2f2f2')+sym(`<path d="M112 156 Q128 160 136 176 L136 282 L114 282 Q109 222 101 178 Q101 161 112 156 Z" fill="${c}"/>`)+plaid(c,'flnC')},
+ {id:'crewneck',name:'Sweatshirt',guy:G,c:'#8a8f99',d:c=>sleeve(c,1,29)+GT(c,280)+`<rect x="112" y="270" width="76" height="12" rx="5" fill="${shade(c,-.15)}"/><path d="M130 160 Q150 178 170 160" fill="none" stroke="${shade(c,-.2)}" stroke-width="6"/>`+sym(`<line x1="90" y1="306" x2="89" y2="318" stroke="${shade(c,-.15)}" stroke-width="29"/>`)},
+ {id:'ghoodie',name:'Hoodie',guy:G,c:'#2d2d3a',d:c=>`<ellipse cx="150" cy="160" rx="38" ry="15" fill="${shade(c,-.25)}"/>`+sleeve(c,1,30)+GT(c,288,170)+`<path d="M122 244 L178 244 L184 278 L116 278 Z" fill="${shade(c,-.12)}"/>`+sym(`<line x1="143" y1="170" x2="141" y2="204" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`)},
+ {id:'ziphoodie',name:'Zip hoodie',guy:G,c:'#3a5bd9',d:c=>`<ellipse cx="150" cy="160" rx="38" ry="15" fill="${shade(c,-.25)}"/>`+sleeve(c,1,30)+GT(c,288,170)+`<path d="M150 170 L150 288" stroke="#d9d9e3" stroke-width="3" stroke-dasharray="3 2"/>`+sym(`<path d="M122 244 L146 244 L146 278 L116 278 Z" fill="${shade(c,-.12)}"/><line x1="143" y1="170" x2="141" y2="204" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`)},
+ {id:'quarterzip',name:'Quarter-zip',guy:G,c:'#1f2a44',d:c=>sleeve(c,1,28)+GT(c,280)+`<path d="M132 152 L168 152 L170 166 L130 166 Z" fill="${shade(c,-.15)}"/><path d="M150 152 L150 204" stroke="#c0c0c0" stroke-width="3"/><circle cx="150" cy="206" r="3" fill="#c0c0c0"/>`},
+ {id:'puffer',name:'Puffer jacket',guy:G,c:'#2d2d3a',d:c=>sleeve(c,1,34)+GT(c,288,164)+[184,208,232,256].map(y=>`<path d="M104 ${y} Q150 ${y+6} 196 ${y}" stroke="${shade(c,.25)}" stroke-width="2.5" fill="none"/>`).join('')+sym([206,250,294].map(y=>`<path d="M84 ${y} Q98 ${y+4} 106 ${y}" stroke="${shade(c,.25)}" stroke-width="2.5" fill="none"/>`).join(''))+`<rect x="128" y="148" width="44" height="18" rx="8" fill="${shade(c,-.15)}"/><path d="M150 150 L150 288" stroke="#c0c0c0" stroke-width="2.5"/>`},
+ {id:'leather',name:'Leather jacket',guy:G,c:'#2d2d3a',d:c=>{const hi=shade(c,.35);return sleeve(c,1,28)+GT('#f2f2f2',280)+neck('#f2f2f2')+sym(`<path d="M112 156 Q128 160 140 176 L140 282 L114 282 Q109 222 101 178 Q101 161 112 156 Z" fill="${c}"/><path d="M114 158 L138 174 L128 200 L120 186 Z" fill="${hi}"/><path d="M120 236 L134 236" stroke="#c0c0c0" stroke-width="2"/>`);}},
+ {id:'hawaiian',name:'Hawaiian shirt',guy:G,c:'#2fa3d6',d:c=>sleeve(c,0,30)+GT(c,280)+collarP(shade(c,.15))+[[124,196],[168,190],[140,232],[178,240],[120,262],[160,268],[104,186],[196,186]].map(([x,y],i)=>flower(x,y,6,i%2?'#ff6fae':'#ffd23f','#fff')).join('')+btns([200,230,260],'#fff')},
+ {id:'baseball',name:'Baseball jersey',guy:G,c:'#ffffff',d:c=>{let s=sleeve('#3a5bd9',0,28)+GT(c,280)+`<path d="${TORSO(280,166)}" fill="none" stroke="#d9d9e3" stroke-width="1.5"/>`;for(let x=118;x<186;x+=10)s+=`<line x1="${x}" y1="170" x2="${x}" y2="278" stroke="#3a5bd9" stroke-width="1" opacity=".5"/>`;return s+`<path d="M134 158 L150 176 L166 158" fill="none" stroke="#3a5bd9" stroke-width="4"/>`+num('7','#3a5bd9','#fff',240,34);}},
+ {id:'football',name:'Football jersey',guy:G,c:'#d62839',d:c=>sleeve(c,0,36)+GT(c,280,170)+sym(`<path d="M96 186 L108 200" stroke="#fff" stroke-width="5"/><path d="M98 196 L109 208" stroke="#fff" stroke-width="5"/>`)+`<path d="M134 158 L150 172 L166 158" fill="none" stroke="#fff" stroke-width="5"/>`+num('88','#fff',shade(c,-.4),246,46)},
+ {id:'camo',name:'Camo jacket',guy:G,c:'#6b7a3f',d:c=>`<defs><clipPath id="cmoC"><path d="${TORSO(282,166)}"/></clipPath></defs>`+sleeve(c,1,29)+GT(c,282)+`<g clip-path="url(#cmoC)">${camo(c,[100,160,200,282])}</g>`+collarP(shade(c,-.15))+`<path d="M150 172 L150 282" stroke="${shade(c,-.35)}" stroke-width="2"/>`+sym(`<rect x="118" y="196" width="22" height="18" rx="3" fill="none" stroke="${shade(c,-.35)}" stroke-width="2"/>`)},
+ {id:'sweatervest',name:'Sweater vest',guy:G,c:'#7a3b5e',d:c=>{let s=sleeve('#f2f2f2',1,27)+GT('#f2f2f2',276)+collarP('#ffffff')+`<path d="M120 166 L150 214 L180 166 L191 184 Q189 222 186 280 L114 280 Q111 222 109 184 Z" fill="${c}"/><rect x="112" y="270" width="76" height="10" rx="4" fill="${shade(c,-.18)}"/>`;
+   for(const [x,y] of [[132,232],[168,232],[150,256]])s+=`<path d="M${x} ${y-12} L${x+10} ${y} L${x} ${y+12} L${x-10} ${y} Z" fill="${shade(c,.3)}"/>`;return s;}},
+ {id:'bballjersey',name:'Basketball jersey',c:'#8e6cff',d:c=>`<path d="M122 164 Q150 186 178 164 L191 184 Q189 222 186 282 L114 282 Q111 222 109 184 Z" fill="${c}"/>`+sym(`<path d="M122 164 L118 156 L126 156 Z" fill="${c}"/><path d="M109 184 Q118 180 122 164" stroke="#fff" stroke-width="3" fill="none"/>`)+`<path d="M122 164 Q150 186 178 164" stroke="#fff" stroke-width="3" fill="none"/>`+num('23','#fff',shade(c,-.4),244,40)},
+ {id:'baseballtop',name:'Baseball jersey',c:'#ffffff',d:c=>{let s=sleeve('#ff4d8d',0,28)+GT(c,280)+`<path d="${TORSO(280,166)}" fill="none" stroke="#d9d9e3" stroke-width="1.5"/>`;return s+`<path d="M150 170 L150 278" stroke="#d9d9e3" stroke-width="2"/>`+btns([190,214,238,262],'#ff4d8d')+`<path d="M134 158 L150 172 L166 158" fill="none" stroke="#ff4d8d" stroke-width="4"/>`+`<text x="124" y="214" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="18" fill="#ff4d8d">12</text>`;}}
+);
+
+BOTTOMS.push(
+ {id:'khakis',name:'Khakis',guy:G,c:'#c8b28a',d:c=>`<path d="${PANTS}" fill="${c}"/>`+sym(`<path d="M127 300 L134 548" stroke="${shade(c,-.15)}" stroke-width="1.5"/><path d="M110 268 Q118 286 128 290" stroke="${shade(c,-.25)}" stroke-width="2" fill="none"/>`)+belt()},
+ {id:'slimjeans',name:'Tight jeans',guy:G,c:'#3a5bd9',d:c=>`<path d="${SLIM}" fill="${c}"/>`+sym(`<path d="M110 268 Q118 286 128 290" stroke="#ffd23f" stroke-width="1.5" fill="none" opacity=".7"/>`)+`<path d="M150 264 L150 322" stroke="${shade(c,-.2)}" stroke-width="2"/>`+belt('#3b2a1e')},
+ {id:'baggyjeans',name:'Baggy jeans',guy:G,c:'#6f9be0',d:c=>`<path d="${BAGGY}" fill="${c}"/>`+sym(`<rect x="100" y="536" width="49" height="16" rx="3" fill="${shade(c,-.12)}"/><path d="M118 340 Q124 420 122 520" stroke="${shade(c,-.15)}" stroke-width="2" fill="none"/>`)+`<path d="M150 264 L150 322" stroke="${shade(c,-.2)}" stroke-width="2"/>`+belt('#2d2d3a')},
+ {id:'cargoshorts',name:'Cargo shorts',guy:G,c:'#8a7a52',d:c=>`<path d="${KNEE(410)}" fill="${c}"/>`+sym(`<rect x="100" y="340" width="20" height="30" rx="3" fill="${shade(c,-.1)}" stroke="${shade(c,-.3)}" stroke-width="1.5"/><path d="M100 348 L120 348" stroke="${shade(c,-.3)}" stroke-width="1.5"/>`)+belt('#3b2a1e')},
+ {id:'gymshorts',name:'Gym shorts',guy:G,c:'#2d2d3a',d:c=>`<path d="${KNEE(372)}" fill="${c}"/>`+sym(`<path d="M104 300 L104 370" stroke="#fff" stroke-width="4"/>`)+`<rect x="113" y="254" width="74" height="12" rx="5" fill="${shade(c,-.2)}"/><path d="M146 266 Q144 278 140 284 M154 266 Q156 278 160 284" stroke="#fff" stroke-width="2" fill="none"/>`},
+ {id:'sweats',name:'Sweatpants',guy:G,c:'#8a8f99',d:c=>`<path d="${BAGGY}" fill="${c}"/>`+sym(`<rect x="104" y="532" width="45" height="22" rx="7" fill="${shade(c,-.15)}"/>`)+`<rect x="113" y="252" width="74" height="14" rx="6" fill="${shade(c,-.15)}"/><path d="M146 266 Q144 280 140 288 M154 266 Q156 280 160 288" stroke="#fff" stroke-width="2" fill="none"/>`},
+ {id:'cargopants',name:'Cargo pants',guy:G,c:'#5d6b3a',d:c=>`<path d="${BAGGY}" fill="${c}"/>`+sym(`<rect x="98" y="360" width="22" height="34" rx="3" fill="${shade(c,-.1)}" stroke="${shade(c,-.3)}" stroke-width="1.5"/><path d="M98 370 L120 370" stroke="${shade(c,-.3)}" stroke-width="1.5"/>`)+belt('#2d2d3a')},
+ {id:'swimtrunks',name:'Swim trunks',guy:G,c:'#2fd1c5',d:c=>`<path d="${KNEE(380)}" fill="${c}"/>`+[[118,300],[176,318],[130,350],[170,362],[112,370]].map(([x,y])=>flower(x,y,5,'#fff','#ffd23f')).join('')+`<rect x="113" y="254" width="74" height="10" rx="4" fill="${shade(c,-.2)}"/><path d="M146 264 Q142 276 138 280 M154 264 Q158 276 162 280" stroke="#fff" stroke-width="2" fill="none"/>`},
+ {id:'ripped',name:'Ripped jeans',guy:G,c:'#6f9be0',d:c=>`<path d="${PANTS}" fill="${c}"/>`+sym(`<ellipse cx="128" cy="430" rx="11" ry="7" fill="${shade(c,.55)}"/><path d="M118 428 L138 428 M119 433 L137 433" stroke="#fff" stroke-width="1.5"/><ellipse cx="124" cy="350" rx="7" ry="4" fill="${shade(c,.55)}"/><path d="M118 350 L130 350" stroke="#fff" stroke-width="1.2"/>`)+`<path d="M150 264 L150 322" stroke="${shade(c,-.2)}" stroke-width="2"/>`+belt('#2d2d3a')},
+ {id:'camopants',name:'Camo pants',guy:G,c:'#6b7a3f',d:c=>`<defs><clipPath id="cmoP"><path d="${BAGGY}"/></clipPath></defs><path d="${BAGGY}" fill="${c}"/><g clip-path="url(#cmoP)">${camo(c,[100,262,200,550])}${camo(c,[104,380,196,548])}</g>`+belt('#2d2d3a')},
+ {id:'chinoshorts',name:'Chino shorts',guy:G,c:'#c8b28a',d:c=>`<path d="${KNEE(392)}" fill="${c}"/>`+sym(`<rect x="102" y="382" width="47" height="10" fill="${shade(c,-.1)}"/><path d="M110 268 Q118 286 128 290" stroke="${shade(c,-.25)}" stroke-width="2" fill="none"/>`)+belt('#3b2a1e')},
+ {id:'bballshorts',name:'Basketball shorts',c:'#8e6cff',d:c=>`<path d="${KNEE(412)}" fill="${c}"/>`+sym(`<path d="M103 300 L102 410" stroke="#fff" stroke-width="5"/>`)+`<rect x="113" y="254" width="74" height="12" rx="5" fill="${shade(c,-.2)}"/>`},
+ {id:'baseballpants',name:'Baseball pants',c:'#ffffff',d:c=>`<path d="${PANTS}" fill="${c}" stroke="#d9d9e3" stroke-width="1.5"/>`+sym(`<path d="M105 300 L124 548" stroke="#ff4d8d" stroke-width="4"/>`)+belt('#2d2d3a')}
+);
+
+// suits and uniforms: a whole outfit, like a dress
+const PANTS_OF=(c,p=PANTS)=>`<path d="${p}" fill="${c}"/><path d="M150 264 L150 322" stroke="${shade(c,-.2)}" stroke-width="2"/>`;
+const jacket=(c,lap,open=1)=>sleeve(c,1,28)+GT('#ffffff',282)+sym(`<path d="M112 156 Q128 160 ${open?140:150} 182 L${open?146:150} 286 L114 286 Q109 222 101 178 Q101 161 112 156 Z" fill="${c}"/><path d="M128 158 L146 200 L130 186 L124 192 Z" fill="${lap}"/><rect x="118" y="244" width="18" height="4" rx="2" fill="${shade(c,-.25)}"/>`)+btns([234,262],shade(c,-.35));
+DRESSES.push(
+ {id:'suit',name:'Sharp suit',guy:G,c:'#1f2a44',d:c=>PANTS_OF(c)+jacket(c,shade(c,-.25))+`<path d="M146 166 L154 166 L157 222 L150 232 L143 222 Z" fill="#d62839"/><path d="M144 160 L156 160 L154 168 L146 168 Z" fill="${shade('#d62839',-.2)}"/>`},
+ {id:'suit2',name:'Everyday suit',guy:G,c:'#6b7280',d:c=>PANTS_OF(c)+jacket(c,shade(c,-.18))+collarP('#ffffff')},
+ {id:'tux',name:'Tuxedo',guy:G,c:'#1a1a1a',d:c=>PANTS_OF(c)+sym(`<path d="M127 300 L134 548" stroke="#3a3a3a" stroke-width="3"/>`)+jacket(c,'#3a3a46')+`<path d="M136 162 L150 168 L164 162 L164 176 L150 170 L136 176 Z" fill="#1a1a1a"/><circle cx="150" cy="169" r="3" fill="#1a1a1a"/>`+btns([196,214],'#1a1a1a')},
+ {id:'tracksuit',name:'Tracksuit',guy:G,c:'#d62839',d:c=>PANTS_OF(c,BAGGY)+sym(`<path d="M104 300 L104 552" stroke="#fff" stroke-width="5"/>`)+sleeve(c,1,29)+sym(`<polyline points="104,172 90,250 85,312" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>`)+GT(c,282)+`<rect x="130" y="150" width="40" height="14" rx="5" fill="${shade(c,-.15)}"/><path d="M150 152 L150 282" stroke="#fff" stroke-width="2.5"/>`},
+ {id:'sweatsuit',name:'Sweatsuit',guy:G,c:'#8a8f99',d:c=>PANTS_OF(c,BAGGY)+sym(`<rect x="104" y="532" width="45" height="22" rx="7" fill="${shade(c,-.15)}"/><line x1="90" y1="306" x2="89" y2="318" stroke="${shade(c,-.15)}" stroke-width="29"/>`)+sleeve(c,1,29)+GT(c,282)+`<rect x="112" y="272" width="76" height="12" rx="5" fill="${shade(c,-.15)}"/><path d="M130 160 Q150 178 170 160" fill="none" stroke="${shade(c,-.2)}" stroke-width="6"/>`},
+ {id:'bballuni',name:'Basketball uniform',guy:G,c:'#ff8a1f',d:c=>`<path d="${KNEE(412)}" fill="${c}"/>`+sym(`<path d="M103 300 L102 410" stroke="#fff" stroke-width="5"/>`)+`<path d="M122 164 Q150 186 178 164 L191 184 Q189 222 186 282 L114 282 Q111 222 109 184 Z" fill="${c}"/>`+sym(`<path d="M122 164 L118 156 L126 156 Z" fill="${c}"/><path d="M109 184 Q118 180 122 164" stroke="#fff" stroke-width="3" fill="none"/>`)+num('3','#fff',shade(c,-.4),244,44)},
+ {id:'coveralls',name:'Mechanic coveralls',guy:G,c:'#3a5bd9',d:c=>PANTS_OF(c,BAGGY)+sleeve(c,1,28)+GT(c,284)+collarP(shade(c,-.15))+`<path d="M150 172 L150 300" stroke="#c0c0c0" stroke-width="2.5"/><rect x="110" y="256" width="80" height="10" fill="${shade(c,-.25)}"/>`+sym(`<rect x="118" y="196" width="22" height="18" rx="3" fill="none" stroke="${shade(c,-.35)}" stroke-width="2"/><rect x="106" y="330" width="20" height="24" rx="3" fill="none" stroke="${shade(c,-.35)}" stroke-width="2"/>`)+`<rect x="160" y="196" width="24" height="12" rx="3" fill="#fff"/><path d="M164 202 L180 202" stroke="#d62839" stroke-width="2"/>`}
+);
+
+SHOES.push(
+ {id:'kicks',name:'Sneakers',guy:G,c:'#ffffff',d:c=>sym(shoe(c)+`<path d="M120 560 Q132 552 146 548" stroke="${c==='#ffffff'?'#2d2d3a':'#fff'}" stroke-width="3" fill="none" stroke-linecap="round"/>`+laces(550,2,c==='#ffffff'?'#c0c0c0':'#fff'))},
+ {id:'skateshoes',name:'Skate shoes',guy:G,c:'#2d2d3a',d:c=>sym(`<path d="M116 544 L148 544 Q153 554 153 568 L111 568 Q111 554 116 544 Z" fill="${c}"/><rect x="109" y="566" width="46" height="12" rx="4" fill="#e8d5a8" stroke="#c9b27e" stroke-width="1.2"/>`+laces(550,3,'#fff'))},
+ {id:'slides',name:'Slides & socks',guy:G,c:'#2d2d3a',d:c=>sym(`<path d="M120 500 L146 500 L148 566 Q148 574 132 574 Q116 574 116 566 Z" fill="#ffffff" stroke="#d9d9e3" stroke-width="1.2"/><path d="M120 504 L146 504" stroke="#d62839" stroke-width="3"/><path d="M114 552 Q132 544 150 552 L151 566 L113 566 Z" fill="${c}"/><rect x="110" y="566" width="44" height="9" rx="4" fill="${shade(c,-.2)}"/>`)},
+ {id:'oxfords',name:'Dress shoes',guy:G,c:'#3b2416',d:c=>sym(`<path d="M117 552 L147 552 Q154 560 153 572 L111 572 Q111 558 117 552 Z" fill="${c}"/><rect x="110" y="571" width="44" height="6" rx="3" fill="${shade(c,-.4)}"/><path d="M126 556 L142 556 M127 561 L141 561" stroke="${shade(c,-.4)}" stroke-width="1.5"/><ellipse cx="144" cy="565" rx="5" ry="2" fill="#fff" opacity=".4"/>`)},
+ {id:'loafers',name:'Loafers',guy:G,c:'#7a4a2a',d:c=>sym(`<path d="M117 552 L147 552 Q154 560 153 572 L111 572 Q111 558 117 552 Z" fill="${c}"/><rect x="110" y="571" width="44" height="6" rx="3" fill="${shade(c,-.4)}"/><rect x="122" y="557" width="22" height="5" rx="2" fill="${shade(c,-.25)}"/><circle cx="133" cy="559.5" r="1.8" fill="#d9a35a"/>`)},
+ {id:'workboots',name:'Work boots',guy:G,c:'#a0622d',d:c=>sym(`<path d="M116 502 L150 502 L150 562 Q153 566 153 572 L111 572 L112 560 Z" fill="${c}"/><rect x="110" y="568" width="44" height="12" rx="4" fill="#2d2d3a"/><rect x="114" y="500" width="38" height="8" rx="3" fill="${shade(c,-.2)}"/>`+laces(512,6,'#e8d5a8'))},
+ {id:'cowboyboots',name:'Cowboy boots',guy:G,c:'#8a5a3b',d:c=>sym(`<path d="M116 470 L150 470 L149 556 Q156 562 158 572 L112 572 L114 556 Z" fill="${c}"/><path d="M116 470 Q133 480 150 470" stroke="${shade(c,-.3)}" stroke-width="2" fill="none"/><path d="M124 490 Q132 510 126 530 M140 490 Q132 510 138 530" stroke="#e8d5a8" stroke-width="1.6" fill="none"/><rect x="138" y="570" width="12" height="10" fill="${shade(c,-.4)}"/><rect x="112" y="572" width="30" height="5" fill="${shade(c,-.4)}"/>`)},
+ {id:'goldkicks',name:'Gold sneakers',guy:G,c:'#e0b04a',d:c=>sym(shoe(c,'#fff')+`<path d="M120 560 Q132 552 146 548" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>`+star(126,552,3,'#fff'))},
+ {id:'runners',name:'Running shoes',guy:G,c:'#4fb6ff',d:c=>sym(shoe(c,'#ffffff')+`<path d="M118 562 L132 550 M126 564 L140 552" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><path d="M111 572 L153 572" stroke="${shade(c,-.1)}" stroke-width="3"/>`)},
+ {id:'courtkicks',name:'Basketball sneakers',c:'#ff6fae',d:c=>sym(`<path d="M118 512 L148 512 L148 548 Q152 556 152 568 L112 568 Q112 556 116 548 Z" fill="${c}"/><rect x="110" y="566" width="44" height="12" rx="6" fill="#fff" stroke="#d9d9e3" stroke-width="1.2"/><path d="M118 540 Q132 532 148 528" stroke="#fff" stroke-width="3" fill="none"/>`+laces(520,4,'#fff'))},
+ {id:'ballcleats',name:'Baseball cleats',c:'#2d2d3a',d:c=>sym(`<path d="M118 546 L146 546 Q151 556 151 568 L113 568 Q113 556 118 546 Z" fill="${c}"/><rect x="111" y="566" width="42" height="7" rx="3" fill="${shade(c,-.2)}"/>`+[116,126,138,148].map(x=>`<rect x="${x-2}" y="572" width="4" height="6" fill="#c0c0c0"/>`).join('')+laces(551,2,'#fff'))}
+);
+
+HATS.push(
+ {id:'backcap',name:'Backwards cap',guy:G,c:'#d62839',d:c=>`<path d="M118 10 Q150 -4 182 10 L178 22 Q150 12 122 22 Z" fill="${shade(c,-.2)}"/><path d="M106 62 Q104 14 150 12 Q196 14 194 62 Z" fill="${c}"/><path d="M106 58 Q150 66 194 58 L194 64 Q150 72 106 64 Z" fill="${shade(c,-.18)}"/><path d="M134 64 L166 64 L162 52 Q150 46 138 52 Z" fill="${shade(c,-.3)}"/>`},
+ {id:'snapback',name:'Snapback',guy:G,c:'#2d2d3a',d:c=>`<path d="M106 60 Q104 12 150 10 Q196 12 194 60 Z" fill="${c}"/><path d="M98 56 L202 56 L200 66 L100 66 Z" fill="${shade(c,-.25)}"/><path d="M150 10 L150 56" stroke="${shade(c,.2)}" stroke-width="1.5"/><rect x="134" y="28" width="32" height="18" rx="3" fill="#ffd23f"/><path d="M140 37 L160 37" stroke="${c}" stroke-width="3"/>`},
+ {id:'bucket',name:'Bucket hat',guy:G,c:'#c8b28a',d:c=>`<path d="M112 58 Q110 16 150 14 Q190 16 188 58 Z" fill="${c}"/><path d="M112 54 L188 54 L208 76 Q150 88 92 76 Z" fill="${shade(c,-.12)}"/><path d="M112 54 L188 54" stroke="${shade(c,-.3)}" stroke-width="2"/><path d="M116 46 L184 46" stroke="${shade(c,-.2)}" stroke-width="1.5" stroke-dasharray="3 2"/>`},
+ {id:'fedora',name:'Fedora',guy:G,c:'#3b3b46',d:c=>`<path d="M84 64 Q150 44 216 64 Q214 72 150 66 Q86 72 84 64 Z" fill="${shade(c,-.15)}"/><path d="M114 58 Q110 18 136 14 Q150 22 164 14 Q190 18 186 58 Z" fill="${c}"/><rect x="113" y="46" width="74" height="10" fill="#1a1a1a"/><path d="M150 22 L150 40" stroke="${shade(c,-.3)}" stroke-width="3"/>`},
+ {id:'cowboyhat',name:'Cowboy hat',guy:G,c:'#c8a06a',d:c=>`<path d="M70 50 Q84 74 150 72 Q216 74 230 50 Q214 66 150 62 Q86 66 70 50 Z" fill="${shade(c,-.12)}"/><path d="M116 60 Q110 18 132 12 Q150 22 168 12 Q190 18 184 60 Z" fill="${c}"/><rect x="115" y="48" width="70" height="9" fill="#5a3a22"/><path d="M150 18 L150 36" stroke="${shade(c,-.3)}" stroke-width="3"/>`},
+ {id:'visor',name:'Visor',guy:G,c:'#ffffff',d:c=>`<path d="M106 50 Q150 40 194 50 L194 62 Q150 54 106 62 Z" fill="${c}" stroke="${shade(c,-.15)}" stroke-width="1.5"/><path d="M106 58 Q150 66 194 58 Q196 72 150 86 Q104 72 106 58 Z" fill="${shade(c,-.1)}" stroke="${shade(c,-.2)}" stroke-width="1.5"/>`},
+ {id:'helmet',name:'Batting helmet',c:'#3a5bd9',d:c=>`<path d="M102 100 Q96 12 150 10 Q204 12 198 100 L186 100 Q186 60 150 58 Q114 60 114 100 Z" fill="${c}"/><path d="M104 60 Q150 70 196 60 Q198 74 150 84 Q102 74 104 60 Z" fill="${shade(c,-.2)}"/><ellipse cx="104" cy="94" rx="14" ry="18" fill="${c}"/><circle cx="104" cy="94" r="5" fill="${shade(c,-.35)}"/><path d="M126 24 Q140 16 154 16" stroke="#fff" stroke-width="4" fill="none" opacity=".45" stroke-linecap="round"/>`}
+);
+
+EXTRAS.push(
+ {id:'chain',name:'Chain',guy:G,c:'#e0b04a',vb:'110 140 80 100',d:c=>({front:`<path d="M128 160 Q132 196 150 206 Q168 196 172 160" fill="none" stroke="${c}" stroke-width="4" stroke-dasharray="4 2"/><circle cx="150" cy="212" r="7" fill="${c}" stroke="${shade(c,-.3)}" stroke-width="1.5"/>`})},
+ {id:'watch',name:'Watch',guy:G,c:'#c0c0c0',vb:'60 280 60 60',d:c=>({hand:`<rect x="78" y="302" width="22" height="12" rx="3" fill="${c}" transform="rotate(6 89 308)"/><circle cx="89" cy="308" r="6.5" fill="#fff" stroke="${shade(c,-.35)}" stroke-width="2"/><path d="M89 308 L89 304 M89 308 L92 309" stroke="#2d2d3a" stroke-width="1.2"/>`})},
+ {id:'shades',name:'Sunglasses',guy:G,c:'#2d2d3a',vb:'110 70 80 45',d:c=>({head:lens(c,.92)+`<path d="M147 90 L153 90" stroke="${c}" stroke-width="3"/>`+sym(`<path d="M121 89 L110 88" stroke="${c}" stroke-width="3"/>`)})},
+ {id:'headphones',name:'Headphones',guy:G,c:'#2d2d3a',vb:'90 20 120 100',d:c=>({head:`<path d="M106 92 Q102 26 150 24 Q198 26 194 92" fill="none" stroke="${c}" stroke-width="7"/>`+sym(`<rect x="98" y="82" width="16" height="26" rx="7" fill="${c}"/><rect x="101" y="86" width="8" height="18" rx="4" fill="#ff4d8d"/>`)})},
+ {id:'backpack',name:'Backpack',guy:G,c:'#d62839',vb:'90 150 120 160',d:c=>({back:`<rect x="104" y="168" width="92" height="118" rx="20" fill="${c}"/>`,front:sym(`<path d="M118 160 Q114 210 118 262" stroke="${shade(c,-.25)}" stroke-width="7" fill="none"/>`)})},
+ {id:'wristbands',name:'Wristbands',guy:G,c:'#ffffff',vb:'60 280 60 60',d:c=>({hand:sym(`<rect x="78" y="300" width="22" height="13" rx="4" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1.2" transform="rotate(6 89 306)"/><path d="M80 306 L98 308" stroke="#d62839" stroke-width="2"/>`)})},
+ {id:'skateboard',name:'Skateboard',guy:G,c:'#ff8a1f',vb:'200 380 60 210',d:c=>({front:`<rect x="214" y="392" width="30" height="168" rx="15" fill="${c}" stroke="${shade(c,-.3)}" stroke-width="2"/><path d="M220 420 L238 520" stroke="#fff" stroke-width="4" opacity=".6"/><rect x="208" y="420" width="42" height="6" rx="3" fill="#c0c0c0"/><rect x="208" y="526" width="42" height="6" rx="3" fill="#c0c0c0"/>`})},
+ {id:'studs',name:'Diamond studs',guy:G,c:'#cfefff',vb:'100 90 100 30',d:c=>({head:sym(`<path d="M111 102 L114 106 L111 110 L108 106 Z" fill="${c}" stroke="#fff" stroke-width=".8"/>`)})},
+ {id:'dogtags',name:'Dog tags',guy:G,c:'#c0c0c0',vb:'110 140 80 100',d:c=>({front:`<path d="M130 160 Q134 194 150 204 Q166 194 170 160" fill="none" stroke="${c}" stroke-width="1.6" stroke-dasharray="1.5 1.5"/><rect x="142" y="202" width="11" height="17" rx="4" fill="${c}" stroke="${shade(c,-.3)}" stroke-width="1"/><rect x="149" y="206" width="11" height="17" rx="4" fill="${shade(c,.15)}" stroke="${shade(c,-.3)}" stroke-width="1"/>`})},
+ {id:'aviators',name:'Aviators',c:'#d4af37',vb:'110 70 80 45',d:c=>({head:sym(`<path d="M121 86 L147 86 Q148 104 134 106 Q120 104 121 86 Z" fill="#5a4a3a" opacity=".85" stroke="${c}" stroke-width="2"/><path d="M121 88 L110 87" stroke="${c}" stroke-width="2"/>`)+`<path d="M147 87 Q150 84 153 87" stroke="${c}" stroke-width="2" fill="none"/>`})},
+ {id:'roundspecs',name:'Round glasses',c:'#8a5a3b',vb:'110 70 80 45',d:c=>({head:sym(`<circle cx="134" cy="93" r="11" fill="#fff" fill-opacity=".15" stroke="${c}" stroke-width="2.2"/>`)+`<path d="M145 92 Q150 89 155 92" stroke="${c}" stroke-width="2.2" fill="none"/>`})},
+ {id:'sportshades',name:'Sport shades',c:'#ff3b6b',vb:'110 70 80 45',d:c=>({head:`<path d="M114 86 Q150 78 186 86 L184 98 Q168 106 152 98 L148 98 Q132 106 116 98 Z" fill="${c}" opacity=".9"/><path d="M118 88 Q150 82 182 88" stroke="#fff" stroke-width="2" opacity=".6" fill="none"/>`})},
+ {id:'thickframes',name:'Thick frames',c:'#2d2d3a',vb:'110 70 80 45',d:c=>({head:sym(`<rect x="121" y="84" width="26" height="19" rx="4" fill="#fff" fill-opacity=".15" stroke="${c}" stroke-width="4"/>`)+`<path d="M147 90 L153 90" stroke="${c}" stroke-width="4"/>`})},
+ {id:'gamer3d',name:'3D glasses',c:'#ffffff',vb:'110 70 80 45',d:c=>({head:`<rect x="119" y="84" width="62" height="20" rx="3" fill="${c}"/><rect x="123" y="87" width="23" height="14" rx="2" fill="#ff3b6b" opacity=".85"/><rect x="154" y="87" width="23" height="14" rx="2" fill="#4fb6ff" opacity=".85"/>`})},
+ {id:'glove',name:'Baseball glove',c:'#a0622d',vb:'50 290 70 70',d:c=>({hand:`<path d="M72 312 Q70 296 80 292 Q84 286 90 290 Q96 286 100 292 Q108 296 106 312 L104 340 Q90 350 76 340 Z" fill="${c}" stroke="${shade(c,-.3)}" stroke-width="2"/><path d="M80 300 L80 318 M90 296 L90 318 M99 300 L99 318" stroke="${shade(c,-.3)}" stroke-width="1.5"/><path d="M76 336 Q90 344 104 336" stroke="#e8d5a8" stroke-width="2" fill="none"/>`})}
+);
+}
+/* ---------- holiday and other things from the 3D world, drawn for the 2D studio (same ids as 3D) ----------
+   In the 3D world the holiday ones are bought in the shop during their holiday; here they are always in the closet.
+   The 2D Candy bucket and Bat wings are the 3D Treat bucket and Bat wings. */
+{
+TOPS.push({id:'flannel',name:'Cozy flannel',c:'#c0392b',d:c=>{const dk=shade(c,-.35);let g='';for(let x=96;x<206;x+=14)g+=`<line x1="${x}" y1="150" x2="${x}" y2="300" stroke="${dk}" stroke-width="4" opacity=".5"/>`;for(let y=160;y<300;y+=14)g+=`<line x1="90" y1="${y}" x2="210" y2="${y}" stroke="${dk}" stroke-width="4" opacity=".4"/>`;
+  return `<defs><clipPath id="flC2"><path d="${TORSO(278,166)}"/></clipPath></defs>`+sleeve(c,1,28)+`<path d="${TORSO(278,166)}" fill="${c}"/><g clip-path="url(#flC2)">${g}</g>`+sym(`<path d="M150 170 L132 156 L126 166 L144 178 Z" fill="${shade(c,-.15)}"/>`)+[190,214,238,262].map(y=>`<circle cx="150" cy="${y}" r="2.3" fill="#fff"/>`).join('');}});
+DRESSES.push(
+ {id:'stargown',name:'Starry gown',c:'#2b2d6e',d:c=>BOD(c)+`<path d="M116 255 L184 255 Q236 400 258 556 Q150 580 42 556 Q64 400 116 255 Z" fill="${c}"/><rect x="114" y="250" width="72" height="12" rx="6" fill="${shade(c,.25)}"/>`+[[110,320,6],[190,350,5],[150,400,7],[90,470,6],[210,480,6],[130,520,5],[176,530,6],[150,300,4],[124,200,4],[174,220,4]].map(([x,y,r])=>star(x,y,r,'#ffe066')).join('')+`<path d="M190 380 Q206 384 212 372 Q200 376 194 366 Q188 376 190 380 Z" fill="#fff3b0"/>`},
+ {id:'ghost',name:'Ghost costume',c:'#ffffff',d:c=>`<path d="M104 176 Q104 150 150 150 Q196 150 196 176 L232 556 Q214 572 196 556 Q178 574 160 556 Q142 574 124 556 Q106 574 88 556 Q70 572 62 556 Z" fill="${c}" stroke="${shade(c,-.15)}" stroke-width="2" opacity=".95"/><ellipse cx="136" cy="250" rx="8" ry="12" fill="#2d2d3a"/><ellipse cx="164" cy="250" rx="8" ry="12" fill="#2d2d3a"/><ellipse cx="150" cy="290" rx="9" ry="12" fill="#2d2d3a"/>`},
+ {id:'elf',name:'Elf dress',c:'#2e8b57',d:c=>sleeve(c,1,27)+BOD(c,170)+`<path d="M116 255 L184 255 L214 380 L196 366 L180 384 L164 368 L150 386 L136 368 L120 384 L104 366 L86 380 Z" fill="${c}"/><path d="M86 380 L104 366 L120 384 L136 368 L150 386 L164 368 L180 384 L196 366 L214 380" stroke="#d62839" stroke-width="5" fill="none"/><path d="M128 160 L150 186 L172 160" stroke="#fff" stroke-width="6" fill="none"/><rect x="113" y="248" width="74" height="13" fill="#3b2a1e"/><rect x="141" y="245" width="18" height="19" rx="3" fill="none" stroke="#ffd23f" stroke-width="4"/>`+sym(`<rect x="80" y="304" width="20" height="10" rx="3" fill="#d62839" transform="rotate(8 90 309)"/>`)}
+);
+SHOES.push({id:'furboots',name:'Fluffy boots',c:'#e8c9a8',d:c=>sym(`<path d="M116 498 L150 498 L149 566 Q149 579 133 579 Q114 579 115 566 Z" fill="${c}"/>`+[116,124,132,140,148].map(x=>`<circle cx="${x}" cy="498" r="6.5" fill="#fff"/>`).join('')+[116,128,140,150].map(x=>`<circle cx="${x}" cy="574" r="5" fill="#fff"/>`).join(''))});
+HATS.push(
+ {id:'hearthb',name:'Heart headband',c:'#ff3b6b',d:c=>`<path d="M106 62 Q104 22 150 20 Q196 22 194 62" fill="none" stroke="${c}" stroke-width="6"/>`+heart(132,8,13,c)+heart(168,8,13,c)},
+ {id:'leprechaun',name:'Lucky hat',c:'#2e9e4f',d:c=>`<ellipse cx="150" cy="54" rx="62" ry="12" fill="${shade(c,-.15)}"/><path d="M118 52 L124 -6 L176 -6 L182 52 Z" fill="${c}"/><rect x="120" y="32" width="60" height="12" fill="#2d2d3a"/><rect x="142" y="30" width="16" height="16" rx="2" fill="none" stroke="#ffd23f" stroke-width="3"/>`+[[-10,0],[10,0],[0,-10]].map(([dx,dy])=>`<circle cx="${176+dx*.5}" cy="${18+dy*.5}" r="5" fill="#7ee081"/>`).join('')},
+ {id:'pumpkinhat',name:'Pumpkin hat',c:'#ff8a1f',d:c=>`<path d="M104 62 Q100 14 150 12 Q200 14 196 62 Z" fill="${c}"/><path d="M126 16 Q118 40 122 62 M150 12 L150 62 M174 16 Q182 40 178 62" stroke="${shade(c,-.2)}" stroke-width="2.5" fill="none"/><rect x="144" y="-2" width="10" height="16" rx="3" fill="#3c8d5a"/><path d="M154 4 Q168 -6 172 6 Q162 2 154 8 Z" fill="#7ee081"/>`},
+ {id:'turkeyhat',name:'Turkey hat',c:'#8a5a3b',d:c=>[['#d62839',-60],['#ff8a1f',-30],['#ffd23f',0],['#ff8a1f',30],['#d62839',60]].map(([f,a])=>`<ellipse cx="150" cy="-4" rx="10" ry="30" fill="${f}" transform="rotate(${a} 150 30)"/>`).join('')+`<path d="M106 62 Q104 18 150 16 Q196 18 194 62 Z" fill="${c}"/><circle cx="150" cy="22" r="13" fill="${shade(c,.15)}"/><circle cx="146" cy="19" r="2" fill="#2d2d3a"/><circle cx="154" cy="19" r="2" fill="#2d2d3a"/><path d="M147 24 L153 24 L150 30 Z" fill="#ffd23f"/><path d="M152 28 Q156 34 152 38" stroke="#d62839" stroke-width="3" fill="none"/>`},
+ {id:'leafcrown',name:'Leaf crown',c:'#ff8a1f',d:c=>{let s='';const cols=[c,'#d62839','#ffd23f',c,'#a0441f','#ffd23f',c];for(let i=0;i<7;i++){const a=Math.PI*(1.05+i*.15),x=150+48*Math.cos(a),y=72+40*Math.sin(a);s+=`<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="11" ry="6" fill="${cols[i]}" transform="rotate(${(a*180/Math.PI+90).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;}return s;}}
+);
+EXTRAS.push(
+ {id:'unicorn',name:'Unicorn horn',c:'#ffb3e6',vb:'120 -20 60 80',d:c=>({head:`<path d="M140 30 L150 -14 L160 30 Z" fill="${c}"/><path d="M142 22 L158 18 M144 10 L156 6" stroke="#fff" stroke-width="2"/>`})},
+ {id:'halo',name:'Halo',c:'#ffd23f',vb:'100 -30 100 50',d:c=>({head:`<ellipse cx="150" cy="-6" rx="34" ry="9" fill="none" stroke="${c}" stroke-width="6"/>`})},
+ {id:'balloon',name:'Balloon',c:'#ff3b6b',vb:'40 120 80 230',d:c=>({hand:`<path d="M88 330 Q70 260 76 200" stroke="#888" stroke-width="1.5" fill="none"/><ellipse cx="76" cy="166" rx="26" ry="32" fill="${c}"/><path d="M72 198 L80 198 L76 204 Z" fill="${c}"/><ellipse cx="66" cy="154" rx="6" ry="10" fill="#fff" opacity=".45"/>`})},
+ {id:'sparkler',name:'Sparkler',c:'#ffd23f',vb:'40 220 70 130',d:c=>({hand:`<line x1="88" y1="334" x2="70" y2="262" stroke="#888" stroke-width="3" stroke-linecap="round"/>`+star(68,254,12,c)+sparkles([[52,238,5],[86,236,4],[60,268,3],[82,258,3]],c)})},
+ {id:'basket',name:'Egg basket',c:'#d9a35a',vb:'50 290 80 80',d:c=>({hand:`<path d="M70 330 Q89 296 108 330" stroke="${shade(c,-.25)}" stroke-width="3" fill="none"/><ellipse cx="80" cy="330" rx="6" ry="8" fill="#ff8fc8"/><ellipse cx="90" cy="328" rx="6" ry="8" fill="#7ee081"/><ellipse cx="100" cy="330" rx="6" ry="8" fill="#4fb6ff"/><path d="M66 332 L112 332 L106 356 L72 356 Z" fill="${c}"/><path d="M68 340 L110 340 M70 348 L108 348" stroke="${shade(c,-.25)}" stroke-width="1.5"/>`})},
+ {id:'starglasses',name:'Star glasses',c:'#ffd23f',vb:'110 70 80 45',d:c=>({head:sym(star(134,94,14,c,'stroke="#fff" stroke-width="1.5" opacity=".95"'))+`<path d="M146 92 Q150 88 154 92" stroke="${c}" stroke-width="3" fill="none"/>`})},
+ {id:'candycane',name:'Candy cane',c:'#d62839',vb:'50 230 60 120',d:c=>({hand:`<path d="M88 340 L80 270 Q78 252 64 252 Q52 254 54 268" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/><path d="M88 340 L80 270 Q78 252 64 252 Q52 254 54 268" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="6 6"/>`})}
+);
+}
 const CATS={tops:TOPS,bottoms:BOTTOMS,dresses:DRESSES,shoes:SHOES,hats:HATS,extras:EXTRAS};
 const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'};
+/* ---------- guys ----------
+   A character is a girl or a guy (look.body==='guy', the same word the 3D world uses). A guy gets the guy cuts, a guy face
+   (no lashes or lipstick, straight brows), the guy things from each closet below, and no Makeup or Nails tabs.
+   Each body keeps its own hair and outfit in look.bodyLooks, so switching back and forth never loses a look. */
+const isGuy=L=>!!L&&L.body==='guy';
+const GUY_OK={hair:['crop','buzz','quiff','sidepart','curltop','spiky','flow','manbun','afro','pixie','curly','locs'],
+  tops:['gtee','graphictee','polo','buttonup','flannelover','crewneck','ghoodie','ziphoodie','quarterzip','puffer','varsity','jacket','jersey','tank','leather','hawaiian','baseball','football','camo','sweatervest','bballjersey','baseballtop','flannel','startee','sweater','xmas','moto','turtleneck','blazer','military'],
+  bottoms:['khakis','slimjeans','baggyjeans','cargoshorts','gymshorts','sweats','cargopants','swimtrunks','ripped','camopants','chinoshorts','bballshorts','baseballpants','jeans','shorts','athshorts','joggers','cargo','skinny'],
+  dresses:['suit','suit2','tux','tracksuit','sweatsuit','bballuni','coveralls','pumpkin','spacepup','werewolf','mummy','zombie','pajamas','jumpsuit'],
+  shoes:['kicks','hightops','skateshoes','slides','oxfords','loafers','workboots','cleats','cowboyboots','goldkicks','runners','courtkicks','ballcleats','sneaker','boots','rain','snowboots','skates','paws','chunkyboots','sandals'],
+  hats:['cap','backcap','snapback','beanie','bucket','sweatband','fedora','cowboyhat','visor','helmet','pumpkinhat','turkeyhat','leafcrown','leprechaun','hearthb','crown','witchhat','santahat','antlers','party','sunhat','pupears','wolfears','mummywrap'],
+  extras:['chain','watch','shades','glasses','headphones','backpack','wristbands','skateboard','scarf','medal','cape','studs','dogtags','aviators','roundspecs','sportshades','thickframes','gamer3d','glove','sparkler','basket','starglasses','candycane','wand','candy','present','ball','bat','vampcape','lei']};
+// what you can pick: guys see the guy list, girls see everything except the guy cuts
+const listFor=(L,tab)=>{const all=tab==='hair'?HAIR:CATS[tab];if(!isGuy(L))return all.filter(x=>!x.guy);const ok=GUY_OK[tab];return ok?ok.map(id=>find(all,id)).filter(Boolean):all;};
+const NO_MAKEUP={shadow:null,lips:null,blush:null,lashes:'natural',paint:null};
+const BODY_KEEP=['hairStyle','top','bottom','dress','shoes','hat','extras','makeup','nails'];
+function setBody(l,b){const cur=isGuy(l)?'guy':'girl';if(b===cur)return false;
+  const saved={};BODY_KEEP.forEach(k=>{if(k in l)saved[k]=l[k];});
+  const back=l.bodyLooks&&l.bodyLooks[b];l.bodyLooks={...(l.bodyLooks||{}),[cur]:saved};delete l.bodyLooks[b];
+  BODY_KEEP.forEach(k=>delete l[k]);
+  const d=defaultLook();
+  Object.assign(l,back||(b==='guy'?{hairStyle:'crop',top:{id:'gtee',c:'#4fb6ff'},bottom:{id:'slimjeans',c:'#3a5bd9'},dress:null,shoes:{id:'hightops',c:'#2d2d3a'},hat:null,extras:{},makeup:{...NO_MAKEUP}}
+    :{hairStyle:d.hairStyle,top:d.top,bottom:d.bottom,dress:null,shoes:d.shoes,hat:null,extras:{},makeup:d.makeup}));
+  if(!l.extras)l.extras={};if(!l.makeup)l.makeup={...NO_MAKEUP};
+  if(b==='guy')l.body='guy';else delete l.body;
+  return true;}
+// the 3D world saves 'brynny.body' when you pick girl or guy there. If you are dressing the same character here
+// (same name), follow the newer choice of the two.
+function syncBodyFrom3D(){try{const c=me(),sb=JSON.parse(localStorage.getItem('brynny.body')),sn=sharedName();
+  if(!c||!sb||!sn||sn.n.trim().toLowerCase()!==c.name.trim().toLowerCase()||!(sb.at>(c.look.bodyAt||0)))return false;
+  c.look.bodyAt=sb.at;setBody(c.look,sb.b==='guy'?'guy':'girl');persist();return true;}catch(e){return false;}}
 const VBS={tops:'64 134 172 172',bottoms:'50 240 200 340',dresses:'20 140 260 450',shoes:'92 450 116 140',hats:'50 -36 200 140'};
 const find=(list,id)=>list.find(i=>i.id===id);
 const parts=x=>typeof x==='string'?{front:x}:x;
@@ -1232,10 +1429,14 @@ function sceneSVG(id,name){
 /* ---------- character ---------- */
 let dollBack=false,RIG=null;
 // height and body width: the whole doll grows from the feet; the head keeps its own width
-const bodyT=L=>{const h=L.height||1,w=L.build||1;return h===1&&w===1?'':`translate(150 580) scale(${(w*h).toFixed(3)} ${h}) translate(-150 -580)`;};
-function charInner(L){const bt=bodyT(L);return bt?`<g class="bd" transform="${bt}">${charInner0(L)}</g>`:charInner0(L);}
+// guys are a bit broader, and their Muscles slider (1 to 1.3) thickens the arms (and sleeves) and widens the body some
+const bodyW=L=>(L.build||1)*(isGuy(L)?1.06*(1+((L.muscle||1)-1)*.4):1);
+let ARMW=1;
+const bodyT=L=>{const h=L.height||1,w=bodyW(L);return h===1&&w===1?'':`translate(150 580) scale(${(w*h).toFixed(3)} ${h}) translate(-150 -580)`;};
+function charInner(L){ARMW=isGuy(L)?1.08+((L.muscle||1)-1)*1.4:1;try{return charInner1(L);}finally{ARMW=1;}}
+function charInner1(L){const bt=bodyT(L);return bt?`<g class="bd" transform="${bt}">${charInner0(L)}</g>`:charInner0(L);}
 function charInner0(L){
-  const T=(L.build&&L.build!==1?`translate(150 0) scale(${(1/L.build).toFixed(4)} 1) translate(-150 0) `:'')+headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):hairParts(L);
+  const bw=bodyW(L),T=(bw!==1?`translate(150 0) scale(${(1/bw).toFixed(4)} 1) translate(-150 0) `:'')+headT(L),H=L.hairStyle==='salon'&&L.salon?salonHair(L,hf(L.hairColor),hs(L.hairColor)):hairParts(L);
   const hat=L.hat&&find(HATS,L.hat.id)?parts(find(HATS,L.hat.id).d(L.hat.c)):{};
   const ex={back:'',front:'',hand:'',head:''};
   for(const [id,c] of Object.entries(L.extras||{})){const it=find(EXTRAS,id);if(!it)continue;const p=parts(it.d(c));for(const k in ex)ex[k]+=p[k]||'';}
@@ -1272,8 +1473,8 @@ function rigInner(L,{T,H,hat,ex,wear,A,v,vc,vh}){
     defs+=cut(`rgU${i}`,P(RIG_UP))+cut(`rgL${i}`,P(RIG_LO))+cut(`rgH${i}`,H2);
     const slU=sleeves.map(q=>`<line x1="110" y1="168" x2="${q.long?94:102}" y2="${q.long?250:208}" stroke="${q.c}"${q.op?` stroke-opacity="${q.op}"`:''} stroke-width="${q.w}" stroke-linecap="round"/>`).join('');
     const slL=sleeves.filter(q=>q.long).map(q=>`<line x1="94" y1="250" x2="89" y2="316" stroke="${q.c}"${q.op?` stroke-opacity="${q.op}"`:''} stroke-width="${q.w}" stroke-linecap="round"/>`).join('');
-    const up=v(m(`<line x1="110" y1="170" x2="94" y2="250" stroke="${sk}" stroke-width="20" stroke-linecap="round"/><line x1="106" y1="176" x2="91" y2="250" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/>`))+vc(m(slU))+`<g clip-path="url(#rgU${i})">${dress}${top}</g>`;
-    const lo=v(m(`<line x1="94" y1="250" x2="88" y2="322" stroke="${sk}" stroke-width="20" stroke-linecap="round"/><line x1="91" y1="252" x2="86" y2="316" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/><path d="M94 250 Q98 254 102 250" stroke="${d}" stroke-width="1.5" fill="none" opacity=".5"/>`))
+    const up=v(m(`<line x1="110" y1="170" x2="94" y2="250" stroke="${sk}" stroke-width="${20*ARMW}" stroke-linecap="round"/><line x1="106" y1="176" x2="91" y2="250" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/>`))+vc(m(slU))+`<g clip-path="url(#rgU${i})">${dress}${top}</g>`;
+    const lo=v(m(`<line x1="94" y1="250" x2="88" y2="322" stroke="${sk}" stroke-width="${20*ARMW}" stroke-linecap="round"/><line x1="91" y1="252" x2="86" y2="316" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/><path d="M94 250 Q98 254 102 250" stroke="${d}" stroke-width="1.5" fill="none" opacity=".5"/>`))
       +vc(m(slL))+`<g clip-path="url(#rgL${i})">${top}</g>`+v(m(handRaw(L)))+`<g clip-path="url(#rgH${i})">${vc(ex.hand)}${A.hand}</g>`;
     return `<g class="rU${i}" data-o="${i?190:110} 170">${up}<g class="rL${i}" data-o="${i?206:94} 250">${lo}</g></g>`;};
   const arms=arm(0)+arm(1);
@@ -1294,11 +1495,19 @@ function defaultLook(){return {style:'cartoon',skin:SKIN[1],eyes:EYES[0],hairSty
   makeup:{shadow:null,lips:null,blush:'#ff7aa8',lashes:'natural',paint:null},scene:'studio'};}
 function randomLook(base){
   const L=defaultLook();L.style=base?base.style:rnd(['cartoon','fashion','glam']);L.skin=base?base.skin:rnd(SKIN);L.eyes=base?base.eyes:rnd(EYES);
-  L.hairStyle=rnd(HAIR).id;L.hairColor=rnd(HAIRC);
+  if(isGuy(base)){L.body='guy';for(const k of ['bodyLooks','bodyAt'])if(base[k])L[k]=base[k];
+    const pick=tab=>{const it=rnd(listFor(L,tab));return {id:it.id,c:Math.random()<.5?it.c:rnd(CLOTHC)};};
+    L.hairStyle=rnd(listFor(L,'hair')).id;L.hairColor=rnd(HAIRC.slice(0,6));
+    if(Math.random()<.15){L.dress=pick('dresses');}else{L.top=pick('tops');L.bottom=pick('bottoms');}
+    L.shoes=pick('shoes');L.hat=Math.random()<.4?pick('hats'):null;
+    L.extras={};if(Math.random()<.5){const e=rnd(listFor(L,'extras'));L.extras[e.id]=e.c;}
+    L.makeup={...NO_MAKEUP};L.scene=rnd(SCENES).id;return L;}
+  L.hairStyle=rnd(listFor(L,'hair')).id;L.hairColor=rnd(HAIRC);
   const pick=list=>{const it=rnd(list);return {id:it.id,c:Math.random()<.5?it.c:rnd(CLOTHC)};};
-  if(Math.random()<.45){L.dress=pick(DRESSES);}else{L.top=pick(TOPS);L.bottom=pick(BOTTOMS);}
-  L.shoes=pick(SHOES);L.hat=Math.random()<.5?pick(HATS):null;
-  L.extras={};const n=Math.floor(Math.random()*3);for(let i=0;i<n;i++){const e=rnd(EXTRAS);L.extras[e.id]=e.c;}
+  const lf=t=>listFor(L,t);
+  if(Math.random()<.45){L.dress=pick(lf('dresses'));}else{L.top=pick(lf('tops'));L.bottom=pick(lf('bottoms'));}
+  L.shoes=pick(lf('shoes'));L.hat=Math.random()<.5?pick(lf('hats')):null;
+  L.extras={};const n=Math.floor(Math.random()*3);for(let i=0;i<n;i++){const e=rnd(lf('extras'));L.extras[e.id]=e.c;}
   L.makeup={shadow:Math.random()<.5?rnd(SHADOW):null,lips:Math.random()<.6?rnd(LIPS):null,blush:rnd(BLUSH),lashes:rnd(LASHES).id,paint:Math.random()<.3?rnd(PAINT).id:null};
   if(base&&base.nails)L.nails=base.nails;
   L.scene=rnd(SCENES).id;return L;
@@ -2148,7 +2357,10 @@ const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'
 
 const STAGEBG={studio:'#f6e6fb',bedroom:'#ecd9f7',birthday:'#ffeaf0',halloween:'#2a1440',christmas:'#1d3a63',wedding:'#fff0f5',beach:'#c9eeff',runway:'#1a1028',soccer:'#cfeec9',ballet:'#2a0f2a',pool:'#cdefff',icerink:'#e3f4ff',school:'#fff3d6',sleepover:'#3b2a63',valentine:'#ffe0ec',spring:'#e3f8d9',fireworks:'#0d1440',fall:'#ffe3c2',city:'#ffe3ee'};
 function renderStage(){const prevScene=$('#stage').dataset.scene;artHighlight=tab==='art';if(zoomMode())spinA=0;dollBack=Math.cos(spinA*Math.PI/180)<0;$('#stage').innerHTML=fullSVG(L(),me().name)+`<button class="twirl" id="twirlBtn" aria-label="Twirl" title="Twirl">🔄</button>`;dollBack=false;artHighlight=false;setSpin(spinA,true);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();$('#stage').dataset.scene=L().scene;if(prevScene&&prevScene!==L().scene&&window.__audioOk)window.__sceneMoved=true;if(window.__audioOk)applyAmbient(L().scene);}
-function renderTabs(){$('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
+// guys: no Makeup or Nails, and the Dresses tab is costumes
+const GUY_TAB={hair:{ico:'💇‍♂️'},tops:{ico:'👕'},dresses:{ico:'🦸',name:'Costumes'},shoes:{ico:'👟'},hats:{ico:'🧢'},extras:{ico:'🕶️'}};
+const tabsFor=L=>isGuy(L)?TABS.filter(t=>t.id!=='makeup'&&t.id!=='nails').map(t=>({...t,...GUY_TAB[t.id]})):TABS;
+function renderTabs(){if(isGuy(L())&&(tab==='makeup'||tab==='nails'))tab='me';$('#tabs').innerHTML=tabsFor(L()).map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
 function swatches(act,list,sel,{none=false,arg=''}={}){
   let h='<div class="swatches">';if(none)h+=`<button class="sw none ${!sel?'on':''}" data-act="${act}" data-arg="${arg}" data-c="" aria-label="none"></button>`;
   for(const c of list)h+=`<button class="sw ${c==='rainbow'?'rainbow':''} ${sel===c?'on':''}" style="${c==='rainbow'?'':'background:'+c}" data-act="${act}" data-arg="${arg}" data-c="${c}" aria-label="${c}"></button>`;
@@ -2158,11 +2370,12 @@ const tile=(on,act,arg,id,svg,name)=>`<button class="item ${on?'on':''}" data-ac
 const noneTile=(on,act,arg)=>`<button class="item ${on?'on':''}" data-act="${act}" data-arg="${arg}" data-id=""><span class="big">🚫</span><span class="nm">None</span></button>`;
 
 function renderPanel(){
-  const l=L();let h='';
+  renderTabs();const l=L();let h='';
   const faceOnly=(extra={})=>{const F={...l,style:'fashion',...extra};return mini('100 38 100 96',`<g>${face(F)}</g>`);};
   if(tab==='me'){
     h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button><button class="${l.style==='glam'?'on':''}" data-act="style" data-c="glam">💎 Glam</button></div>`;
-    h+=`<h3>Body</h3><div class="fs"><label for="bodyH">📏 Height</label><input type="range" id="bodyH" data-body="height" min=".86" max="1.08" step=".005" value="${l.height||1}"></div><div class="fs"><label for="bodyW">↔️ Body width</label><input type="range" id="bodyW" data-body="build" min=".85" max="1.25" step=".005" value="${l.build||1}"></div>`;
+    h+=`<h3>Girl or guy</h3><div class="seg"><button class="${isGuy(l)?'':'on'}" data-act="body" data-c="girl">👧 Girl</button><button class="${isGuy(l)?'on':''}" data-act="body" data-c="guy">👦 Guy</button></div>`;
+    h+=`<h3>Body</h3><div class="fs"><label for="bodyH">📏 Height</label><input type="range" id="bodyH" data-body="height" min=".86" max="1.08" step=".005" value="${l.height||1}"></div><div class="fs"><label for="bodyW">↔️ Body width</label><input type="range" id="bodyW" data-body="build" min=".85" max="1.25" step=".005" value="${l.build||1}"></div>`+(isGuy(l)?`<div class="fs"><label for="bodyM">💪 Muscles</label><input type="range" id="bodyM" data-body="muscle" min="1" max="1.3" step=".005" value="${l.muscle||1}"></div>`:'');
     h+=`<h3>Skin</h3>`+swatches('skin',SKIN,l.skin)+`<h3>Eyes</h3>`+swatches('eyes',EYES,l.eyes);
     h+=`<h3>📷 My face</h3>`;
     if(l.photo){
@@ -2175,9 +2388,10 @@ function renderPanel(){
     h+=`<h3>Little details</h3><div class="grid">`+detailTiles(l)+`</div><div class="addrow"><button class="pill" data-act="compare">🎨 Face designer</button>${l.feat&&(l.feat.eye||l.feat.nose||l.feat.fw)?`<button class="pill soft" data-act="plainFace">↩️ Plain doll face</button>`:''}</div><p class="hint">Take a selfie and the doll copies your face shape and colors. Tap 📷 Photo to wear your real face. The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
-    h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
-    if(l.myHair){const p=myHairParts(l.myHair,hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle==='mine','hair','','mine',mini('56 -6 188 280',`${p.back}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front}`),'📸 My hair');}
-    for(const it of HAIR){const p=it.d(hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle===it.id,'hair','',it.id,mini('56 -6 188 280',`${p.back||''}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front||''}`),it.name);}
+    // guys pick a cut; the salon tools (grow, braid, curl, clips) are made for long hair
+    h+=(isGuy(l)?'':salonPanel(l))+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>${isGuy(l)?'💈 Haircuts':'Quick styles'}</h3><div class="grid">`;
+    if(l.myHair&&!isGuy(l)){const p=myHairParts(l.myHair,hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle==='mine','hair','','mine',mini('56 -6 188 280',`${p.back}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front}`),'📸 My hair');}
+    for(const it of listFor(l,'hair')){const p=it.d(hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle===it.id,'hair','',it.id,mini('56 -6 188 280',`${p.back||''}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front||''}`),it.name);}
     h+='</div>';
   }else if(tab==='nails'){
     h+=`<h3>💅 Nail Spa</h3><div class="addrow" style="margin-top:0"><button class="pill" data-act="nailspa" data-c="hands" style="font-size:16px;padding:12px 16px">✋ Manicure</button><button class="pill" data-act="nailspa" data-c="feet" style="font-size:16px;padding:12px 16px;background:#8e6cff">🦶 Pedicure</button></div><p class="hint">Soak, scrub, file, then paint every nail with your finger!</p>`;
@@ -2194,13 +2408,13 @@ function renderPanel(){
     h+=`<h3>Where are you going?</h3><div class="grid">`+SCENES.map(s=>tile(l.scene===s.id,'scene','',s.id,mini(VIEW,DEFS+sceneSVG(s.id,'')),s.name)).join('')+'</div>';
   }else if(tab==='extras'){
     h+=`<p class="hint">Tap to add or take off. You can wear lots at once!</p><div class="grid">`;
-    for(const it of EXTRAS){const c=l.extras[it.id]||it.c;h+=tile(it.id in l.extras,'extra','',it.id,mini(it.vb,allParts(parts(it.d(c)))),it.name);}
+    for(const it of listFor(l,'extras')){const c=l.extras[it.id]||it.c;h+=tile(it.id in l.extras,'extra','',it.id,mini(it.vb,allParts(parts(it.d(c)))),it.name);}
     h+='</div>';
     const sel=lastExtra&&lastExtra in l.extras?lastExtra:Object.keys(l.extras).slice(-1)[0];
     if(sel)h+=`<h3>Color for ${find(EXTRAS,sel).name}</h3>`+swatches('color',CLOTHC,l.extras[sel],{arg:'extras:'+sel});
   }else{
-    const list=CATS[tab],k=KEY[tab],cur=l[k];
-    if((tab==='tops'||tab==='bottoms')&&l.dress)h+=`<p class="hint">Picking this takes off the dress.</p>`;
+    const list=listFor(l,tab),k=KEY[tab],cur=l[k];
+    if((tab==='tops'||tab==='bottoms')&&l.dress)h+=`<p class="hint">Picking this takes off the ${isGuy(l)?'costume':'dress'}.</p>`;
     h+=`<div class="grid" style="margin-top:10px">`+noneTile(!cur,'wear',tab);
     for(const it of list){const on=cur&&cur.id===it.id;h+=tile(on,'wear',tab,it.id,mini(VBS[tab],allParts(parts(it.d(on?cur.c:it.c)))),it.name);}
     h+='</div>';
@@ -2224,6 +2438,7 @@ $('#content').addEventListener('click',e=>{
   update(l=>{
     switch(act){
       case 'style':l.style=c;break;
+      case 'body':if(setBody(l,c)){l.bodyAt=Date.now();renderTabs();}break;
       case 'skin':l.skin=c;break;
       case 'eyes':l.eyes=c;break;
       case 'hairColor':l.hairColor=c;break;
@@ -2275,7 +2490,7 @@ function renderTopPic(){$('#whoPic').innerHTML=BrynnyPic.html(BrynnyPic.current(
 function renderPic(){renderTopPic();$('#picRow').innerHTML=BrynnyPic.picker(false);}
 {const rs0=renderStage;renderStage=function(){const r=rs0.apply(this,arguments);try{renderTopPic();}catch(e){}return r;};}
 $('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;BrynnyPic.set(b.dataset.pic);renderPic();});
-renderPic();document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderPic();});
+renderPic();document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(syncBodyFrom3D()){renderTabs();renderStage();renderPanel();}renderPic();});
 addEventListener('storage',e=>{if(!e.key||e.key.startsWith('brynny.'))renderPic();});
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m||e.target.hasAttribute('data-close'))m.classList.remove('show');}));
 
@@ -2943,13 +3158,13 @@ document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=
   w.w=Math.round(k.box[2]*f);w.h=Math.round(k.box[3]*f);w.x=Math.round(cx-w.w/2);w.y=Math.round(cy-w.h/2);persist();salonRender();});
 
 // bump APP_VERSION and APP_BUILT with every update; open copies check for a newer one
-const APP_VERSION='35',APP_BUILT='2026-10-31T02:58:00Z';
+const APP_VERSION='36',APP_BUILT='2026-11-02T03:00:00Z';
 $('#verLine').textContent=`Version ${APP_VERSION} · updated ${new Date(APP_BUILT).toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}`;
 async function checkUpdate(){try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text(),m=t.match(/APP_VERSION='([^']+)'/);
   if(m&&m[1]!==APP_VERSION)$('#updBtn').style.display='block';}catch(e){}}
 $('#updBtn').onclick=()=>location.reload();
 setTimeout(checkUpdate,4000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});
-renderTabs();renderStage();renderPanel();
+syncBodyFrom3D();renderTabs();renderStage();renderPanel();
 loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
 // the party shows the first time the game opens on each device (add ?party to the address to see it again)
 {const cm=location.search.match(/[?&]c=([a-z0-9]{6})\b/);
