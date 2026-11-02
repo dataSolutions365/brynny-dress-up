@@ -1507,6 +1507,8 @@ class Avatar{
         if(sleeve==='long'){P(capTop(.049,.17),m,a.sh);P(capTop(.043,.15),m,a.el);}
         if(sleeve==='puff')P(sph(.072,18,14),m,a.sh,0,-.03,0);
         if(sleeve==='strap'){const st=P(box(.025,.12,.012),m,spine,a.sx*.07,.41,0);st.scale.z=8;}}
+      // a guy's shoulders are wider than the top, so every top with sleeves fills in the top of each shoulder (14c-guy.js)
+      if(this.guy&&sleeve!=='strap')shirtShoulders({P,arms,spine},m);
       return c;};
     const decal=(emoji)=>{const t=canvasTex(128,128,(x)=>{x.font='96px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,64,72);});const dm=new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.7,depthWrite:false});this.mats.push(dm);P(new THREE.PlaneGeometry(.12,.12),dm,spine,0,.29,.106).castShadow=false;};
     const waist=(m)=>P(sph(.136,24,16),m,hips).scale.set(1.06,.8,.84);
@@ -1814,7 +1816,7 @@ const OUTFITS2D={
   moto(k,c){const m=k.mat(c,'shiny');k.topShell(m,'long');k.P(box(.07,.2,.01),k.mat('#ffffff'),k.spine,0,.31,.1);k.P(box(.006,.22,.012),k.mat('#e8e8ff','metal'),k.spine,.042,.3,.104);k.P(sph(.008,8,6),k.mat('#ff3b6b','shiny'),k.spine,0,.32,.107);
     for(const s of [-1,1]){const l=k.P(box(.035,.09,.01),m,k.spine,s*.05,.38,.102);l.rotation.z=s*.35;}},
   // 🏈 Varsity jacket: red body, white sleeves, a gold B
-  varsity(k,c){const m=k.mat(c),w=k.mat('#ffffff');k.topShell(m,'strap');for(const a of k.arms){k.P(capTop(.049,.17),w,a.sh);k.P(capTop(.043,.15),w,a.el);beltRing(k,m,a.el,.045,.011,-.16);}
+  varsity(k,c){const m=k.mat(c),w=k.mat('#ffffff');k.topShell(m,'strap');if(k.av.guy)shirtShoulders(k,m,w);for(const a of k.arms){k.P(capTop(.049,.17),w,a.sh);k.P(capTop(.043,.15),w,a.el);beltRing(k,m,a.el,.045,.011,-.16);}
     beltRing(k,w,k.spine,.064,.012,.45);buttons(k,w,k.spine,.02,[.36,.3,.24,.18],.104);frontText(k,'B','#ffd23f',.33,.07);},
   // 📣 Cheer top: a tank with a white and gold chevron
   cheertop(k,c){const m=k.mat(c);k.topShell(m,'strap');for(const [col,dy] of [['#ffffff',0],['#ffd23f',-.03]])for(const s of [-1,1]){const v=k.P(box(.012,.11,.01),k.mat(col,'shiny'),k.spine,s*.032,.3+dy,.1);v.rotation.z=s*.95;}},
@@ -2037,8 +2039,9 @@ const guyBelt=(k,c='#3a2a1e')=>{const b=beltRing(k,k.mat(c,'shiny'),k.hips,.142,
 const crewNeck=(k,m,r=.056,t=.011)=>{const o=k.P(new THREE.TorusGeometry(r,t,8,24),m,k.spine,0,.468,0);o.rotation.x=Math.PI/2;return o;};
 const shirtCollar=(k,m)=>{crewNeck(k,m,.058,.009);for(const s of [-1,1])frontStrip(k,m,lineOf(s*.012,.463,s*.045,.418,.004,.016,3),.004);};
 const cuffs=(k,m,r=.045,t=.014)=>{for(const a of k.arms)k.P(new THREE.TorusGeometry(r,t,8,20),m,a.el,0,-.19,0).rotation.x=Math.PI/2;};
-// fills in the top of each shoulder so a short-sleeve shirt doesn't show skin between the body and the sleeve
-const shirtShoulders=(k,m)=>{for(const a of k.arms){k.P(sph(.052,18,14),m,a.sh,0,-.03,0).scale.set(1.04,.82,1);
+// fills in the top of each shoulder so a top doesn't show skin between the body and the sleeve. topShell does this for
+// every guy top with sleeves; call it yourself for a top built without topShell sleeves (sm = the sleeve color)
+const shirtShoulders=(k,m,sm=m)=>{for(const a of k.arms){k.P(sph(.054,18,14),sm,a.sh,0,-.02,0).scale.set(1.04,.92,1.02);
   const y=k.P(new THREE.CapsuleGeometry(.04,.1,6,16),m,k.spine,a.sx*.11,.4,0);y.rotation.z=Math.PI/2+a.sx*.2;y.scale.set(.9,1,.85);}};
 const waistband=(k,m)=>{const o=beltRing(k,m,k.spine,.098,.014,.055);o.scale.set(k.av.shellX,1,.8);};
 // pants: slim legs hug the leg; loose legs are open tubes so they hang wide
@@ -2101,9 +2104,9 @@ const GUY_WEAR={
 
   /* tops */
   // 👕 T-shirt with a crew neck and a little longer sleeves
-  gtee(k,c){const m=k.mat(c);k.topShell(m,'short');shirtShoulders(k,m);for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,m);},
+  gtee(k,c){const m=k.mat(c);k.topShell(m,'short');for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,m);},
   // 🏆 Team shirt: a sporty tee with stripes on the sleeves, a trim collar and a big number on the front
-  teamtee(k,c){const m=k.mat(c),tr=k.mat(trimOf(c));k.topShell(m,'short');shirtShoulders(k,m);
+  teamtee(k,c){const m=k.mat(c),tr=k.mat(trimOf(c));k.topShell(m,'short');
     for(const a of k.arms){k.P(capTop(.055,.07),m,a.sh,0,-.03,0);for(const y of [-.115,-.135])k.P(new THREE.TorusGeometry(.058,.005,6,20),tr,a.sh,0,y,0).rotation.x=Math.PI/2;}
     crewNeck(k,tr,.056,.011);frontText(k,'10',trimOf(c),.28,.15);},
   // ⚡ Graphic tee
@@ -2134,7 +2137,7 @@ const GUY_WEAR={
   puffer(k,c){const m=k.mat(c,'shiny');const b=k.P(new THREE.CapsuleGeometry(.14,.2,6,24),m,k.spine,0,.24,0);b.scale.set(k.av.shellX*1.02,1,.86);
     for(const y of [.16,.24,.32]){const r=k.P(new THREE.TorusGeometry(.14,.02,8,32),m,k.spine,0,y,0);r.rotation.x=Math.PI/2;r.scale.set(k.av.shellX*1.03,.88,1);}
     const col=k.P(new THREE.CylinderGeometry(.066,.075,.07,24,1,true),m,k.spine,0,.48,0);col.material.side=THREE.DoubleSide;
-    for(const a of k.arms){k.P(capTop(.06,.17),m,a.sh);k.P(capTop(.054,.15),m,a.el);k.P(new THREE.TorusGeometry(.058,.016,8,20),m,a.sh,0,-.13,0).rotation.x=Math.PI/2;k.P(new THREE.TorusGeometry(.052,.015,8,20),m,a.el,0,-.1,0).rotation.x=Math.PI/2;}
+    shirtShoulders(k,m);for(const a of k.arms){k.P(capTop(.06,.17),m,a.sh);k.P(capTop(.054,.15),m,a.el);k.P(new THREE.TorusGeometry(.058,.016,8,20),m,a.sh,0,-.13,0).rotation.x=Math.PI/2;k.P(new THREE.TorusGeometry(.052,.015,8,20),m,a.el,0,-.1,0).rotation.x=Math.PI/2;}
     const hem=k.skirt(m,.1,.158,{r0:.152,curve:1,folds:0,k:8});hem.scale.set(k.av.shellX/1.12*1.05,1,.84);
     frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.5,0,.0,.004,.004,10),.02);},
 
@@ -2625,7 +2628,7 @@ const FASHION_WEAR={
     for(const a of k.arms){k.P(box(.008,.17,.02),w,a.sh,a.sx*.048,-.13,0);k.P(box(.008,.15,.02),w,a.el,a.sx*.042,-.1,0);}
     for(const s of [-1,1])frontStrip(k,w,lineOf(s*.05,.47,s*.06,.2,.004,.004,6),.004);},
   // 〰️ Striped tee: a soft tee with thin stripes, sleeves that cover the shoulders
-  stripetee(k,c){const m=fabMat(k,c,'breton');k.topShell(m,'short');shirtShoulders(k,m);for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,k.mat(c));},
+  stripetee(k,c){const m=fabMat(k,c,'breton');k.topShell(m,'short');for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,k.mat(c));},
   // 🏃 Track pants: shiny with stripes down the sides and cuffs at the ankles
   trackpants(k,c){const m=k.mat(c,'shiny');k.waist(m);k.legsShell(m,.074,true);sideStripes(k,k.mat(trimOf(c)),true);ankleCuffs(k,m,.064);drawstrings(k);},
   // 🟫 Corduroys: ribbed straight pants with a belt

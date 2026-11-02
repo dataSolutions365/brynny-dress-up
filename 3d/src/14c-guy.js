@@ -88,8 +88,9 @@ const guyBelt=(k,c='#3a2a1e')=>{const b=beltRing(k,k.mat(c,'shiny'),k.hips,.142,
 const crewNeck=(k,m,r=.056,t=.011)=>{const o=k.P(new THREE.TorusGeometry(r,t,8,24),m,k.spine,0,.468,0);o.rotation.x=Math.PI/2;return o;};
 const shirtCollar=(k,m)=>{crewNeck(k,m,.058,.009);for(const s of [-1,1])frontStrip(k,m,lineOf(s*.012,.463,s*.045,.418,.004,.016,3),.004);};
 const cuffs=(k,m,r=.045,t=.014)=>{for(const a of k.arms)k.P(new THREE.TorusGeometry(r,t,8,20),m,a.el,0,-.19,0).rotation.x=Math.PI/2;};
-// fills in the top of each shoulder so a short-sleeve shirt doesn't show skin between the body and the sleeve
-const shirtShoulders=(k,m)=>{for(const a of k.arms){k.P(sph(.052,18,14),m,a.sh,0,-.03,0).scale.set(1.04,.82,1);
+// fills in the top of each shoulder so a top doesn't show skin between the body and the sleeve. topShell does this for
+// every guy top with sleeves; call it yourself for a top built without topShell sleeves (sm = the sleeve color)
+const shirtShoulders=(k,m,sm=m)=>{for(const a of k.arms){k.P(sph(.054,18,14),sm,a.sh,0,-.02,0).scale.set(1.04,.92,1.02);
   const y=k.P(new THREE.CapsuleGeometry(.04,.1,6,16),m,k.spine,a.sx*.11,.4,0);y.rotation.z=Math.PI/2+a.sx*.2;y.scale.set(.9,1,.85);}};
 const waistband=(k,m)=>{const o=beltRing(k,m,k.spine,.098,.014,.055);o.scale.set(k.av.shellX,1,.8);};
 // pants: slim legs hug the leg; loose legs are open tubes so they hang wide
@@ -152,9 +153,9 @@ const GUY_WEAR={
 
   /* tops */
   // 👕 T-shirt with a crew neck and a little longer sleeves
-  gtee(k,c){const m=k.mat(c);k.topShell(m,'short');shirtShoulders(k,m);for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,m);},
+  gtee(k,c){const m=k.mat(c);k.topShell(m,'short');for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,m);},
   // 🏆 Team shirt: a sporty tee with stripes on the sleeves, a trim collar and a big number on the front
-  teamtee(k,c){const m=k.mat(c),tr=k.mat(trimOf(c));k.topShell(m,'short');shirtShoulders(k,m);
+  teamtee(k,c){const m=k.mat(c),tr=k.mat(trimOf(c));k.topShell(m,'short');
     for(const a of k.arms){k.P(capTop(.055,.07),m,a.sh,0,-.03,0);for(const y of [-.115,-.135])k.P(new THREE.TorusGeometry(.058,.005,6,20),tr,a.sh,0,y,0).rotation.x=Math.PI/2;}
     crewNeck(k,tr,.056,.011);frontText(k,'10',trimOf(c),.28,.15);},
   // ⚡ Graphic tee
@@ -185,7 +186,7 @@ const GUY_WEAR={
   puffer(k,c){const m=k.mat(c,'shiny');const b=k.P(new THREE.CapsuleGeometry(.14,.2,6,24),m,k.spine,0,.24,0);b.scale.set(k.av.shellX*1.02,1,.86);
     for(const y of [.16,.24,.32]){const r=k.P(new THREE.TorusGeometry(.14,.02,8,32),m,k.spine,0,y,0);r.rotation.x=Math.PI/2;r.scale.set(k.av.shellX*1.03,.88,1);}
     const col=k.P(new THREE.CylinderGeometry(.066,.075,.07,24,1,true),m,k.spine,0,.48,0);col.material.side=THREE.DoubleSide;
-    for(const a of k.arms){k.P(capTop(.06,.17),m,a.sh);k.P(capTop(.054,.15),m,a.el);k.P(new THREE.TorusGeometry(.058,.016,8,20),m,a.sh,0,-.13,0).rotation.x=Math.PI/2;k.P(new THREE.TorusGeometry(.052,.015,8,20),m,a.el,0,-.1,0).rotation.x=Math.PI/2;}
+    shirtShoulders(k,m);for(const a of k.arms){k.P(capTop(.06,.17),m,a.sh);k.P(capTop(.054,.15),m,a.el);k.P(new THREE.TorusGeometry(.058,.016,8,20),m,a.sh,0,-.13,0).rotation.x=Math.PI/2;k.P(new THREE.TorusGeometry(.052,.015,8,20),m,a.el,0,-.1,0).rotation.x=Math.PI/2;}
     const hem=k.skirt(m,.1,.158,{r0:.152,curve:1,folds:0,k:8});hem.scale.set(k.av.shellX/1.12*1.05,1,.84);
     frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.5,0,.0,.004,.004,10),.02);},
 

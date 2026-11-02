@@ -46,7 +46,7 @@ const FASHION_WEAR={
     for(const a of k.arms){k.P(box(.008,.17,.02),w,a.sh,a.sx*.048,-.13,0);k.P(box(.008,.15,.02),w,a.el,a.sx*.042,-.1,0);}
     for(const s of [-1,1])frontStrip(k,w,lineOf(s*.05,.47,s*.06,.2,.004,.004,6),.004);},
   // 〰️ Striped tee: a soft tee with thin stripes, sleeves that cover the shoulders
-  stripetee(k,c){const m=fabMat(k,c,'breton');k.topShell(m,'short');shirtShoulders(k,m);for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,k.mat(c));},
+  stripetee(k,c){const m=fabMat(k,c,'breton');k.topShell(m,'short');for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,k.mat(c));},
   // 🏃 Track pants: shiny with stripes down the sides and cuffs at the ankles
   trackpants(k,c){const m=k.mat(c,'shiny');k.waist(m);k.legsShell(m,.074,true);sideStripes(k,k.mat(trimOf(c)),true);ankleCuffs(k,m,.064);drawstrings(k);},
   // 🟫 Corduroys: ribbed straight pants with a belt
