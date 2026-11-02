@@ -29,7 +29,7 @@ $('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('�
 // buying
 function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');const have=s.stars?starsLeft():SAVE.coins||0,need=(s.stars||s.p)-have,cur=s.stars?'⭐':'🪙',mine=owns(k),wear=/^(look|pet):/.test(k);
   // clothing-store things are bought at the store
-  if(s.tab==='store'&&!mine&&!storeOpen){$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>Get it at the 👔 Clothing Store for ${s.p} 🪙! It's past the 💃 Runway.</p><button class="btn" data-b="go">🗺️ Show me the way</button><button class="btn ghost" data-b="close">OK</button>`;$('#buy').dataset.k=k;$('#buy').classList.add('show');return;}
+  if(s.tab==='store'&&!mine&&!storeOpen){$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>Get it for ${s.p} 🪙 at the 👔 Clothing Store past the 💃 Runway, or at the 🛍️ racks in the ✨ Sparkle Studio!</p><button class="btn" data-b="go">🗺️ Show me the way</button><button class="btn ghost" data-b="close">OK</button>`;$('#buy').dataset.k=k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p>`+
     (mine?(wear?`<button class="btn" data-b="wear">✨ Wear it</button>`:'')+`<button class="btn ghost" data-b="close">OK</button>`
     :need<=0?`<button class="btn" data-b="buy">Buy for ${priceTxt(s)}</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} ${cur}${s.stars?' to spend':''}</p>`
@@ -55,7 +55,7 @@ function refreshOpen(){if(shopOpen)renderShop();else if(parlorOpen)renderParlor(
 
 // the shop
 const STABS=[['outfits','👗','Outfits'],['pets','🐾','Pets'],['colors','🎨','Colors'],['moves','💃','Moves'],['earn','🪙','Earn']];
-const SHINT={outfits:'New outfits show up in your 👗 closet once they are yours.',pets:'Pet things show up in the 🐾 Pet Parlor.',colors:'New colors show up everywhere you pick a color.',moves:'New moves show up with your other moves.'};
+const SHINT={outfits:'New outfits show up in your 👗 closet once they are yours. Lots more clothes are at the 👔 Clothing Store and the 🛍️ racks in the ✨ Sparkle Studio!',pets:'Pet things show up in the 🐾 Pet Parlor.',colors:'New colors show up everywhere you pick a color.',moves:'New moves show up with your other moves.'};
 let stab=null;
 // during a holiday the shop gets a tab of its own (window.__season comes from seasons.js)
 const seasonTab=()=>{const H=window.__season&&window.__season.now();return H&&SHOP.some(s=>s.hol===H.id)?['season',H.e,H.n]:null;};

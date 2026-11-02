@@ -22,12 +22,12 @@ function smallShop(z,{W,B,F,H,wall,trim,roof,floor,sign,signFg,stripe}){const g=
   M(new THREE.PlaneGeometry(W*2,.22),new THREE.MeshStandardMaterial({map:scal,transparent:true,side:THREE.DoubleSide,roughness:.8}),0,2.34,F+.74,g,false,false);
   return {wallM,trimM,white};}
 // a glowing pad on the floor that opens something when you step on it
-function floorPad(z,lx,lz,color,emoji,label){const g=z.g,m=glow(color,1.4);m.transparent=true;
-  M(new THREE.RingGeometry(.42,.6,40),m,lx,.04,lz,g,false,false).rotation.x=-Math.PI/2;
+function floorPad(z,lx,lz,color,emoji,label,y=0){const g=z.g,m=glow(color,1.4);m.transparent=true;
+  M(new THREE.RingGeometry(.42,.6,40),m,lx,.04+y,lz,g,false,false).rotation.x=-Math.PI/2;
   const t=canvasTex(128,128,(x)=>{x.font='88px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,64,70);});
-  M(new THREE.PlaneGeometry(.6,.6),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}),lx,.045,lz,g,false,false).rotation.x=-Math.PI/2;
-  const lbl=sprite(labelTex(label,{size:52}),1.9,.47);lbl.position.set(lx,1.05,lz);g.add(lbl);
-  const ph=Math.random()*6;anims.push(t=>{m.opacity=.55+.45*Math.sin(t*3+ph);lbl.position.y=1+Math.sin(t*2+ph)*.08;});
+  M(new THREE.PlaneGeometry(.6,.6),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}),lx,.045+y,lz,g,false,false).rotation.x=-Math.PI/2;
+  const lbl=sprite(labelTex(label,{size:52}),1.9,.47);lbl.position.set(lx,1.05+y,lz);g.add(lbl);
+  const ph=Math.random()*6;anims.push(t=>{m.opacity=.55+.45*Math.sin(t*3+ph);lbl.position.y=1+y+Math.sin(t*2+ph)*.08;});
   return {lx,lz,r:.6,lbl};}
 
 /* ---------- 💈 Barber Shop ---------- */
