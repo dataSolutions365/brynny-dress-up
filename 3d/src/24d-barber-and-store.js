@@ -58,7 +58,7 @@ function barberCam(dt){if(!barberOpen)return;const T=av.head.getWorldPosition(ne
   const a=barbCam.a;camera.position.copy(barbCam.t).add(new THREE.Vector3(Math.sin(a)*barbCam.d,.06,Math.cos(a)*barbCam.d));camera.lookAt(barbCam.t);}
 function snipFx(c){const h=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.12,0));burst(h,c||'#3a2618',26,1.2,.05);
   tone(140,.5,'sawtooth',.03,0,170);setTimeout(()=>{tone(2400,.04,'square',.04);tone(1800,.04,'square',.04,.05);},120);
-  const m=shopNPC.max;if(m){m.a.play(rnd(['magic','clap']));if(Math.random()<.6)say(m,rnd(['Fresh! 💈','Looking sharp! ✂️','Nice cut! 😎','That suits you! 👍','Clean! ✨']));}}
+  const m=glamOpen?ag.gigi:shopNPC.max;if(m){m.a.play(rnd(['magic','clap']));if(Math.random()<.6)say(m,rnd(['Fresh! 💈','Looking sharp! ✂️','Nice cut! 😎','That suits you! 👍','Clean! ✨']));}}
 const viewChips=()=>`<div class="chips"><button data-bview="1.3">⬅️ Side</button><button data-bview="0">🙂 Front</button><button data-bview="-1.3">➡️ Other side</button><button data-bview="3.14">🔙 Back</button></div>`;
 function barberHTML(){const L=SAVE.look,H=L.hair,Bd=L.beard||{id:'none'};const grid=(list,cur,key)=>`<div class="grid">${list.map(([id,e,n])=>`<button class="item${cur===id?' on':''}" data-${key}="${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`;
   const sws=(list,cur,key)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-${key}="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
@@ -75,7 +75,7 @@ function barberClick(b){const L=SAVE.look,d=b.dataset;
   if(d.bhc){L.hair.c=d.bhc;persist();av.dress(L);barberSeat();snipFx(d.bhc);renderCloset();return true;}
   if(d.bbeard){L.beard={id:d.bbeard,c:(L.beard&&L.beard.c)||L.hair.c};persist();av.dress(L);barberSeat();snipFx(L.beard.c);renderCloset();return true;}
   if(d.bbc){L.beard=Object.assign({id:'none'},L.beard,{c:d.bbc});if(L.beard.id==='none')toast('Pick a beard first, then its color 🧔');persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
-  if(d.bface){const [k,v]=d.bface.split(':');L.face=Object.assign({},L.face,{[k]:v});persist();rebuildPlayer();barberSeat();sfx('pop');const m=shopNPC.max;if(m&&Math.random()<.5)say(m,rnd(['Great look! 😎','Nice! 👍']));renderCloset();return true;}
+  if(d.bface){const [k,v]=d.bface.split(':');L.face=Object.assign({},L.face,{[k]:v});persist();rebuildPlayer();barberSeat();sfx('pop');const m=glamOpen?ag.gigi:shopNPC.max;if(m&&Math.random()<.5)say(m,rnd(['Great look! 😎','Nice! 👍']));renderCloset();return true;}
   if(d.bskin){L.skin=d.bskin;persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
   if(d.beyes){L.eyes=d.beyes;persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
   return false;}

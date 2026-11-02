@@ -19,6 +19,8 @@ C.done ||= {}; C.n ||= {}; C.u ||= {};
    poll: a number we can just look up      goal: how many you need      u: count different ones (places, people)
    go: the place the 📍 button guides you to */
 const glam = () => G.glamCheck(SAVE.look);
+// guys get grooming at the glam mirror instead of makeup, nails and braids, so those challenges change for them
+const guy = () => !!SAVE.look && SAVE.look.body === 'guy';
 const LIST = [
   // ✨ Sparkle Studio
   { id: 'dress', tab: 'studio', e: '👗', t: 'Put on a dress', r: 1, go: 'studio', poll: () => SAVE.look.dress ? 1 : 0 },
@@ -51,11 +53,11 @@ const LIST = [
   { id: 'cakeWin', tab: 'bakery', e: '👑', t: 'Win a cake contest', r: 2, go: 'bakery', ev: { k: 'cakect', a: p => p === 0 } },
   { id: 'wish', tab: 'bakery', e: '🕯️', t: 'Blow out the candles and make a wish', r: 1, go: 'bakery', ev: { k: 'wish' } },
   // ⭐ Star Model Agency
-  { id: 'glam', tab: 'agency', e: '💄', t: 'Sit at the glam mirror', r: 1, go: 'agency', ev: { k: 'glam' } },
-  { id: 'makeup', tab: 'agency', e: '💋', t: 'Wear 3 kinds of makeup', r: 1, go: 'agency', poll: () => glam().mk >= 3 ? 1 : 0 },
-  { id: 'nails', tab: 'agency', e: '💅', t: 'Get a manicure and a pedicure', r: 1, go: 'agency', poll: () => glam().nails && glam().toes ? 1 : 0 },
-  { id: 'salon', tab: 'agency', e: '💇', t: 'Get a salon hairdo', r: 1, go: 'agency', poll: () => glam().hair ? 1 : 0 },
-  { id: 'braid', tab: 'agency', e: '🪢', t: 'Braid your own hair', r: 2, go: 'agency', ev: { k: 'braid' } },
+  { id: 'glam', tab: 'agency', get e() { return guy() ? '🪞' : '💄'; }, t: 'Sit at the glam mirror', r: 1, go: 'agency', ev: { k: 'glam' } },
+  { id: 'makeup', tab: 'agency', get e() { return guy() ? '🧴' : '💋'; }, get t() { return guy() ? 'Try skin care: brows, a tan or freckles' : 'Wear 3 kinds of makeup'; }, r: 1, go: 'agency', poll: () => guy() ? glam().skin : glam().mk >= 3 ? 1 : 0 },
+  { id: 'nails', tab: 'agency', get e() { return guy() ? '🧔' : '💅'; }, get t() { return guy() ? 'Pick a beard, or a clean shave' : 'Get a manicure and a pedicure'; }, r: 1, go: 'agency', poll: () => guy() ? glam().beard : glam().nails && glam().toes ? 1 : 0 },
+  { id: 'salon', tab: 'agency', get e() { return guy() ? '💈' : '💇'; }, get t() { return guy() ? 'Get a barber special cut' : 'Get a salon hairdo'; }, r: 1, go: 'agency', poll: () => guy() ? glam().cut : glam().hair ? 1 : 0 },
+  { id: 'braid', tab: 'agency', get e() { return guy() ? '🙂' : '🪢'; }, get t() { return guy() ? 'Pick your face shape at the glam mirror' : 'Braid your own hair'; }, r: 2, go: 'agency', ev: { k: 'braid' }, get poll() { return guy() ? () => glam().face : undefined; } },
   { id: 'contest', tab: 'agency', e: '🏆', t: 'Enter the model contest', r: 1, go: 'agency', ev: { k: 'contest' } },
   { id: 'podium', tab: 'agency', e: '🥉', t: 'Finish in the top 3 of the contest', r: 2, go: 'agency', ev: { k: 'contest', a: p => p <= 2 } },
   { id: 'win', tab: 'agency', e: '👑', t: 'Win the model contest', r: 3, go: 'agency', ev: { k: 'contest', a: p => p === 0 } },
@@ -95,7 +97,7 @@ const DAILY = [
   { id: 'd_pose', e: '📸', t: 'Strike 3 poses on the runway', goal: 3, go: 'runway', ev: { k: 'pose' } },
   { id: 'd_contest', e: '🏆', t: 'Enter the model contest', go: 'agency', ev: { k: 'contest' } },
   { id: 'd_quest', e: '🎁', t: 'Help someone in town', ev: { k: 'quest' } },
-  { id: 'd_glam', e: '💄', t: 'Sit at the glam mirror', go: 'agency', ev: { k: 'glam' } },
+  { id: 'd_glam', get e() { return guy() ? '🪞' : '💄'; }, t: 'Sit at the glam mirror', go: 'agency', ev: { k: 'glam' } },
   { id: 'd_bath', e: '🛁', t: 'Give your pet a bath', go: 'parlor', ev: { k: 'bath' } },
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
