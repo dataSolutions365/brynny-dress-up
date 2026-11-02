@@ -6726,6 +6726,38 @@ function spArms(a,pose,t){const A=a.arms;if(!A)return;
   else if(pose==='dribble'){A[0].sh.rotation.x=-.55;A[0].sh.rotation.z=-.25;A[0].el.rotation.x=-.5-Math.abs(Math.sin(t*9))*.35;}
   else if(pose==='guard'){A[0].sh.rotation.z=-1.25;A[1].sh.rotation.z=1.25;A[0].sh.rotation.x=A[1].sh.rotation.x=-.3;A[0].el.rotation.x=A[1].el.rotation.x=-.3;}
   else if(pose==='reach'){for(const i of [0,1]){A[i].sh.rotation.x=-1.3;A[i].el.rotation.x=-.2;}}}
+/* 🏀 a real jump shot, in the order a player does it:
+   ready  - ball in both hands at the waist
+   set    - knees bend, ball up to the forehead on the shooting (right) hand, wrist cocked back, elbow under the ball,
+            the other hand on the side of the ball
+   rise   - legs push up, the shooting arm straightens, the ball leaves from the fingertips
+   follow - arm stays up and the wrist snaps down ("reach into the cookie jar") while the ball flies
+   sNx/sNz/eN/hN/hNy: shoulder, elbow and wrist of arm N (0 = right). hp/kn/an: hip, knee, ankle. dip: how far the hips drop. */
+const SHOT_POSES={
+  ready: {s0x:-.2,s0z:.3,e0:-1.45,h0:-.2,h0y:.6,s1x:-.2,s1z:-.3,e1:-1.45,h1:-.2,h1y:-.6,hp:-.1,kn:.2,an:-.1,lean:.05,dip:-.012},
+  set:   {s0x:-2.2,s0z:.16,e0:-1.0,h0:-1.15,h0y:0,s1x:-2.25,s1z:-.4,e1:-.85,h1:-.35,h1y:-1.35,hp:-.55,kn:1.05,an:-.5,lean:.1,dip:-.09},
+  rise:  {s0x:-2.72,s0z:.08,e0:-.22,h0:-.75,h0y:0,s1x:-2.3,s1z:-.32,e1:-.75,h1:-.3,h1y:-1.35,hp:-.04,kn:.06,an:.45,lean:.02,dip:0},
+  follow:{s0x:-2.78,s0z:.06,e0:-.06,h0:1.15,h0y:0,s1x:-2.25,s1z:-.22,e1:-.55,h1:0,h1y:-.6,hp:-.02,kn:.05,an:.35,lean:0,dip:0}};
+const SP_REL=.15;// how long from letting go of SHOOT until the ball leaves the fingertips
+function spShotPose(a,name,dt,rate=16){const T=SHOT_POSES[name],A=a.arms,L=a.legs;if(!A||!L)return;
+  let S=a.shot;if(!S){const r=o=>o.rotation;S=a.shot={s0x:r(A[0].sh).x,s0z:r(A[0].sh).z,e0:r(A[0].el).x,h0:r(A[0].hand).x,h0y:r(A[0].hand).y,
+    s1x:r(A[1].sh).x,s1z:r(A[1].sh).z,e1:r(A[1].el).x,h1:r(A[1].hand).x,h1y:r(A[1].hand).y,hp:r(L[0].hp).x,kn:r(L[0].kn).x,an:r(L[0].an).x,lean:a.spine.rotation.x,dip:a.hips.position.y-a.hip-(a.lift||0)};}
+  const k=Math.min(1,dt*rate);for(const key in T)S[key]+=(T[key]-S[key])*k;
+  A[0].sh.rotation.x=S.s0x;A[0].sh.rotation.z=S.s0z;A[0].el.rotation.x=S.e0;A[0].hand.rotation.x=S.h0;A[0].hand.rotation.y=S.h0y;
+  A[1].sh.rotation.x=S.s1x;A[1].sh.rotation.z=S.s1z;A[1].el.rotation.x=S.e1;A[1].hand.rotation.x=S.h1;A[1].hand.rotation.y=S.h1y;
+  // shooting-side foot a little ahead of the other, like a real shooter's stance
+  L[0].hp.rotation.x=S.hp-.06;L[1].hp.rotation.x=S.hp+.04;L[0].kn.rotation.x=L[1].kn.rotation.x=S.kn;L[0].an.rotation.x=S.an+.02;L[1].an.rotation.x=S.an-.04;
+  a.spine.rotation.x=S.lean;a.hips.position.y=a.hip+(a.lift||0)+S.dip;a.handsBack=true;}
+// done shooting: hand the body back to the normal animation, and ease the wrists straight again
+function spShotOff(a,dt){a.shot=null;if(!a.handsBack||!a.arms)return;const k=Math.min(1,dt*10);let left=0;
+  for(const A of a.arms){const r=A.hand.rotation;r.x-=r.x*k;r.y-=r.y*k;left+=Math.abs(r.x)+Math.abs(r.y);}if(left<.01){for(const A of a.arms)A.hand.rotation.set(0,0,0);a.handsBack=false;}}
+// put the ball where the hands are: on the palm of the shooting hand, or held in both hands at the waist
+const _spV=new THREE.Vector3(),_spW=new THREE.Vector3(),_spQ=new THREE.Quaternion();
+function spBallInHands(a,b,two){a.g.updateMatrixWorld(true);const A=a.arms;
+  if(two){A[0].hand.localToWorld(_spV.set(0,-.05,0));A[1].hand.localToWorld(_spW.set(0,-.05,0));_spV.add(_spW).multiplyScalar(.5);
+    _spV.addScaledVector(_spW.set(0,0,1).applyQuaternion(a.g.getWorldQuaternion(_spQ)),.03);}
+  else A[0].hand.localToWorld(_spV.set(0,-.045,-(SP_BR+.012)));
+  SP.z.g.worldToLocal(b.p.copy(_spV));b.m.position.copy(b.p);}
 
 /* ---------- 🏀 basketball physics ---------- */
 const spBallMat=phys('#ff7a1f',{roughness:.55,clearcoat:.2});
@@ -6752,11 +6784,14 @@ function spStepBall(b,dt){const C=SPC,n=5,h=dt/n,p=b.p,v=b.v;b.age+=dt;
        if(vn<0){v.x-=1.5*vn*nx;v.y-=1.5*vn*ny;v.z-=1.5*vn*nz;v.multiplyScalar(.92);b.rim++;Z.court.hoop.shake=Math.min(1,.4+Math.abs(vn)*.15);if(Math.abs(vn)>.6)tone(520,.07,'triangle',.07);}}
      // through the hoop from above: it counts
      if(!b.made&&!b.blocked&&py>=C.RIM&&p.y<C.RIM&&v.y<0&&hd<C.RR-.03)spMade(b);}}
-  b.m.position.copy(p);b.m.rotation.x+=v.z*dt*4;b.m.rotation.z-=v.x*dt*4;}
+  b.m.position.copy(p);
+  // a good shot has backspin until it touches something; after that it rolls the way it moves
+  if(b.spin&&!b.bounces&&!b.rim&&!b.blocked&&(v.x||v.z)){const hl=Math.hypot(v.x,v.z)||1;_spW.set(-v.z/hl,0,v.x/hl);b.m.quaternion.premultiply(_spQ.setFromAxisAngle(_spW,b.spin*dt));}
+  else{b.m.rotation.x+=v.z*dt*4;b.m.rotation.z-=v.x*dt*4;}}
 // launch a shot from `from` toward the rim. perr: too soft/too hard (0 is perfect), lerr: left/right (radians)
 function spLaunch(b,from,perr,lerr){const C=SPC;b.p.copy(from);const dx=0-from.x,dz=C.HZ-from.z,dist=Math.hypot(dx,dz),dy=C.RIM+.02-from.y;
   const t=.62+dist*.09;let vx=dx/t,vz=dz/t;const vy=(dy+.5*SP_G*t*t)/t;const c=Math.cos(lerr),s=Math.sin(lerr);[vx,vz]=[vx*c-vz*s,vx*s+vz*c];
-  b.v.set(vx,vy,vz).multiplyScalar(1+perr);b.st='fly';b.age=0;b.bounces=0;b.rim=0;b.made=false;b.blocked=false;b.m.position.copy(b.p);}
+  b.v.set(vx,vy,vz).multiplyScalar(1+perr);b.spin=13;b.st='fly';b.age=0;b.bounces=0;b.rim=0;b.made=false;b.blocked=false;b.m.position.copy(b.p);}
 const spThree=(lx,lz)=>{const C=SPC,cx=C.ARC-.25;return Math.abs(lx)>=cx?true:Math.hypot(lx,lz-C.HZ)>C.ARC;};
 function spMade(b){const C=SPC,z=Z.court;b.made=true;z.hoop.swish=1;tone(880,.12,'triangle',.12);tone(1320,.16,'sine',.1,.08);
   burst(z.g.localToWorld(new THREE.Vector3(0,C.RIM,C.HZ)),b.pts===3?'#ffd23f':'#ff8a1f',b.pts===3?50:30,3);
@@ -6800,7 +6835,7 @@ const spCanUnsuit=()=>{const P=SAVE.sports.prev;return !!P&&isGuy(P)===isGuy(SAV
 function spUnsuit(){const P=SAVE.sports.prev;if(!spCanUnsuit())return;SAVE.look=P;delete SAVE.sports.prev;persist();rebuildPlayer();sfx('pop');}
 function spCloseMenu(){SP.menu=false;$('#spMenu').classList.remove('show');}
 $('#spMenu').addEventListener('click',e=>{if(e.target.id==='spMenu'&&!SP.mode)spCloseMenu();});
-function spStart(m){const C=SPC;spCloseMenu();SP.mode=m;SP.z=m==='bat'?Z.batting:Z.court;SP.score=0;SP.opp=0;SP.shots=0;SP.t=0;SP.hold=null;SP.dunk=null;SP.next=0;SP.poss=null;SP.cam.init=false;SP.msgT=0;
+function spStart(m){const C=SPC;spCloseMenu();SP.mode=m;SP.z=m==='bat'?Z.batting:Z.court;SP.score=0;SP.opp=0;SP.shots=0;SP.t=0;SP.hold=null;SP.rel=null;SP.dunk=null;SP.next=0;SP.poss=null;SP.cam.init=false;SP.msgT=0;
   for(const b of SP.balls.slice())spDropBall(b);
   closeMap&&closeMap();joy.id=null;joy.x=joy.y=0;$('#joy').style.display='none';
   if(m==='bat'){spBody(true,false);spBatStart();return;}
@@ -6817,7 +6852,7 @@ function spCheck(who){const C=SPC,z=SP.z,c=spCpu();for(const b of SP.balls.slice
   if(who==='me'){spSetWorld(z,0,top);player.face=spFace(z,0,top,0,C.HZ);c.p.set(0,0,def);c.face=Math.atan2(0,1);}
   else{spSetWorld(z,0,def);player.face=spFace(z,0,def,0,top);c.p.set(0,0,top);c.face=Math.PI;c.plan=null;c.t=0;c.shootT=-1;}
   cam.yaw=spFace(z,0,top,0,C.HZ)+Math.PI;cam.cy=cam.yaw;spBoard();spHud('🆚 You vs Kai',`${SP.score} - ${SP.opp}`,who==='me'?'your ball':'Kai\'s ball');}
-function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;SP.hold=null;SP.dunk=null;$('#spMeter').classList.remove('show');spBody(false);
+function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;SP.hold=null;SP.rel=null;SP.dunk=null;for(const a of [av,SP.cpu&&SP.cpu.a])if(a){a.shot=null;a.handsBack=false;for(const A of a.arms)A.hand.rotation.set(0,0,0);}$('#spMeter').classList.remove('show');spBody(false);
   for(const b of SP.balls.slice())spDropBall(b);if(SP.cpu)SP.cpu.a.g.visible=false;
   if(m==='bat')spBatStop();Z.court.board.draw('0','0');
   if(!show)return;let h='',coins=0,best=false;
@@ -6852,11 +6887,10 @@ function spRelease(){if(!SP.hold)return;const C=SPC,z=SP.z,h=SP.hold;SP.hold=nul
   let w=SP.mode==='ft'?.15:Math.max(.07,.15-.014*Math.max(0,dist-3));let contest=0;
   if(SP.mode==='v1'){const c=SP.cpu;contest=Math.max(0,1-Math.hypot(c.p.x-l.x,c.p.z-l.z)/1.6);w*=1-.45*contest;}
   const off=(v-SP_SWEET)/w,perr=.009+off*.02+(Math.random()-.5)*.006,lerr=(Math.random()-.5)*.03*(1+contest*2)*(Math.abs(off)>1?1.6:1);
-  const b=SP.ball;const fwd=new THREE.Vector3(-l.x,0,C.HZ-l.z).normalize();
-  const from=new THREE.Vector3(l.x+fwd.x*.2,(l.y||0)+2.15,l.z+fwd.z*.2);
-  b.by='me';b.pts=SP.mode==='ft'?1:spThree(l.x,l.z)?3:2;spLaunch(b,from,perr,lerr);SP.poss=null;SP.lastBy='me';SP.shots++;
+  const b=SP.ball;
+  // the ball stays on the fingertips while the legs push and the arm straightens, then leaves (see spCourtStep)
+  b.by='me';b.pts=SP.mode==='ft'?1:spThree(l.x,l.z)?3:2;SP.rel={t:0,b,perr,lerr,done:false};SP.poss=null;SP.lastBy='me';SP.shots++;
   if(SP.mode!=='ft'&&player.onGround)player.vy=3.6;
-  av.play&&av.play('hop');
   const tip=Math.abs(off)<=1?(Math.abs(off)<.35?'Perfect release! ✨':'Good release!'):v<SP_SWEET?'Too soft!':'Too hard!';toast(tip);
   if(SP.mode==='v1'&&contest>.35&&Math.random()<.15*contest+.04){const c=SP.cpu;spCpuJump(c,5.5);b.blockAt=.12;setTimeout(()=>{if(SP.mode)spSay('🖐️ Blocked by Kai!');},150);}
   if(SP.mode==='ft'){SP.next=2.4;}else if(SP.mode==='shoot'){SP.next=.55;}
@@ -6878,7 +6912,7 @@ function spDunkStep(dt){const D=SP.dunk,C=SPC,z=SP.z,b=SP.ball,p=player.pos;D.t+
   const k=Math.min(1,D.t/.42),e=k*(2-k);const tx=0,tz=C.HZ+.42;spSetWorld(z,D.fx+(tx-D.fx)*e,D.fz+(tz-D.fz)*e);player.face=spFace(z,0,C.HZ+1,0,C.HZ);
   D.peak=Math.max(D.peak,p.y);
   if(D.t>=.42&&!D.slam){D.slam=true;if(D.blocked){spLaunch(b,new THREE.Vector3(0,C.RIM+.5,C.HZ+.5),0,0);b.v.set((Math.random()<.5?-1:1)*3,2,4);b.blocked=true;b.by='me';SP.poss=null;SP.lastBy='me';spSay('🖐️ Kai blocks the dunk!');}
-    else{b.st='fly';b.by='me';b.pts=2;b.dunked=true;b.p.set(0,C.RIM+.35,C.HZ+.02);b.v.set(0,-6,0);b.age=0;b.made=false;b.blocked=false;b.rim=0;SP.poss=null;SP.lastBy='me';Z.court.hoop.shake=1;tone(90,.25,'square',.14);
+    else{b.st='fly';b.by='me';b.pts=2;b.dunked=true;b.p.set(0,C.RIM+.35,C.HZ+.02);b.v.set(0,-6,0);b.spin=0;b.age=0;b.made=false;b.blocked=false;b.rim=0;SP.poss=null;SP.lastBy='me';Z.court.hoop.shake=1;tone(90,.25,'square',.14);
       SP.shots++;if(SP.mode==='shoot')SP.next=.8;}}
   // hang on the rim for a moment, then drop
   if(D.slam&&D.t<.85&&!D.blocked){p.y=Math.max(p.y,D.peak-.05);player.vy=0;}
@@ -6900,14 +6934,15 @@ function spCpuStep(dt,t){const C=SPC,c=SP.cpu,z=SP.z,l=spLocal(z,player.pos);c.t
       const dx=tx-c.p.x,dz=tz-c.p.z,dl=Math.hypot(dx,dz)||1,ox=l.x-c.p.x,oz=l.z-c.p.z;if(dP<1&&(ox*dx+oz*dz)/dl>0){tx=c.p.x+dx/dl-dz/dl*1.2;tz=c.p.z+dz/dl+dx/dl*1.2;spd=2.4;}
       c.face=Math.atan2(dx,dz);pose='dribble';
       if(Math.hypot(c.plan.x-c.p.x,c.plan.z-c.p.z)<.3||c.t>4.5){c.shootT=0;c.face=Math.atan2(-c.p.x,C.HZ-c.p.z);spCpuJump(c,c.plan.drive?6.8:4.2);}}
-    else{c.shootT+=dt;pose='up';c.face=Math.atan2(-c.p.x,C.HZ-c.p.z);
+    else{c.shootT+=dt;const jumper=!c.plan.drive;pose=jumper?(c.shootT<.2?'shot-set':'shot-rise'):'up';c.face=Math.atan2(-c.p.x,C.HZ-c.p.z);
       if(c.shootT>=.34){c.shootT=-1;c.plan=null;const dist=Math.hypot(c.p.x,c.p.z-C.HZ);const contest=Math.max(0,1-dP/1.4);
         const three=spThree(c.p.x,c.p.z);let chance=(dist<1.4?.62:three?.3:.45)-contest*.3;// Kai is good, but beatable
         b.by='cpu';b.pts=three?3:2;SP.poss=null;SP.lastBy='cpu';
-        if(dist<1.4&&Math.random()<.5){b.dunked=true;b.st='fly';b.p.set(0,C.RIM+.35,C.HZ+.02);b.v.set(0,-6,0);b.age=0;b.made=false;b.blocked=false;b.rim=0;Z.court.hoop.shake=1;tone(90,.25,'square',.14);
+        if(dist<1.4&&Math.random()<.5){b.dunked=true;b.st='fly';b.p.set(0,C.RIM+.35,C.HZ+.02);b.v.set(0,-6,0);b.spin=0;b.age=0;b.made=false;b.blocked=false;b.rim=0;Z.court.hoop.shake=1;tone(90,.25,'square',.14);
           if(!player.onGround&&dP<1.1&&Math.random()<.5){b.v.set(3,2,4);b.blocked=true;spSay('🖐️ You blocked the dunk!');did('sport','block');}}
         else{const ok=Math.random()<chance;const perr=.009+(ok?(Math.random()-.5)*.008:(Math.random()<.5?-1:1)*(.045+Math.random()*.04));
-          spLaunch(b,new THREE.Vector3(c.p.x,c.p.y+2.15,c.p.z),perr,(Math.random()-.5)*(ok?.01:.05));b.dunked=false;
+          // a jump shot leaves from Kai's fingertips (where the ball sat last frame), a layup from over his head
+          spLaunch(b,jumper?b.p.clone():new THREE.Vector3(c.p.x,c.p.y+2.15,c.p.z),perr,(Math.random()-.5)*(ok?.01:.05));b.dunked=false;if(jumper){c.follow=.65;pose='shot-follow';}
           if(!player.onGround&&dP<1.25&&Math.random()<.65){b.blockAt=.1;setTimeout(()=>{if(SP.mode){spSay('🖐️ Blocked!');tone(1200,.1,'triangle',.1);}},120);did('sport','block');}}
         spHud(...spHudText());}}}
   else if(b&&b.st!=='hold'&&(b.made===false)&&(b.bounces>0||b.rim>0||b.blocked||b.age>1.2)){// loose ball: go get the rebound
@@ -6919,10 +6954,12 @@ function spCpuStep(dt,t){const C=SPC,c=SP.cpu,z=SP.z,l=spLocal(z,player.pos);c.t
   {const ox=c.p.x-l.x,oz=c.p.z-l.z,od=Math.hypot(ox,oz);if(od<.6&&od>1e-4){c.p.x=l.x+ox/od*.6;c.p.z=l.z+oz/od*.6;}}
   c.p.x=Math.max(-C.X,Math.min(C.X,c.p.x));c.p.z=Math.max(C.Z0+.3,Math.min(C.Z1,c.p.z));
   c.vy-=18*dt;c.p.y+=c.vy*dt;if(c.p.y<0){c.p.y=0;c.vy=0;}
-  c.a.g.position.copy(c.p);c.a.g.rotation.y=c.face;c.a.update(dt,moved,c.p.y>.02);if(pose)spArms(c.a,pose,t);
+  if(c.follow>0){c.follow-=dt;if(SP.poss!=='me'&&!(pose&&pose.startsWith('shot')))pose='shot-follow';}
+  c.a.g.position.copy(c.p);c.a.g.rotation.y=c.face;c.a.update(dt,moved,c.p.y>.02);
+  if(pose&&pose.startsWith('shot-')){const n=pose.slice(5);spShotPose(c.a,n,dt,n==='set'?16:n==='rise'?28:14);}else{spShotOff(c.a,dt);if(pose)spArms(c.a,pose,t);}
   // Kai holding the ball
-  if(SP.poss==='cpu'&&b&&b.st==='hold'){const f=c.face;if(c.shootT>=0){b.p.set(c.p.x+Math.sin(f)*.15,c.p.y+2.15,c.p.z+Math.cos(f)*.15);}
-    else{const rx=-Math.cos(f),rz=Math.sin(f);b.p.set(c.p.x+rx*.32+Math.sin(f)*.2,SP_BR+Math.abs(Math.sin(t*9))*.62,c.p.z+rz*.32+Math.cos(f)*.2);}b.m.position.copy(b.p);b.m.rotation.x+=dt*6;}
+  if(SP.poss==='cpu'&&b&&b.st==='hold'){const f=c.face;if(c.shootT>=0&&c.plan&&!c.plan.drive)spBallInHands(c.a,b,false);else if(c.shootT>=0){b.p.set(c.p.x+Math.sin(f)*.15,c.p.y+2.15,c.p.z+Math.cos(f)*.15);}
+    else{const rx=-Math.cos(f),rz=Math.sin(f);b.p.set(c.p.x+rx*.32+Math.sin(f)*.2,SP_BR+Math.abs(Math.sin(t*9))*.62,c.p.z+rz*.32+Math.cos(f)*.2);}b.m.position.copy(b.p);if(c.shootT<0)b.m.rotation.x+=dt*6;}
   // grab a loose ball
   if(b&&SP.poss===null&&b.st!=='hold'&&!b.made&&(b.bounces>0||b.rim>0||b.blocked)&&b.age>.35&&b.p.y<2.3&&Math.hypot(b.p.x-c.p.x,b.p.z-c.p.z)<.55){b.st='hold';SP.poss='cpu';c.plan=null;c.shootT=-1;spHud(...spHudText());toast('Kai got the rebound');}}
 
@@ -6937,14 +6974,21 @@ function spCourtStep(dt,t){const C=SPC,z=SP.z,p=player.pos,l=spLocal(z,p);
     gz.style.bottom=((SP_SWEET-w)*100)+'%';gz.style.height=(w*200)+'%';player.face=spFace(z,ll.x,ll.z,0,C.HZ);}
   if(SP.dunk)spDunkStep(dt);
   if(SP.stealCD>0)SP.stealCD-=dt;
+  // poses: the jump shot (hold SHOOT = load up, let go = rise and release), dunks, dribbling
+  const b=SP.ball,mine=b&&b.st==='hold'&&SP.poss==='me'&&!SP.dunk,R=SP.rel;
+  av.g.position.copy(p);av.g.rotation.y=player.face;
+  if(SP.dunk){spShotOff(av,dt);spArms(av,'up',t);}
+  else if(SP.hold)spShotPose(av,'set',dt,14);
+  else if(R){R.t+=dt;spShotPose(av,R.t<SP_REL?'rise':'follow',dt,R.t<SP_REL?28:R.t<SP_REL+.12?30:12);}
+  else if(mine&&SP.mode==='ft')spShotPose(av,'ready',dt,9);
+  else{spShotOff(av,dt);if(mine)spArms(av,'dribble',t);else if(SP.mode==='v1'&&SP.poss==='cpu')spArms(av,'guard',t);}
   // the ball in your hands
-  const b=SP.ball;if(b&&b.st==='hold'&&SP.poss==='me'&&!SP.dunk){const f=player.face-z.rot;
-    if(SP.hold){b.p.set(l.x+Math.sin(f)*.15,p.y+2.15,l.z+Math.cos(f)*.15);}
-    else{const rx=-Math.cos(f),rz=Math.sin(f);b.p.set(l.x+rx*.32+Math.sin(f)*.22,p.y+SP_BR+Math.abs(Math.sin(t*9))*.62,l.z+rz*.32+Math.cos(f)*.22);if(SP.mode==='ft')b.p.y=p.y+1.05;}
-    b.m.position.copy(b.p);}
+  if(mine){if(SP.hold)spBallInHands(av,b,false);else if(SP.mode==='ft')spBallInHands(av,b,true);
+    else{const f=player.face-z.rot,rx=-Math.cos(f),rz=Math.sin(f);b.p.set(l.x+rx*.32+Math.sin(f)*.22,p.y+SP_BR+Math.abs(Math.sin(t*9))*.62,l.z+rz*.32+Math.cos(f)*.22);b.m.position.copy(b.p);}}
+  // the ball rides the fingertips while the arm straightens, then leaves the hand on its arc
+  if(R&&!R.done){spBallInHands(av,R.b,false);if(R.t>=SP_REL){R.done=true;spLaunch(R.b,R.b.p.clone(),R.perr,R.lerr);}}
+  if(R&&R.t>SP_REL+.75)SP.rel=null;
   for(const bb of SP.balls.slice()){if(bb.st==='fly'){spStepBall(bb,dt);if(SP.mode!=='v1'&&(bb.age>3.2||bb.made&&bb.age>2.2))spDropBall(bb);}}
-  // poses
-  if(SP.hold||SP.dunk)spArms(av,'up',t);else if(SP.poss==='me'&&b&&b.st==='hold')spArms(av,SP.mode==='ft'?'reach':'dribble',t);else if(SP.mode==='v1'&&SP.poss==='cpu')spArms(av,'guard',t);
   // after a shot
   if(SP.mode==='ft'){if(!SP.ball||SP.ball.st!=='hold'){SP.next-=dt;if(SP.next<=0){if(SP.shots>=10){spEnd(true);return;}spGive();}}}
   else if(SP.mode==='shoot'){SP.left-=dt;if(SP.left<=0){spEnd(true);return;}if(SP.poss!=='me'&&!SP.dunk){SP.next-=dt;if(SP.next<=0)spGive();}}
@@ -7042,7 +7086,7 @@ anims.push((t,dt)=>{// runs every frame after the player moved, before the camer
   if(closetOpen){spEnd(false);return;}
   if(SP.mode==='bat')spBatStep(dt,t);else spCourtStep(dt,t);
   av.g.position.copy(player.pos);av.g.rotation.y=player.face;av.tag.visible=SP.mode!=='ft'&&SP.mode!=='bat';});
-window.__sports={SP,step:(dt)=>{if(SP.mode)SP.mode==='bat'?spBatStep(dt,clock.elapsedTime):spCourtStep(dt,clock.elapsedTime);},start:spStart,end:spEnd,press:spPress,release:spRelease,menu:spOpenMenu,busy:()=>!!SP.mode};
+window.__sports={SP,launch:spLaunch,stepBall:spStepBall,newBall:spNewBall,dropBall:spDropBall,step:(dt)=>{if(SP.mode)SP.mode==='bat'?spBatStep(dt,clock.elapsedTime):spCourtStep(dt,clock.elapsedTime);},start:spStart,end:spEnd,press:spPress,release:spRelease,menu:spOpenMenu,busy:()=>!!SP.mode};
 // ---- src/24f-sandcastle.js ----
 /* ================= 🏰 SANDCASTLE (Beach Day) =================
    Step on the glowing bucket pad at the beach and build a sandcastle, one hands-on step at a time:
