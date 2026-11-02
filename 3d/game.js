@@ -1699,6 +1699,8 @@ class Avatar{
       // the dances you pick from the Dance list (14d-dances.js), and the guy versions of moves
       const DM=MOVE_ANIMS[e.id];if(DM){DM.go(k,tgt,this);if(k>DM.t||sp>.15)this.emote=null;}
       if(e.id==='magic'){tgt.a0z=-2.9;tgt.a1z=2.9;tgt.e0=tgt.e1=0;tgt.a0x=tgt.a1x=0;tgt.spin=Math.min(1,k/1.8)*Math.PI*2;tgt.bob=Math.sin(Math.min(1,k/1.8)*Math.PI)*.25;if(k>1.9)this.emote=null;}}
+    // riding a skateboard (17c-skateboard.js): side-on stance on the board, knees bent, arms out for balance
+    if(this.skating)skatePose(this,tgt,sp,air,t);
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);
     damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;
@@ -2185,8 +2187,12 @@ const GUY_WEAR={
     for(const s of [-1,1]){frontStrip(k,dk,lineOf(s*.075,.45,s*.085,.2,.012,.012,6),.006);const t=k.P(new THREE.TorusGeometry(.04,.012,6,16,Math.PI),dk,k.spine,s*.08,.45,-.03);t.rotation.y=Math.PI/2;}},
   // 💪 Wristbands on both wrists
   wristbands(k,c){const m=k.mat(c);for(const a of k.arms){const w=k.P(new THREE.CylinderGeometry(.042,.042,.04,20),m,a.el,0,-.19,0);}},
-  // 🛹 Skateboard carried in the right hand
-  skateboard(k,c){const a=k.arms[0];const g=new THREE.Group();g.position.set(a.sx*.03,-.06,0);g.rotation.z=a.sx*.08;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
+  // 🛹 Skateboard carried in the right hand. A second board waits under the feet for riding (17c-skateboard.js
+  // shows one or the other, and hides the one in the hand during sports and other hands-on games).
+  skateboard(k,c){const a=k.arms[0];const g=new THREE.Group();g.position.set(a.sx*.03,-.06,0);g.rotation.z=a.sx*.08;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};k.av.board=g;
+    {const d=new THREE.Group();d.visible=false;k.av.g.add(d);k.av.parts.push(d);d.geometry={dispose(){}};k.av.deck=d;const wm=k.mat('#ffd23f','shiny'),tm=k.mat('#c0c0c0','metal');
+     k.P(new RoundedBoxGeometry(.2,.022,.74,3,.01),k.mat(c,'shiny'),d,0,-.011,0);k.P(new RoundedBoxGeometry(.19,.004,.7,2,.002),k.mat('#2d2d3a'),d,0,.001,0);
+     for(const z of [-.25,.25]){k.P(box(.14,.025,.04),tm,d,0,-.035,z);for(const x of [-.075,.075]){const w=k.P(cyl(.03,.03,.03,14),wm,d,x,-.058,z);w.rotation.z=Math.PI/2;}}}
     k.P(new RoundedBoxGeometry(.014,.62,.18,2,.006),k.mat(c,'shiny'),g,0,0,0);k.P(new RoundedBoxGeometry(.004,.6,.17,2,.002),k.mat('#2d2d3a'),g,-a.sx*.009,0,0);
     const wm=k.mat('#ffd23f','shiny');for(const y of [-.21,.21])for(const z of [-.06,.06]){const w=k.P(cyl(.022,.022,.02,12),wm,g,a.sx*.03,y,z);w.rotation.z=Math.PI/2;}},
 };
@@ -2935,6 +2941,50 @@ const zoomStop=()=>{clearInterval(zoomHold);zoomHold=null;};
   ['pointerup','pointercancel','pointerleave'].forEach(t=>b.addEventListener(t,zoomStop));});
 let zoomShown=null;
 function zoomTick(){const s=started&&!!zoomWhere();if(s!==zoomShown){zoomShown=s;zoomEl.classList.toggle('show',s);if(!s)zoomStop();}}
+// ---- src/17c-skateboard.js ----
+/* ================= 🛹 SKATEBOARD =================
+   The skateboard is a guy's extra (14c-guy.js). It is carried in the hand while walking around, and:
+   - it is put away (hidden) during sports and other hands-on games, so it's not in the way of the bat or the ball.
+   - tap 🛹 Ride in the moves wheel to hop on and skate around town: faster than walking, you keep rolling when
+     you let go of the joystick, you lean into turns, and JUMP does an ollie. Tap 🛹 Hop off to carry it again. */
+const SK={on:false,v:0,dir:0,air:false,lean:0};
+const hasBoard=()=>!!(SAVE.look&&SAVE.look.extras&&SAVE.look.extras.skateboard);
+// busy with something that needs your hands (or a seat): the board goes away until you're done
+const boardBusy=()=>!!SP.mode||garageOpen||bakeryOpen||parlorOpen||barnOpen||!!barnRide||glamOpen||barberOpen||ck.on||pc.on;
+const skateBoost=()=>SK.on?1.55:1;
+const skateActs=()=>hasBoard()?[['skate','🛹',SK.on?'Hop off':'Ride']]:[];
+function startSkate(){if(SK.on||!hasBoard()||closetOpen||!started||boardBusy())return;SK.on=true;SK.v=0;SK.dir=player.face;av.emote=null;
+  if(player.onGround){player.vy=3.2;player.onGround=false;}sfx('jump');renderActions();did('skate');
+  if(!SAVE.skated){SAVE.skated=1;persist();toast('🛹 Skate anywhere in town! Tap JUMP to ollie, tap 🛹 Hop off to carry it again');}}
+function stopSkate(quiet){if(!SK.on)return;SK.on=false;SK.v=0;av.skating=false;av.g.rotation.z=0;if(av.deck)av.deck.rotation.x=0;if(!quiet)sfx('pop');renderActions();}
+function toggleSkate(){if(SK.on)stopSkate();else startSkate();}
+// the stance: turn the hips side-on (feet across the board), turn the chest and head back toward where you're going
+function skatePose(a,tgt,sp,air,t){const push=SK.on&&!air&&sp>.05&&SK.pushing;
+  tgt.sy=-1.35;tgt.st=.75;tgt.hy=.55;tgt.lean=.06;tgt.hd=0;tgt.spin=0;
+  tgt.l0=tgt.l1=-.32;tgt.k0=tgt.k1=.62;tgt.an=-.25;tgt.l0z=-.2;tgt.l1z=.2;tgt.bob=-.07;
+  tgt.a0x=tgt.a1x=0;tgt.a0z=-.9-Math.sin(t*2.3)*.12;tgt.a1z=.9-Math.sin(t*2.3+1)*.12;tgt.e0=tgt.e1=-.35;
+  // push off with the back foot now and then while speeding up
+  if(push){const k=Math.max(0,Math.sin(t*5));tgt.l1=-.32+k*.6;tgt.k1=.62-k*.4;}
+  if(air){tgt.k0=tgt.k1=1.1;tgt.l0=tgt.l1=-.7;tgt.bob=-.12;tgt.a0z=-1.4;tgt.a1z=1.4;}}
+anims.push((t,dt)=>{if(!started||!av)return;
+  // the board in the hand: hidden while riding it, and during games that need your hands
+  if(SK.on&&(!hasBoard()||closetOpen||boardBusy()))stopSkate(true);
+  if(av.board)av.board.visible=!SK.on&&!boardBusy();
+  if(av.deck)av.deck.visible=SK.on;
+  av.skating=SK.on;if(!SK.on){if(av.g.rotation.z)av.g.rotation.z=0;return;}
+  // keep rolling after you let go of the joystick, slowing down little by little
+  let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
+  const p=player.pos,pushing=Math.hypot(ix,iy)>.08;SK.pushing=pushing&&player.speed>SK.v+.05;
+  const turn=((player.face-SK.dir+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
+  if(pushing){SK.v=player.speed;SK.dir=player.face;}
+  else if(SK.v>.15){SK.v*=Math.pow(.45,dt);const old=p.clone();p.x+=Math.sin(SK.dir)*SK.v*dt;p.z+=Math.cos(SK.dir)*SK.v*dt;collide(p);
+    if(groundAt(p.x,p.z)-p.y>.45||p.distanceTo(old)<SK.v*dt*.3){p.x=old.x;p.z=old.z;SK.v=0;}player.speed=SK.v;}
+  else SK.v=0;
+  // lean into turns, pop the nose up for an ollie, clack when you land
+  SK.lean+=(Math.max(-.3,Math.min(.3,-turn/Math.max(dt,.001)*.012))-SK.lean)*Math.min(1,dt*6);
+  av.g.position.copy(p);av.g.position.y+=.1;av.g.rotation.z=SK.lean;
+  const air=!player.onGround;if(av.deck)av.deck.rotation.x+=((air&&player.vy>0?-.28:0)-av.deck.rotation.x)*Math.min(1,dt*14);
+  if(SK.air&&!air)tone(170,.06,'square',.06);SK.air=air;});
 // ---- src/18-sound.js ----
 /* ================= SOUND ================= */
 let AC=null;function ac(){if(!AC)try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}return AC;}
@@ -2994,7 +3044,7 @@ const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','
 // Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
 const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>(isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+const allActs=()=>skateActs().concat(isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -3005,6 +3055,8 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
 function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  if(id==='skate'){toggleSkate();return;}
+  if(SK.on)stopSkate(true);
   if(id==='dance'&&!picked){openDances();return;}
   // a dance picked from the Dance list counts as dancing for quests and challenges
   const dancing=DANCE_IDS.has(id);questEvent('act',dancing?'dance':id);const G=isGuy(av.look);
@@ -6432,7 +6484,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
-    const spd=(curZone===PARK?6.5:5)*mag*rideBoost();// a bit quicker on the open grass between places, normal speed inside them
+    const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost();// a bit quicker on the open grass between places, normal speed inside them
     const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
     const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
     player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;
