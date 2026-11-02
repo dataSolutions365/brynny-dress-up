@@ -45,7 +45,7 @@ const HATS=[['tiara','💎','Tiara','#ffd23f'],['crown','👑','Crown','#d4af37'
 const EXTRAS=[['wings','🧚','Fairy wings','#b388ff'],['cape','🦸','Cape','#e0263b'],['purse','👛','Purse','#ff6fae'],['wand','🪄','Magic wand','#ffd23f'],['glasses','👓','Glasses','#2d2d3a'],['pearls','📿','Pearls','#ffffff'],['scarf','🧣','Scarf','#ff3b6b'],['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['balloon','🎈','Balloon','#ff3b6b'],
   // from the 2D game
   ['heartneck','💖','Heart necklace','#ff4d6d'],['earrings','✨','Earrings','#ffd23f'],['heartglasses','😍','Heart shades','#ff4d8d'],['bouquet','💐','Bouquet','#ff8fc8'],['present','🎁','Gift box','#7ee081'],['pompoms','📣','Pom-poms','#ff4d8d'],['racket','🎾','Tennis racket','#7ee081'],
-  ['ball','⚽','Soccer ball','#ffffff'],['medal','🥇','Gold medal','#ffd23f'],['vampcape','🧛','Vampire cape','#2d2d3a'],['lei','🌺','Flower lei','#ff8fc8'],['tail','🐈','Kitty tail','#ffffff'],['whiskers','🐱','Kitty face paint','#ffffff'],['bangles','🟡','Gold bangles','#e0b04a']];
+  ['ball','⚽','Soccer ball','#ffffff'],['bball','🏀','Basketball','#ff7a1f'],['medal','🥇','Gold medal','#ffd23f'],['vampcape','🧛','Vampire cape','#2d2d3a'],['lei','🌺','Flower lei','#ff8fc8'],['tail','🐈','Kitty tail','#ffffff'],['whiskers','🐱','Kitty face paint','#ffffff'],['bangles','🟡','Gold bangles','#e0b04a']];
 const CAT={tops:TOPS,bottoms:BOTTOMS,dresses:DRESSES,shoes:SHOES,hats:HATS,extras:EXTRAS};
 const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'};
 // things you can buy in the shop with coins (everything else stays free)
