@@ -2783,12 +2783,12 @@ addEventListener('load',()=>{if(window.__game)window.__game.closets=()=>({hairs:
    - skates:  four-wheel quad skates, a laced high-top boot on a metal plate, two wheels front and back, and a toe stop
    - inlines: inline skates, a tall hard cuff with a buckle strap, four wheels in a row on a frame, and a heel brake
    The boot takes the shoe color. The wheels have their own color (look.shoes.w), picked in the closet under "Wheels".
-   Wearing either one makes you roll: a bit faster than walking, wheels spinning, and a skating stride where
+   Wearing either one makes you roll: much faster than walking, wheels spinning, and a skating stride where
    the legs push out to the side and the arms swing (rollerPose, called from Avatar.update in 14-avatar.js). */
-const ROLLERS={skates:{w:'#ffd23f',lift:.077},inlines:{w:'#4fb6ff',lift:.092}};
+const ROLLERS={skates:{w:'#ffd23f',lift:.092},inlines:{w:'#4fb6ff',lift:.104}};
 const isRoller=s=>!!(s&&ROLLERS[s.id]);
 // rolling speed while wearing skates (off while riding, on a board, or in games that need your hands)
-const rollerBoost=()=>av&&av.rollers&&!SK.on&&!boardBusy()?1.35:1;
+const rollerBoost=()=>av&&av.rollers&&!SK.on&&!boardBusy()?1.75:1;
 
 // a wheel that can spin: a group at the axle, so turning group.rotation.x rolls it forward
 function rollerWheel(k,an,x,y,z,r,w,wm,hub,stripe){const g=new THREE.Group();g.position.set(x,y,z);an.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
@@ -2814,8 +2814,8 @@ const ROLLER_BUILD={
         for(const s of [-1,1])k.P(sph(.006,8,6),met,l.kn,s*.026,y,.062);}
       for(let i=0;i<2;i++){const b=k.P(box(.052,.007,.006),lace,an,0,.03-i*.022,.098+i*.018);b.rotation.x=-.75;}
       k.P(box(.07,.012,.2),met,an,0,-.083,.045);// metal plate
-      for(const z of [-.008,.1]){k.P(box(.045,.026,.032),met,an,0,-.095,z);const ax=k.P(cyl(.006,.006,.13,8),met,an,0,-.105,z);ax.rotation.z=Math.PI/2;
-        for(const s of [-1,1])rollerWheel(k,an,s*.052,-.105,z,.034,.03,wm,met,lace);}
+      for(const z of [-.008,.1]){k.P(box(.045,.026,.032),met,an,0,-.095,z);const ax=k.P(cyl(.006,.006,.14,8),met,an,0,-.112,z);ax.rotation.z=Math.PI/2;
+        for(const s of [-1,1])rollerWheel(k,an,s*.056,-.112,z,.042,.034,wm,met,lace);}
       const ts=k.P(cyl(.019,.023,.034,16),rub,an,0,-.104,.163);ts.rotation.x=.45;}// toe stop
     k.av.lift=ROLLERS.skates.lift;k.av.rollers='skates';},
   // 🛼 inline skates, like a sporty rollerblade
@@ -2826,25 +2826,25 @@ const ROLLER_BUILD={
       const st=k.P(new THREE.TorusGeometry(.064,.012,8,22,Math.PI),dk,an,0,-.024,.07);st.scale.set(1.05,.85,1);
       k.P(box(.024,.016,.012),met,an,l.sx*.03,.026,.072);
       // the frame under the boot, and four wheels in a row
-      for(const s of [-1,1])k.P(box(.007,.042,.27),frm,an,s*.018,-.094,.048);
-      for(const z of [-.06,.012,.084,.156]){rollerWheel(k,an,0,-.122,z,.032,.022,wm,met,lite);const b=k.P(cyl(.006,.006,.044,8),met,an,0,-.122,z);b.rotation.z=Math.PI/2;}
-      if(l.sx>0){const br=k.P(cyl(.022,.026,.045,16),rub,an,0,-.118,-.118);br.rotation.x=-.5;}}// heel brake on one skate
+      for(const s of [-1,1])k.P(box(.007,.042,.3),frm,an,s*.018,-.094,.048);
+      for(const z of [-.069,.009,.087,.165]){rollerWheel(k,an,0,-.128,z,.038,.024,wm,met,lite);const b=k.P(cyl(.006,.006,.046,8),met,an,0,-.128,z);b.rotation.z=Math.PI/2;}
+      if(l.sx>0){const br=k.P(cyl(.022,.026,.045,16),rub,an,0,-.124,-.132);br.rotation.x=-.5;}}// heel brake on one skate
     k.av.lift=ROLLERS.inlines.lift;k.av.rollers='inlines';}};
 for(const id in ROLLER_BUILD)OUTFITS2D[id]=(k,c)=>{const s=k.av.look.shoes||{};ROLLER_BUILD[id](k,c,s.w||ROLLERS[id].w);};
 
 // 🛼 the skating stride: a push out to the side and back with one leg while gliding on the other bent leg,
 // the body leaning forward, and the arms swinging opposite the legs (the arm on the pushing side swings back)
 function rollerPose(a,tgt,sp,dt){if(sp<.04){a.rollOn=false;return;}a.rollOn=true;
-  a.rph=(a.rph||0)+dt*(3.2+sp*2.4);const s=Math.sin(a.rph),k=Math.min(1,sp*1.5),p0=Math.max(0,-s),p1=Math.max(0,s);
-  tgt.l0=(-.28+p0*.8)*k;tgt.l1=(-.28+p1*.8)*k;tgt.k0=.12+(.5-p0*.38)*k;tgt.k1=.12+(.5-p1*.38)*k;
-  tgt.l0z=-(.05+p0*.42)*k;tgt.l1z=(.05+p1*.42)*k;
+  a.rph=(a.rph||0)+dt*(3+sp*2);const s=Math.sin(a.rph),k=Math.min(1,sp*1.6),p0=Math.max(0,-s),p1=Math.max(0,s);
+  tgt.l0=(-.32+p0*1.05)*k;tgt.l1=(-.32+p1*1.05)*k;tgt.k0=.14+(.6-p0*.5)*k;tgt.k1=.14+(.6-p1*.5)*k;
+  tgt.l0z=-(.06+p0*.55)*k;tgt.l1z=(.06+p1*.55)*k;
   // sink down onto the gliding leg so the wheels stay on the ground
   const T=.38+a.legX,S=.37+a.legX,h=(l,kn,lz)=>(T*Math.cos(l)+S*Math.cos(l+kn))*Math.cos(lz);
   tgt.bob=Math.max(h(tgt.l0,tgt.k0,tgt.l0z),h(tgt.l1,tgt.k1,tgt.l1z))-(T+S);
-  tgt.a0x=-s*1.15*k;tgt.a1x=s*1.15*k;
-  tgt.a0z=-.18+(p1*.3-p0*.4)*k;tgt.a1z=.18+(p1*.4-p0*.3)*k;
+  tgt.a0x=-s*1.55*k;tgt.a1x=s*1.55*k;
+  tgt.a0z=-.2+(p1*.45-p0*.6)*k;tgt.a1z=.2+(p1*.6-p0*.45)*k;
   tgt.e0=-.35-p1*.65*k;tgt.e1=-.35-p0*.65*k;
-  tgt.lean=.34*k;tgt.sy=s*.16*k;tgt.st=-s*.22*k;tgt.hx=-s*.05*k;tgt.hd=s*.04*k;tgt.hy=s*.12*k;}
+  tgt.lean=.42*k;tgt.sy=s*.2*k;tgt.st=-s*.3*k;tgt.hx=-s*.07*k;tgt.hd=s*.04*k;tgt.hy=s*.12*k;}
 // keep the skates flat on the ground while the legs bend and push out, and roll the wheels
 function rollerFeet(a,dt,speed){const L=a.legs;
   if(a.rollOn)for(const l of L){l.an.rotation.x=-(l.hp.rotation.x+l.kn.rotation.x);l.an.rotation.z=-l.hp.rotation.z;}
