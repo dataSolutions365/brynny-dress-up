@@ -91,6 +91,12 @@ try {
   await A.evaluate(() => { const r = window.__game.SHOW.find(s => s.k === 'ride'); r.mine = r._mine; });
   await until(B, () => { const o = [...window.__net.friends().values()][0]; return !o.shows.ride && !(o.a.emote && o.a.emote.id === 'ride'); }, null, 'and hops off again');
 
+  // A rides a blue bike: B sees them pedaling one
+  await A.evaluate(() => { const r = window.__game.SHOW.find(s => s.k === 'bike'); r._mine = r.mine; r.mine = () => ({ c: '#3a8dff' }); });
+  await until(B, () => { const o = [...window.__net.friends().values()][0], s = o.shows.bike; return s && s.h.b.g.visible && s.h.b.frame.color.getHexString() === '3a8dff' && o.a.biking; }, null, "the host rides a blue bike on the guest's phone");
+  await A.evaluate(() => { const r = window.__game.SHOW.find(s => s.k === 'bike'); r.mine = r._mine; });
+  await until(B, () => { const o = [...window.__net.friends().values()][0]; return !o.shows.bike && !o.a.biking; }, null, 'and gets off the bike');
+
   // A opens the bakery: B sees a sign over their head
   await A.evaluate(() => window.__game.openBakery());
   await until(B, () => { const o = [...window.__net.friends().values()][0]; return o.shows.doing && o.shows.doing.d.w === '🎂 Baking a cake'; }, null, 'the guest sees what the host is busy doing');

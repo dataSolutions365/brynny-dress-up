@@ -1,7 +1,7 @@
 /* ================= 👭 WHAT FRIENDS SEE ONLINE =================
    When you play online with family (online.js), everyone in the room sees you on their phone exactly like you see yourself:
    your outfit and body (online.js sends your look), plus everything in this file: the pet you adopted following you
-   (in its outfit, nail polish and mud), your barn buddy, the animal you're riding, your skateboard (in your hand or under
+   (in its outfit, nail polish and mud), your barn buddy, the animal you're riding, your bike, your skateboard (in your hand or under
    your feet), and what you're busy doing, like baking or batting, with a little sign over your head.
 
    Each thing friends can see is one entry in SHOW:
@@ -12,7 +12,7 @@
                   Return anything you want to keep (it comes back as h).
      step(f,d,dt,h)  every frame while it's shown.
      off(f,h)     take it away again (they hopped off, left the room, or it changed).
-   NEW RIDES (a bicycle, a horse...) or new things to hold: add one more entry here with SHOW.push({...}), and friends see it too.
+   NEW RIDES or new things to hold: add one more entry here with SHOW.push({...}), and friends see it too.
    A ride that is a barn animal (riding in 24d-barn.js) already shows up through the 'ride' entry below. */
 const SHOW=[];
 const showEsc=s=>String(s==null?'':s).slice(0,20);
@@ -83,6 +83,17 @@ SHOW.push({k:'skate',
     A.g.position.y+=.1;A.g.rotation.z=h.lean;
     if(A.deck)A.deck.rotation.x+=((f.air?-.28:0)-A.deck.rotation.x)*Math.min(1,dt*14);},
   off(f){const A=f.a;if(!A)return;A.skating=false;A.skatePush=false;A.g.rotation.z=0;if(A.deck){A.deck.visible=false;A.deck.rotation.x=0;}if(A.board)A.board.visible=true;}});
+
+// 🚲 riding your bike (17d-bicycle.js): your friend pedals around on a bike the color you picked
+SHOW.push({k:'bike',
+  mine(){return BIKE.on&&hasBike()?{c:String(SAVE.look.extras.bicycle)}:null;},
+  on(f,d){const b=makeBike();b.g.visible=true;try{b.frame.color.set(String(d.c||'#ff6fae').slice(0,30));}catch(e){}return {b,spin:0,crank:0,lean:0,yaw:null};},
+  step(f,d,dt,h){const A=f.a,b=h.b,sp=f.sp||0;A.biking=true;
+    h.crank+=dt*Math.min(9,sp*.9);A.bikeCrank=h.crank;h.spin+=sp*dt/b.R;for(const w of b.wheels)w.rotation.x=h.spin;b.crank.rotation.x=h.crank;
+    const yaw=f.cur??f.face,turn=h.yaw==null?0:((yaw-h.yaw+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;h.yaw=yaw;
+    h.lean+=(Math.max(-.25,Math.min(.25,-turn/Math.max(dt,.001)*.01))-h.lean)*Math.min(1,dt*6);
+    A.g.rotation.z=h.lean;b.g.position.copy(f.pos);b.g.rotation.set(0,yaw,0);b.g.rotateZ(h.lean);},
+  off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;}}});
 
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){
