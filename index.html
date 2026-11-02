@@ -593,8 +593,10 @@ function body(L){
   s+=sym(`<path d="M106 290 L150 296 L148 300 L146 430 L142 556 L126 556 L118 430 Z" fill="${sk}"/><ellipse cx="134" cy="562" rx="11" ry="7" fill="${sk}"/><path d="M126 312 Q128 380 129 430 Q131 490 131 548" stroke="#fff" stroke-opacity=".2" stroke-width="6" fill="none" stroke-linecap="round"/>${nailDots(L.nails&&L.nails.feet,[[127,566],[131.5,567.5],[135.5,567.8],[139,567.2],[142,566]],1.4,1.3)}<path d="M122 430 Q132 436 142 430" stroke="${d}" stroke-width="2" fill="none" opacity=".6"/>`);
   s+=`<path d="M139 110 L161 110 L162 162 L138 162 Z" fill="${sk}"/><path d="M139 132 Q150 146 161 132 L161 146 Q150 156 139 146 Z" fill="${d}" opacity=".45"/>`;
   s+=`<path d="${TORSO_BODY}" fill="${sk}"/>`;
-  s+=`<path d="M118 168 Q150 180 182 168 L190 186 Q187 222 183 258 L117 258 Q113 222 110 186 Z" fill="#fff0f6"/>`;
-  s+=`<path d="M117 254 L183 254 Q196 280 196 302 L156 312 L150 324 L144 312 L104 302 Q104 280 117 254 Z" fill="#fff0f6"/>`;
+  const under=isGuy(L)?'#e4ecf7':'#fff0f6';
+  if(isGuy(L))s+=`<path d="M136 120 L164 120 L165 162 L135 162 Z" fill="${sk}"/>`;
+  s+=`<path d="M118 168 Q150 180 182 168 L190 186 Q187 222 183 258 L117 258 Q113 222 110 186 Z" fill="${under}"/>`;
+  s+=`<path d="M117 254 L183 254 Q196 280 196 302 L156 312 L150 324 L144 312 L104 302 Q104 280 117 254 Z" fill="${isGuy(L)?'#7f9fd0':under}"/>`;
   return s;
 }
 const nailDots=(set,pts,rx,ry)=>(set||[]).map((n,i)=>n&&pts[i]?`<ellipse cx="${pts[i][0]}" cy="${pts[i][1]}" rx="${rx}" ry="${ry}" fill="${n.c}"${n.g?' stroke="#fff" stroke-width=".5"':''}/>`:'').join('');
@@ -636,10 +638,11 @@ function spookyTop(id){
 const ESHAPE={none:{rx:1,ry:1,tilt:0},almond:{rx:1.05,ry:.85,tilt:3},round:{rx:.95,ry:1.2,tilt:0},monolid:{rx:1.05,ry:.75,tilt:4},hooded:{rx:1,ry:1,tilt:0},upturned:{rx:1,ry:.92,tilt:8}};
 const NSHAPE={button:[.92,.82],wide:[1.3,.96],narrow:[.8,1.08]};
 function face(L){
-  const F=L.feat||{},es=F.eye||1,gx=F.gap||0,frx=(L.style==='glam'?38:40)*(F.fw||1),fry=(L.style==='glam'?47:46)*(F.chin||1),fcy=42+fry;
+  const guy=isGuy(L),F=guy?{...L.feat,bshape:(L.feat&&L.feat.bshape)||'straight',bw:((L.feat&&L.feat.bw)||1)*1.35}:(L.feat||{}),es=F.eye||1,gx=F.gap||0,frx=(L.style==='glam'?38:40)*(F.fw||1)*(guy?1.04:1),fry=(L.style==='glam'?47:46)*(F.chin||1),fcy=42+fry;
   const toon=L.style==='cartoon',glam=L.style==='glam',rx=(glam?11:9)*(ESHAPE[F.eshape]||ESHAPE.none).rx,ry=(toon?10:glam?8.4:5.6)*(F.open||1)*(ESHAPE[F.eshape]||ESHAPE.none).ry,ir=toon?7:glam?6.8:4.6,ey=92,esh=F.eshape;
   const sk=L.skin,d=shade(sk,-.18),bc=L.hairColor==='rainbow'?'#6b4a8a':shade(L.hairColor,-.35);
-  const m=L.makeup||{};
+  // guys wear no makeup: no lashes, eyeshadow, lipstick or blush
+  const m=guy?{}:(L.makeup||{});
   let s='<g filter="url(#vol)">'+sym(`<ellipse cx="111" cy="94" rx="6" ry="9" fill="${sk}"/><ellipse cx="111" cy="94" rx="3" ry="5" fill="${d}" opacity=".4"/>`);
   s+=`<ellipse cx="150" cy="${fcy}" rx="${frx}" ry="${fry}" fill="${sk}"/></g><path d="M${150-frx+1} 96 Q${150-frx*.85} ${fcy+fry-6} 150 ${fcy+fry} Q${150+frx*.85} ${fcy+fry-6} ${150+frx-1} 96 Q${150+frx*.9} ${fcy+fry-12} 150 ${fcy+fry-6} Q${150-frx*.9} ${fcy+fry-12} ${150-frx+1} 96 Z" fill="${d}" opacity=".35"/><ellipse cx="136" cy="66" rx="20" ry="14" fill="url(#sheen)" opacity=".55"/>`;
   if(!(L.photo&&L.photoOn))s+=`<ellipse cx="150" cy="${fcy}" rx="${frx}" ry="${fry}" fill="url(#faceShade)"/>`;
@@ -652,18 +655,18 @@ function face(L){
     return s;
   }
   let one='';
-  if(glam){const sh=m.shadow||'#b98a9a';one+=`<path d="M${134-rx-5} ${ey+1} Q134 ${ey-ry-13} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.15} ${134-rx-5} ${ey+1} Z" fill="${sh}" opacity="${m.shadow?.8:.45}"/>`;}
+  if(glam&&!guy){const sh=m.shadow||'#b98a9a';one+=`<path d="M${134-rx-5} ${ey+1} Q134 ${ey-ry-13} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.15} ${134-rx-5} ${ey+1} Z" fill="${sh}" opacity="${m.shadow?.8:.45}"/>`;}
   else if(m.shadow) one+=`<path d="M${134-rx-3} ${ey-ry*.2} Q134 ${ey-ry-12} ${134+rx+3} ${ey-ry*.2} Q134 ${ey-ry*1.1} ${134-rx-3} ${ey-ry*.2} Z" fill="${m.shadow}" opacity=".75"/>`;
   const iy=ey+(toon?1:0);
   one+=`<g class="eye"><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="#fff"/><circle cx="134" cy="${iy}" r="${ir}" fill="${L.eyes}"/><circle cx="134" cy="${iy}" r="${ir}" fill="url(#irisShade)"/><circle cx="134" cy="${iy}" r="${ir*.5}" fill="#1e1424"/><circle cx="${134+ir*.38}" cy="${iy-ir*.38}" r="${ir*.3}" fill="#fff"/><ellipse cx="134" cy="${ey}" rx="${rx}" ry="${ry}" fill="url(#lidShade)"/>`;
   if(toon) one+=`<circle cx="${134-ir*.4}" cy="${iy+ir*.4}" r="${ir*.15}" fill="#fff"/>`;
   if(glam) one+=`<circle cx="134" cy="${iy}" r="${ir}" fill="none" stroke="${shade(L.eyes,-.45)}" stroke-width="1.1"/><circle cx="${134-ir*.35}" cy="${iy+ir*.45}" r="${ir*.17}" fill="#fff" opacity=".85"/><path d="M${134-rx-1} ${ey+1} Q134 ${ey+ry*1.05} ${134+rx} ${ey+1}" stroke="#6a4a5a" stroke-width=".9" fill="none" opacity=".7"/>`;
-  const lash=m.lashes||(glam?'long':'natural'),lw=(lash==='bold'?3.4:lash==='long'?2.5:1.9)+(glam?.9:0);
+  const lash=guy?'natural':m.lashes||(glam?'long':'natural'),lw=guy?(glam?2:1.6):(lash==='bold'?3.4:lash==='long'?2.5:1.9)+(glam?.9:0);
   const P0=[134-rx-1,ey],P1=[134,ey-ry*(esh==='monolid'?1.2:esh==='hooded'?.95:1.65)],P2=[134+rx+1,ey];
   // hooded: skin-colored lid comes down over the top of the eye, crease sits above it
   if(esh==='hooded')one+=`<path d="M${P0[0]-1} ${ey} Q134 ${ey-ry*2.1} ${P2[0]+1} ${ey} Q134 ${ey-ry*.95} ${P0[0]-1} ${ey} Z" fill="${sk}"/><path d="M${P0[0]+1} ${ey-ry*.5} Q134 ${ey-ry*1.75} ${P2[0]-1} ${ey-ry*.5}" stroke="${d}" stroke-width="1.1" fill="none" opacity=".4"/>`;
   one+=`<path d="M${P0[0]} ${P0[1]} Q${P1[0]} ${P1[1]} ${P2[0]} ${P2[1]}" fill="none" stroke="#2b1a2e" stroke-width="${lw}" stroke-linecap="round"/>`;
-  if(glam)one+=`<path d="M${P0[0]+1} ${P0[1]-1} L${P0[0]-6} ${P0[1]-6} L${P0[0]+3} ${P0[1]-3.5} Z" fill="#2b1a2e" stroke="#2b1a2e" stroke-width="1.2" stroke-linejoin="round"/>`;
+  if(glam&&!guy)one+=`<path d="M${P0[0]+1} ${P0[1]-1} L${P0[0]-6} ${P0[1]-6} L${P0[0]+3} ${P0[1]-3.5} Z" fill="#2b1a2e" stroke="#2b1a2e" stroke-width="1.2" stroke-linejoin="round"/>`;
   if(lash!=='natural'){
     const n=lash==='bold'?4:3,len=lash==='bold'?7:5.5;
     for(let i=0;i<n;i++){const t=.06+i*.12,x=(1-t)**2*P0[0]+2*t*(1-t)*P1[0]+t*t*P2[0],y=(1-t)**2*P0[1]+2*t*(1-t)*P1[1]+t*t*P2[1];
@@ -677,11 +680,12 @@ function face(L){
   s+=sym(one);
   s+=`<ellipse cx="150" cy="128" rx="7" ry="2" fill="${d}" opacity=".3"/><g transform="translate(150 104) scale(${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[0]} ${(F.nose||1)*(NSHAPE[F.nshape]||[1,1])[1]}) translate(-150 -104)"><path d="M148.5 78 Q148 92 148.5 100" stroke="#fff" stroke-opacity=".16" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="152" cy="108.5" rx="5" ry="1.8" fill="${d}" opacity=".35"/><path d="M150 99 Q146.5 106 151 108" fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round"/></g>`;
   s+=`<g transform="translate(150 118) scale(${F.mouth||1} ${F.lips||1}) translate(-150 -118)">`;
-  const lsh=F.lshape||(glam?'full':'');
+  const lsh=guy?'':F.lshape||(glam?'full':'');
   if(lsh==='full'){const lc=m.lips||(glam?'#d4737f':'#d98a92');s+=`<path d="M138 117 Q144 110.5 150 113.8 Q156 110.5 162 117 Q156 119.5 150 119.2 Q144 119.5 138 117 Z" fill="${shade(lc,-.12)}"/><path d="M138.5 117.6 Q150 121 161.5 117.6 Q157 127.5 150 127.8 Q143 127.5 138.5 117.6 Z" fill="${lc}"/><path d="M139 117.8 Q150 120.2 161 117.8" stroke="${shade(lc,-.45)}" stroke-width="1" fill="none"/><ellipse cx="147" cy="122.8" rx="4" ry="1.5" fill="#fff" opacity=".65"/><ellipse cx="154" cy="123.4" rx="1.6" ry=".8" fill="#fff" opacity=".5"/>`;}
   else if(lsh==='heart'){const lc=m.lips||'#d98a92';s+=`<path d="M141 117.5 Q145 111.5 150 114.8 Q155 111.5 159 117.5 Q155 119 150 118.6 Q145 119 141 117.5 Z" fill="${shade(lc,-.12)}"/><path d="M142 118 Q150 120 158 118 Q156 125.5 150 125.8 Q144 125.5 142 118 Z" fill="${lc}"/><path d="M142 118.2 Q150 119.8 158 118.2" stroke="${shade(lc,-.45)}" stroke-width=".9" fill="none"/><ellipse cx="148" cy="122" rx="2.6" ry="1.1" fill="#fff" opacity=".6"/>`;}
   else if(lsh==='thin'){const lc=m.lips||'#d08a90';s+=`<path d="M139 117.5 Q150 114.5 161 117.5 Q150 121.5 139 117.5 Z" fill="${lc}"/><path d="M139 117.6 Q150 119 161 117.6" stroke="${shade(lc,-.4)}" stroke-width="1" fill="none"/><ellipse cx="147" cy="119.3" rx="2.2" ry=".6" fill="#fff" opacity=".5"/>`;}
   else if(m.lips) s+=`<path d="M139 117 Q144 112 150 114.5 Q156 112 161 117 Q150 128 139 117 Z" fill="${m.lips}"/><ellipse cx="146" cy="120" rx="3" ry="1.2" fill="#fff" opacity=".5"/>`;
+  else if(guy)s+=`<path d="M141 117.5 Q150 124.5 159 117.5" fill="none" stroke="${shade(sk,-.45)}" stroke-width="2.2" stroke-linecap="round"/><path d="M145 123.5 Q150 125.5 155 123.5" fill="none" stroke="${shade(sk,-.25)}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>`;
   else s+=`<path d="M141 117 Q150 128 159 117 Q150 122 141 117 Z" fill="#e08a92" opacity=".7"/><path d="M140 116 Q150 124 160 116" fill="none" stroke="#c0636b" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="147" cy="121" rx="2.5" ry=".9" fill="#fff" opacity=".45"/>`;
   s+='</g>';
   if(F.freckles)s+=sym([[124,104],[129,107],[121,109],[127,111],[133,105],[138,108],[131,101]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1" fill="${shade(sk,-.4)}" opacity=".55"/>`).join(''))+`<circle cx="145" cy="98" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/><circle cx="155" cy="97" r=".9" fill="${shade(sk,-.4)}" opacity=".5"/>`;
@@ -759,6 +763,17 @@ const HAIR=[
  {id:'highbun',name:'Ballerina bun',d:(c,d)=>({back:`<circle cx="150" cy="24" r="24" fill="${c}"/><path d="M134 24 Q150 6 166 24 Q150 38 140 26" stroke="${d}" stroke-width="2" fill="none"/>`,front:`<path d="${CAP}" fill="${c}"/>`})},
  {id:'pixie',name:'Short',d:(c,d)=>({back:`<path d="M106 80 Q102 30 150 30 Q198 30 194 80 L192 104 L108 104 Z" fill="${c}"/>`,
    front:`<path d="M108 94 Q104 32 150 32 Q196 32 192 94 L186 64 L174 72 L166 58 L152 70 L142 56 L130 70 L120 60 L112 74 Z" fill="${c}"/>`})},
+ // guy cuts (guy:1): only guys see these, see GUY below
+ {id:'crop',name:'Crew cut',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 33 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 92 Q105 38 150 35 Q195 38 190 92 Q188 70 176 60 Q150 54 124 60 Q112 70 110 92 Z" fill="${c}"/><path d="M128 46 L132 56 M146 42 L148 54 M164 44 L162 56" stroke="${d}" stroke-width="2" opacity=".35" stroke-linecap="round"/>`})},
+ {id:'buzz',name:'Buzz cut',guy:1,d:(c,d)=>({back:'',
+   front:`<path d="M111 92 Q107 40 150 39 Q193 40 189 92 Q187 70 176 62 Q150 57 124 62 Q113 70 111 92 Z" fill="${c}" opacity=".85"/>`})},
+ {id:'swoop',name:'Swoop',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 32 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 94 Q102 40 146 28 Q178 22 192 42 Q197 60 190 94 Q188 72 178 62 Q160 52 134 66 Q116 74 110 94 Z" fill="${c}"/><path d="M130 50 Q150 34 182 40 M126 60 Q150 44 186 52" stroke="${d}" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>`})},
+ {id:'spiky',name:'Spiky',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 33 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 92 Q106 50 112 40 L114 26 L124 36 L130 18 L140 32 L150 14 L160 32 L170 18 L176 36 L186 26 L188 40 Q194 50 190 92 Q188 70 176 60 Q150 54 124 60 Q112 70 110 92 Z" fill="${c}"/>`})},
+ {id:'curltop',name:'Curly top',guy:1,d:(c,d)=>({back:`<path d="M108 88 Q104 34 150 33 Q196 34 192 88 L190 98 L110 98 Z" fill="${c}"/>`,
+   front:`<path d="M110 92 Q106 66 112 58 Q186 54 188 58 Q194 66 190 92 Q188 72 176 64 Q150 60 124 64 Q112 72 110 92 Z" fill="${c}"/>`+[[118,52],[130,42],[144,38],[158,38],[172,42],[184,52],[124,32],[138,28],[154,26],[168,30],[180,38],[118,42]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="${c}"/><path d="M${x-5} ${y+2} Q${x} ${y-5} ${x+5} ${y+1}" stroke="${d}" stroke-width="1.6" fill="none" opacity=".4"/>`).join('')})},
  {id:'superlong',name:'Extra long',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L206 396 Q150 410 94 396 Z" fill="${c}"/><path d="M124 120 L118 380 M176 120 L182 380 M150 130 L150 396" stroke="${d}" stroke-width="2" opacity=".35"/>`,
    front:`<path d="M108 102 Q101 32 150 31 Q199 32 192 102 Q189 70 172 57 Q150 74 117 70 Q109 82 108 102 Z" fill="${c}"/>`+sym(`<path d="M109 88 Q101 160 104 300 L117 292 Q112 160 115 96 Z" fill="${c}"/>`)})},
  {id:'hime',name:'Blunt bangs',d:(c,d)=>({back:`<path d="M104 80 Q100 27 150 27 Q200 27 196 80 L200 300 L100 300 Z" fill="${c}"/>`,
@@ -1111,6 +1126,37 @@ const PAINT=[{id:'star',name:'Stars'},{id:'heart',name:'Heart'},{id:'rainbow',na
 
 const CATS={tops:TOPS,bottoms:BOTTOMS,dresses:DRESSES,shoes:SHOES,hats:HATS,extras:EXTRAS};
 const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'};
+/* ---------- guys ----------
+   A character is a girl or a guy (look.body==='guy', the same word the 3D world uses). A guy gets the guy cuts, a guy face
+   (no lashes or lipstick, straight brows), the guy things from each closet below, and no Makeup or Nails tabs.
+   Each body keeps its own hair and outfit in look.bodyLooks, so switching back and forth never loses a look. */
+const isGuy=L=>!!L&&L.body==='guy';
+const GUY_OK={hair:['crop','buzz','swoop','spiky','curltop','pixie','curly','afro','locs'],
+  tops:['tee','startee','tank','sweater','xmas','hoodie','jersey','moto','varsity','turtleneck','blazer','military','jacket'],
+  bottoms:['jeans','shorts','athshorts','joggers','cargo','skinny'],
+  dresses:['pumpkin','spacepup','werewolf','mummy','zombie','pajamas','jumpsuit'],
+  shoes:['sneaker','hightops','cleats','boots','rain','snowboots','skates','paws','chunkyboots','sandals'],
+  hats:['crown','witchhat','santahat','antlers','party','beanie','cap','sunhat','sweatband','pupears','wolfears','mummywrap'],
+  extras:['glasses','scarf','wand','candy','present','ball','medal','cape','bat','vampcape','lei']};
+// what you can pick: guys see the guy list, girls see everything except the guy cuts
+const listFor=(L,tab)=>{const all=tab==='hair'?HAIR:CATS[tab];if(!isGuy(L))return tab==='hair'?all.filter(x=>!x.guy):all;const ok=GUY_OK[tab];return ok?all.filter(x=>ok.includes(x.id)):all;};
+const NO_MAKEUP={shadow:null,lips:null,blush:null,lashes:'natural',paint:null};
+const BODY_KEEP=['hairStyle','top','bottom','dress','shoes','hat','extras','makeup','nails'];
+function setBody(l,b){const cur=isGuy(l)?'guy':'girl';if(b===cur)return false;
+  const saved={};BODY_KEEP.forEach(k=>{if(k in l)saved[k]=l[k];});
+  const back=l.bodyLooks&&l.bodyLooks[b];l.bodyLooks={...(l.bodyLooks||{}),[cur]:saved};delete l.bodyLooks[b];
+  BODY_KEEP.forEach(k=>delete l[k]);
+  const d=defaultLook();
+  Object.assign(l,back||(b==='guy'?{hairStyle:'crop',top:{id:'tee',c:'#4fb6ff'},bottom:{id:'jeans',c:'#3a5bd9'},dress:null,shoes:{id:'sneaker',c:'#ffffff'},hat:null,extras:{},makeup:{...NO_MAKEUP}}
+    :{hairStyle:d.hairStyle,top:d.top,bottom:d.bottom,dress:null,shoes:d.shoes,hat:null,extras:{},makeup:d.makeup}));
+  if(!l.extras)l.extras={};if(!l.makeup)l.makeup={...NO_MAKEUP};
+  if(b==='guy')l.body='guy';else delete l.body;
+  return true;}
+// the 3D world saves 'brynny.body' when you pick girl or guy there. If you are dressing the same character here
+// (same name), follow the newer choice of the two.
+function syncBodyFrom3D(){try{const c=me(),sb=JSON.parse(localStorage.getItem('brynny.body')),sn=sharedName();
+  if(!c||!sb||!sn||sn.n.trim().toLowerCase()!==c.name.trim().toLowerCase()||!(sb.at>(c.look.bodyAt||0)))return false;
+  c.look.bodyAt=sb.at;setBody(c.look,sb.b==='guy'?'guy':'girl');persist();return true;}catch(e){return false;}}
 const VBS={tops:'64 134 172 172',bottoms:'50 240 200 340',dresses:'20 140 260 450',shoes:'92 450 116 140',hats:'50 -36 200 140'};
 const find=(list,id)=>list.find(i=>i.id===id);
 const parts=x=>typeof x==='string'?{front:x}:x;
@@ -1294,7 +1340,14 @@ function defaultLook(){return {style:'cartoon',skin:SKIN[1],eyes:EYES[0],hairSty
   makeup:{shadow:null,lips:null,blush:'#ff7aa8',lashes:'natural',paint:null},scene:'studio'};}
 function randomLook(base){
   const L=defaultLook();L.style=base?base.style:rnd(['cartoon','fashion','glam']);L.skin=base?base.skin:rnd(SKIN);L.eyes=base?base.eyes:rnd(EYES);
-  L.hairStyle=rnd(HAIR).id;L.hairColor=rnd(HAIRC);
+  if(isGuy(base)){L.body='guy';for(const k of ['bodyLooks','bodyAt'])if(base[k])L[k]=base[k];
+    const pick=tab=>{const it=rnd(listFor(L,tab));return {id:it.id,c:Math.random()<.5?it.c:rnd(CLOTHC)};};
+    L.hairStyle=rnd(listFor(L,'hair')).id;L.hairColor=rnd(HAIRC.slice(0,6));
+    if(Math.random()<.15){L.dress=pick('dresses');}else{L.top=pick('tops');L.bottom=pick('bottoms');}
+    L.shoes=pick('shoes');L.hat=Math.random()<.4?pick('hats'):null;
+    L.extras={};if(Math.random()<.5){const e=rnd(listFor(L,'extras'));L.extras[e.id]=e.c;}
+    L.makeup={...NO_MAKEUP};L.scene=rnd(SCENES).id;return L;}
+  L.hairStyle=rnd(listFor(L,'hair')).id;L.hairColor=rnd(HAIRC);
   const pick=list=>{const it=rnd(list);return {id:it.id,c:Math.random()<.5?it.c:rnd(CLOTHC)};};
   if(Math.random()<.45){L.dress=pick(DRESSES);}else{L.top=pick(TOPS);L.bottom=pick(BOTTOMS);}
   L.shoes=pick(SHOES);L.hat=Math.random()<.5?pick(HATS):null;
@@ -2148,7 +2201,10 @@ const TABS=[{id:'me',ico:'🙂',name:'Me'},{id:'hair',ico:'💇‍♀️',name:'
 
 const STAGEBG={studio:'#f6e6fb',bedroom:'#ecd9f7',birthday:'#ffeaf0',halloween:'#2a1440',christmas:'#1d3a63',wedding:'#fff0f5',beach:'#c9eeff',runway:'#1a1028',soccer:'#cfeec9',ballet:'#2a0f2a',pool:'#cdefff',icerink:'#e3f4ff',school:'#fff3d6',sleepover:'#3b2a63',valentine:'#ffe0ec',spring:'#e3f8d9',fireworks:'#0d1440',fall:'#ffe3c2',city:'#ffe3ee'};
 function renderStage(){const prevScene=$('#stage').dataset.scene;artHighlight=tab==='art';if(zoomMode())spinA=0;dollBack=Math.cos(spinA*Math.PI/180)<0;$('#stage').innerHTML=fullSVG(L(),me().name)+`<button class="twirl" id="twirlBtn" aria-label="Twirl" title="Twirl">🔄</button>`;dollBack=false;artHighlight=false;setSpin(spinA,true);$('#stage').style.background=STAGEBG[L().scene]||'#fff';$('#whoName').textContent=me().name;if(typeof applyZoom==='function')applyZoom();$('#stage').dataset.scene=L().scene;if(prevScene&&prevScene!==L().scene&&window.__audioOk)window.__sceneMoved=true;if(window.__audioOk)applyAmbient(L().scene);}
-function renderTabs(){$('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
+// guys: no Makeup or Nails, and the Dresses tab is costumes
+const GUY_TAB={hair:{ico:'💇‍♂️'},tops:{ico:'👕'},dresses:{ico:'🦸',name:'Costumes'},shoes:{ico:'👟'},hats:{ico:'🧢'},extras:{ico:'🕶️'}};
+const tabsFor=L=>isGuy(L)?TABS.filter(t=>t.id!=='makeup'&&t.id!=='nails').map(t=>({...t,...GUY_TAB[t.id]})):TABS;
+function renderTabs(){if(isGuy(L())&&(tab==='makeup'||tab==='nails'))tab='me';$('#tabs').innerHTML=tabsFor(L()).map(t=>`<button class="tab ${t.id===tab?'on':''}" data-tab="${t.id}"><span class="ico">${t.icon||t.ico}</span>${t.name}</button>`).join('');}
 function swatches(act,list,sel,{none=false,arg=''}={}){
   let h='<div class="swatches">';if(none)h+=`<button class="sw none ${!sel?'on':''}" data-act="${act}" data-arg="${arg}" data-c="" aria-label="none"></button>`;
   for(const c of list)h+=`<button class="sw ${c==='rainbow'?'rainbow':''} ${sel===c?'on':''}" style="${c==='rainbow'?'':'background:'+c}" data-act="${act}" data-arg="${arg}" data-c="${c}" aria-label="${c}"></button>`;
@@ -2158,10 +2214,11 @@ const tile=(on,act,arg,id,svg,name)=>`<button class="item ${on?'on':''}" data-ac
 const noneTile=(on,act,arg)=>`<button class="item ${on?'on':''}" data-act="${act}" data-arg="${arg}" data-id=""><span class="big">🚫</span><span class="nm">None</span></button>`;
 
 function renderPanel(){
-  const l=L();let h='';
+  renderTabs();const l=L();let h='';
   const faceOnly=(extra={})=>{const F={...l,style:'fashion',...extra};return mini('100 38 100 96',`<g>${face(F)}</g>`);};
   if(tab==='me'){
     h+=`<h3>Look style</h3><div class="seg"><button class="${l.style==='cartoon'?'on':''}" data-act="style" data-c="cartoon">😊 Cartoon</button><button class="${l.style==='fashion'?'on':''}" data-act="style" data-c="fashion">💃 Fashion doll</button><button class="${l.style==='glam'?'on':''}" data-act="style" data-c="glam">💎 Glam</button></div>`;
+    h+=`<h3>Girl or guy</h3><div class="seg"><button class="${isGuy(l)?'':'on'}" data-act="body" data-c="girl">👧 Girl</button><button class="${isGuy(l)?'on':''}" data-act="body" data-c="guy">👦 Guy</button></div>`;
     h+=`<h3>Body</h3><div class="fs"><label for="bodyH">📏 Height</label><input type="range" id="bodyH" data-body="height" min=".86" max="1.08" step=".005" value="${l.height||1}"></div><div class="fs"><label for="bodyW">↔️ Body width</label><input type="range" id="bodyW" data-body="build" min=".85" max="1.25" step=".005" value="${l.build||1}"></div>`;
     h+=`<h3>Skin</h3>`+swatches('skin',SKIN,l.skin)+`<h3>Eyes</h3>`+swatches('eyes',EYES,l.eyes);
     h+=`<h3>📷 My face</h3>`;
@@ -2175,9 +2232,10 @@ function renderPanel(){
     h+=`<h3>Little details</h3><div class="grid">`+detailTiles(l)+`</div><div class="addrow"><button class="pill" data-act="compare">🎨 Face designer</button>${l.feat&&(l.feat.eye||l.feat.nose||l.feat.fw)?`<button class="pill soft" data-act="plainFace">↩️ Plain doll face</button>`:''}</div><p class="hint">Take a selfie and the doll copies your face shape and colors. Tap 📷 Photo to wear your real face. The picture stays on this device.</p><div class="addrow" style="margin-top:0"><button class="pill soft" data-act="cameraVideo">🎥 Record a video</button></div>`;
     h+=`<h3>Name</h3><div class="addrow" style="margin-top:0"><input id="nameEdit" maxlength="20" value="${esc(me().name)}"></div><p class="hint">Tap 👧 at the top to dress up friends and family too!</p>`;
   }else if(tab==='hair'){
-    h+=salonPanel(l)+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>Quick styles</h3><div class="grid">`;
-    if(l.myHair){const p=myHairParts(l.myHair,hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle==='mine','hair','','mine',mini('56 -6 188 280',`${p.back}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front}`),'📸 My hair');}
-    for(const it of HAIR){const p=it.d(hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle===it.id,'hair','',it.id,mini('56 -6 188 280',`${p.back||''}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front||''}`),it.name);}
+    // guys pick a cut; the salon tools (grow, braid, curl, clips) are made for long hair
+    h+=(isGuy(l)?'':salonPanel(l))+`<h3>Hair color</h3>`+swatches('hairColor',HAIRC,l.hairColor)+`<h3>${isGuy(l)?'💈 Haircuts':'Quick styles'}</h3><div class="grid">`;
+    if(l.myHair&&!isGuy(l)){const p=myHairParts(l.myHair,hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle==='mine','hair','','mine',mini('56 -6 188 280',`${p.back}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front}`),'📸 My hair');}
+    for(const it of listFor(l,'hair')){const p=it.d(hf(l.hairColor),hs(l.hairColor));h+=tile(l.hairStyle===it.id,'hair','',it.id,mini('56 -6 188 280',`${p.back||''}<ellipse cx="150" cy="88" rx="40" ry="46" fill="${l.skin}"/>${p.front||''}`),it.name);}
     h+='</div>';
   }else if(tab==='nails'){
     h+=`<h3>💅 Nail Spa</h3><div class="addrow" style="margin-top:0"><button class="pill" data-act="nailspa" data-c="hands" style="font-size:16px;padding:12px 16px">✋ Manicure</button><button class="pill" data-act="nailspa" data-c="feet" style="font-size:16px;padding:12px 16px;background:#8e6cff">🦶 Pedicure</button></div><p class="hint">Soak, scrub, file, then paint every nail with your finger!</p>`;
@@ -2194,13 +2252,13 @@ function renderPanel(){
     h+=`<h3>Where are you going?</h3><div class="grid">`+SCENES.map(s=>tile(l.scene===s.id,'scene','',s.id,mini(VIEW,DEFS+sceneSVG(s.id,'')),s.name)).join('')+'</div>';
   }else if(tab==='extras'){
     h+=`<p class="hint">Tap to add or take off. You can wear lots at once!</p><div class="grid">`;
-    for(const it of EXTRAS){const c=l.extras[it.id]||it.c;h+=tile(it.id in l.extras,'extra','',it.id,mini(it.vb,allParts(parts(it.d(c)))),it.name);}
+    for(const it of listFor(l,'extras')){const c=l.extras[it.id]||it.c;h+=tile(it.id in l.extras,'extra','',it.id,mini(it.vb,allParts(parts(it.d(c)))),it.name);}
     h+='</div>';
     const sel=lastExtra&&lastExtra in l.extras?lastExtra:Object.keys(l.extras).slice(-1)[0];
     if(sel)h+=`<h3>Color for ${find(EXTRAS,sel).name}</h3>`+swatches('color',CLOTHC,l.extras[sel],{arg:'extras:'+sel});
   }else{
-    const list=CATS[tab],k=KEY[tab],cur=l[k];
-    if((tab==='tops'||tab==='bottoms')&&l.dress)h+=`<p class="hint">Picking this takes off the dress.</p>`;
+    const list=listFor(l,tab),k=KEY[tab],cur=l[k];
+    if((tab==='tops'||tab==='bottoms')&&l.dress)h+=`<p class="hint">Picking this takes off the ${isGuy(l)?'costume':'dress'}.</p>`;
     h+=`<div class="grid" style="margin-top:10px">`+noneTile(!cur,'wear',tab);
     for(const it of list){const on=cur&&cur.id===it.id;h+=tile(on,'wear',tab,it.id,mini(VBS[tab],allParts(parts(it.d(on?cur.c:it.c)))),it.name);}
     h+='</div>';
@@ -2224,6 +2282,7 @@ $('#content').addEventListener('click',e=>{
   update(l=>{
     switch(act){
       case 'style':l.style=c;break;
+      case 'body':if(setBody(l,c)){l.bodyAt=Date.now();renderTabs();}break;
       case 'skin':l.skin=c;break;
       case 'eyes':l.eyes=c;break;
       case 'hairColor':l.hairColor=c;break;
@@ -2274,7 +2333,7 @@ function renderTopPic(){$('#whoPic').innerHTML=BrynnyPic.html(BrynnyPic.current(
 function renderPic(){renderTopPic();$('#picRow').innerHTML=BrynnyPic.picker(false);}
 {const rs0=renderStage;renderStage=function(){const r=rs0.apply(this,arguments);try{renderTopPic();}catch(e){}return r;};}
 $('#picRow').addEventListener('click',e=>{const b=e.target.closest('[data-pic]');if(!b)return;BrynnyPic.set(b.dataset.pic);renderPic();});
-renderPic();document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderPic();});
+renderPic();document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(syncBodyFrom3D()){renderTabs();renderStage();renderPanel();}renderPic();});
 addEventListener('storage',e=>{if(!e.key||e.key.startsWith('brynny.'))renderPic();});
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m||e.target.hasAttribute('data-close'))m.classList.remove('show');}));
 
@@ -2942,13 +3001,13 @@ document.addEventListener('input',e=>{if(e.target.id!=='artSize')return;const w=
   w.w=Math.round(k.box[2]*f);w.h=Math.round(k.box[3]*f);w.x=Math.round(cx-w.w/2);w.y=Math.round(cy-w.h/2);persist();salonRender();});
 
 // bump APP_VERSION and APP_BUILT with every update; open copies check for a newer one
-const APP_VERSION='35',APP_BUILT='2026-10-31T02:58:00Z';
+const APP_VERSION='36',APP_BUILT='2026-11-02T03:00:00Z';
 $('#verLine').textContent=`Version ${APP_VERSION} · updated ${new Date(APP_BUILT).toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}`;
 async function checkUpdate(){try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text(),m=t.match(/APP_VERSION='([^']+)'/);
   if(m&&m[1]!==APP_VERSION)$('#updBtn').style.display='block';}catch(e){}}
 $('#updBtn').onclick=()=>location.reload();
 setTimeout(checkUpdate,4000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});
-renderTabs();renderStage();renderPanel();
+syncBodyFrom3D();renderTabs();renderStage();renderPanel();
 loadArt().then(()=>{renderStage();if(tab==='art')renderPanel();});
 // the party shows the first time the game opens on each device (add ?party to the address to see it again)
 {const cm=location.search.match(/[?&]c=([a-z0-9]{6})\b/);
