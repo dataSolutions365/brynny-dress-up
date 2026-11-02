@@ -73,7 +73,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
     else toast(`⭐ ${n} of ${STARS.length}!`);questEvent('star');}}
   // zones
   let z=null;for(const zz of ZONES){if(Math.hypot(p.x-zz.x,p.z-zz.z)<zz.r+(zz.d?1:1.4)){z=zz;break;}}z=z||PARK;
-  if(z!==curZone){curZone=z;$('#place').textContent=z.name;if(started)questEvent('zone',z.id);if(started){if(z!==PARK)banner(z.name);setTrack(z.music);if(z.id==='parlor'&&!closetOpen)setTimeout(()=>toast(myPet()?'Step on the glowing paw pad to start pet care 🐾':'Adopt a pet first, then bring them here! 🐾'),1600);if(z.id==='bakery'&&!closetOpen)setTimeout(()=>toast('Step on the glowing cupcake pad to design a cake 🎂'),1600);if(z.id==='garage'&&!closetOpen)setTimeout(()=>toast('Step on the glowing wrench pad to fix up your car 🔧'),1600);if(z.id==='agency'&&!closetOpen)setTimeout(()=>toast('Step on 🏆 for the model contest, or 💄 to sit at the glam mirror!'),1600);}}
+  if(z!==curZone){curZone=z;$('#place').textContent=z.name;if(started)questEvent('zone',z.id);if(started){if(z!==PARK)banner(z.name);setTrack(z.music);if(z.id==='parlor'&&!closetOpen)setTimeout(()=>toast(myPet()?'Step on the glowing paw pad to start pet care 🐾':'Adopt a pet first, then bring them here! 🐾'),1600);if(z.id==='bakery'&&!closetOpen)setTimeout(()=>toast('Step on the glowing cupcake pad to design a cake 🎂'),1600);if(z.id==='garage'&&!closetOpen)setTimeout(()=>toast('Step on the glowing wrench pad to fix up your car 🔧'),1600);if(z.id==='beach'&&!closetOpen)setTimeout(()=>toast('Step on the glowing bucket pad to build a sandcastle 🏰'),1600);if(z.id==='agency'&&!closetOpen)setTimeout(()=>toast('Step on 🏆 for the model contest, or 💄 to sit at the glam mirror!'),1600);}}
   const padD=Math.hypot(p.x,p.z);if(padD<Z.studio.pad.r&&player.onGround){if(!onPad&&started){onPad=true;openCloset();}}else if(padD>1.6)onPad=false;
   {const pz=Z.parlor,[lx,lz]=pz.toLocal(p.x,p.z),d=Math.hypot(lx-pz.ppad.lx,lz-pz.ppad.lz);if(d<pz.ppad.r&&player.onGround&&!closetOpen){if(!onPPad&&started){onPPad=true;tryParlor();}}else if(d>1.3)onPPad=false;}
   {const bz=Z.bakery,[lx,lz]=bz.toLocal(p.x,p.z),d=Math.hypot(lx-bz.bpad.lx,lz-bz.bpad.lz);if(d<bz.bpad.r&&player.onGround&&!closetOpen){if(!onBPad&&started){onBPad=true;openBakery();}}else if(d>1.3)onBPad=false;}
@@ -114,6 +114,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   if(ct.on)contestCam(dt);
   if(bakeryOpen)bakeryCam(dt);
   if(garageOpen)garageCam(dt);
+  sandCam(dt);
   cakeContestCam(dt);
   petContestCam(dt);
   sportsCam(dt);
