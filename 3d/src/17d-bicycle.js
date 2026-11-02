@@ -87,12 +87,14 @@ anims.push((t,dt)=>{if(!started||!av)return;
 
 /* ---------- 🐎 call your horse (or any ride you own) from anywhere ---------- */
 // the animal that comes when you call: the last one you rode, or else your horse, unicorn, pony... (riding: 24d-barn.js)
-const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','ptero','nova'];
+const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','ptero','eagle','nova'];
 function myRides(){const own=(SAVE.barn&&SAVE.barn.own)||{};return Object.keys(own).filter(k=>FK[k]&&FK[k].ride).sort((a,b)=>(STEED_ORDER.indexOf(a)+99)%99-(STEED_ORDER.indexOf(b)+99)%99);}
 function mySteed(){const r=myRides();return r.includes(SAVE.barn&&SAVE.barn.steed)?SAVE.barn.steed:r[0]||null;}
 // (the moves wheel is first drawn before the barn file has loaded, so skip the horse button until it has)
 // with more than one ride (barn animals plus rides from the shop) the button says 🏇 Rides and opens a list to pick from (24g-mounts.js)
-RIDE_ACTS.push(()=>{try{if(barnRide)return [['horse',barnRide.F.e,'Hop off']];if(myRides().length>1)return [['horse','🏇','Rides']];const k=mySteed();return [['horse',k?FK[k].e:'🐎',k?FK[k].n:'Horse']];}catch(e){return [];}});
+// the button shows a little picture of your real 3D animal once it's drawn (24d-barn.js), or its emoji until then
+const ridePic=k=>FTHUMB[k]?`<img class="actPic" src="${FTHUMB[k]}" alt="">`:FK[k].e;
+RIDE_ACTS.push(()=>{try{if(barnRide)return [['horse',ridePic(barnRide.k),'Hop off']];if(myRides().length>1)return [['horse','🏇','Rides']];const k=mySteed();return [['horse',k?ridePic(k):'🐎',k?FK[k].n:'Horse']];}catch(e){return [];}});
 function toggleHorse(){if(barnRide){sfx('pop');stopRide();return;}
   if(closetOpen||!started)return;
   if(handsBusy()){toast('Finish what you are doing first, then saddle up! 🐎');return;}

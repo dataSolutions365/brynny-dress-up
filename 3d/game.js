@@ -3385,12 +3385,14 @@ anims.push((t,dt)=>{if(!started||!av)return;
 
 /* ---------- 🐎 call your horse (or any ride you own) from anywhere ---------- */
 // the animal that comes when you call: the last one you rode, or else your horse, unicorn, pony... (riding: 24d-barn.js)
-const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','ptero','nova'];
+const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','ptero','eagle','nova'];
 function myRides(){const own=(SAVE.barn&&SAVE.barn.own)||{};return Object.keys(own).filter(k=>FK[k]&&FK[k].ride).sort((a,b)=>(STEED_ORDER.indexOf(a)+99)%99-(STEED_ORDER.indexOf(b)+99)%99);}
 function mySteed(){const r=myRides();return r.includes(SAVE.barn&&SAVE.barn.steed)?SAVE.barn.steed:r[0]||null;}
 // (the moves wheel is first drawn before the barn file has loaded, so skip the horse button until it has)
 // with more than one ride (barn animals plus rides from the shop) the button says 🏇 Rides and opens a list to pick from (24g-mounts.js)
-RIDE_ACTS.push(()=>{try{if(barnRide)return [['horse',barnRide.F.e,'Hop off']];if(myRides().length>1)return [['horse','🏇','Rides']];const k=mySteed();return [['horse',k?FK[k].e:'🐎',k?FK[k].n:'Horse']];}catch(e){return [];}});
+// the button shows a little picture of your real 3D animal once it's drawn (24d-barn.js), or its emoji until then
+const ridePic=k=>FTHUMB[k]?`<img class="actPic" src="${FTHUMB[k]}" alt="">`:FK[k].e;
+RIDE_ACTS.push(()=>{try{if(barnRide)return [['horse',ridePic(barnRide.k),'Hop off']];if(myRides().length>1)return [['horse','🏇','Rides']];const k=mySteed();return [['horse',k?ridePic(k):'🐎',k?FK[k].n:'Horse']];}catch(e){return [];}});
 function toggleHorse(){if(barnRide){sfx('pop');stopRide();return;}
   if(closetOpen||!started)return;
   if(handsBusy()){toast('Finish what you are doing first, then saddle up! 🐎');return;}
@@ -4807,7 +4809,8 @@ $('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('�
 function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');if(s.prize&&!owns(k))return askPrize(s);const have=s.stars?starsLeft():SAVE.coins||0,need=(s.stars||s.p)-have,cur=s.stars?'⭐':'🪙',mine=owns(k),wear=/^(look|pet):/.test(k);
   // clothing-store things are bought at the store
   if(s.tab==='store'&&!mine&&!storeOpen){$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>Get it for ${s.p} 🪙 at the 👔 Clothing Store past the 💃 Runway, or at the 🛍️ racks in the ✨ Sparkle Studio!</p><button class="btn" data-b="go">🗺️ Show me the way</button><button class="btn ghost" data-b="close">OK</button>`;$('#buy').dataset.k=k;$('#buy').classList.add('show');return;}
-  $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p>`+
+  if(s.fk&&!FTHUMB[s.fk])try{FTHUMB[s.fk]=farmPic(s.fk);}catch(e){}
+  $('#buyCard').innerHTML=(s.fk&&FTHUMB[s.fk]?`<img class="bigPic" src="${FTHUMB[s.fk]}" alt="">`:`<div class="bigE">${s.e}</div>`)+`<h2>${s.n}</h2><p>${s.d}</p>`+
     (mine?(wear?`<button class="btn" data-b="wear">✨ Wear it</button>`:'')+`<button class="btn ghost" data-b="close">OK</button>`
     :need<=0?`<button class="btn" data-b="buy">Buy for ${priceTxt(s)}</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} ${cur}${s.stars?' to spend':''}</p>`
     :`<p class="bneed">You need <b>${need}</b> more ${cur}</p><p>${s.stars?'Finish ⭐ star challenges to earn more stars!':'Find ⭐ stars, take care of your pet, and help the townspeople to earn more!'}</p><button class="btn ghost" data-b="close">OK</button>`);
@@ -4837,14 +4840,15 @@ const SHINT={outfits:'New outfits show up in your 👗 closet once they are your
 let stab=null;
 // during a holiday the shop gets a tab of its own (window.__season comes from seasons.js)
 const seasonTab=()=>{const H=window.__season&&window.__season.now();return H&&SHOP.some(s=>s.hol===H.id)?['season',H.e,H.n]:null;};
-function renderShop(){showCoins();const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only come in the shop during ${ST[2]}. Once you buy one, it's yours forever.`;if(stab==='season'&&!ST)stab='outfits';
+function renderShop(){showCoins();if(stab==='rides')thumbsSoon();// the rides show pictures of the real 3D animals (24d-barn.js)
+const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only come in the shop during ${ST[2]}. Once you buy one, it's yours forever.`;if(stab==='season'&&!ST)stab='outfits';
   $('#stabs').innerHTML=(ST?[ST]:[]).concat(STABS).map(([id,ico,n])=>`<button class="tab${id===stab?' on':''}" data-stab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';
   if(stab==='earn'){const quests=!!(window.__game&&window.__game.townSave);
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
       [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
-  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
 $('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
 $('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};
@@ -5764,7 +5768,8 @@ const FARM=[
   {k:'kitty',e:'🐱',n:'Big fluffy cat',nm:'Marshmallow',mount:10,ride:1.08,about:'A giant, super fluffy cat you can ride! She purrs when you hug her.',food:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],say:['Purrrrr 💕','Mrrrow! 🐱','*big fluffy stretch*']},
   {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
   {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,fly:1,ride:1.2,about:'A lavender unicorn with feathery wings. Ride her and tap 🪽 Fly to soar over the treetops!',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
-  {k:'ptero',e:'🦅',n:'Pterodactyl',nm:'Sunny',mount:14,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
+  {k:'ptero',e:'🦕',n:'Pterodactyl',nm:'Sunny',mount:14,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
+  {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
   {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
@@ -6127,11 +6132,48 @@ class FarmAnimal{
       const beak=M(new THREE.ConeGeometry(H*.42,H*3.4,18),beakM,0,-H*.18,H*2.4,head);beak.rotation.x=Math.PI/2;beak.scale.set(.75,1,1);
       M(new THREE.ConeGeometry(H*.36,H*2.4,16),beakM,0,-H*.36,H*1.9,head).rotation.x=Math.PI/2+.06;// the lower jaw
       const crest=new THREE.Shape();crest.moveTo(0,0);crest.quadraticCurveTo(H*1.4,H*.9,H*2.6,H*1.25);crest.quadraticCurveTo(H*1.6,H*.15,H*.4,-H*.25);crest.lineTo(0,0);
-      const cm=M(new THREE.ExtrudeGeometry(crest,{depth:H*.08,bevelEnabled:true,bevelSize:H*.05,bevelThickness:H*.04,bevelSegments:2,curveSegments:10}),crestM,-H*.04,H*.45,H*.2,head);cm.rotation.y=-Math.PI/2;
+      const cm=M(new THREE.ExtrudeGeometry(crest,{depth:H*.08,bevelEnabled:true,bevelSize:H*.05,bevelThickness:H*.04,bevelSegments:2,curveSegments:10}),crestM,H*.04,H*.45,-H*.1,head);cm.rotation.y=Math.PI/2;// sweeps back off the top of her head
       fEyes(this,head,H,.5,.2,.62,.55,.26,'#7a3a12');fBlush(head,H,.62,-.15,.7);
       const tail=new THREE.Group();tail.position.set(0,by+.02,-(len/2+r*.75));g.add(tail);taperTube([fV(0,0,0),fV(0,-.04,-.18),fV(0,-.04,-.34)],q=>.07*(1-q*.8),skin,tail,12,8);
       this.sparkle=false;
       Object.assign(o,{neck,head,tail,nTilt:.45,size:1.15,h:by+1.05,rad:.7,dustR:[r,r,len*.8]});}
+    // 🦅 a giant bald eagle: brown feathers, white head and tail, a hooked yellow beak and big fingered wings
+    if(k==='eagle'){const r=.34,len=.42,leg=.42,by=leg+r*.8,brown=fm('#5a3a22',{roughness:.9}),light=fm('#7a5232',{roughness:.9}),dark=fm('#3b2414',{roughness:.9}),
+        white=fm('#fbf8f2',{roughness:.95}),yel=fShiny('#ffc22e',{roughness:.35}),talon=fShiny('#2b211a');
+      body.position.y=by;body.rotation.x=-.12;const t=M(new THREE.CapsuleGeometry(r,len,8,22),brown,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(1,.92,1);
+      // layers of feathers on the chest and back
+      for(let i=0;i<14;i++){const a=(i%7)/6-.5,row=i<7?0:1;M(sph(r*.32,10,8),row?light:brown,a*r*1.3,-r*.35-row*r*.2,len*.35-row*len*.25,body,false,false).scale.set(1,.55,1.3);}
+      for(let i=0;i<8;i++)M(sph(r*.28,10,8),dark,(i%2-.5)*r*.6,r*.78,len*.3-i*len*.13,body,false,false).scale.set(1.2,.4,1.4);
+      // two strong yellow legs with feathery "trousers" and black talons
+      for(const sx of [-1,1]){const lg=new THREE.Group();lg.position.set(sx*r*.45,by-r*.35,len*.05);g.add(lg);
+        M(sph(r*.36,10,8),brown,0,-.02,0,lg).scale.set(.8,1.1,.9);M(cyl(.045,.04,leg-.12,10),yel,0,-(leg-.12)/2-.12,0,lg);
+        for(const a of [-.45,0,.45]){const toe=M(new THREE.CapsuleGeometry(.025,.12,4,8),yel,Math.sin(a)*.07,-leg+.04,Math.cos(a)*.08,lg);toe.rotation.x=Math.PI/2;toe.rotation.y=a;
+          M(new THREE.ConeGeometry(.02,.06,6),talon,Math.sin(a)*.15,-leg+.02,Math.cos(a)*.15,lg).rotation.x=Math.PI/2+.6;}
+        M(new THREE.CapsuleGeometry(.025,.08,4,8),yel,0,-leg+.04,-.07,lg).rotation.x=Math.PI/2;
+        this.legs.push({g:lg,ph:sx>0?Math.PI:0});}
+      // the wings: long brown flight feathers spread out like fingers at the tips, lighter coverts on top
+      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.8,r*.45,len*.25);body.add(w);
+        M(new THREE.CapsuleGeometry(.11,.75,6,12),brown,sx*.45,0,-.05,w,true,false).rotation.z=Math.PI/2;// the arm of the wing
+        for(let i=0;i<13;i++){const q=i/12,L=.5+.25*Math.sin(q*Math.PI),f=new THREE.Group();f.position.set(sx*(.12+q*.85),0,-.08);f.rotation.y=sx*(-.15+q*.95)*-1;w.add(f);
+          const fe=M(new THREE.CapsuleGeometry(.075,L,4,10),i>8?dark:brown,0,0,-L/2-.05,f,true,false);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.28);}
+        for(let i=0;i<4;i++){const f=new THREE.Group();f.position.set(sx*1.02,0,-.02);f.rotation.y=sx*(i*.2-.1);w.add(f);// fingered tips
+          const L=.55-i*.04,fe=M(new THREE.CapsuleGeometry(.05,L,4,10),dark,sx*(L/2),0,0,f,true,false);fe.rotation.z=Math.PI/2;fe.scale.set(1,.28,1);}
+        for(let i=0;i<5;i++)M(sph(.13,10,8),light,sx*(.15+i*.18),.03,-.05,w,true,false).scale.set(1.1,.35,1.3);
+        this.wings.push({w,sx,fly:0,fold:1.3});}
+      const neck=new THREE.Group();neck.position.set(0,by+r*.45,len/2+r*.4);neck.rotation.x=.25;g.add(neck);
+      M(sph(.19,14,12),white,0,.08,0,neck).scale.set(1,1.15,1);
+      const head=new THREE.Group();head.position.set(0,.26,.03);head.rotation.x=-.25;neck.add(head);const H=.2;
+      M(sph(H,22,16),white,0,0,0,head).scale.set(.9,.92,1.1);
+      for(let i=0;i<10;i++){const a=i/9*Math.PI-Math.PI/2;M(sph(H*.28,8,6),white,Math.sin(a)*H*.7,H*.2-Math.abs(Math.sin(a))*H*.1,-H*.75,head,false,false).scale.set(.8,.6,1.4);}// fluffy feathers at the back of the head
+      M(sph(H*.42,14,10),yel,0,-H*.08,H*.88,head).scale.set(.85,.8,1.15);
+      const hook=taperTube([fV(0,H*.05,H*1.1),fV(0,H*.0,H*1.45),fV(0,-H*.32,H*1.6),fV(0,-H*.5,H*1.45)],q=>H*(.22-.18*q),yel,head,16,10);
+      M(sph(H*.1,8,6),fShiny('#3b2a1a'),0,-H*.05,H*1.25,head,false,false).scale.set(2.2,.5,.5);// nostrils
+      fEyes(this,head,H,.5,.12,.6,.75,.24,'#e0a000');
+      for(const sx of [-1,1]){const brow=M(sph(H*.22,10,8),white,sx*H*.5,H*.36,H*.55,head,false,false);brow.scale.set(1.2,.45,.9);brow.rotation.z=sx*.25;}// a serious eagle brow
+      const tail=new THREE.Group();tail.position.set(0,by+r*.1,-(len/2+r*.8));g.add(tail);
+      for(let i=0;i<7;i++){const a=(i/6-.5)*.9,f=new THREE.Group();f.rotation.y=a;tail.add(f);const fe=M(new THREE.CapsuleGeometry(.07,.42,4,10),white,0,0,-.24,f);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.25);}
+      tail.rotation.x=-.15;
+      Object.assign(o,{neck,head,tail,nTilt:.25,size:1.15,h:by+.85,rad:.7,dustR:[r,r,len*.8]});}
     return o;}
   setTag(n){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();this.tag=null;}if(!n)return;
     this.tag=sprite(labelTex('💖 '+n,{size:58,fg:'#d6453d',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);this.tag.position.y=this.h+.15;this.g.add(this.tag);}
@@ -6301,17 +6343,21 @@ let thumbBusy=false,picKit=null;
 function farmPic(k,S=160,yaw=.6){if(!picKit){const sc=new THREE.Scene();sc.add(new THREE.HemisphereLight('#ffffff','#d9c7b0',2.2));const dl=new THREE.DirectionalLight('#ffffff',2.4);dl.position.set(2,3,4);sc.add(dl);picKit={sc,cm:new THREE.PerspectiveCamera(30,1,.05,50)};}
   const {sc,cm}=picKit,rt=new THREE.WebGLRenderTarget(S,S,{samples:4}),buf=new Uint8Array(S*S*4),cv=document.createElement('canvas');cv.width=cv.height=S;const cx=cv.getContext('2d'),id=cx.createImageData(S,S);
   const lin2s=v=>{v/=255;v=v<=.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-.055;return Math.max(0,Math.min(255,Math.round(v*255)));};
-  const a=new FarmAnimal(k);const i=obs.indexOf(a.ob);if(i>=0)obs.splice(i,1);a.dust.forEach(d=>d.visible=false);a.g.rotation.y=yaw;sc.add(a.g);a.g.updateMatrixWorld(true);
+  const a=new FarmAnimal(k);const i=obs.indexOf(a.ob);if(i>=0)obs.splice(i,1);a.dust.forEach(d=>d.visible=false);a.g.rotation.y=a.F.fly?yaw+.55:yaw;// flyers a bit more from the side, so you see the beak, crest and wings
+  // rides with wings show them spread up in a V, the way they look taking off (flat wings are just thin lines from the side)
+  if(a.wings&&a.F.fly)for(const w of a.wings){w.w.rotation.set(0,0,w.sx*.6);w.w.scale.x=1;}
+  sc.add(a.g);a.g.updateMatrixWorld(true);
   try{const bb=new THREE.Box3().setFromObject(a.g),c=bb.getCenter(new THREE.Vector3()),sz=bb.getSize(new THREE.Vector3()),d=Math.max(sz.x,sz.y,sz.z)*2.25;
-    cm.position.set(c.x+d*.35,c.y+d*.25,c.z+d*.9);cm.lookAt(c);
+    const up=a.F.fly?.45:.25;cm.position.set(c.x+d*.35,c.y+d*up,c.z+d*.9);cm.lookAt(c);
     const oc=renderer.getClearColor(new THREE.Color()),oa=renderer.getClearAlpha();renderer.setRenderTarget(rt);renderer.setClearColor('#000000',0);renderer.clear();renderer.render(sc,cm);
     renderer.readRenderTargetPixels(rt,0,0,S,S,buf);renderer.setRenderTarget(null);renderer.setClearColor(oc,oa);
     for(let y=0;y<S;y++)for(let x=0;x<S;x++){const s=((S-1-y)*S+x)*4,t=(y*S+x)*4,al=buf[s+3];if(!al){id.data[t+3]=0;continue;}
       id.data[t]=lin2s(buf[s]*255/al);id.data[t+1]=lin2s(buf[s+1]*255/al);id.data[t+2]=lin2s(buf[s+2]*255/al);id.data[t+3]=al;}
     cx.putImageData(id,0,0);return cv.toDataURL('image/png');}
   finally{renderer.setRenderTarget(null);rt.dispose();sc.remove(a.g);a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
-function thumbsSoon(){if(thumbBusy)return;const todo=FARM.concat(ZOOA).filter(f=>!FTHUMB[f.k]);if(!todo.length)return;thumbBusy=true;
-  const one=()=>{const f=todo.shift();if(!f){thumbBusy=false;if(barnOpen)renderBarn();if(catOpen)renderCatalog();if($('#rides').classList.contains('show'))renderRides();return;}try{FTHUMB[f.k]=farmPic(f.k);}catch(e){}setTimeout(one,30);};setTimeout(one,50);}
+function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=FARM.concat(ZOOA).filter(f=>!FTHUMB[f.k]).sort((a,b)=>!!isRide(b)-!!isRide(a));if(!todo.length)return;thumbBusy=true;
+  // the rides from the shop are drawn first, and the shop and ride button show them as soon as they're done
+  const one=()=>{const f=todo.shift();if(f&&!isRide(f)&&todo.length&&FARM.concat(ZOOA).filter(isRide).every(r=>FTHUMB[r.k])&&!one.told){one.told=1;if(shopOpen&&stab==='rides')renderShop();renderActions();}if(!f){thumbBusy=false;if(barnOpen)renderBarn();if(catOpen)renderCatalog();if(shopOpen&&stab==='rides')renderShop();renderActions();if($('#rides').classList.contains('show'))renderRides();return;}try{FTHUMB[f.k]=farmPic(f.k);}catch(e){}setTimeout(one,30);};setTimeout(one,50);}
 
 /* ---------- the safari zoo (12d-place-zoo.js): walk up to an animal, pet it, feed it and learn about it ---------- */
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
@@ -7385,8 +7431,8 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{openS
 const MOUNTS=FARM.filter(f=>f.mount||f.prize);
 STABS.splice(1,0,['rides','🦖','Rides']);
 SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn, and the dinosaurs and unicorn there can be ridden too.';
-for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,n:f.n,stars:f.mount,prize:f.prize,
-  d:f.prize?f.about:`${f.about} Tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
+for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize,
+  d:f.prize?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
 
 // it's yours: it moves into the barn, and the ride button calls it
 function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
@@ -7401,6 +7447,8 @@ function askPrize(s){const st=starsEarned();
 function checkPrizes(){if(!started)return;for(const f of MOUNTS)if(f.prize&&!BS.own[f.k]&&starsEarned()>=f.prize){getMount(f.k,true);sfx('tada');
   burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);}}
 setInterval(checkPrizes,1500);
+// draw the pictures of your rides soon after you start, so the ride button shows your real animal
+setTimeout(function warmPics(){if(!started)return setTimeout(warmPics,2000);if(myRides().length)thumbsSoon();},4000);
 
 /* ---------- 🏇 pick a ride: every animal you own that you can ride ---------- */
 function renderRides(){const now=mySteed();
@@ -7425,6 +7473,7 @@ $('#rides').onclick=e=>{if(e.target.id==='rides')closeRides();};
 const FLYK={// hz: wing beats a second, amp: how far the wings swing, glide: how much of the cruise is gliding, spd: top speed
   pegacorn:{hz:2.2,amp:.6,base:.12,glide:.3,spd:12,tuckF:.9,tuckB:1.05},
   ptero:{hz:1.3,amp:.5,base:.04,glide:.75,spd:13,tuckF:1.15,tuckB:1.3},
+  eagle:{hz:1.5,amp:.55,base:.1,glide:.85,spd:14,tuckF:1.25,tuckB:1.25},
   nova:{hz:1.55,amp:.58,base:.08,glide:.5,spd:12.5,tuckF:.85,tuckB:1.15}};
 const flyK=k=>FLYK[k]||FLYK.nova;
 const FLY_CRUISE=10,FLY_MAX=26,FLY_EDGE=R-4;// cruise height (the tallest trees are about 7.5), the ceiling, how far out you can go

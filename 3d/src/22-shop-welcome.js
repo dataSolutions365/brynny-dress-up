@@ -30,7 +30,8 @@ $('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('�
 function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');if(s.prize&&!owns(k))return askPrize(s);const have=s.stars?starsLeft():SAVE.coins||0,need=(s.stars||s.p)-have,cur=s.stars?'⭐':'🪙',mine=owns(k),wear=/^(look|pet):/.test(k);
   // clothing-store things are bought at the store
   if(s.tab==='store'&&!mine&&!storeOpen){$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>Get it for ${s.p} 🪙 at the 👔 Clothing Store past the 💃 Runway, or at the 🛍️ racks in the ✨ Sparkle Studio!</p><button class="btn" data-b="go">🗺️ Show me the way</button><button class="btn ghost" data-b="close">OK</button>`;$('#buy').dataset.k=k;$('#buy').classList.add('show');return;}
-  $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p>`+
+  if(s.fk&&!FTHUMB[s.fk])try{FTHUMB[s.fk]=farmPic(s.fk);}catch(e){}
+  $('#buyCard').innerHTML=(s.fk&&FTHUMB[s.fk]?`<img class="bigPic" src="${FTHUMB[s.fk]}" alt="">`:`<div class="bigE">${s.e}</div>`)+`<h2>${s.n}</h2><p>${s.d}</p>`+
     (mine?(wear?`<button class="btn" data-b="wear">✨ Wear it</button>`:'')+`<button class="btn ghost" data-b="close">OK</button>`
     :need<=0?`<button class="btn" data-b="buy">Buy for ${priceTxt(s)}</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} ${cur}${s.stars?' to spend':''}</p>`
     :`<p class="bneed">You need <b>${need}</b> more ${cur}</p><p>${s.stars?'Finish ⭐ star challenges to earn more stars!':'Find ⭐ stars, take care of your pet, and help the townspeople to earn more!'}</p><button class="btn ghost" data-b="close">OK</button>`);
@@ -60,14 +61,15 @@ const SHINT={outfits:'New outfits show up in your 👗 closet once they are your
 let stab=null;
 // during a holiday the shop gets a tab of its own (window.__season comes from seasons.js)
 const seasonTab=()=>{const H=window.__season&&window.__season.now();return H&&SHOP.some(s=>s.hol===H.id)?['season',H.e,H.n]:null;};
-function renderShop(){showCoins();const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only come in the shop during ${ST[2]}. Once you buy one, it's yours forever.`;if(stab==='season'&&!ST)stab='outfits';
+function renderShop(){showCoins();if(stab==='rides')thumbsSoon();// the rides show pictures of the real 3D animals (24d-barn.js)
+const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only come in the shop during ${ST[2]}. Once you buy one, it's yours forever.`;if(stab==='season'&&!ST)stab='outfits';
   $('#stabs').innerHTML=(ST?[ST]:[]).concat(STABS).map(([id,ico,n])=>`<button class="tab${id===stab?' on':''}" data-stab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';
   if(stab==='earn'){const quests=!!(window.__game&&window.__game.townSave);
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
       [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
-  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
 $('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
 $('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};

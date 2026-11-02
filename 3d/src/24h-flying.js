@@ -12,6 +12,7 @@
 const FLYK={// hz: wing beats a second, amp: how far the wings swing, glide: how much of the cruise is gliding, spd: top speed
   pegacorn:{hz:2.2,amp:.6,base:.12,glide:.3,spd:12,tuckF:.9,tuckB:1.05},
   ptero:{hz:1.3,amp:.5,base:.04,glide:.75,spd:13,tuckF:1.15,tuckB:1.3},
+  eagle:{hz:1.5,amp:.55,base:.1,glide:.85,spd:14,tuckF:1.25,tuckB:1.25},
   nova:{hz:1.55,amp:.58,base:.08,glide:.5,spd:12.5,tuckF:.85,tuckB:1.15}};
 const flyK=k=>FLYK[k]||FLYK.nova;
 const FLY_CRUISE=10,FLY_MAX=26,FLY_EDGE=R-4;// cruise height (the tallest trees are about 7.5), the ceiling, how far out you can go
