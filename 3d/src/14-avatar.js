@@ -174,7 +174,7 @@ class Avatar{
   setSkin(c){this.skin.color.set(c);}
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
-    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;
+    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;
     this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
@@ -423,6 +423,8 @@ class Avatar{
     if(this.skating)skatePose(this,tgt,sp,air,t);
     // riding a bike (17d-bicycle.js): sitting on the seat, pedaling, hands on the handlebars
     if(this.biking)bikePose(this,tgt,sp,air,t);
+    // dribbling, kicking and passing a ball (24g-ball-play.js)
+    if(this.ballMove)ballPose(this,tgt,sp,t);
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);
     damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;

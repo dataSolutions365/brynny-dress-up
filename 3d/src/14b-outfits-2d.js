@@ -205,7 +205,10 @@ const OUTFITS2D={
   racket(k,c){const a=k.arms[1],m=k.mat(c,'shiny'),g=new THREE.Group();g.position.set(0,-.06,.03);g.rotation.x=.3;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
     k.P(cyl(.008,.008,.12,8),k.mat('#ffffff'),g,0,-.0,0);const r=k.P(new THREE.TorusGeometry(.065,.008,8,28),m,g,0,-.12,0);r.scale.set(.8,1,1);r.rotation.y=Math.PI/2;const net=k.P(new THREE.CircleGeometry(.062,20),k.mat('#ffffff','tulle'),g,0,-.12,0);net.scale.set(.8,1,1);net.rotation.y=Math.PI/2;},
   // ⚽ Soccer ball held in one hand
-  ball(k,c){const t=printMat(k,c,'spots');const b=k.P(sph(.08,24,16),t,k.arms[1].hand,0,-.11,.05);},
+  // (24g-ball-play.js hides it while you dribble it with your feet or pass it)
+  ball(k,c){const t=printMat(k,c,'spots');const b=k.P(sph(.08,24,16),t,k.arms[1].hand,0,-.11,.05);k.av.handBall=b;},
+  // 🏀 Basketball held in the right hand (24g-ball-play.js bounces it while you walk)
+  bball(k,c){const b=k.P(sph(.12,24,16),bbMat(c),k.arms[0].hand,0,-.15,.05);k.av.handBall=b;},
   // 🥇 Gold medal on a ribbon
   medal(k,c){const r=k.mat('#3a5bd9');for(const s of [-1,1]){const b=k.P(box(.014,.14,.004),r,k.spine,s*.03,.4,.1);b.rotation.z=s*.35;}const m=k.P(cyl(.024,.024,.006,20),k.mat(c,'metal'),k.spine,0,.32,.106);m.rotation.x=Math.PI/2;},
   // 🧛 Vampire cape with a tall red collar

@@ -47,7 +47,7 @@ const HATS=[['tiara','💎','Tiara','#ffd23f'],['crown','👑','Crown','#d4af37'
 const EXTRAS=[['wings','🧚','Fairy wings','#b388ff'],['cape','🦸','Cape','#e0263b'],['purse','👛','Purse','#ff6fae'],['wand','🪄','Magic wand','#ffd23f'],['glasses','👓','Glasses','#2d2d3a'],['pearls','📿','Pearls','#ffffff'],['scarf','🧣','Scarf','#ff3b6b'],['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['balloon','🎈','Balloon','#ff3b6b'],
   // from the 2D game
   ['heartneck','💖','Heart necklace','#ff4d6d'],['earrings','✨','Earrings','#ffd23f'],['heartglasses','😍','Heart shades','#ff4d8d'],['bouquet','💐','Bouquet','#ff8fc8'],['present','🎁','Gift box','#7ee081'],['pompoms','📣','Pom-poms','#ff4d8d'],['racket','🎾','Tennis racket','#7ee081'],
-  ['ball','⚽','Soccer ball','#ffffff'],['medal','🥇','Gold medal','#ffd23f'],['vampcape','🧛','Vampire cape','#2d2d3a'],['lei','🌺','Flower lei','#ff8fc8'],['tail','🐈','Kitty tail','#ffffff'],['whiskers','🐱','Kitty face paint','#ffffff'],['bangles','🟡','Gold bangles','#e0b04a']];
+  ['ball','⚽','Soccer ball','#ffffff'],['bball','🏀','Basketball','#ff7a1f'],['medal','🥇','Gold medal','#ffd23f'],['vampcape','🧛','Vampire cape','#2d2d3a'],['lei','🌺','Flower lei','#ff8fc8'],['tail','🐈','Kitty tail','#ffffff'],['whiskers','🐱','Kitty face paint','#ffffff'],['bangles','🟡','Gold bangles','#e0b04a']];
 const CAT={tops:TOPS,bottoms:BOTTOMS,dresses:DRESSES,shoes:SHOES,hats:HATS,extras:EXTRAS};
 const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'};
 // things you can buy in the shop with coins (everything else stays free)
@@ -1457,7 +1457,7 @@ class Avatar{
   setSkin(c){this.skin.color.set(c);}
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
-    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;
+    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;
     this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
@@ -1706,6 +1706,8 @@ class Avatar{
     if(this.skating)skatePose(this,tgt,sp,air,t);
     // riding a bike (17d-bicycle.js): sitting on the seat, pedaling, hands on the handlebars
     if(this.biking)bikePose(this,tgt,sp,air,t);
+    // dribbling, kicking and passing a ball (24g-ball-play.js)
+    if(this.ballMove)ballPose(this,tgt,sp,t);
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);
     damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;
@@ -1926,7 +1928,10 @@ const OUTFITS2D={
   racket(k,c){const a=k.arms[1],m=k.mat(c,'shiny'),g=new THREE.Group();g.position.set(0,-.06,.03);g.rotation.x=.3;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
     k.P(cyl(.008,.008,.12,8),k.mat('#ffffff'),g,0,-.0,0);const r=k.P(new THREE.TorusGeometry(.065,.008,8,28),m,g,0,-.12,0);r.scale.set(.8,1,1);r.rotation.y=Math.PI/2;const net=k.P(new THREE.CircleGeometry(.062,20),k.mat('#ffffff','tulle'),g,0,-.12,0);net.scale.set(.8,1,1);net.rotation.y=Math.PI/2;},
   // ⚽ Soccer ball held in one hand
-  ball(k,c){const t=printMat(k,c,'spots');const b=k.P(sph(.08,24,16),t,k.arms[1].hand,0,-.11,.05);},
+  // (24g-ball-play.js hides it while you dribble it with your feet or pass it)
+  ball(k,c){const t=printMat(k,c,'spots');const b=k.P(sph(.08,24,16),t,k.arms[1].hand,0,-.11,.05);k.av.handBall=b;},
+  // 🏀 Basketball held in the right hand (24g-ball-play.js bounces it while you walk)
+  bball(k,c){const b=k.P(sph(.12,24,16),bbMat(c),k.arms[0].hand,0,-.15,.05);k.av.handBall=b;},
   // 🥇 Gold medal on a ribbon
   medal(k,c){const r=k.mat('#3a5bd9');for(const s of [-1,1]){const b=k.P(box(.014,.14,.004),r,k.spine,s*.03,.4,.1);b.rotation.z=s*.35;}const m=k.P(cyl(.024,.024,.006,20),k.mat(c,'metal'),k.spine,0,.32,.106);m.rotation.x=Math.PI/2;},
   // 🧛 Vampire cape with a tall red collar
@@ -2764,7 +2769,7 @@ HAIRS.push(['wavy','🌊','Wavy'],['highbun','🩰','Ballerina bun'],['superlong
   GUY_OUTFITS.push(...from(DRESSES,['werewolf','mummy','zombie','spacepup','pajamas','jumpsuit']));
   GUY_SHOES.push(...from(SHOES,['sneaker','boots','rain','snowboots','skates','paws','chunkyboots','sandals']));
   GUY_HATS.push(...from(HATS,['crown','witchhat','santahat','party','sunhat','pupears','wolfears','mummywrap']));
-  GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','vampcape','lei']));}
+  GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','bball','vampcape','lei']));}
 // for 3d/tests/closets-match.mjs: every list of things to wear, read when it runs (holiday things are added by seasons.js)
 addEventListener('load',()=>{if(window.__game)window.__game.closets=()=>({hairs:HAIRS.map(x=>x[0]),guyHairs:GUY_HAIRS.map(x=>x[0]),
   cat:Object.fromEntries(Object.entries(CAT).map(([k,l])=>[k,l.map(x=>x[0])])),guy:Object.fromEntries(Object.entries(GUY_CAT).map(([k,l])=>[k,l.map(x=>x[0])])),
@@ -3111,7 +3116,7 @@ canvas.addEventListener('pointermove',e=>{
   if(e.pointerId===brush.id){const uv=faceHit(e);if(uv)paintAt(uv);else brush.last=null;return;}
   if(e.pointerId===joy.id){let dx=e.clientX-joy.x0,dy=e.clientY-joy.y0;const d=Math.hypot(dx,dy),max=56;if(d>max){dx*=max/d;dy*=max/d;}joy.x=dx/max;joy.y=dy/max;knob.style.transform=`translate(${dx}px,${dy}px)`;}
   if(e.pointerId===look.id){const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;
-    if(closetOpen){if(barberOpen)bview-=dx*.012;else if(!drawing()&&!(ct.on&&!ct.sub)&&!(glamOpen&&ctab!=='hair'))player.face+=dx*.012;}else{cam.yaw-=dx*.006;cam.pitch=Math.min(1.25,Math.max(-.15,cam.pitch+dy*.004));fadeHint();}}});
+    if(closetOpen){if(barberOpen||glamOpen&&guyGlamTab())bview-=dx*.012;else if(!drawing()&&!(ct.on&&!ct.sub)&&!(glamOpen&&ctab!=='hair'))player.face+=dx*.012;}else{cam.yaw-=dx*.006;cam.pitch=Math.min(1.25,Math.max(-.15,cam.pitch+dy*.004));fadeHint();}}});
 const endPtr=e=>{pinchUp(e);parlorUp(e);bakeryUp(e);garageUp(e);sandUp(e);beautyUp(e);if(e.pointerId===brush.id){brush.id=null;brush.last=null;savePaint();}if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';}if(e.pointerId===look.id)look.id=null;};
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);canvas.addEventListener('lostpointercapture',endPtr);
 canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
@@ -3367,7 +3372,7 @@ const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','
 // Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
 const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>skateActs().concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+const allActs=()=>ballActs().concat(skateActs()).concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -3378,6 +3383,7 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
 function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  if(id==='kick'){kickBall();return;}
   if(id==='skate'){toggleSkate();return;}
   if(id==='bike'){toggleBike();return;}
   if(id==='horse'){toggleHorse();return;}
@@ -3441,7 +3447,7 @@ const MK_SHADOW=['#ff6fae','#ffb3d1','#b388ff','#8e6cff','#4fb6ff','#2fd1c5','#7
 const MK_LIPS=['#ff3b6b','#e0263b','#c2185b','#ff6fae','#ffb3d1','#e89aa0','#b5655b','#8e2b5b','#ff8a1f','#8e6cff','#4fb6ff','#2d2d3a'];
 const MK_BRUSH=['#2b1d16','#000000','#ffffff','#ff3b6b','#c2185b','#ff6fae','#b388ff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#d4af37','#c0c0c0','#8a5a3b'];
 function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&&!tabsOf().some(t=>t[0]===ctab))ctab=isGuy(L)?'tops':'dresses';
-  $('#tabs').innerHTML=(glamOpen?GTABS:barberOpen?BARBER_TABS:storeOpen?storeTabs():tabsOf()).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
+  $('#tabs').innerHTML=(glamOpen?glamTabs():barberOpen?BARBER_TABS:storeOpen?storeTabs():tabsOf()).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';const sw=(list,cur,kind)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
   const gh=glamOpen&&glamHTML()||barberOpen&&barberHTML()||storeOpen&&storeHTML();if(gh)h=gh;
   else if(ctab==='hair'){h+=`<h3>Hair style</h3><div class="grid">${hairsOf(L).map(([id,ico,n])=>`<button class="item${L.hair.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div><h3>Hair color</h3>`+sw(myColors(HAIRC),L.hair.c,'hair');}
@@ -3470,7 +3476,7 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&
 function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();renderActions();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
-$('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
+$('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;if(BVIEW[ctab]!=null)bview=BVIEW[ctab];glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
 $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');if(!b)return;if(glamOpen&&glamClick(b))return;
   if(b.dataset.lock){askBuy(b.dataset.lock);return;}
   if(b.dataset.hair){L.hair.id=b.dataset.hair;return changed();}
@@ -4859,25 +4865,33 @@ canvas.addEventListener('pointercancel',e=>{if(tap&&tap.id===e.pointerId)tap=nul
 
 // ---- src/24-model-agency.js ----
 /* ================= STAR MODEL AGENCY: glam mirror (makeup, hair, nails, toes) + model contest ================= */
+// Guys get grooming at the mirror instead (skin care, haircuts, beards, face shapes), and their own rivals and themes in the contest.
 const AG=Z.agency;
 const agW=(lx,y,lz)=>{const [x,w]=AG.toWorld(lx,lz);return new THREE.Vector3(x,y,w);};
 const agFace=(dx,dz)=>{const c=Math.cos(AG.rot),s=Math.sin(AG.rot);return Math.atan2(dx*c+dz*s,-dx*s+dz*c);};
-const ag={built:false,judges:[],rivals:[],gigi:null,all:[]};
+const ag={built:false,judges:[],rivals:[],girlRivals:[],guyRivals:[],gigi:null,all:[]};
 function agNPC(look,name,col,lx,lz,face){const a=new Avatar(look,name,col);const o={a,g:a.g,look,name,pos:agW(lx,0,lz),face,sp:0,home:[lx,lz,face],say:null,sayT:0};a.g.position.copy(o.pos);a.g.rotation.y=face;scene.add(a.g);ag.all.push(o);return o;}
 const JUDGES=[
   {n:'Madame Chic',em:'🎩',what:'style',w:[.62,.18,.2],l:{hair:{id:'updo',c:'#2b1d16',shine:true},skin:'#e6c49a',eyes:'#3d2a1a',dress:{id:'gown',c:'#2d2d3a'},shoes:{id:'heels',c:'#2d2d3a'},hat:null,extras:{glasses:'#2d2d3a',pearls:'#ffffff'},mk:{lips:'#c2185b',liner:'wing',lashes:'long'}}},
   {n:'Lady Glitter',em:'✨',what:'glam',w:[.22,.58,.2],l:{hair:{id:'waves',c:'#ff7eb6',shine:true},skin:'#ffe3cc',eyes:'#7a5cc8',dress:null,top:{id:'sequin',c:'#d4af37'},bottom:{id:'skirt',c:'#2d2d3a'},shoes:{id:'platforms',c:'#d4af37'},hat:{id:'tiara',c:'#ffd23f'},extras:{},mk:{lips:'#ff6fae',shadow:'#b388ff',gems:true,gloss:true,lashes:'bold'}}},
   {n:'Coco Star',em:'💃',what:'walk',w:[.22,.18,.6],l:{hair:{id:'afropuff',c:'#2b1d16'},skin:'#8d5a3b',eyes:'#3d2a1a',dress:{id:'mermaid',c:'#8e6cff'},shoes:{id:'heels',c:'#ff3b6b'},hat:null,extras:{glasses:'#ff6fae'},mk:{lips:'#e0263b',liner:'thin',lashes:'long'}}}];
-const RIVAL_N=['Bella','Sienna','Rosie'];
+const RIVAL_N=['Bella','Sienna','Rosie'],GUY_RIVAL_N=['Jake','Marco','Theo'];
+const rivalNames=()=>isGuy(SAVE.look)?GUY_RIVAL_N:RIVAL_N;
+function guyRandLook(){const l=defaultGuyLook();l.skin=rnd(SKIN);l.eyes=rnd(EYES);l.hair={id:rnd(GUY_HAIRS)[0],c:rnd(HAIRC)};if(Math.random()<.5)l.beard={id:rnd(BEARDS)[0],c:l.hair.c};return l;}
+// you compete against girls when you play a girl, and against guys when you play a guy
+function useRivals(guy){const want=guy?ag.guyRivals:ag.girlRivals;if(!want||ag.rivals===want)return;ag.rivals=want;
+  ag.girlRivals.forEach(o=>o.g.visible=!guy);ag.guyRivals.forEach(o=>o.g.visible=guy);}
 function buildAgencyNPCs(){if(ag.built)return;ag.built=true;
   JUDGES.forEach((j,i)=>{const l=Object.assign(defaultLook(),{style:'glam',top:null,bottom:null},j.l);l.makeup=Object.assign(defaultMakeup(),j.l.mk);delete l.mk;
     const o=agNPC(l,`${j.em} ${j.n}`,'#b8860b',AG.jt.lx+.72,AG.jseats[i],agFace(-1,0));o.a.play('chair');o.j=j;ag.judges.push(o);});
-  [[-3.3,-3.2],[-4.3,-2.5],[-4.7,-3.9]].forEach(([lx,lz],i)=>{const l=randLook();l.style='glam';const o=agNPC(l,RIVAL_N[i],'#c2185b',lx,lz,agFace(1,.3));o.base=l;ag.rivals.push(o);});
+  [[-3.3,-3.2],[-4.3,-2.5],[-4.7,-3.9]].forEach(([lx,lz],i)=>{const l=randLook();l.style='glam';const o=agNPC(l,RIVAL_N[i],'#c2185b',lx,lz,agFace(1,.3));o.base=l;ag.girlRivals.push(o);
+    const gl=guyRandLook();const g=agNPC(gl,GUY_RIVAL_N[i],'#2f7be5',lx,lz,agFace(1,.3));g.base=gl;g.g.visible=false;ag.guyRivals.push(g);});
+  ag.rivals=ag.girlRivals;useRivals(isGuy(SAVE.look));
   const gl=Object.assign(defaultLook(),{style:'glam',skin:'#d49a6a',hair:{id:'highpony',c:'#ff6fae',shine:true},dress:null,top:{id:'tee',c:'#2d2d3a'},bottom:{id:'jeans',c:'#3a5bd9'},shoes:{id:'sneaker',c:'#ffffff'},hat:null,extras:{}});gl.makeup=Object.assign(defaultMakeup(),{lips:'#ff3b6b',liner:'wing'});gl.nails={c:'#ff6fae',f:'glitter'};
   ag.gigi=agNPC(gl,'💇‍♀️ Gigi','#8e6cff',-3.75,.55,agFace(-.6,1));}
 function stepNPC(o,dt){o.g.position.copy(o.pos);o.g.rotation.y=o.face+(o.a.spinY||0);o.a.update(dt,o.sp,false);if(o.say){o.sayT-=dt;if(o.sayT<0){o.g.remove(o.say);o.say=null;}}}
 function npcSay(o,t){if(o)friendBubble(o,t);}
-anims.push((t,dt)=>{const here=started&&(curZone===AG||ct.on||glamOpen);AG.mirror.visible=here;if(!here)return;buildAgencyNPCs();for(const o of ag.all)if(o!==ct.walker)stepNPC(o,dt);
+anims.push((t,dt)=>{const here=started&&(curZone===AG||ct.on||glamOpen);AG.mirror.visible=here;if(!here)return;buildAgencyNPCs();if(!ct.on)useRivals(isGuy(SAVE.look));for(const o of ag.all)if(o!==ct.walker)stepNPC(o,dt);
   AG.bulbs.forEach((b,i)=>b.scale.setScalar(.85+.2*Math.sin(t*2+i*.7)));AG.flashes.forEach(f=>{if(f.visible&&(f.t-=dt)<0)f.visible=false;});});
 function camFlash(){AG.flashes.forEach((f,i)=>setTimeout(()=>{f.visible=true;f.t=.09;},i*140+Math.random()*120));try{sndCam.currentTime=0;sndCam.play().catch(()=>{});}catch(e){}}
 function showTrophies(){const g=AG.trophyG;(g.userData.cups||[]).forEach(m=>g.remove(m));g.userData.cups=[];const list=((SAVE.contest||{}).cups||[]).slice(-10);
@@ -4888,6 +4902,19 @@ showTrophies();
 /* ---------- glam mirror (the dressing room) ---------- */
 let glamOpen=false,onGPad=false,onCPad=false,glamPrevTab='dresses';
 const GTABS=[['makeup','💄','Makeup'],['hair','💇','Hair salon'],['nails','💅','Manicure'],['toes','🦶','Pedicure']];
+// guys get grooming instead of makeup, nails and the girls' hair tools: skin care, plus the barber's cuts, beards and face shapes
+const GUY_GTABS=[['makeup','🧴','Grooming'],['cut','✂️','Haircut'],['beard','🧔','Beard'],['bface','🙂','Face']];
+const glamTabs=()=>isGuy(SAVE.look)?GUY_GTABS:GTABS;
+const ALL_GTABS=GTABS.concat(GUY_GTABS.slice(1));
+const guyGlamTab=()=>isGuy(SAVE.look)&&['cut','beard','bface'].includes(ctab);
+const GUY_MTOOLS=['soap','rinse','brows','tan','freckles','paint'];
+const mToolsOf=()=>isGuy(SAVE.look)?MTOOLS.filter(t=>GUY_MTOOLS.includes(t[0])):MTOOLS;
+// lipstick, eye makeup, blush and nail polish come off a guy (looks saved before guys had their own grooming could still have them)
+const GIRL_MK=['shadow','liner','linerC','lashes','lips','lipLiner','gloss','blush','gems','stickers'];
+function guyScrub(L){if(!isGuy(L))return false;const mk=L.makeup||(L.makeup=defaultMakeup()),d=defaultMakeup();let ch=false;
+  for(const k of GIRL_MK){const want=k==='blush'?'none':k==='stickers'?[]:d[k];if(JSON.stringify(mk[k])!==JSON.stringify(want)){mk[k]=want;ch=true;}}
+  if(L.nails&&Object.keys(L.nails).length){L.nails={};ch=true;}return ch;}
+{let ch=guyScrub(SAVE.look);const gl=SAVE.looks&&SAVE.looks.guy&&SAVE.looks.guy.look;if(gl&&gl!==SAVE.look)ch=guyScrub(gl)||ch;if(ch)persist();}
 const NAILF=[['shiny','💅 Shiny'],['glitter','✨ Glitter'],['chrome','🪩 Chrome'],['jelly','💎 Jelly']];
 const gcam={p:new THREE.Vector3(),t:new THREE.Vector3(),init:false};
 function nailsHTML(key,fkey,title){const N=SAVE.look.nails||{},cur=nailBrush[key],fin=N[fkey]||'shiny';
@@ -4895,6 +4922,8 @@ function nailsHTML(key,fkey,title){const N=SAVE.look.nails||{},cur=nailBrush[key
     <h3>Finish</h3><div class="chips">${NAILF.map(([v,n])=>`<button class="${fin===v?'on':''}" data-nf="${fkey}" data-v="${v}">${n}</button>`).join('')}</div>
     <div style="height:10px"></div><div class="chips"><button data-nailall="${key}">💅 Paint them all</button><button data-nailoff="${key}">🧽 Take off all polish</button></div>`;}
 function glamHTML(){const L=SAVE.look;
+  if(guyGlamTab())return barberHTML();
+  if(isGuy(L)&&ctab!=='makeup')return null;
   if(ctab==='nails')return `<p class="drawhint">👆 Pick a color, then tap one nail at a time to paint it. The big buttons switch hands.</p>`+nailsHTML('c','f','💅 Nail polish');
   if(ctab==='toes')return `<p class="drawhint">👆 Feet up on the pouf! Pick a color, then tap one toenail at a time. Sandals 🩴 show off your toes later.</p>`+nailsHTML('t','tf','🦶 Toe polish');
   if(ctab==='hair')return hairHTML();
@@ -4905,12 +4934,12 @@ function glamSeat(fx){const t=ctab;const chairF=agFace(-1,0),pediF=agFace(0,1);
   av.play(t==='nails'?'mani':t==='toes'?'pedi':'chair');if(t==='toes'||t==='nails')player.face=t==='toes'?pediF:chairF;if(t==='makeup')player.face=chairF;
   if(fx){const P=player.pos,g=ag.gigi;if(t==='hair'){burst(av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.15,0)),'#ffffff',30,1.4,.09);tone(180,.6,'sawtooth',.025,0,260);if(g)g.a.play('magic');}
     else if(t==='nails'||t==='toes'){const pts=t==='nails'?av.arms.map(a=>a.hand):av.legs.map(l=>l.an);pts.forEach(o=>burst(o.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.08,0)),'#ffd6f0',14,.8,.06));sfx('brush');if(g)g.a.play('clap');}
-    if(g&&Math.random()<.5)npcSay(g,rnd(['Gorgeous! 😍','So pretty! 💖','Stunning! ✨','Love it! 💅','Perfect! 🌟']));}}
+    if(g&&Math.random()<.5)npcSay(g,rnd(isGuy(SAVE.look)?['Looking sharp! 😎','Fresh! ✨','Nice! 👍','Clean look! 🌟']:['Gorgeous! 😍','So pretty! 💖','Stunning! ✨','Love it! 💅','Perfect! 🌟']));}}
 function openGlam(fromContest){if(closetOpen&&!fromContest)return;closeTalk();buildAgencyNPCs();glamOpen=true;closetOpen=true;
-  glamPrevTab=GTABS.some(g=>g[0]===ctab)?'dresses':ctab;ctab='makeup';czoom='face';gcam.init=false;
+  glamPrevTab=ALL_GTABS.some(g=>g[0]===ctab)?(isGuy(SAVE.look)?'tops':'dresses'):ctab;ctab='makeup';if(guyScrub(SAVE.look)){persist();av.dress(SAVE.look);}if(isGuy(SAVE.look)&&!GUY_MTOOLS.includes(mTool))mTool='soap';czoom='face';gcam.init=false;
   const [cx,cz]=AG.dr.chair;player.pos.copy(agW(cx,0,cz));player.vy=0;player.speed=0;player.face=agFace(-1,0);cam.closetYaw=cam.cy=player.face;cam.cd=.55;cam.cp=.02;cam.fv=null;
   joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';document.body.classList.add('dressing');$('#ctitle').textContent='🪞 Glam Mirror';
-  AG.gLbl.visible=false;const g=ag.gigi;if(g){g.pos.copy(agW(-4.05,0,.75));g.face=Math.atan2(player.pos.x-g.pos.x,player.pos.z-g.pos.z);npcSay(g,'Welcome to the glam room! 💖');g.a.play('wave');}
+  AG.gLbl.visible=false;const g=ag.gigi;if(g){g.pos.copy(agW(-4.05,0,.75));g.face=Math.atan2(player.pos.x-g.pos.x,player.pos.z-g.pos.z);npcSay(g,isGuy(SAVE.look)?'Welcome! Time for a fresh look 😎':'Welcome to the glam room! 💖');g.a.play('wave');}
   glamSeat(false);renderCloset();$('#closet').classList.add('show');$('#ccontent').scrollTop=0;sfx('tada');}
 function closeGlam(){if(!glamOpen)return;hideHTool();glamOpen=false;closetOpen=false;czoom='body';ctab=glamPrevTab;document.body.classList.remove('dressing');$('#closet').classList.remove('show');$('#ctitle').textContent='👗 My closet';
   av.dress(SAVE.look);persist();AG.gLbl.visible=true;AG.chair.rotation.y=0;const g=ag.gigi;if(g){g.pos.copy(agW(...g.home.slice(0,1),0,g.home[1]));g.face=g.home[2];}
@@ -4918,13 +4947,17 @@ function closeGlam(){if(!glamOpen)return;hideHTool();glamOpen=false;closetOpen=f
   if(ct.on&&ct.sub==='glam'){ct.sub=null;backToContest();return;}
   did('glam');if(Date.now()-(SAVE.glamPaid||0)>6e5){SAVE.glamPaid=Date.now();persist();setTimeout(()=>earn(5,'Glam time!'),700);}
   toast('Looking fabulous! ✨ Now try the 🏆 model contest!');}
-function glamCam(dt){if(!glamOpen||ctab==='makeup')return;const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
+function glamCam(dt){if(!glamOpen||ctab==='makeup')return;
+  // a guy's haircut, beard and face tabs: the camera circles his head like at the barber (drag or the side buttons turn it)
+  if(guyGlamTab()){const T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,ctab==='beard'?-.03:0,0)),want=player.face+bview,d=ctab==='cut'?.7:.55,k=Math.min(1,dt*5);
+    if(!gcam.init){gcam.a=want;gcam.t.copy(T);gcam.init=true;}gcam.a=angDamp(gcam.a,want,k);gcam.t.lerp(T,k);
+    camera.position.copy(gcam.t).add(new THREE.Vector3(Math.sin(gcam.a)*d,.06,Math.cos(gcam.a)*d));camera.lookAt(gcam.t);return;}const fwd=tmpV.set(Math.sin(player.face),0,Math.cos(player.face)).clone();let T,Pp;
   if(ctab==='hair'){T=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.02,0));const a=player.face+hairView;Pp=T.clone().add(new THREE.Vector3(Math.sin(a)*1.0,.12,Math.cos(a)*1.0));}
   else if(nailCamAt(ctab==='nails'?'c':'t',fwd)){T=nailCamT;Pp=nailCamP;}
   else if(ctab==='nails'){player.face=agFace(-1,0);T=av.arms[0].hand.getWorldPosition(new THREE.Vector3()).add(av.arms[1].hand.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);Pp=T.clone().addScaledVector(fwd,.2).add(new THREE.Vector3(0,.27,0));}
   else{player.face=agFace(0,1);T=av.legs[0].an.getWorldPosition(new THREE.Vector3()).add(av.legs[1].an.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).addScaledVector(fwd,.1);Pp=T.clone().addScaledVector(fwd,.12).add(new THREE.Vector3(0,.36,0));}
   if(!gcam.init){gcam.p.copy(Pp);gcam.t.copy(T);gcam.init=true;}const k=Math.min(1,dt*5);gcam.p.lerp(Pp,k);gcam.t.lerp(T,k);camera.position.copy(gcam.p);camera.lookAt(gcam.t);}
-function glamClick(b){const L=SAVE.look;if(beautyClick(b))return true;
+function glamClick(b){const L=SAVE.look;if(isGuy(L)&&barberClick(b))return true;if(beautyClick(b))return true;
   if(b.dataset.nail){nailBrush[b.dataset.nail]=b.dataset.c||'';sfx('pop');renderCloset();renderNailUI();return true;}
   if(b.dataset.nailall){youPaintAll(b.dataset.nailall,nailBrush[b.dataset.nailall]);glamSeat(true);renderCloset();return true;}
   if(b.dataset.nailoff){youPaintAll(b.dataset.nailoff,'');sfx('pop');renderCloset();return true;}
@@ -4950,16 +4983,16 @@ function hairHTML(){const H=SAVE.look.hair,t=HTOOLS.find(x=>x[0]===hTool);
   h+=`<h3>Quick styles</h3><div class="grid">${hairsOf(SAVE.look).map(([id,ico,n])=>`<button class="item${H.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>
     <div class="chips" style="margin-top:10px"><button data-hreset="all">↩️ Wash out (reset length, curls, volume)</button></div>`;
   return h;}
-function makeupHTML(){const mk=SAVE.look.makeup,t=MTOOLS.find(x=>x[0]===mTool),cols=MKC[mTool];
-  let h=mkTopHTML()+`<div class="zoomrow">${[['eyes','👁️ Eyes'],['lips','👄 Lips'],['face','🙂 Face']].map(([z,n])=>`<button class="${czoom===z?'on':''}" data-zoom="${z}">${n}</button>`).join('')}</div>
-    <div class="chips tools">${MTOOLS.map(([id,e,n])=>`<button class="${mTool===id?'on':''}" data-mtool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${t[3]} You can tap too.</p>`;
+function makeupHTML(){if(isGuy(SAVE.look)&&!GUY_MTOOLS.includes(mTool))mTool='soap';const mk=SAVE.look.makeup,t=MTOOLS.find(x=>x[0]===mTool),cols=MKC[mTool];
+  let h=(isGuy(SAVE.look)?'':mkTopHTML())+`<div class="zoomrow">${[['eyes','👁️ Eyes'],['lips','👄 Lips'],['face','🙂 Face']].filter(z=>!isGuy(SAVE.look)||z[0]!=='lips').map(([z,n])=>`<button class="${czoom===z?'on':''}" data-zoom="${z}">${n}</button>`).join('')}</div>
+    <div class="chips tools">${mToolsOf().map(([id,e,n])=>`<button class="${mTool===id?'on':''}" data-mtool="${id}">${e} ${n}</button>`).join('')}</div><p class="drawhint">👆 ${t[3]} You can tap too.</p>`;
   if(mTool==='paint')return h+`<div class="chips">${[['thin','✏️ Thin'],['medium','🖍️ Medium'],['thick','🎨 Thick']].map(([v,n])=>`<button class="${!brush.erase&&brush.size===v?'on':''}" data-brush="${v}">${n}</button>`).join('')}<button class="${brush.erase?'on':''}" data-brush="erase">🧽 Eraser</button><button data-brush="undo">↩️ Undo</button><button data-brush="clear">🗑️ Clear</button></div><div style="height:8px"></div><div class="swatches">${MK_BRUSH.map(c=>`<button class="sw${!brush.erase&&c===brush.c?' on':''}" style="background:${c}" data-sw="brush" data-c="${c}"></button>`).join('')}</div>`+faceShapes();
   if(MKX[mTool])return h+mkExtraHTML()+faceShapes();
   if(cols)h+=`<div class="swatches">${cols.map(c=>{const [v,cc]=Array.isArray(c)?c:[c,c];return `<button class="sw${mkColor[mTool]===v?' on':''}" style="background:${cc}" data-mkc="${v}"></button>`;}).join('')}</div>`;
   h+=`<div class="chips" style="margin-top:8px"><button data-mkoff="${mTool}">🧼 Wipe off ${t[2].toLowerCase()}</button><button data-mkoff="all">🧼 Wipe off everything</button></div>`;
   if(['shadow','liner','lashes'].includes(mTool))h+=eyeLooksHTML();
   return h+faceShapes();}
-function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute')return '';const F=L.face||{};
+function faceShapes(){const L=SAVE.look;if((L.style||'glam')==='cute'||isGuy(L))return '';const F=L.face||{};
   return FACEOPT.filter(([k])=>k==='eyes'||k==='lips').map(([k,t,opts])=>`<h3>${k==='eyes'?'👁️ Eye shape':'👄 Lip shape'}</h3><div class="grid">${opts.map(([v,e,n])=>`<button class="item${(F[k]||opts[0][0])===v?' on':''}" data-face="${k}:${v}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`).join('');}
 function beautyClick(b){const L=SAVE.look,H=L.hair,mk=L.makeup;if(mkExtraClick(b))return true;
   if(b.dataset.htool){hTool=b.dataset.htool;if(hTool==='clip'&&!b.classList.contains('on')){}else if(hTool==='clip'){}sfx('pop');renderCloset();return true;}
@@ -5117,18 +5150,48 @@ const CT_THEMES=[
   {id:'pop',e:'🎤',n:'Pop Star',tip:'Shine on stage! Sparkly tops, party dresses and platform heels.',dress:['party'],top:['sequin','startee','jacket'],bottom:['skirt','leggings','tutu','shorts'],shoes:['platforms','heels','skates'],hat:['cap','bow'],extras:['glasses','purse'],fams:['pink','purple','blue','gold']},
   {id:'galaxy',e:'🌌',n:'Galaxy Night',tip:'Out of this world! Starry gowns, sparkles, wings and halos.',dress:['stargown','mermaid','gown'],top:['sequin'],bottom:['leggings','maxi'],shoes:['platforms','glass'],hat:['tiara'],extras:['wings','halo','unicorn'],fams:['purple','blue','black','silver']},
   {id:'pink',e:'💗',n:'Pretty in Pink',tip:'Everything pink! Pink clothes, pink shoes, pink hat, pink lips.',pink:true,dress:ALL(DRESSES),top:ALL(TOPS),bottom:ALL(BOTTOMS),shoes:ALL(SHOES),hat:ALL(HATS),extras:ALL(EXTRAS),fams:['pink']}];
+// what guys wear for each theme (the lists above are ids from the girls' closet). Holiday rounds from seasons.js are here too.
+const CT_GUY={
+  royal:{tip:'A royal ball! Tuxedos, sharp suits, dress shoes, a gold chain and a cape.',dress:['tux','suit'],top:['buttonup','sweatervest'],bottom:['khakis'],shoes:['oxfords','loafers'],hat:['fedora'],extras:['chain','cape','watch','studs']},
+  beach:{tip:'Sunny and fun! Hawaiian shirts, swim trunks, slides and shades.',dress:[],top:['hawaiian','tank','gtee','graphictee'],bottom:['swimtrunks','cargoshorts','chinoshorts'],shoes:['slides','kicks'],hat:['bucket','cap','backcap','visor'],extras:['shades','aviators','sportshades']},
+  spooky:{tip:'Dark and cool! Black, purple and orange, a leather jacket or hoodie, and a cape.',dress:[],top:['leather','ghoodie','ziphoodie','graphictee'],bottom:['ripped','slimjeans','cargopants'],shoes:['workboots','skateshoes'],hat:['beanie','snapback'],extras:['cape','chain','dogtags']},
+  winter:{tip:'Cozy and snowy! Puffer jackets, sweatshirts, boots, beanies and scarves.',dress:['sweatsuit'],top:['puffer','crewneck','quarterzip','ghoodie'],bottom:['slimjeans','sweats','khakis'],shoes:['workboots','cowboyboots'],hat:['beanie'],extras:['scarf','headphones']},
+  garden:{tip:'Fresh and sunny! Polos, button-ups, khakis, loafers and a bucket hat.',dress:['suit2'],top:['polo','buttonup','flannelover','sweatervest'],bottom:['khakis','chinoshorts'],shoes:['loafers','oxfords'],hat:['bucket','fedora'],extras:['watch','roundspecs']},
+  pop:{tip:'Shine on stage! A leather or varsity jacket, gold sneakers and a chain.',dress:[],top:['leather','varsity','jacket','graphictee'],bottom:['ripped','slimjeans'],shoes:['goldkicks','hightops'],hat:['snapback','backcap'],extras:['chain','shades','headphones','studs']},
+  galaxy:{tip:'Out of this world! A sharp tux, gold sneakers, a cape and 3D glasses.',dress:['tux','suit'],top:['leather','graphictee'],bottom:['slimjeans'],shoes:['goldkicks','oxfords'],hat:['fedora'],extras:['gamer3d','cape','chain','medal']},
+  costume:{tip:'Wear your spookiest costume! A pumpkin suit, bat wings, a cape and a treat bag!',dress:['pumpkin'],top:['ghoodie','graphictee'],bottom:['cargopants','sweats'],shoes:['workboots','skateshoes'],hat:['pumpkinhat','beanie'],extras:['batwings','treatbag','cape']},
+  fall:{tip:'Cozy fall colors! Flannel, sweatshirts, boots and scarves.',dress:[],top:['flannel','flannelover','crewneck','puffer'],bottom:['khakis','slimjeans','cargopants'],shoes:['workboots','cowboyboots'],hat:['turkeyhat','beanie','bucket'],extras:['scarf','watch']},
+  xmas:{tip:'Red, green and cozy! A puffer or sweatshirt, antlers, a candy cane and boots.',dress:[],top:['puffer','crewneck','varsity'],bottom:['slimjeans','khakis'],shoes:['workboots','oxfords'],hat:['antlers','beanie'],extras:['candycane','scarf']}};
+const themeFor=(L,th)=>{const g=isGuy(L)&&CT_GUY[th.id];return g?Object.assign({},th,g):th;};
+// the guys' closet, plus holiday things guys can wear too (like catOf in 14c-guy.js)
+const guyPool=(base,girl)=>base.concat(girl.filter(x=>{const s=shopItem('look:'+x[0]);return s&&s.hol&&!GIRL_ONLY.has(x[0])&&!base.some(b=>b[0]===x[0]);}));
+const ctLists=L=>isGuy(L)?{dress:guyPool(GUY_OUTFITS,DRESSES),top:guyPool(GUY_TOPS,TOPS),bottom:guyPool(GUY_BOTTOMS,BOTTOMS),shoes:guyPool(GUY_SHOES,SHOES),hat:guyPool(GUY_HATS,HATS),extras:guyPool(GUY_EXTRAS,EXTRAS)}
+  :{dress:DRESSES,top:TOPS,bottom:BOTTOMS,shoes:SHOES,hat:HATS,extras:EXTRAS};
 const PRIZE=[50,30,20,10];
 function fam(hex){if(!hex||hex==='rainbow')return '';if(hex==='#d4af37'||hex==='#e8c25a')return 'gold';const c=new THREE.Color(hex),h={};c.getHSL(h);const H=h.h*360,S=h.s,L=h.l;
   if(L>.88)return 'white';if(L<.22)return 'black';if(S<.18)return L>.6?'silver':'black';
   if(H>=345||H<12)return L>.72?'pink':'red';if(H>=290)return 'pink';if(H<42)return L<.45?'brown':'orange';if(H<68)return 'yellow';if(H<160)return 'green';if(H<200)return 'teal';if(H<245)return 'blue';return 'purple';}
-function themeCheck(L,th){const r={};const ok=(o,list)=>!!o&&list.includes(o.id);
+function themeCheck(L,th){th=themeFor(L,th);const r={};const ok=(o,list)=>!!o&&list.includes(o.id);
   if(th.pink){const pk=c=>fam(c)==='pink';r.outfit=L.dress?(pk(L.dress.c)?2:0):(L.top&&pk(L.top.c)?1:0)+(L.bottom&&pk(L.bottom.c)?1:0);r.shoes=L.shoes&&pk(L.shoes.c)?1:0;r.hat=L.hat&&pk(L.hat.c)?1:0;r.extra=Object.values(L.extras||{}).some(pk)?1:0;r.color=pk((L.makeup||{}).lips)||pk(L.hair.c)?1:0;}
   else{r.outfit=L.dress?(ok(L.dress,th.dress)?2:0):(ok(L.top,th.top)?1:0)+(ok(L.bottom,th.bottom)?1:0);r.shoes=ok(L.shoes,th.shoes)?1:0;r.hat=ok(L.hat,th.hat)?1:0;r.extra=Object.keys(L.extras||{}).some(k=>th.extras.includes(k))?1:0;const m=L.dress||L.top;r.color=m&&th.fams.includes(fam(m.c))?1:0;}
   r.T=(r.outfit+r.shoes+r.hat+r.extra+r.color)/6;return r;}
-function glamCheck(L){const mk=L.makeup||{},N=L.nails||{};const n=[!!mk.shadow,mk.liner&&mk.liner!=='none',mk.lashes&&mk.lashes!=='natural',!!mk.lips,!!(mk.gloss||mk.lipLiner),!!mk.gems].filter(Boolean).length;
+// guys are judged on grooming: a barber special cut, a beard (or a clean shave), a face shape and skin care
+function glamCheck(L){if(isGuy(L)){const mk=L.makeup||{};const r={cut:BCUT[L.hair.id]?1:0,beard:L.beard&&L.beard.id?1:0,face:Object.keys(L.face||{}).length?1:0,skin:(mk.tan||0)>0||!!mk.browC||(mk.freckles||0)>0?1:0};
+    r.G=(r.cut*2+r.beard+r.face+r.skin)/5;return r;}
+  const mk=L.makeup||{},N=L.nails||{};const n=[!!mk.shadow,mk.liner&&mk.liner!=='none',mk.lashes&&mk.lashes!=='natural',!!mk.lips,!!(mk.gloss||mk.lipLiner),!!mk.gems].filter(Boolean).length;
   const r={mk:Math.min(3,n),nails:nailCols(N,'c').some(Boolean)?1:0,toes:nailCols(N,'t').some(Boolean)?1:0,hair:L.hair.shine||SALON.has(L.hair.id)?1:0};r.G=(r.mk+r.nails+r.toes+r.hair)/6;return r;}
 function judgeCards(T,G,W){return JUDGES.map(j=>{const v=j.w[0]*T+j.w[1]*G+j.w[2]*W;return Math.max(1,Math.min(10,Math.round(1.6+v*8.4+(Math.random()-.5)*1.2)));});}
-function themeLook(base,th,q){const l=JSON.parse(JSON.stringify(base));const yes=()=>Math.random()<q;const cols=COLORS.filter(c=>th.fams.includes(fam(c)));const tc=()=>yes()&&cols.length?rnd(cols):rnd(COLORS);
+function guyThemeLook(base,th,q){const l=JSON.parse(JSON.stringify(base)),g=themeFor(l,th),A=ctLists(l);const yes=()=>Math.random()<q;const cols=COLORS.filter(c=>th.fams.includes(fam(c)));const tc=()=>yes()&&cols.length?rnd(cols):rnd(COLORS);
+  const pick=(arr,list)=>{arr=inSeason(arr);const good=arr.filter(x=>list.includes(x[0]));return yes()&&good.length?rnd(good):rnd(arr);};
+  if(g.dress.length&&Math.random()<.4){const d=pick(A.dress,g.dress);l.dress={id:d[0],c:tc()};l.top=l.bottom=null;}
+  else{const t=pick(A.top,g.top),b=pick(A.bottom,g.bottom);l.dress=null;l.top={id:t[0],c:tc()};l.bottom={id:b[0],c:th.pink?tc():b[3]};}
+  const s=pick(A.shoes,g.shoes);l.shoes={id:s[0],c:th.pink?tc():s[3]};
+  if(Math.random()<.7){const h=pick(A.hat,g.hat);l.hat={id:h[0],c:th.pink?tc():h[3]};}else l.hat=null;
+  l.extras={};if(Math.random()<.8){const e=pick(A.extras,g.extras);l.extras[e[0]]=th.pink?tc():e[3];}
+  l.hair={id:Math.random()<.5?rnd(BCUTS)[0]:base.hair.id,c:base.hair.c};l.beard=Math.random()<.6?{id:rnd(BEARDS)[0],c:base.hair.c}:base.beard;
+  l.face={};if(Math.random()<.6){const o=rnd(FACEOPT.filter(o=>o[0]!=='lips'));l.face[o[0]]=rnd(o[2])[0];}
+  l.makeup=Object.assign(defaultMakeup(),{blush:'none',tan:Math.random()<.4?.3:0});return l;}
+function themeLook(base,th,q){if(isGuy(base))return guyThemeLook(base,th,q);const l=JSON.parse(JSON.stringify(base));const yes=()=>Math.random()<q;const cols=COLORS.filter(c=>th.fams.includes(fam(c)));const tc=()=>yes()&&cols.length?rnd(cols):rnd(COLORS);
   const pick=(arr,list)=>{arr=inSeason(arr);const good=arr.filter(x=>list.includes(x[0]));return yes()&&good.length?rnd(good):rnd(arr);};
   if(th.dress.length&&(!th.top.length||Math.random()<.6)){const d=pick(DRESSES,th.dress);l.dress={id:d[0],c:tc()};l.top=l.bottom=null;}
   else{const t=pick(TOPS,th.top),b=pick(BOTTOMS,th.bottom);l.dress=null;l.top={id:t[0],c:tc()};l.bottom={id:b[0],c:th.pink?tc():b[3]};}
@@ -5141,7 +5204,7 @@ function themeLook(base,th,q){const l=JSON.parse(JSON.stringify(base));const yes
 const ct={on:false,phase:'',round:0,themes:[],you:[],riv:[],sub:null,queue:[],walker:null,w:null,pose:null,cards:[]};
 const rw=()=>AG.rw;
 function stagePlayer(){player.pos.copy(agW(0,rw().h,rw().z0+.6));player.vy=0;player.speed=0;player.face=agFace(0,1);cam.yaw=cam.cy=cam.closetYaw=player.face;}
-function openContest(){if(closetOpen)return;closeTalk();buildAgencyNPCs();Object.assign(ct,{on:true,phase:'intro',round:0,sub:null,you:[],riv:[[],[],[]],walker:null,w:null});
+function openContest(){if(closetOpen)return;closeTalk();buildAgencyNPCs();useRivals(isGuy(SAVE.look));Object.assign(ct,{on:true,phase:'intro',round:0,sub:null,you:[],riv:[[],[],[]],walker:null,w:null});
   closetOpen=true;document.body.classList.add('dressing','contest');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';AG.cLbl.visible=false;ccam.init=false;
   stagePlayer();av.play('wave');renderContest();$('#contest').classList.add('show');$('#ctcontent').scrollTop=0;sfx('tada');}
 function endContest(){if(!ct.on)return;ct.on=false;ct.phase='';ct.sub=null;clearCards();ct.walker=null;
@@ -5154,32 +5217,34 @@ const star5=v=>{const n=Math.round(v*5);return '⭐'.repeat(n)+'☆'.repeat(5-n)
 function names(arr,ids){return ids.filter(id=>arr.some(x=>x[0]===id)).slice(0,4).map(id=>{const a=arr.find(x=>x[0]===id);return `${a[1]} ${a[2]}`;}).join(', ');}
 function renderContest(){const C=SAVE.contest||{};let h='';$('#cttitle').textContent='🏆 Model Contest';$('#ctdone').textContent=ct.phase==='final'?'Done':'Leave';
   if(ct.phase==='intro'){h=`<div class="ctTheme"><b>🏆</b><div><strong>Star Model Contest</strong><span>3 rounds · 3 judges · 4 models</span></div></div>
-    <p class="cttext">Every round has a theme. Dress up for it, get glam at the mirror, then walk the runway and strike your best poses! The judges each give a score from 1 to 10.</p>
+    <p class="cttext">Every round has a theme. Dress up for it, ${isGuy(SAVE.look)?'get groomed':'get glam'} at the mirror, then walk the runway and strike your best poses! The judges each give a score from 1 to 10.</p>
     <div class="earn"><div><b>🥇</b><span>1st place</span><em>+${PRIZE[0]} 🪙</em></div><div><b>🥈</b><span>2nd place</span><em>+${PRIZE[1]} 🪙</em></div><div><b>🥉</b><span>3rd place</span><em>+${PRIZE[2]} 🪙</em></div><div><b>🎀</b><span>4th place</span><em>+${PRIZE[3]} 🪙</em></div></div>
-    <p class="cttext">Tonight you're up against <b>${RIVAL_N.join(', ')}</b>.${C.wins?` You have won ${C.wins} time${C.wins>1?'s':''}! 🏆`:''}</p>
+    <p class="cttext">Tonight you're up against <b>${rivalNames().join(', ')}</b>.${C.wins?` You have won ${C.wins} time${C.wins>1?'s':''}! 🏆`:''}</p>
     <div class="ctbtns"><button class="btn" data-ct="start">▶ Start the contest!</button></div>`;}
-  else if(ct.phase==='prep'){const th=themeNow(),L=SAVE.look,T=themeCheck(L,th),G=glamCheck(L);const ck=v=>v?'✅':'⬜';
-    const want=th.pink?[[T.outfit>=2,'👗','Pink dress, or a pink top and bottom'],[T.shoes,'👠','Pink shoes'],[T.hat,'👑','A pink hat'],[T.extra,'👜','A pink accessory'],[T.color,'💄','Pink lips or pink hair']]
-      :[[T.outfit>=2,'👗',`${names(DRESSES,th.dress)}${th.top.length?' · or '+names(TOPS,th.top):''}${th.bottom.length?' + '+names(BOTTOMS,th.bottom):''}`],[T.shoes,'👠',names(SHOES,th.shoes)],[T.hat,'👑',names(HATS,th.hat)],[T.extra,'👜',names(EXTRAS,th.extras)],
+  else if(ct.phase==='prep'){const th0=themeNow(),L=SAVE.look,th=themeFor(L,th0),T=themeCheck(L,th0),G=glamCheck(L),A=ctLists(L),guy=isGuy(L),ic=guy?['👕','👟','🧢','⌚','💈']:['👗','👠','👑','👜','💄'];const ck=v=>v?'✅':'⬜';
+    const outfitTxt=[names(A.dress,th.dress),[names(A.top,th.top),names(A.bottom,th.bottom)].filter(Boolean).join(' + ')].filter(Boolean).join(' · or ');
+    const want=th.pink?[[T.outfit>=2,ic[0],guy?'A pink suit, or a pink top and bottom':'Pink dress, or a pink top and bottom'],[T.shoes,ic[1],'Pink shoes'],[T.hat,ic[2],'A pink hat'],[T.extra,ic[3],'A pink accessory'],[T.color,guy?'💇‍♂️':'💄',guy?'Pink hair':'Pink lips or pink hair']]
+      :[[T.outfit>=2,ic[0],outfitTxt],[T.shoes,ic[1],names(A.shoes,th.shoes)],[T.hat,ic[2],names(A.hat,th.hat)],[T.extra,ic[3],names(A.extras,th.extras)],
         [T.color,'🎨',`Colors: <i class="dots">${COLORS.filter(c=>th.fams.includes(fam(c))).slice(0,7).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`]];
     h=`<div class="ctTheme"><b>${th.e}</b><div><strong>Round ${ct.round+1} of 3: ${th.n}</strong><span>${th.tip}</span></div></div>
       <h3>What the judges want <span class="ctstars">${star5(T.T)}</span></h3><div class="ctwant">${want.map(([v,e,t])=>`<div><b>${ck(v)}</b><span>${e} ${t}</span></div>`).join('')}</div>
-      <h3>Glam check <span class="ctstars">${star5(G.G)}</span></h3><div class="ctwant"><div><b>${ck(G.mk>=3)}</b><span>💄 Makeup (${G.mk} of 3: eyeshadow, liner, lashes, lipstick, gloss, gems)</span></div><div><b>${ck(G.hair)}</b><span>💇 Salon hair or glossy blow-dry</span></div><div><b>${ck(G.nails)}</b><span>💅 Manicure</span></div><div><b>${ck(G.toes)}</b><span>🦶 Pedicure</span></div></div>
-      <div class="ctbtns"><button class="btn ghost" data-ct="closet">👗 Change outfit</button><button class="btn ghost" data-ct="glam">🪞 Glam mirror</button></div>
+      ${guy?`<h3>Grooming check <span class="ctstars">${star5(G.G)}</span></h3><div class="ctwant"><div><b>${ck(G.cut)}</b><span>💈 A barber special cut (✂️ Haircut at the mirror)</span></div><div><b>${ck(G.beard)}</b><span>🧔 A beard style or a clean shave (🧔 Beard)</span></div><div><b>${ck(G.face)}</b><span>🙂 Pick your face shape (🙂 Face)</span></div><div><b>${ck(G.skin)}</b><span>🧴 Skin care: brows, a tan or freckles (🧴 Grooming)</span></div></div>`
+      :`<h3>Glam check <span class="ctstars">${star5(G.G)}</span></h3><div class="ctwant"><div><b>${ck(G.mk>=3)}</b><span>💄 Makeup (${G.mk} of 3: eyeshadow, liner, lashes, lipstick, gloss, gems)</span></div><div><b>${ck(G.hair)}</b><span>💇 Salon hair or glossy blow-dry</span></div><div><b>${ck(G.nails)}</b><span>💅 Manicure</span></div><div><b>${ck(G.toes)}</b><span>🦶 Pedicure</span></div></div>`}
+      <div class="ctbtns"><button class="btn ghost" data-ct="closet">${ic[0]} Change outfit</button><button class="btn ghost" data-ct="glam">🪞 Glam mirror</button></div>
       <div class="ctbtns"><button class="btn big" data-ct="walk">${isGuy(SAVE.look)?'🕺':'💃'} Walk the runway!</button></div>`;}
   else if(ct.phase==='result'||ct.phase==='final'){const rows=[{n:SAVE.name||'You',you:true,r:ct.you},...ag.rivals.map((o,i)=>({n:o.name,r:ct.riv[i]}))].map(x=>({...x,last:x.r[ct.round].sum,tot:x.r.reduce((a,b)=>a+b.sum,0)}));
     const fin=ct.phase==='final';rows.sort((a,b)=>(fin?b.tot-a.tot:b.last-a.last)||(a.you?-1:b.you?1:0));const max=fin?90:30;const place=rows.findIndex(r=>r.you);
     const medal=['🥇','🥈','🥉','🎀'];
     h=fin?`<div class="ctTheme gold"><b>${medal[place]}</b><div><strong>${place===0?'You won the contest!':`You came in ${['1st','2nd','3rd','4th'][place]} place!`}</strong><span>${place===0?'You are the Star Model! 👑':'Great job! Try again to win the crown!'} +${PRIZE[place]} 🪙</span></div></div>`
       :`<div class="ctTheme"><b>${themeNow().e}</b><div><strong>Round ${ct.round+1} scores: ${themeNow().n}</strong><span>${place===0?'You got the top score this round! 🌟':'Keep going, you can still win!'}</span></div></div>`;
-    const you=ct.you[ct.round];if(!fin&&you)h+=`<div class="ctwant"><div><b>👗</b><span>Theme ${star5(you.T)}</span></div><div><b>💄</b><span>Glam ${star5(you.G)}</span></div><div><b>💃</b><span>Poses ${star5(you.W)}</span></div></div>`;
+    const you=ct.you[ct.round];if(!fin&&you)h+=`<div class="ctwant"><div><b>${isGuy(SAVE.look)?'👕':'👗'}</b><span>Theme ${star5(you.T)}</span></div><div><b>${isGuy(SAVE.look)?'💈':'💄'}</b><span>${isGuy(SAVE.look)?'Grooming':'Glam'} ${star5(you.G)}</span></div><div><b>${isGuy(SAVE.look)?'🕺':'💃'}</b><span>Poses ${star5(you.W)}</span></div></div>`;
     h+=`<h3>${fin?'Final scores':'This round'}</h3><div class="board">${rows.map((r,i)=>{const v=fin?r.tot:r.last;return `<div class="${r.you?'me':''}"><b>${fin?medal[i]:i+1}</b><span>${r.you?'⭐ ':''}${r.n}</span><i><u style="width:${Math.round(v/max*100)}%"></u></i><em>${v}</em></div>`;}).join('')}</div>`;
     if(!fin)h+=`<p class="cttext">Total so far: ${rows.slice().sort((a,b)=>b.tot-a.tot).map(r=>`${r.n} ${r.tot}`).join(' · ')}</p>`;
     h+=`<div class="ctbtns">${fin?`<button class="btn" data-ct="again">🔁 Play again</button><button class="btn ghost" data-ct="leave">Done</button>`:`<button class="btn big" data-ct="next">${ct.round<2?'Next round ▶':'See who won! 🏆'}</button>`}</div>`;}
   $('#ctcontent').innerHTML=h;}
 $('#ctcontent').onclick=e=>{const b=e.target.closest('[data-ct]');if(!b)return;const k=b.dataset.ct;sfx('pop');
-  if(k==='start'||k==='again'){const pool=CT_THEMES.filter(t=>!t.hol).sort(()=>Math.random()-.5),hol=CT_THEMES.find(t=>t.hol&&seasonOn(t.hol));Object.assign(ct,{themes:hol?[hol].concat(pool.slice(0,2)):pool.slice(0,3),round:0,you:[],riv:[[],[],[]],phase:'prep'});dressRivals();renderContest();$('#ctcontent').scrollTop=0;banner(`${themeNow().e} ${themeNow().n}`);}
-  else if(k==='closet'){ct.sub='closet';$('#contest').classList.remove('show');document.body.classList.remove('contest');closetOpen=false;cam.yaw=player.face;ctab=ctab==='makeup'||GTABS.some(g=>g[0]===ctab)&&ctab!=='hair'?'dresses':ctab;openCloset();}
+  if(k==='start'||k==='again'){useRivals(isGuy(SAVE.look));const pool=CT_THEMES.filter(t=>!t.hol).sort(()=>Math.random()-.5),hol=CT_THEMES.find(t=>t.hol&&seasonOn(t.hol));Object.assign(ct,{themes:hol?[hol].concat(pool.slice(0,2)):pool.slice(0,3),round:0,you:[],riv:[[],[],[]],phase:'prep'});dressRivals();renderContest();$('#ctcontent').scrollTop=0;banner(`${themeNow().e} ${themeNow().n}`);}
+  else if(k==='closet'){ct.sub='closet';$('#contest').classList.remove('show');document.body.classList.remove('contest');closetOpen=false;cam.yaw=player.face;ctab=ctab==='makeup'||ALL_GTABS.some(g=>g[0]===ctab)&&ctab!=='hair'?(isGuy(SAVE.look)?'tops':'dresses'):ctab;openCloset();}
   else if(k==='glam'){ct.sub='glam';$('#contest').classList.remove('show');document.body.classList.remove('contest');closetOpen=false;openGlam(true);}
   else if(k==='walk')startShow();
   else if(k==='next'){if(ct.round<2){ct.round++;ct.phase='prep';dressRivals();renderContest();$('#ctcontent').scrollTop=0;banner(`${themeNow().e} ${themeNow().n}`);}else finishContest();}
@@ -5213,7 +5278,7 @@ function contestStep(dt){const w=ct.w;if(!ct.on||ct.phase!=='show'||!w)return;w.
   if(w.st==='in'||w.st==='out')(w.you?av:w.o.a).runwayT=.25;// catwalk for girls, a confident stride for guys (runwayWalk in 14d-dances.js)
   const mover=w.you?{get pos(){return player.pos;},set face(v){player.face=v;},get face(){return player.face;},a:av}:w.o;const pos=w.you?player.pos:w.o.pos;let sp=0;
   const walkTo=(tgt)=>{tmpV.subVectors(tgt,pos);tmpV.y=0;const d=tmpV.length();if(d<.05)return true;tmpV.normalize();pos.addScaledVector(tmpV,Math.min(d,WALK_SP*dt));sp=WALK_SP;const f=Math.atan2(tmpV.x,tmpV.z);if(w.you)player.face=angDamp(player.face,f,Math.min(1,dt*10));else w.o.face=angDamp(w.o.face,f,Math.min(1,dt*10));return false;};
-  if(w.st==='in'){if(walkTo(end)){w.st='pose';w.t=0;if(w.you)startPoses();else{w.o.a.play(rnd(['pose','kiss','twirl','cheer']));camFlash();burst(w.o.pos.clone().add(new THREE.Vector3(0,1.2,0)),'#ffd6f0',40,2.2,.12);}}}
+  if(w.st==='in'){if(walkTo(end)){w.st='pose';w.t=0;if(w.you)startPoses();else{w.o.a.play(rnd(isGuy(w.o.look)?['pose','twirl','cheer']:['pose','kiss','twirl','cheer']));camFlash();burst(w.o.pos.clone().add(new THREE.Vector3(0,1.2,0)),'#ffd6f0',40,2.2,.12);}}}
   else if(w.st==='pose'){const lookF=agFace(0,1);if(w.you){player.face=angDamp(player.face,lookF,Math.min(1,dt*8));stepPoses(dt);}else{w.o.face=angDamp(w.o.face,lookF,Math.min(1,dt*8));if(w.t>1.3){w.st='score';w.t=0;const r=scoreRival(w.k);r.cards.forEach((n,j)=>showCard(j,n,j*180));$('#ctTop').textContent=`${w.o.name}: ${r.sum} points`;}}}
   else if(w.st==='score'){if(w.t>(w.you?3.4:1.5)){w.st='out';w.t=0;if(w.you)clearCards();}}
   else if(w.st==='out'){if(walkTo(start)||w.t>4){if(!w.you){const o=w.o;o.pos.copy(agW(o.home[0],0,o.home[1]));o.face=o.home[2];o.sp=0;ct.walker=null;}nextWalker();return;}}
@@ -5228,8 +5293,8 @@ function posePress(timeout){const P=ct.pose;if(!P||P.done||P.cool>0||ct.w.st!=='
   P.i++;P.t=Math.random()*3;P.cool=.9;if(P.i>=3){P.done=true;P.cool=1.4;}}
 function finishPoses(){$('#ctPose').style.display='none';const w=ct.w;w.st='score';w.t=0;const r=scoreYou();r.cards.forEach((n,j)=>showCard(j,n,400+j*650));
   $('#ctTop').textContent='The judges are scoring…';setTimeout(()=>{if(!ct.on)return;$('#ctTop').textContent=`You got ${r.sum} points! ${r.sum>=26?'🤩':r.sum>=20?'😊':'💪'}`;if(r.sum>=24){try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}}
-    const low=[['T',0,'Dress more for the theme next time! 👗'],['G',1,'Visit the glam mirror! 💄💅'],['W',2,'Practice those poses! 📸']].filter(([k])=>r[k]<.55).sort((a,b)=>r[a[0]]-r[b[0]])[0];
-    const j=low?ag.judges[low[1]]:rnd(ag.judges);npcSay(j,low?low[2]:rnd(['Fabulous! 😍','A true star! 🌟','Gorgeous! 💖','Wow, just wow! ✨']));},400+3*650);
+    const low=[['T',0,'Dress more for the theme next time! 👗'],['G',1,isGuy(SAVE.look)?'Get groomed at the glam mirror! 💈':'Visit the glam mirror! 💄💅'],['W',2,'Practice those poses! 📸']].filter(([k])=>r[k]<.55).sort((a,b)=>r[a[0]]-r[b[0]])[0];
+    const j=low?ag.judges[low[1]]:rnd(ag.judges);npcSay(j,low?low[2]:rnd(isGuy(SAVE.look)?['Looking sharp! 😎','A true star! 🌟','So cool! 🔥','Wow, just wow! ✨']:['Fabulous! 😍','A true star! 🌟','Gorgeous! 💖','Wow, just wow! ✨']));},400+3*650);
   w.t=-1.4;}
 $('#ctPoseBtn').addEventListener('pointerdown',e=>{e.preventDefault();posePress(false);});
 addEventListener('keydown',e=>{if(e.code==='Space'&&ct.on&&ct.phase==='show'&&ct.w&&ct.w.you&&ct.w.st==='pose'){posePress(false);e.preventDefault();}});
@@ -5506,7 +5571,7 @@ function barberCam(dt){if(!barberOpen)return;const T=av.head.getWorldPosition(ne
   const a=barbCam.a;camera.position.copy(barbCam.t).add(new THREE.Vector3(Math.sin(a)*barbCam.d,.06,Math.cos(a)*barbCam.d));camera.lookAt(barbCam.t);}
 function snipFx(c){const h=av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.12,0));burst(h,c||'#3a2618',26,1.2,.05);
   tone(140,.5,'sawtooth',.03,0,170);setTimeout(()=>{tone(2400,.04,'square',.04);tone(1800,.04,'square',.04,.05);},120);
-  const m=shopNPC.max;if(m){m.a.play(rnd(['magic','clap']));if(Math.random()<.6)say(m,rnd(['Fresh! 💈','Looking sharp! ✂️','Nice cut! 😎','That suits you! 👍','Clean! ✨']));}}
+  const m=glamOpen?ag.gigi:shopNPC.max;if(m){m.a.play(rnd(['magic','clap']));if(Math.random()<.6)say(m,rnd(['Fresh! 💈','Looking sharp! ✂️','Nice cut! 😎','That suits you! 👍','Clean! ✨']));}}
 const viewChips=()=>`<div class="chips"><button data-bview="1.3">⬅️ Side</button><button data-bview="0">🙂 Front</button><button data-bview="-1.3">➡️ Other side</button><button data-bview="3.14">🔙 Back</button></div>`;
 function barberHTML(){const L=SAVE.look,H=L.hair,Bd=L.beard||{id:'none'};const grid=(list,cur,key)=>`<div class="grid">${list.map(([id,e,n])=>`<button class="item${cur===id?' on':''}" data-${key}="${id}"><b>${e}</b><span>${n}</span></button>`).join('')}</div>`;
   const sws=(list,cur,key)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-${key}="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
@@ -5523,7 +5588,7 @@ function barberClick(b){const L=SAVE.look,d=b.dataset;
   if(d.bhc){L.hair.c=d.bhc;persist();av.dress(L);barberSeat();snipFx(d.bhc);renderCloset();return true;}
   if(d.bbeard){L.beard={id:d.bbeard,c:(L.beard&&L.beard.c)||L.hair.c};persist();av.dress(L);barberSeat();snipFx(L.beard.c);renderCloset();return true;}
   if(d.bbc){L.beard=Object.assign({id:'none'},L.beard,{c:d.bbc});if(L.beard.id==='none')toast('Pick a beard first, then its color 🧔');persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
-  if(d.bface){const [k,v]=d.bface.split(':');L.face=Object.assign({},L.face,{[k]:v});persist();rebuildPlayer();barberSeat();sfx('pop');const m=shopNPC.max;if(m&&Math.random()<.5)say(m,rnd(['Great look! 😎','Nice! 👍']));renderCloset();return true;}
+  if(d.bface){const [k,v]=d.bface.split(':');L.face=Object.assign({},L.face,{[k]:v});persist();rebuildPlayer();barberSeat();sfx('pop');const m=glamOpen?ag.gigi:shopNPC.max;if(m&&Math.random()<.5)say(m,rnd(['Great look! 😎','Nice! 👍']));renderCloset();return true;}
   if(d.bskin){L.skin=d.bskin;persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
   if(d.beyes){L.eyes=d.beyes;persist();av.dress(L);barberSeat();sfx('pop');renderCloset();return true;}
   return false;}
@@ -7558,3 +7623,184 @@ function friendShow(f,all){if(!f)return;const A=all&&typeof all==='object'?all:{
     if(d!=null&&typeof d==='object'){let h=null;try{h=s.on(f,d);}catch(e){h=null;}if(h)f.shows[s.k]={j,d,h,av:f.a};}}}
 function friendShowStep(f,dt){if(!f.shows)return;for(const s of SHOW){const c=f.shows[s.k];if(c&&s.step)try{s.step(f,c.d,dt,c.h);}catch(e){}}}
 Object.assign(window.__game,{SHOW,myShow,friendShow,friendShowStep,friendShowClear:f=>friendShow(f,{})});
+// ---- src/26d-ball-play.js ----
+/* ================= ⚽🏀 BALL PLAY: dribble, kick and pass =================
+   Wear the ⚽ Soccer ball or the 🏀 Basketball (Extras) and take it for a walk around town:
+   - ⚽ Walk and the ball drops to your feet. You dribble it ahead with little touches; turn and it follows.
+     Stand still for a moment and you pick it back up.
+   - 🏀 Walk and you bounce it beside you. Stop and you hold it.
+   - ⚽ Kick / 🏀 Pass (in the moves wheel) sends it to the nearest townsperson or online friend, and they send
+     it back to you. With nobody near, a kick boots it up the field (go get it!) and a pass throws it ahead.
+   - The ball is put away during sports, riding and the other hands-on games, like the skateboard (17c).
+   Online (bottom of this file): friends see your ball, and a pass to an online friend makes it their ball
+   to dribble and pass back. */
+const BALL_R={soccer:.11,bball:.12};
+// textures, made once per color (called while avatars are built, so these are hoisted functions)
+function bbMat(c){const C=bbMat.c||(bbMat.c={});if(C[c])return C[c];const m=phys('#ffffff',{roughness:.6,clearcoat:.15});
+  m.map=canvasTex(256,128,(x)=>{x.fillStyle=c;x.fillRect(0,0,256,128);x.strokeStyle='#2a1406';x.lineWidth=5;
+    x.beginPath();x.moveTo(0,64);x.lineTo(256,64);x.stroke();for(const v of [64,192]){x.beginPath();x.moveTo(v,0);x.lineTo(v,128);x.stroke();}
+    for(const v of [0,128,256]){x.beginPath();x.ellipse(v,64,46,64,0,0,Math.PI*2);x.stroke();}});return C[c]=m;}
+function sbMat(c){const C=sbMat.c||(sbMat.c={});if(C[c])return C[c];const m=phys('#ffffff',{roughness:.45,clearcoat:.3});
+  m.map=canvasTex(256,128,(x)=>{x.fillStyle=c;x.fillRect(0,0,256,128);x.fillStyle='#2d2d3a';
+    const pent=(cx,cy,r)=>{x.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;x.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}x.closePath();x.fill();};
+    for(let i=0;i<5;i++){pent(i*51+25,40,15);pent(i*51,92,15);}pent(256,92,15);x.fillRect(0,0,256,6);x.fillRect(0,122,256,6);});return C[c]=m;}
+const ballMat=(kind,c)=>kind==='soccer'?sbMat(c||'#ffffff'):bbMat(c||'#ff7a1f');
+function ballMesh(kind){const m=M(sph(BALL_R[kind],24,16),ballMat(kind),0,-50,0,scene,true,false);m.visible=false;m.userData.kind=kind;return m;}
+
+/* ---------- the poses (called from Avatar.update for you, townspeople and online friends) ---------- */
+// a.ballMove = {drib: 0..1 how high the bouncing basketball is, act:'kick'|'pass', t0: when it started}
+function ballPose(a,tgt,sp,t){const b=a.ballMove;
+  if(b.drib!=null&&!b.act){tgt.a0x=-.42;tgt.a0z=-.12;tgt.e0=-.3-b.drib*.6;}
+  if(!b.act)return;const k=performance.now()/1000-b.t0;
+  if(b.act==='kick'){if(k<.13){tgt.l0=.6;tgt.k0=1.05;tgt.a1x=.3;tgt.a0x=-.3;}else if(k<.42){tgt.l0=-1.15;tgt.k0=.08;tgt.a1x=-.45;tgt.a0x=.35;tgt.lean=-.06;}else{b.act=null;if(b.drib==null)a.ballMove=null;}}
+  else if(b.act==='pass'){if(k<.16){tgt.a0x=tgt.a1x=-1.15;tgt.e0=tgt.e1=-1.7;tgt.a0z=.2;tgt.a1z=-.2;}else if(k<.45){tgt.a0x=tgt.a1x=-1.5;tgt.e0=tgt.e1=-.1;tgt.a0z=.1;tgt.a1z=-.1;tgt.lean=.08;}else{b.act=null;if(b.drib==null)a.ballMove=null;}}}
+const ballAct=(a,act)=>{a.ballMove=Object.assign(a.ballMove||{},{act,t0:performance.now()/1000});};
+// where an avatar's held ball is: the soccer ball in the left hand, the basketball in the right
+const handSpot=(a,kind,out)=>kind==='soccer'?a.arms[1].hand.localToWorld(out.set(0,-.11,.05)):a.arms[0].hand.localToWorld(out.set(0,-.15,.05));
+// bouncing the basketball beside you: right under the hand, from the hand down to the ground and back
+const DRIB_HZ=2.4;
+function dribbleSpot(a,t,out){const u=(t*DRIB_HZ)%1,s=Math.abs(Math.cos(Math.PI*u));handSpot(a,'bball',out);
+  const g=groundAt(out.x,out.z)+BALL_R.bball;out.y=g+(Math.max(g,out.y)-g)*s;return {u,s};}
+// rolling: turn the ball around the axis across the way it's going
+const ballAxis=new THREE.Vector3();
+function ballRoll(m,vx,vz,dt,r){const s=Math.hypot(vx,vz);if(s<.01)return;ballAxis.set(vz/s,0,-vx/s);m.rotateOnWorldAxis(ballAxis,s*dt/r);}
+
+/* ---------- my ball ---------- */
+var BP={kind:null,st:'hand',p:new THREE.Vector3(),v:new THREE.Vector3(),m:{},to:null,npc:null,hold:0,flyT:0,still:0,passes:0,
+  borrowed:null,awayT:0,u:0,sendT:0,sentNone:true,actsKey:'',col:null};
+function ownKind(){const e=(SAVE.look&&SAVE.look.extras)||{};return e.ball?'soccer':e.bball?'bball':null;}
+function ballKind(){return BP&&BP.borrowed?BP.borrowed.kind:ownKind();}
+const ballColor=k=>BP.borrowed?BP.borrowed.c:((SAVE.look.extras||{})[k==='soccer'?'ball':'bball']);
+function ballBusy(){return boardBusy()||SK.on;}
+// (the moves wheel is first drawn before this file runs, so these are hoisted functions)
+function ballActs(){const k=ballKind();return k&&!ballBusy()?[['kick',k==='soccer'?'⚽':'🏀',k==='soccer'?'Kick':'Pass']]:[];}
+const ballNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
+function myBallMesh(kind){const m=BP.m[kind]||(BP.m[kind]=ballMesh(kind));const c=ballColor(kind);if(m.userData.c!==c){m.userData.c=c;m.material=ballMat(kind,c);}return m;}
+function ballHome(quiet){BP.st='hand';BP.to=null;BP.npc=null;BP.v.set(0,0,0);if(!quiet)sfx('pop');}
+
+// who to pass to: the closest townsperson or online friend, a bit more likely the one you're facing
+function ballTarget(){const P=player.pos,fx=Math.sin(player.face),fz=Math.cos(player.face);let best=null,bs=1e9;
+  const look=(pos,o)=>{const dx=pos.x-P.x,dz=pos.z-P.z,d=Math.hypot(dx,dz);if(d<1.2||d>15)return;const s=d-3.5*(dx*fx+dz*fz)/d;if(s<bs){bs=s;best=o;}};
+  for(const f of FRIENDS)if(f.g.visible!==false)look(f.pos,{npc:f,pos:f.pos});
+  if(ballNet()&&mapOthers)for(const [id,o] of mapOthers)look(o.pos,{net:id,pos:o.pos,name:o.name});
+  return best;}
+// throw or kick the ball from p toward a spot
+function ballLaunch(kind,from,to){const p=BP.p,v=BP.v;p.copy(from);const dx=to.x-from.x,dz=to.z-from.z,d=Math.hypot(dx,dz)||1;
+  if(kind==='soccer'){const s=Math.min(16,d*1.35+2.2);v.set(dx/d*s,d>8?2.6:.4,dz/d*s);}
+  else{const T=.42+d*.045,ty=groundAt(to.x,to.z)+1.05;v.set(dx/T,(ty-from.y+.5*14*T*T)/T,dz/T);}
+  BP.flyT=0;}
+function kickBall(){const kind=ballKind();if(!kind||closetOpen||!started||ballBusy())return;const P=player.pos;
+  if(BP.st==='fly'||BP.st==='npc'||BP.st==='away'){toast(kind==='soccer'?'Wait for the ball to come back! ⚽':'Wait for the ball to come back! 🏀');return;}
+  if(BP.st!=='hand'&&Math.hypot(BP.p.x-P.x,BP.p.z-P.z)>1.7){toast(kind==='soccer'?'Run to the ball first! ⚽':'Go get the ball first! 🏀');return;}
+  const fx=Math.sin(player.face),fz=Math.cos(player.face);
+  // soccer: kicked off the ground in front of your feet. basketball: passed from the chest
+  const from=kind==='soccer'?new THREE.Vector3(P.x+fx*.42,groundAt(P.x+fx*.42,P.z+fz*.42)+BALL_R.soccer,P.z+fz*.42):new THREE.Vector3(P.x+fx*.35,P.y+1.05,P.z+fz*.35);
+  ballAct(av,kind==='soccer'?'kick':'pass');
+  const tg=ballTarget();
+  if(tg){ballLaunch(kind,from,tg.pos);BP.st='fly';BP.to=tg;
+    if(tg.npc){tg.npc.tgt=null;tg.npc.wait=Math.max(tg.npc.wait,4);}
+    if(tg.net){const n=ballNet();if(n){n.send({t:'ball',k:'pass',to:tg.net,kind,c:ballColor(kind),p:BP.p.toArray().map(x=>+x.toFixed(2)),v:BP.v.toArray().map(x=>+x.toFixed(2))});
+      if(BP.borrowed)BP.borrowed.gone=true;}}}
+  else{const d=kind==='soccer'?11:6;ballLaunch(kind,from,new THREE.Vector3(P.x+fx*d,0,P.z+fz*d));if(kind==='soccer')BP.v.y=3.2;BP.st='loose';BP.to=null;}
+  BP.still=0;tone(kind==='soccer'?150:220,.08,'sine',.16);tone(kind==='soccer'?90:140,.06,'square',.05,.02);did('ball',kind==='soccer'?'kick':'pass');}
+
+// the ball flying, bouncing and rolling. Returns true when it hits the ground hard enough to make a sound.
+const ballOld=new THREE.Vector3();
+function ballPhys(kind,p,v,dt){const R=BALL_R[kind];ballOld.copy(p);v.y-=14*dt;p.addScaledVector(v,dt);
+  let g=groundAt(p.x,p.z)+R;if(g-ballOld.y>.42+R){p.x=ballOld.x;p.z=ballOld.z;v.x*=-.4;v.z*=-.4;g=groundAt(p.x,p.z)+R;}// a step too tall to roll up
+  let thud=false;if(p.y<=g){p.y=g;if(v.y<-1.2){thud=v.y<-2;v.y=-v.y*(kind==='soccer'?.4:.74);}else v.y=0;}
+  if(p.y<=g+.02){const f=Math.pow(kind==='soccer'?.32:.5,dt);v.x*=f;v.z*=f;}
+  // trees, walls and the edge of the island
+  const ox=p.x,oz=p.z;collide(p,R);const nx=p.x-ox,nz=p.z-oz,nl=Math.hypot(nx,nz);if(nl>1e-5){const ux=nx/nl,uz=nz/nl,dot=v.x*ux+v.z*uz;if(dot<0){v.x-=1.6*dot*ux;v.z-=1.6*dot*uz;}}
+  return thud;}
+
+const bTmp=new THREE.Vector3(),bTmp2=new THREE.Vector3();
+anims.push((t,dt)=>{if(!started||!av)return;
+  const kind=ballKind(),P=player.pos,now=performance.now()/1000;
+  // the borrowed ball goes away if its owner leaves the room
+  if(BP.borrowed&&(!ballNet()||!mapOthers||!mapOthers.has(BP.borrowed.from))&&BP.st!=='fly'){BP.borrowed=null;ballHome(true);return;}
+  {const key=kind+(ballBusy()?'b':'');if(key!==BP.actsKey){BP.actsKey=key;renderActions();}}
+  for(const k in BP.m)if(k!==kind)BP.m[k].visible=false;
+  if(kind!==BP.kind){BP.kind=kind;ballHome(true);if(!kind)av.ballMove=null;}
+  if(!kind){ballSend(null);return;}
+  const m=myBallMesh(kind),R=BALL_R[kind],busy=ballBusy();
+  // in the closet you see it in your hand; during games and skating it's put away
+  if(closetOpen||busy){if(BP.st==='fly'&&BP.to&&BP.to.net){BP.st='away';BP.awayT=0;BP.to=null;}else if(BP.st!=='away')ballHome(true);m.visible=false;if(av.handBall)av.handBall.visible=!busy;av.ballMove=null;ballSend(null);return;}
+  if(av.handBall)av.handBall.visible=false;m.visible=BP.st!=='away';
+  const moving=player.speed>.6,fx=Math.sin(player.face),fz=Math.cos(player.face);
+  if(BP.st==='hand'){
+    if(kind==='soccer'){if(moving&&player.onGround){BP.st='loose';BP.flyT=1;BP.p.set(P.x+fx*.45,groundAt(P.x+fx*.45,P.z+fz*.45)+R,P.z+fz*.45);BP.v.set(fx*player.speed*1.3,0,fz*player.speed*1.3);BP.still=0;}
+      else{handSpot(av,kind,BP.p);if(av.ballMove&&!av.ballMove.act)av.ballMove=null;}}
+    else{if(moving&&player.onGround){const d=dribbleSpot(av,t,BP.p);if(BP.u<.5&&d.u>=.5)tone(110,.05,'sine',.07);BP.u=d.u;av.ballMove=Object.assign(av.ballMove||{},{drib:d.s});}
+      else{handSpot(av,kind,BP.p);if(av.ballMove){av.ballMove.drib=null;if(!av.ballMove.act)av.ballMove=null;}}}
+    m.position.copy(BP.p);}
+  else{if(av.ballMove&&av.ballMove.drib!=null){av.ballMove.drib=null;if(!av.ballMove.act)av.ballMove=null;}}
+  if(BP.st==='loose'||BP.st==='fly'){const vx=BP.v.x,vz=BP.v.z;
+    if(ballPhys(kind,BP.p,BP.v,dt))tone(kind==='soccer'?95:115,.05,'sine',.07);
+    ballRoll(m,vx,vz,dt,R);m.position.copy(BP.p);
+    const dx=BP.p.x-P.x,dz=BP.p.z-P.z,d=Math.hypot(dx,dz),onG=BP.p.y<groundAt(BP.p.x,BP.p.z)+R+.05;
+    if(BP.st==='loose'){BP.flyT+=dt;
+      if(kind==='soccer'){
+        // dribbling: the ball at your feet gets a little touch ahead the way you're walking
+        if(d<.55&&onG&&BP.p.y<P.y+.5){if(moving){const s=player.speed*1.35+.5;BP.v.set(fx*s,0,fz*s);BP.still=0;if(!BP.tap)tone(140,.03,'sine',.05);BP.tap=1;}
+          else if(BP.flyT>.4){BP.v.x*=.6;BP.v.z*=.6;if(d<.38&&d>1e-4){BP.p.x=P.x+dx/d*.38;BP.p.z=P.z+dz/d*.38;}}}else BP.tap=0;
+        // stand still next to it and you pick it up
+        if(!moving&&d<1.4&&Math.hypot(BP.v.x,BP.v.z)<.4){BP.still+=dt;if(BP.still>2.2)ballHome();}else BP.still=0;}
+      else if(BP.flyT>.6&&d<.8&&BP.p.y<P.y+1.6){ballHome();}// walk up to the basketball to pick it up
+      if(d>35){ballHome(true);toast(kind==='soccer'?'⚽ Your ball is back!':'🏀 Your ball is back!');}}
+    else{// passing to someone: steer it toward them as it goes, and they catch it when it gets there
+      BP.flyT+=dt;const tg=BP.to,tp=tg.me?P:tg.npc?tg.npc.pos:(mapOthers&&mapOthers.get(tg.net)||{}).pos;
+      if(!tp){BP.st='loose';BP.to=null;}
+      else{const ex=tp.x-BP.p.x,ez=tp.z-BP.p.z,ed=Math.hypot(ex,ez),hs=Math.hypot(BP.v.x,BP.v.z);
+        if(kind==='soccer'&&onG&&hs>.3&&ed>.2){const k=Math.min(1,dt*5);BP.v.x+=(ex/ed*hs-BP.v.x)*k;BP.v.z+=(ez/ed*hs-BP.v.z)*k;}
+        const reach=ed<.8&&BP.p.y<tp.y+1.8,stopped=hs<.6&&onG&&ed<5;
+        if(reach||stopped||BP.flyT>5){
+          if(tg.me){BP.passes++;BP.to=null;sfx('pop');
+            if(kind==='soccer'){BP.st='loose';BP.flyT=1;BP.v.set(0,0,0);if(d>.5){BP.p.x=P.x+fx*.45;BP.p.z=P.z+fz*.45;}}else ballHome(true);
+            if(BP.passes%5===0)banner(`${kind==='soccer'?'⚽':'🏀'} ${BP.passes} passes in a row!`);}
+          else if(tg.npc){BP.st='npc';BP.npc=tg.npc;BP.hold=.9+Math.random()*.6;BP.to=null;const f=tg.npc;f.tgt=null;f.wait=Math.max(f.wait,3);
+            friendBubble(f,rnd(kind==='soccer'?['Nice pass! ⚽','Got it! 🙌','Ooh, good kick!','Here it comes back!']:['Nice pass! 🏀','Got it! 🙌','Catch! 🏀','Good one!']));}
+          else{BP.st='away';BP.awayT=0;BP.to=null;if(BP.borrowed&&BP.borrowed.gone){BP.borrowed=null;}}}}}}
+  else if(BP.st==='npc'){const f=BP.npc;f.face=Math.atan2(P.x-f.pos.x,P.z-f.pos.z);f.g.rotation.y=f.face;f.tgt=null;f.wait=Math.max(f.wait,1.5);
+    const ffx=Math.sin(f.face),ffz=Math.cos(f.face);
+    if(kind==='soccer')BP.p.set(f.pos.x+ffx*.42,groundAt(f.pos.x+ffx*.42,f.pos.z+ffz*.42)+R,f.pos.z+ffz*.42);else handSpot(f,kind,BP.p);
+    m.position.copy(BP.p);BP.hold-=dt;
+    if(BP.hold<=0){ballAct(f,kind==='soccer'?'kick':'pass');if(kind==='bball')BP.p.set(f.pos.x+ffx*.35,f.pos.y+1.05,f.pos.z+ffz*.35);
+      ballLaunch(kind,BP.p,P);BP.st='fly';BP.to={me:1};BP.npc=null;tone(kind==='soccer'?150:220,.08,'sine',.12);}
+    if(Math.hypot(f.pos.x-P.x,f.pos.z-P.z)>40)ballHome(true);}
+  else if(BP.st==='away'){m.visible=false;BP.awayT+=dt;// an online friend has it: they pass it back
+    if(BP.awayT>45){ballHome(true);toast(kind==='soccer'?'⚽ Your ball is back!':'🏀 Your ball is back!');}}
+  ballSend(kind,dt);});
+
+/* ---------- online: friends see your ball (one entry in SHOW, 26c-friends-see.js) ----------
+   SHOW sends what kind of ball you have and what it's doing when that changes: in your hand, bouncing beside you
+   (their phone bounces it in time with your walk), out on the ground (then its spot comes 10 times a second as
+   {t:'ball',k:'at',p}), put away, or gone to someone else. A pass is {t:'ball',k:'pass',to,kind,c,p,v}. */
+function ballMd(){const k=ballKind();if(!k)return null;if(closetOpen)return 'hand';if(ballBusy())return 'away';
+  if(BP.st==='away'||(BP.st==='fly'&&BP.to&&BP.to.net))return 'gone';
+  if(BP.st==='hand')return av&&av.ballMove&&av.ballMove.drib!=null?'drib':'hand';return 'free';}
+SHOW.push({k:'ball',
+  mine(){const kind=ballKind();return kind?{kind,c:ballColor(kind)||null,md:ballMd()}:null;},
+  on(f,d){if(d.kind!=='soccer'&&d.kind!=='bball')return null;const m=ballMesh(d.kind);m.material=ballMat(d.kind,typeof d.c==='string'?d.c.slice(0,30):null);return {m};},
+  step(f,d,dt,h){const a=f.a,m=h.m,ex=(a.look&&a.look.extras)||{},theirs=!!a.handBall&&!!(d.kind==='soccer'?ex.ball:ex.bball);
+    const drib=d.md==='drib';if(!drib&&a.ballMove&&a.ballMove.drib!=null){a.ballMove.drib=null;if(!a.ballMove.act)a.ballMove=null;}
+    if(a.handBall)a.handBall.visible=d.md==='hand'&&theirs;
+    m.visible=!(d.md==='hand'&&theirs)&&d.md!=='away'&&d.md!=='gone';if(!m.visible)return;
+    if(drib){const r=dribbleSpot(a,performance.now()/1000,m.position);a.ballMove=Object.assign(a.ballMove||{},{drib:r.s});return;}
+    if(d.md==='hand'){handSpot(a,d.kind,m.position);return;}
+    if(!f.ballAt)return;bTmp2.copy(m.position);if(m.position.distanceTo(f.ballAt)>6)m.position.copy(f.ballAt);else m.position.lerp(f.ballAt,Math.min(1,dt*12));
+    ballRoll(m,(m.position.x-bTmp2.x)/Math.max(dt,1e-3),(m.position.z-bTmp2.z)/Math.max(dt,1e-3),dt,BALL_R[d.kind]);},
+  off(f,h){if(!h)return;scene.remove(h.m);const a=f.a;if(a){if(a.handBall)a.handBall.visible=true;if(a.ballMove&&a.ballMove.drib!=null){a.ballMove.drib=null;if(!a.ballMove.act)a.ballMove=null;}}}});
+// while my ball is out on the ground, tell the room where it is
+function ballSend(kind,dt){const n=ballNet();if(!n||!kind||ballMd()!=='free')return;BP.sendT-=dt;if(BP.sendT>0)return;BP.sendT=.1;
+  n.send({t:'ball',k:'at',p:BP.p.toArray().map(x=>+x.toFixed(2))});}
+function ballFromNet(id,name,d){if(!d||d.t!=='ball')return;const o=mapOthers&&mapOthers.get(id);
+  if(d.k==='at'&&Array.isArray(d.p)&&o){(o.ballAt||(o.ballAt=new THREE.Vector3())).set(+d.p[0]||0,+d.p[1]||0,+d.p[2]||0);}
+  else if(d.k==='pass'&&(d.kind==='soccer'||d.kind==='bball')){if(o&&o.a)ballAct(o.a,d.kind==='soccer'?'kick':'pass');
+    const n=ballNet(),me=n&&n.id&&n.id();if(!me||d.to!==me)return;
+    // it's coming to me: it's my ball now (my own again if it's the one I passed away)
+    BP.borrowed=d.kind===ownKind()?null:{kind:d.kind,c:typeof d.c==='string'?d.c.slice(0,30):null,from:id};
+    BP.kind=ballKind();BP.st='fly';BP.to={me:1};BP.flyT=0;BP.npc=null;
+    if(Array.isArray(d.p))BP.p.set(+d.p[0]||0,+d.p[1]||0,+d.p[2]||0);if(Array.isArray(d.v))BP.v.set(+d.v[0]||0,+d.v[1]||0,+d.v[2]||0);
+    toast(`${name||'Your friend'} passed you the ball! Tap ${d.kind==='soccer'?'⚽ Kick':'🏀 Pass'} to send it back`);}}
+addEventListener('load',()=>{if(window.__net)window.__net.on(ballFromNet);if(window.__game)window.__game.ball=()=>BP;});

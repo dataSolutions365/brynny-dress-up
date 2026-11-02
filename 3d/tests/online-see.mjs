@@ -1,6 +1,7 @@
 // Online test: two phones join the same family room, and each one sees the other exactly as they are:
 // their pet (in its outfit and nail polish) following them, the skateboard in their hand or under their feet,
-// the animal they ride, and the sign that says what they're busy doing. (3d/online.js + 3d/src/26c-friends-see.js)
+// the animal they ride, the sign that says what they're busy doing, and a soccer ball kicked back and forth.
+// (3d/online.js + 3d/src/26c-friends-see.js + 3d/src/26d-ball-play.js)
 //
 // Run it with:  npm i --no-save playwright peer && npx playwright install chromium && node 3d/tests/online-see.mjs
 // It starts its own little PeerJS server, so nothing goes out to the internet except the 3D engine and PeerJS.
@@ -106,6 +107,27 @@ try {
   // B changes their look: A rebuilds them, and B's own pet from before still shows on A when B adopts one
   await B.evaluate(() => { const G = window.__game, i = G.PETS.findIndex(p => p.name === 'Biscuit'); G.PETS[i].owned = true; G.SAVE.pet = i; });
   await until(A, () => { const o = [...window.__net.friends().values()][0]; return o.shows.pet && o.shows.pet.h.pt.name === 'Biscuit'; }, null, "the host sees the guest's new pet");
+
+  // ⚽ the guest puts on the soccer ball and kicks it to the host, who kicks it back (3d/src/26d-ball-play.js)
+  const ballSpot = (P, x, z, face) => P.evaluate(([x, z, face]) => { const G = window.__game; for (const f of G.FRIENDS) f.g.visible = false;// no townspeople to pass to
+    G.player.pos.set(x, .15, z); G.player.face = face; }, [x, z, face]);
+  await ballSpot(A, 0, 10, Math.PI); await ballSpot(B, 0, 6, 0);
+  await B.evaluate(() => { const G = window.__game; G.SAVE.look.extras = { ball: '#ffffff' }; G.rebuildPlayer(); });
+  await until(A, () => { const o = [...window.__net.friends().values()][0], s = o.shows.ball; return s && s.d.kind === 'soccer' && s.d.md === 'hand' && o.a.handBall && o.a.handBall.visible; }, null, 'the host sees the guest holding the soccer ball');
+  await B.waitForTimeout(800);
+  await B.evaluate(() => window.__game.doAction('kick'));
+  await until(A, () => window.__game.ball().borrowed && window.__game.ball().borrowed.kind === 'soccer', null, 'the guest kicks the ball to the host');
+  await until(A, () => window.__game.ball().st === 'loose', null, 'and it stops at the host\'s feet');
+  await until(B, () => { const o = [...window.__net.friends().values()][0], s = o.shows.ball; return s && s.d.kind === 'soccer' && window.__game.ball().st === 'away'; }, null, 'the guest sees the host has the ball now');
+  await A.evaluate(() => window.__game.doAction('kick'));
+  await until(B, () => window.__game.ball().st === 'loose' && window.__game.ball().passes === 1 && !window.__game.ball().borrowed, null, 'the host kicks it back to the guest');
+  await until(A, () => !window.__game.ball().borrowed && !window.__game.ball().kind, null, 'and the host has no ball again');
+  // 🏀 the guest walks with a basketball: the host sees them bounce it
+  await B.evaluate(() => { const G = window.__game; G.SAVE.look.extras = { bball: '#ff7a1f' }; G.rebuildPlayer(); });
+  await B.keyboard.down('KeyW');
+  await until(A, () => { const o = [...window.__net.friends().values()][0], s = o.shows.ball; return s && s.d.kind === 'bball' && s.d.md === 'drib' && o.a.ballMove && o.a.ballMove.drib != null && s.h.m.visible; }, null, 'the host sees the guest dribble the basketball');
+  await B.keyboard.up('KeyW');
+  await until(A, () => { const o = [...window.__net.friends().values()][0], s = o.shows.ball; return s && s.d.md === 'hand' && o.a.handBall.visible && !s.h.m.visible; }, null, 'and hold it when they stop');
 
   // a picture of what the guest sees: SHOT=picture.png
   if (process.env.SHOT) {

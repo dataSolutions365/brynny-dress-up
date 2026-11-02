@@ -281,9 +281,9 @@ function removeOther(id, quiet) {
   if (!quiet) G.toast(`${o.name} left 👋`);
   badge();
 }
-// the bakery cake contest (3d/src/21b-cake-contest.js) sends its own messages through the room
+// the bakery cake contest (3d/src/21b-cake-contest.js) and ball passing (3d/src/24g-ball-play.js) send their own messages through the room
 const netFns = [];
-window.__net = { live: () => !!role && others.size > 0, send: d => send(d), on: f => netFns.push(f), friends: () => others };
+window.__net = { live: () => !!role && others.size > 0, send: d => send(d), on: f => netFns.push(f), friends: () => others, id: () => myId };
 function handle(id, d) {
   const o = others.get(id); if (!o) return;
   o.heard = performance.now();
@@ -301,7 +301,7 @@ function handle(id, d) {
   else if (d.t === 'emo' && typeof d.id === 'string') { o.a.play(d.id); if (d.id === 'magic' || d.id === 'cheer') G.burst(o.pos.clone().add(new G.THREE.Vector3(0, 1.2, 0)), '#ffd23f', 30, 2.5, .18); }
   else if (d.t === 'show' && d.show && typeof d.show === 'object') { o.show = d.show; if (G.friendShow) G.friendShow(o, d.show); }
   else if (d.t === 'say' && SAY.includes(d.text)) G.friendBubble(o, d.text);
-  else if (d.t === 'cake') for (const f of netFns) try { f(id, o.name, d); } catch (e) { }
+  else if (d.t === 'cake' || d.t === 'ball') for (const f of netFns) try { f(id, o.name, d); } catch (e) { }
 }
 
 G.onTick.push(dt => {

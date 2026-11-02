@@ -7,7 +7,7 @@ const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','
 // Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
 const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>skateActs().concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+const allActs=()=>ballActs().concat(skateActs()).concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -18,6 +18,7 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
 function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  if(id==='kick'){kickBall();return;}
   if(id==='skate'){toggleSkate();return;}
   if(id==='bike'){toggleBike();return;}
   if(id==='horse'){toggleHorse();return;}
@@ -81,7 +82,7 @@ const MK_SHADOW=['#ff6fae','#ffb3d1','#b388ff','#8e6cff','#4fb6ff','#2fd1c5','#7
 const MK_LIPS=['#ff3b6b','#e0263b','#c2185b','#ff6fae','#ffb3d1','#e89aa0','#b5655b','#8e2b5b','#ff8a1f','#8e6cff','#4fb6ff','#2d2d3a'];
 const MK_BRUSH=['#2b1d16','#000000','#ffffff','#ff3b6b','#c2185b','#ff6fae','#b388ff','#4fb6ff','#2fd1c5','#7ee081','#ffd23f','#d4af37','#c0c0c0','#8a5a3b'];
 function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&&!tabsOf().some(t=>t[0]===ctab))ctab=isGuy(L)?'tops':'dresses';
-  $('#tabs').innerHTML=(glamOpen?GTABS:barberOpen?BARBER_TABS:storeOpen?storeTabs():tabsOf()).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
+  $('#tabs').innerHTML=(glamOpen?glamTabs():barberOpen?BARBER_TABS:storeOpen?storeTabs():tabsOf()).map(([id,ico,n])=>`<button class="tab${id===ctab?' on':''}" data-tab="${id}"><b>${ico}</b>${n}</button>`).join('');
   let h='';const sw=(list,cur,kind)=>`<div class="swatches">${list.map(c=>`<button class="sw${c===cur?' on':''}" style="background:${c}" data-sw="${kind}" data-c="${c}" aria-label="color ${c}"></button>`).join('')}</div>`;
   const gh=glamOpen&&glamHTML()||barberOpen&&barberHTML()||storeOpen&&storeHTML();if(gh)h=gh;
   else if(ctab==='hair'){h+=`<h3>Hair style</h3><div class="grid">${hairsOf(L).map(([id,ico,n])=>`<button class="item${L.hair.id===id?' on':''}" data-hair="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div><h3>Hair color</h3>`+sw(myColors(HAIRC),L.hair.c,'hair');}
@@ -110,7 +111,7 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&
 function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();renderActions();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
-$('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
+$('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;if(BVIEW[ctab]!=null)bview=BVIEW[ctab];glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
 $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');if(!b)return;if(glamOpen&&glamClick(b))return;
   if(b.dataset.lock){askBuy(b.dataset.lock);return;}
   if(b.dataset.hair){L.hair.id=b.dataset.hair;return changed();}
