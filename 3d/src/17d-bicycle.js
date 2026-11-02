@@ -1,15 +1,21 @@
 /* ================= 🚲 BICYCLE and 🐎 HORSE (rides from the moves wheel) =================
-   - 🚲 Bike: everyone has one. Tap 🚲 Bike in the moves wheel to hop on and pedal around town: faster than walking,
+   - 🚲 Bike: an extra you buy in the shop with ⭐ stars, in the closet's Extras like in the 2D studio (index.html).
+     While you wear it, tap 🚲 Bike in the moves wheel to hop on and pedal around town: faster than walking,
      you keep rolling for a bit when you let go of the joystick, you lean into turns, and JUMP does a little bunny hop.
      Tap 🚲 Hop off to walk again.
    - 🐎 Horse: once you adopt a horse (or a pony, unicorn, donkey... any animal you can ride) at the Happy Barn, tap it in
      the moves wheel and it trots over to you wherever you are, so you can ride it around town (24d-barn.js does the riding).
      Before you have one, the button shows the way to the barn.
+   Only barn animals made for riding can be ridden (never pets like dogs and cats).
    Both are put away during sports, contests and other hands-on games, the same as the skateboard. */
 const BIKE={on:false,v:0,dir:0,lean:0,crank:0,spin:0,air:false,col:''};
 const bikeBoost=()=>BIKE.on?1.7:1;
 // "rideActs" are added to the front of the moves wheel (19-ui-closet.js); the horse one comes from the barn
-const RIDE_ACTS=[()=>[['bike','🚲',BIKE.on?'Hop off':'Bike']]];
+const hasBike=()=>!!(SAVE.look&&SAVE.look.extras&&SAVE.look.extras.bicycle)&&owns('look:bicycle');
+const RIDE_ACTS=[()=>hasBike()?[['bike','🚲',BIKE.on?'Hop off':'Bike']]:[]];
+// in the closet's Extras (girls and guys), and in the shop for ⭐ stars; its color is the bike's color
+EXTRAS.push(['bicycle','🚲','Bicycle','#ff6fae']);GUY_EXTRAS.push(['bicycle','🚲','Bicycle','#3a8dff']);
+SHOP.push({k:'look:bicycle',tab:'outfits',e:'🚲',n:'Bicycle',stars:10,d:'Your own bike! Find it in Extras, then tap 🚲 Bike with your moves to ride it around town.'});
 const rideActs=()=>RIDE_ACTS.flatMap(f=>f());
 
 /* ---------- the bike model: chunky and cute like the rest of the town ---------- */
@@ -40,7 +46,7 @@ const BK=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
   const pedals=[];for(const s of [-1,1]){const arm=M(box(.016,.15,.03),rim,s*.05,-s*.06,0,crank,false);const pd=M(box(.08,.02,.05),tire,s*.09,-s*.13,0,crank,false);pedals.push(pd,arm);}
   return {g,wheels,crank,frame,R};})();
 
-function bikeBusy(){return closetOpen||!started||handsBusy()||!!barnRide;}
+function bikeBusy(){return closetOpen||!started||handsBusy()||!!barnRide||!hasBike();}
 function startBike(){if(BIKE.on||bikeBusy())return;if(SK.on)stopSkate(true);BIKE.on=true;BIKE.v=0;BIKE.dir=player.face;av.emote=null;
   sfx('pop');tone(880,.05,'triangle',.08);tone(1180,.06,'triangle',.08,.08);// ring ring!
   renderActions();did('bike');
@@ -55,9 +61,13 @@ function bikePose(a,tgt,sp,air,t){const c=BIKE.crank;
   if(air){tgt.bob+=.05;tgt.l0=tgt.l1=-1.05;tgt.k0=tgt.k1=1.25;}}
 anims.push((t,dt)=>{if(!started||!av)return;
   if(BIKE.on&&bikeBusy())stopBike(true);
-  av.biking=BIKE.on;BK.g.visible=BIKE.on;if(!BIKE.on)return;
-  // a pink bike for girls, a blue one for guys
-  const col=isGuy(SAVE.look)?'#3a8dff':'#ff6fae';if(BIKE.col!==col){BIKE.col=col;BK.frame.color.set(col);}
+  av.biking=BIKE.on;
+  // the bike is the color you picked for it in the closet
+  const col=hasBike()&&SAVE.look.extras.bicycle;if(col&&BIKE.col!==col){BIKE.col=col;BK.frame.color.set(col);}
+  // in the closet it stands next to you so you can see it
+  const parked=!BIKE.on&&hasBike()&&closetOpen&&$('#closet').classList.contains('show');BK.g.visible=BIKE.on||parked;
+  if(parked){const f=player.face;BK.g.position.set(player.pos.x+Math.cos(f)*.75,player.pos.y,player.pos.z-Math.sin(f)*.75);BK.g.rotation.set(0,f+.5,0);BK.crank.rotation.x=.6;}
+  if(!BIKE.on)return;
   // keep rolling after you let go of the joystick, slowing down little by little
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   const p=player.pos,pushing=Math.hypot(ix,iy)>.08;
