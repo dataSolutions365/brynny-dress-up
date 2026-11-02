@@ -14,3 +14,10 @@
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
   2D studio (snake game's Firebase project), marked `where: 3D world …`.
+
+## Outfits go in both games
+- Everything you can wear in the 2D studio (`index.html`) must also be wearable in the 3D world, and the other way round,
+  with the same id, for girls and for guys. Add a new outfit, costume, hair style or accessory to both in the same PR.
+- 2D: guy-only items have `guy:1`, and `GUY_OK` lists what guys see. 3D: guy lists are in `3d/src/14c-guy.js`; things
+  brought over from 2D are added in `3d/src/14e-match-2d.js`.
+- `3d/tests/closets-match.mjs` (run on every PR) fails if an id is in one game's closet but not the other's.
