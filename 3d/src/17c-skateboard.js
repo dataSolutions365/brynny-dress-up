@@ -1,6 +1,7 @@
 /* ================= 🛹 SKATEBOARD =================
    The skateboard is a guy's extra (14c-guy.js). It is carried in the hand while walking around, and:
-   - it is put away (hidden) during sports and other hands-on games, so it's not in the way of the bat or the ball.
+   - it is put away (hidden) during sports and other hands-on games, so it's not in the way of the bat or the ball,
+     and while you wear roller skates (14f-roller-skates.js), since you're already on wheels.
    - tap 🛹 Ride in the moves wheel to hop on and skate around town: faster than walking, you keep rolling when
      you let go of the joystick, you lean into turns, and JUMP does an ollie. Tap 🛹 Hop off to carry it again. */
 const SK={on:false,v:0,dir:0,air:false,lean:0};
@@ -25,9 +26,9 @@ function skatePose(a,tgt,sp,air,t){const push=a.skating&&!air&&sp>.05&&a.skatePu
   if(push){const k=Math.max(0,Math.sin(t*5));tgt.l1=-.32+k*.6;tgt.k1=.62-k*.4;}
   if(air){tgt.k0=tgt.k1=1.1;tgt.l0=tgt.l1=-.7;tgt.bob=-.12;tgt.a0z=-1.4;tgt.a1z=1.4;}}
 anims.push((t,dt)=>{if(!started||!av)return;
-  // the board in the hand: hidden while riding it, and during games that need your hands
+  // the board in the hand: hidden while riding it, during games that need your hands, and while wearing roller skates
   if(SK.on&&(!hasBoard()||closetOpen||boardBusy()))stopSkate(true);
-  if(av.board)av.board.visible=!SK.on&&!boardBusy();
+  if(av.board)av.board.visible=!SK.on&&!boardBusy()&&!av.rollers;
   if(av.deck)av.deck.visible=SK.on;
   av.skating=SK.on;av.skatePush=SK.pushing;if(!SK.on){if(av.g.rotation.z)av.g.rotation.z=0;return;}
   // keep rolling after you let go of the joystick, slowing down little by little
