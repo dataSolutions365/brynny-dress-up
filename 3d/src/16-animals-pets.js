@@ -31,7 +31,7 @@ function taperTube(pts,rf,mat,par,seg=36,rad=12,fuzz=0){const c=new THREE.Catmul
   g.computeVertexNormals();const m=M(g,mat,0,0,0,par);M(sph(rf(0),12,10),mat,pts[0].x,pts[0].y,pts[0].z,par);const e=pts[pts.length-1];M(sph(rf(1),12,10),mat,e.x,e.y,e.z,par);return m;}
 class Pet{
   constructor(kind,color,name,home,o={}){
-    Object.assign(this,{kind,name,home});this.o=o;this.g=new THREE.Group();this.t=Math.random()*9;this.pos=new THREE.Vector3();this.face=Math.random()*6;this.speed=0;this.owned=false;this.wait=Math.random()*3;this.tgt=null;this.vy=0;this.y=0;this.phase=0;this.happy=0;this.say=null;
+    Object.assign(this,{kind,name,home,color});this.o=o;this.g=new THREE.Group();this.t=Math.random()*9;this.pos=new THREE.Vector3();this.face=Math.random()*6;this.speed=0;this.owned=false;this.wait=Math.random()*3;this.tgt=null;this.vy=0;this.y=0;this.phase=0;this.happy=0;this.say=null;
     const D=o.real?(o.dim||REAL_DIM[kind]):PET_DIM[kind],furC=new THREE.Color(color),lightC=o.light?new THREE.Color(o.light):furC.clone().lerp(new THREE.Color('#fff8f0'),.65);
     const fur=phys(furC,{roughness:.95,sheen:1,sheenColor:furC.clone().lerp(new THREE.Color('#ffffff'),.6),sheenRoughness:.8}),light=phys(lightC,{roughness:.95,sheen:1,sheenColor:new THREE.Color('#ffffff')});
     const pink=phys('#ff9eb5',{roughness:.6}),eyeM=phys('#1a1210',{roughness:.05,clearcoat:1}),shine=new THREE.MeshBasicMaterial({color:'#fff'});
@@ -233,7 +233,7 @@ function stepPet(pt,dt){if(pt.inParlor){parlorPet(pt,dt);return;}let spd=0;const
 const myStars=()=>(SAVE.chal&&SAVE.chal.stars)||0;
 const starsShort=pt=>pt.owned?0:Math.max(0,((pt.o&&pt.o.stars)||0)-myStars());
 let petNear=null;
-function petButton(){const P=player.pos;let best=null,bd=2.1;for(const pt of PETS){const d=Math.hypot(P.x-pt.pos.x,P.z-pt.pos.z);if(d<bd){bd=d;best=pt;}}
+function petButton(){const P=player.pos;let best=null,bd=2.1;for(const pt of PETS){if(!pt.g.visible)continue;const d=Math.hypot(P.x-pt.pos.x,P.z-pt.pos.z);if(d<bd){bd=d;best=pt;}}
   if(best!==petNear||(best&&best.owned!==petNear._o)){petNear=best;const b=$('#petBtn');if(best){best._o=best.owned;b.textContent=best.owned?`💖 Pet ${best.name}`:starsShort(best)?`🔒 Adopt ${best.name} · ⭐ ${best.o.stars}`:`🐾 Adopt ${best.name}`;b.style.display='block';}else b.style.display='none';}}
 $('#petBtn').onclick=()=>{const pt=petNear;if(!pt)return;if(pt.owned){pt.happy=2;pt.vy=3;const need=petNeed(pt,true);if(need){pt.speak(need);toast(`Take ${pt.name} to the 🐾 Pet Parlor!`);}else pt.speak(rnd(PET_SAY[pt.kind]));floaties(pt.g.position.clone().add(new THREE.Vector3(0,pt.tagH*.8,0)),'💖',5);sfx('pop');}else if(starsShort(pt)){const n=starsShort(pt);pt.speak(rnd(PET_SAY[pt.kind]));sfx('pop');toast(`${pt.name} needs ⭐ ${pt.o.stars} stars to adopt. Get ${n} more ${n===1?'star':'stars'} from star challenges or hidden stars!`);}
   else adopt(pt);petNear=null;petButton();};

@@ -24,9 +24,11 @@ let peer = null, host = null /* conn to host (guest) */, conns = new Map() /* ho
 const waiting = new Map(); // host: id -> conn, family phones waiting for the host to tap Let in
 const Fam = window.Family;
 const roomId = async c => PREFIX + (await Fam.key('room', c)).slice(0, 24);
-const others = new Map(); // id -> {name, look, a: Avatar, tgt, face, sp, air}
+const others = new Map(); // id -> {name, look, show, a: Avatar, tgt, face, sp, air}
 if (G && G.setMapOthers) G.setMapOthers(others); // friends show up on the map
-let lastLook = '', lastEmote = null, sendT = 0;
+let lastLook = '', lastShow = '', lastEmote = null, sendT = 0;
+// your pet, barn buddy, ride, skateboard and what you're doing (3d/src/26c-friends-see.js), so friends see you just as you are
+const myShow = () => { try { return G.myShow ? G.myShow() : {}; } catch (e) { return {}; } };
 
 /* ---------- UI ---------- */
 const css = document.createElement('style');
@@ -117,7 +119,7 @@ function loadPeer() {
   return peerLib;
 }
 const newCode = () => Array.from({ length: 5 }, () => ABC[Math.random() * ABC.length | 0]).join('');
-const me = () => ({ name: G.SAVE.name || 'Friend', look: G.SAVE.look });
+const me = () => ({ name: G.SAVE.name || 'Friend', look: G.SAVE.look, show: myShow() });
 const stateMsg = () => { const p = G.player.pos; return { t: 's', p: [+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2)], f: +G.player.face.toFixed(2), sp: +G.player.speed.toFixed(1), air: !G.player.onGround }; };
 
 async function startRoom(tries = 0) {
@@ -167,7 +169,7 @@ function letIn(c, id, d) {
     delete d.k;
     conns.set(id, c);
     // tell the newcomer who is here already, then tell everyone about the newcomer
-    c.send({ t: 'roster', you: id, list: [{ id: myId, ...me(), st: stateMsg() }, ...[...others].map(([oid, o]) => ({ id: oid, name: o.name, look: o.look, st: o.st }))] });
+    c.send({ t: 'roster', you: id, list: [{ id: myId, ...me(), st: stateMsg() }, ...[...others].map(([oid, o]) => ({ id: oid, name: o.name, look: o.look, show: o.show, st: o.st }))] });
     for (const [oid, oc] of conns) if (oid !== id) oc.send({ ...d, id });
     addOther(id, d);
 }
@@ -221,7 +223,9 @@ function fromHost(d) {
   if (!d || typeof d !== 'object') return;
   if (d.t === 'no') { leave(true); status = 'You weren’t let in this time. Check the family word, or ask again.'; G.toast('Not let in this time'); render(); badge(); return; }
   if (d.t === 'full') { leave(true); status = 'That room is full (6 friends max).'; render(); badge(); return; }
-  if (d.t === 'roster') { status = 'You’re in! Find your family in the world.'; G.toast(`You joined ${d.list[0] ? d.list[0].name + '’s' : 'the'} room! 💖`); for (const o of d.list) addOther(o.id, o, true); nearHost(d.list[0]); return; }
+  if (d.t === 'roster') { status = 'You’re in! Find your family in the world.'; G.toast(`You joined ${d.list[0] ? d.list[0].name + '’s' : 'the'} room! 💖`); for (const o of d.list) addOther(o.id, o, true); nearHost(d.list[0]);
+    // anything that changed while we waited to be let in
+    send({ t: 'look', look: G.SAVE.look }); send({ t: 'show', show: myShow() }); return; }
   if (d.t === 'hi') { addOther(d.id, d); return; }
   if (d.t === 'bye') { if (d.id === hostId) { leave(true); status = 'Your friend closed the room.'; G.toast('Your friend left the room 👋'); render(); return; } removeOther(d.id); return; }
   handle(d.id, d);
@@ -266,18 +270,20 @@ function addOther(id, d, quiet) {
   const st = d.st || { p: [0, .15, 2], f: 0, sp: 0 };
   const o = { name, tc, look: d.look, a, st, pos: new THREE.Vector3(...st.p), tgt: new THREE.Vector3(...st.p), face: st.f, sp: 0, air: false, say: null, sayT: 0, g: a.g };
   o.heard = performance.now(); a.g.position.copy(o.pos); scene.add(a.g); others.set(id, o);
+  o.show = d.show && typeof d.show === 'object' ? d.show : {}; o.cur = o.face; if (G.friendShow) G.friendShow(o, o.show);
   if (!quiet) { G.toast(`${name} joined the room! 👋`); a.play('wave'); }
   badge();
 }
 function removeOther(id, quiet) {
   const o = others.get(id); if (!o) return;
+  if (G.friendShowClear) G.friendShowClear(o);
   G.scene.remove(o.a.g); others.delete(id);
   if (!quiet) G.toast(`${o.name} left 👋`);
   badge();
 }
 // the bakery cake contest (3d/src/21b-cake-contest.js) sends its own messages through the room
 const netFns = [];
-window.__net = { live: () => !!role && others.size > 0, send: d => send(d), on: f => netFns.push(f) };
+window.__net = { live: () => !!role && others.size > 0, send: d => send(d), on: f => netFns.push(f), friends: () => others };
 function handle(id, d) {
   const o = others.get(id); if (!o) return;
   o.heard = performance.now();
@@ -287,10 +293,13 @@ function handle(id, d) {
     // style (glam/cute) or girl/guy changes the body, so rebuild; otherwise just re-dress
     if ((d.look.style || 'glam') !== (o.a.look.style || 'glam') || (d.look.body || 'girl') !== (o.a.look.body || 'girl') || JSON.stringify(d.look.face || {}) !== JSON.stringify(o.a.look.face || {})) {
       const n = new G.Avatar(d.look, o.name, o.tc);
+      if (G.friendShowClear) G.friendShowClear(o);
       G.scene.remove(o.a.g); o.a = n; o.g = n.g; o.say = null; G.scene.add(n.g); n.g.position.copy(o.pos);
     } else { try { o.a.dress(d.look); } catch (e) { } }
+    if (G.friendShow) G.friendShow(o, o.show);
   }
   else if (d.t === 'emo' && typeof d.id === 'string') { o.a.play(d.id); if (d.id === 'magic' || d.id === 'cheer') G.burst(o.pos.clone().add(new G.THREE.Vector3(0, 1.2, 0)), '#ffd23f', 30, 2.5, .18); }
+  else if (d.t === 'show' && d.show && typeof d.show === 'object') { o.show = d.show; if (G.friendShow) G.friendShow(o, d.show); }
   else if (d.t === 'say' && SAY.includes(d.text)) G.friendBubble(o, d.text);
   else if (d.t === 'cake') for (const f of netFns) try { f(id, o.name, d); } catch (e) { }
 }
@@ -303,6 +312,7 @@ G.onTick.push(dt => {
     o.a.update(dt, o.sp, o.air);
     o.cur = G.angDamp(o.cur ?? o.face, o.face, Math.min(1, dt * 12));
     o.a.g.rotation.y = o.cur + (o.a.spinY || 0);
+    if (G.friendShowStep) G.friendShowStep(o, dt);
     if (o.say) { o.sayT -= dt; if (o.sayT < 0) { o.g.remove(o.say); o.say = null; } }
   }
   if (myBubble.say) { myBubble.sayT -= dt; if (myBubble.sayT < 0) { myBubble.g.remove(myBubble.say); myBubble.say = null; } }
@@ -323,6 +333,7 @@ setInterval(() => {
   else if (others.size && [...others.values()].every(o => now - o.heard > 20000)) { leave(true); status = 'Lost the connection to your friend. Join again with the code.'; G.toast('Lost the connection 😢'); render(); }
 }, 2000);
 setInterval(() => { if (!role) return; const l = JSON.stringify(G.SAVE.look); if (l !== lastLook) { if (lastLook) send({ t: 'look', look: G.SAVE.look }); lastLook = l; } }, 700);
+setInterval(() => { if (!role) { lastShow = ''; return; } const sh = myShow(), j = JSON.stringify(sh); if (j !== lastShow) { if (lastShow) send({ t: 'show', show: sh }); lastShow = j; } }, 400);
 
 /* ---------- invite links: ?room=CODE ---------- */
 if (urlRoom) {

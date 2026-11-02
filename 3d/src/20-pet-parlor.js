@@ -40,7 +40,8 @@ function petExtras(pt){const D=pt.D,r=D.r,L=D.len;
   const mud=std('#7a5232',{roughness:1});
   pt.dirtM=[[r*.93,r*.15,L*.25],[-r*.9,r*.3,-L*.2],[0,r*.98,-L*.05],[r*.55,r*.75,-L*.45],[-r*.6,-r*.55,L*.35]].map(([x,y,zz])=>M(sph(r*.27,10,8),mud,x*.97,y*.97,zz,pt.torso,false,false));
   pt.bubbles=[];pt.wet=0;pt.furBase=pt.furMats.map(m=>m.color.clone());pt.fitMeshes=[];}
-function paintNails(pt){const c=petCare(pt);pt.nailMats.forEach((m,i)=>{const p=c.polish[i];
+// pol: a friend's pet online (26c-friends-see.js) brings its own polish instead of your saved care
+function paintNails(pt,pol){const P=pol||petCare(pt).polish;pt.nailMats.forEach((m,i)=>{const p=P[i];
   if(p==='glitter'){m.color.set('#ffd86b');m.metalness=1;m.roughness=.15;m.emissive.set('#4a3000');}else{m.color.set(p||'#f3ebe2');m.metalness=0;m.roughness=p?.12:.45;m.emissive.set('#000000');}m.clearcoat=p?1:.4;});}
 function showDirt(pt){const c=petCare(pt);pt.dirtM.forEach((s,i)=>{const h=c.dirt[i]||0;s.visible=h>.02;const k=.35+.65*h;s.scale.set(k,.8*k,1.2*k);});}
 function setWet(pt,w){pt.wet=w;pt.furMats.forEach((m,i)=>{m.color.copy(pt.furBase[i]).multiplyScalar(1-.32*w);m.roughness=.95-.55*w;m.sheen=1-.8*w;m.clearcoat=.7*w;});}
