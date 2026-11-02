@@ -32,7 +32,7 @@ HAIRS.push(['wavy','🌊','Wavy'],['highbun','🩰','Ballerina bun'],['superlong
   GUY_OUTFITS.push(...from(DRESSES,['werewolf','mummy','zombie','spacepup','pajamas','jumpsuit']));
   GUY_SHOES.push(...from(SHOES,['sneaker','boots','rain','snowboots','skates','paws','chunkyboots','sandals']));
   GUY_HATS.push(...from(HATS,['crown','witchhat','santahat','party','sunhat','pupears','wolfears','mummywrap']));
-  GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','vampcape','lei']));}
+  GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','bball','vampcape','lei']));}
 // for 3d/tests/closets-match.mjs: every list of things to wear, read when it runs (holiday things are added by seasons.js)
 addEventListener('load',()=>{if(window.__game)window.__game.closets=()=>({hairs:HAIRS.map(x=>x[0]),guyHairs:GUY_HAIRS.map(x=>x[0]),
   cat:Object.fromEntries(Object.entries(CAT).map(([k,l])=>[k,l.map(x=>x[0])])),guy:Object.fromEntries(Object.entries(GUY_CAT).map(([k,l])=>[k,l.map(x=>x[0])])),

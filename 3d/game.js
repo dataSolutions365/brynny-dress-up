@@ -47,7 +47,7 @@ const HATS=[['tiara','💎','Tiara','#ffd23f'],['crown','👑','Crown','#d4af37'
 const EXTRAS=[['wings','🧚','Fairy wings','#b388ff'],['cape','🦸','Cape','#e0263b'],['purse','👛','Purse','#ff6fae'],['wand','🪄','Magic wand','#ffd23f'],['glasses','👓','Glasses','#2d2d3a'],['pearls','📿','Pearls','#ffffff'],['scarf','🧣','Scarf','#ff3b6b'],['unicorn','🦄','Unicorn horn','#ffb3e6'],['halo','😇','Halo','#ffd23f'],['balloon','🎈','Balloon','#ff3b6b'],
   // from the 2D game
   ['heartneck','💖','Heart necklace','#ff4d6d'],['earrings','✨','Earrings','#ffd23f'],['heartglasses','😍','Heart shades','#ff4d8d'],['bouquet','💐','Bouquet','#ff8fc8'],['present','🎁','Gift box','#7ee081'],['pompoms','📣','Pom-poms','#ff4d8d'],['racket','🎾','Tennis racket','#7ee081'],
-  ['ball','⚽','Soccer ball','#ffffff'],['medal','🥇','Gold medal','#ffd23f'],['vampcape','🧛','Vampire cape','#2d2d3a'],['lei','🌺','Flower lei','#ff8fc8'],['tail','🐈','Kitty tail','#ffffff'],['whiskers','🐱','Kitty face paint','#ffffff'],['bangles','🟡','Gold bangles','#e0b04a']];
+  ['ball','⚽','Soccer ball','#ffffff'],['bball','🏀','Basketball','#ff7a1f'],['medal','🥇','Gold medal','#ffd23f'],['vampcape','🧛','Vampire cape','#2d2d3a'],['lei','🌺','Flower lei','#ff8fc8'],['tail','🐈','Kitty tail','#ffffff'],['whiskers','🐱','Kitty face paint','#ffffff'],['bangles','🟡','Gold bangles','#e0b04a']];
 const CAT={tops:TOPS,bottoms:BOTTOMS,dresses:DRESSES,shoes:SHOES,hats:HATS,extras:EXTRAS};
 const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'};
 // things you can buy in the shop with coins (everything else stays free)
@@ -1457,7 +1457,7 @@ class Avatar{
   setSkin(c){this.skin.color.set(c);}
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
-    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;
+    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;
     this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
@@ -1704,6 +1704,8 @@ class Avatar{
     if(this.skating)skatePose(this,tgt,sp,air,t);
     // riding a bike (17d-bicycle.js): sitting on the seat, pedaling, hands on the handlebars
     if(this.biking)bikePose(this,tgt,sp,air,t);
+    // dribbling, kicking and passing a ball (24g-ball-play.js)
+    if(this.ballMove)ballPose(this,tgt,sp,t);
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);
     damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;
@@ -1924,7 +1926,10 @@ const OUTFITS2D={
   racket(k,c){const a=k.arms[1],m=k.mat(c,'shiny'),g=new THREE.Group();g.position.set(0,-.06,.03);g.rotation.x=.3;a.hand.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
     k.P(cyl(.008,.008,.12,8),k.mat('#ffffff'),g,0,-.0,0);const r=k.P(new THREE.TorusGeometry(.065,.008,8,28),m,g,0,-.12,0);r.scale.set(.8,1,1);r.rotation.y=Math.PI/2;const net=k.P(new THREE.CircleGeometry(.062,20),k.mat('#ffffff','tulle'),g,0,-.12,0);net.scale.set(.8,1,1);net.rotation.y=Math.PI/2;},
   // ⚽ Soccer ball held in one hand
-  ball(k,c){const t=printMat(k,c,'spots');const b=k.P(sph(.08,24,16),t,k.arms[1].hand,0,-.11,.05);},
+  // (24g-ball-play.js hides it while you dribble it with your feet or pass it)
+  ball(k,c){const t=printMat(k,c,'spots');const b=k.P(sph(.08,24,16),t,k.arms[1].hand,0,-.11,.05);k.av.handBall=b;},
+  // 🏀 Basketball held in the right hand (24g-ball-play.js bounces it while you walk)
+  bball(k,c){const b=k.P(sph(.12,24,16),bbMat(c),k.arms[0].hand,0,-.15,.05);k.av.handBall=b;},
   // 🥇 Gold medal on a ribbon
   medal(k,c){const r=k.mat('#3a5bd9');for(const s of [-1,1]){const b=k.P(box(.014,.14,.004),r,k.spine,s*.03,.4,.1);b.rotation.z=s*.35;}const m=k.P(cyl(.024,.024,.006,20),k.mat(c,'metal'),k.spine,0,.32,.106);m.rotation.x=Math.PI/2;},
   // 🧛 Vampire cape with a tall red collar
@@ -2761,7 +2766,7 @@ HAIRS.push(['wavy','🌊','Wavy'],['highbun','🩰','Ballerina bun'],['superlong
   GUY_OUTFITS.push(...from(DRESSES,['werewolf','mummy','zombie','spacepup','pajamas','jumpsuit']));
   GUY_SHOES.push(...from(SHOES,['sneaker','boots','rain','snowboots','skates','paws','chunkyboots','sandals']));
   GUY_HATS.push(...from(HATS,['crown','witchhat','santahat','party','sunhat','pupears','wolfears','mummywrap']));
-  GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','vampcape','lei']));}
+  GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','bball','vampcape','lei']));}
 // for 3d/tests/closets-match.mjs: every list of things to wear, read when it runs (holiday things are added by seasons.js)
 addEventListener('load',()=>{if(window.__game)window.__game.closets=()=>({hairs:HAIRS.map(x=>x[0]),guyHairs:GUY_HAIRS.map(x=>x[0]),
   cat:Object.fromEntries(Object.entries(CAT).map(([k,l])=>[k,l.map(x=>x[0])])),guy:Object.fromEntries(Object.entries(GUY_CAT).map(([k,l])=>[k,l.map(x=>x[0])])),
@@ -3364,7 +3369,7 @@ const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','
 // Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
 const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>skateActs().concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+const allActs=()=>ballActs().concat(skateActs()).concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -3375,6 +3380,7 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
 function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  if(id==='kick'){kickBall();return;}
   if(id==='skate'){toggleSkate();return;}
   if(id==='bike'){toggleBike();return;}
   if(id==='horse'){toggleHorse();return;}
@@ -7614,3 +7620,184 @@ function friendShow(f,all){if(!f)return;const A=all&&typeof all==='object'?all:{
     if(d!=null&&typeof d==='object'){let h=null;try{h=s.on(f,d);}catch(e){h=null;}if(h)f.shows[s.k]={j,d,h,av:f.a};}}}
 function friendShowStep(f,dt){if(!f.shows)return;for(const s of SHOW){const c=f.shows[s.k];if(c&&s.step)try{s.step(f,c.d,dt,c.h);}catch(e){}}}
 Object.assign(window.__game,{SHOW,myShow,friendShow,friendShowStep,friendShowClear:f=>friendShow(f,{})});
+// ---- src/26d-ball-play.js ----
+/* ================= ⚽🏀 BALL PLAY: dribble, kick and pass =================
+   Wear the ⚽ Soccer ball or the 🏀 Basketball (Extras) and take it for a walk around town:
+   - ⚽ Walk and the ball drops to your feet. You dribble it ahead with little touches; turn and it follows.
+     Stand still for a moment and you pick it back up.
+   - 🏀 Walk and you bounce it beside you. Stop and you hold it.
+   - ⚽ Kick / 🏀 Pass (in the moves wheel) sends it to the nearest townsperson or online friend, and they send
+     it back to you. With nobody near, a kick boots it up the field (go get it!) and a pass throws it ahead.
+   - The ball is put away during sports, riding and the other hands-on games, like the skateboard (17c).
+   Online (bottom of this file): friends see your ball, and a pass to an online friend makes it their ball
+   to dribble and pass back. */
+const BALL_R={soccer:.11,bball:.12};
+// textures, made once per color (called while avatars are built, so these are hoisted functions)
+function bbMat(c){const C=bbMat.c||(bbMat.c={});if(C[c])return C[c];const m=phys('#ffffff',{roughness:.6,clearcoat:.15});
+  m.map=canvasTex(256,128,(x)=>{x.fillStyle=c;x.fillRect(0,0,256,128);x.strokeStyle='#2a1406';x.lineWidth=5;
+    x.beginPath();x.moveTo(0,64);x.lineTo(256,64);x.stroke();for(const v of [64,192]){x.beginPath();x.moveTo(v,0);x.lineTo(v,128);x.stroke();}
+    for(const v of [0,128,256]){x.beginPath();x.ellipse(v,64,46,64,0,0,Math.PI*2);x.stroke();}});return C[c]=m;}
+function sbMat(c){const C=sbMat.c||(sbMat.c={});if(C[c])return C[c];const m=phys('#ffffff',{roughness:.45,clearcoat:.3});
+  m.map=canvasTex(256,128,(x)=>{x.fillStyle=c;x.fillRect(0,0,256,128);x.fillStyle='#2d2d3a';
+    const pent=(cx,cy,r)=>{x.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;x.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}x.closePath();x.fill();};
+    for(let i=0;i<5;i++){pent(i*51+25,40,15);pent(i*51,92,15);}pent(256,92,15);x.fillRect(0,0,256,6);x.fillRect(0,122,256,6);});return C[c]=m;}
+const ballMat=(kind,c)=>kind==='soccer'?sbMat(c||'#ffffff'):bbMat(c||'#ff7a1f');
+function ballMesh(kind){const m=M(sph(BALL_R[kind],24,16),ballMat(kind),0,-50,0,scene,true,false);m.visible=false;m.userData.kind=kind;return m;}
+
+/* ---------- the poses (called from Avatar.update for you, townspeople and online friends) ---------- */
+// a.ballMove = {drib: 0..1 how high the bouncing basketball is, act:'kick'|'pass', t0: when it started}
+function ballPose(a,tgt,sp,t){const b=a.ballMove;
+  if(b.drib!=null&&!b.act){tgt.a0x=-.42;tgt.a0z=-.12;tgt.e0=-.3-b.drib*.6;}
+  if(!b.act)return;const k=performance.now()/1000-b.t0;
+  if(b.act==='kick'){if(k<.13){tgt.l0=.6;tgt.k0=1.05;tgt.a1x=.3;tgt.a0x=-.3;}else if(k<.42){tgt.l0=-1.15;tgt.k0=.08;tgt.a1x=-.45;tgt.a0x=.35;tgt.lean=-.06;}else{b.act=null;if(b.drib==null)a.ballMove=null;}}
+  else if(b.act==='pass'){if(k<.16){tgt.a0x=tgt.a1x=-1.15;tgt.e0=tgt.e1=-1.7;tgt.a0z=.2;tgt.a1z=-.2;}else if(k<.45){tgt.a0x=tgt.a1x=-1.5;tgt.e0=tgt.e1=-.1;tgt.a0z=.1;tgt.a1z=-.1;tgt.lean=.08;}else{b.act=null;if(b.drib==null)a.ballMove=null;}}}
+const ballAct=(a,act)=>{a.ballMove=Object.assign(a.ballMove||{},{act,t0:performance.now()/1000});};
+// where an avatar's held ball is: the soccer ball in the left hand, the basketball in the right
+const handSpot=(a,kind,out)=>kind==='soccer'?a.arms[1].hand.localToWorld(out.set(0,-.11,.05)):a.arms[0].hand.localToWorld(out.set(0,-.15,.05));
+// bouncing the basketball beside you: right under the hand, from the hand down to the ground and back
+const DRIB_HZ=2.4;
+function dribbleSpot(a,t,out){const u=(t*DRIB_HZ)%1,s=Math.abs(Math.cos(Math.PI*u));handSpot(a,'bball',out);
+  const g=groundAt(out.x,out.z)+BALL_R.bball;out.y=g+(Math.max(g,out.y)-g)*s;return {u,s};}
+// rolling: turn the ball around the axis across the way it's going
+const ballAxis=new THREE.Vector3();
+function ballRoll(m,vx,vz,dt,r){const s=Math.hypot(vx,vz);if(s<.01)return;ballAxis.set(vz/s,0,-vx/s);m.rotateOnWorldAxis(ballAxis,s*dt/r);}
+
+/* ---------- my ball ---------- */
+var BP={kind:null,st:'hand',p:new THREE.Vector3(),v:new THREE.Vector3(),m:{},to:null,npc:null,hold:0,flyT:0,still:0,passes:0,
+  borrowed:null,awayT:0,u:0,sendT:0,sentNone:true,actsKey:'',col:null};
+function ownKind(){const e=(SAVE.look&&SAVE.look.extras)||{};return e.ball?'soccer':e.bball?'bball':null;}
+function ballKind(){return BP&&BP.borrowed?BP.borrowed.kind:ownKind();}
+const ballColor=k=>BP.borrowed?BP.borrowed.c:((SAVE.look.extras||{})[k==='soccer'?'ball':'bball']);
+function ballBusy(){return boardBusy()||SK.on;}
+// (the moves wheel is first drawn before this file runs, so these are hoisted functions)
+function ballActs(){const k=ballKind();return k&&!ballBusy()?[['kick',k==='soccer'?'⚽':'🏀',k==='soccer'?'Kick':'Pass']]:[];}
+const ballNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
+function myBallMesh(kind){const m=BP.m[kind]||(BP.m[kind]=ballMesh(kind));const c=ballColor(kind);if(m.userData.c!==c){m.userData.c=c;m.material=ballMat(kind,c);}return m;}
+function ballHome(quiet){BP.st='hand';BP.to=null;BP.npc=null;BP.v.set(0,0,0);if(!quiet)sfx('pop');}
+
+// who to pass to: the closest townsperson or online friend, a bit more likely the one you're facing
+function ballTarget(){const P=player.pos,fx=Math.sin(player.face),fz=Math.cos(player.face);let best=null,bs=1e9;
+  const look=(pos,o)=>{const dx=pos.x-P.x,dz=pos.z-P.z,d=Math.hypot(dx,dz);if(d<1.2||d>15)return;const s=d-3.5*(dx*fx+dz*fz)/d;if(s<bs){bs=s;best=o;}};
+  for(const f of FRIENDS)if(f.g.visible!==false)look(f.pos,{npc:f,pos:f.pos});
+  if(ballNet()&&mapOthers)for(const [id,o] of mapOthers)look(o.pos,{net:id,pos:o.pos,name:o.name});
+  return best;}
+// throw or kick the ball from p toward a spot
+function ballLaunch(kind,from,to){const p=BP.p,v=BP.v;p.copy(from);const dx=to.x-from.x,dz=to.z-from.z,d=Math.hypot(dx,dz)||1;
+  if(kind==='soccer'){const s=Math.min(16,d*1.35+2.2);v.set(dx/d*s,d>8?2.6:.4,dz/d*s);}
+  else{const T=.42+d*.045,ty=groundAt(to.x,to.z)+1.05;v.set(dx/T,(ty-from.y+.5*14*T*T)/T,dz/T);}
+  BP.flyT=0;}
+function kickBall(){const kind=ballKind();if(!kind||closetOpen||!started||ballBusy())return;const P=player.pos;
+  if(BP.st==='fly'||BP.st==='npc'||BP.st==='away'){toast(kind==='soccer'?'Wait for the ball to come back! ⚽':'Wait for the ball to come back! 🏀');return;}
+  if(BP.st!=='hand'&&Math.hypot(BP.p.x-P.x,BP.p.z-P.z)>1.7){toast(kind==='soccer'?'Run to the ball first! ⚽':'Go get the ball first! 🏀');return;}
+  const fx=Math.sin(player.face),fz=Math.cos(player.face);
+  // soccer: kicked off the ground in front of your feet. basketball: passed from the chest
+  const from=kind==='soccer'?new THREE.Vector3(P.x+fx*.42,groundAt(P.x+fx*.42,P.z+fz*.42)+BALL_R.soccer,P.z+fz*.42):new THREE.Vector3(P.x+fx*.35,P.y+1.05,P.z+fz*.35);
+  ballAct(av,kind==='soccer'?'kick':'pass');
+  const tg=ballTarget();
+  if(tg){ballLaunch(kind,from,tg.pos);BP.st='fly';BP.to=tg;
+    if(tg.npc){tg.npc.tgt=null;tg.npc.wait=Math.max(tg.npc.wait,4);}
+    if(tg.net){const n=ballNet();if(n){n.send({t:'ball',k:'pass',to:tg.net,kind,c:ballColor(kind),p:BP.p.toArray().map(x=>+x.toFixed(2)),v:BP.v.toArray().map(x=>+x.toFixed(2))});
+      if(BP.borrowed)BP.borrowed.gone=true;}}}
+  else{const d=kind==='soccer'?11:6;ballLaunch(kind,from,new THREE.Vector3(P.x+fx*d,0,P.z+fz*d));if(kind==='soccer')BP.v.y=3.2;BP.st='loose';BP.to=null;}
+  BP.still=0;tone(kind==='soccer'?150:220,.08,'sine',.16);tone(kind==='soccer'?90:140,.06,'square',.05,.02);did('ball',kind==='soccer'?'kick':'pass');}
+
+// the ball flying, bouncing and rolling. Returns true when it hits the ground hard enough to make a sound.
+const ballOld=new THREE.Vector3();
+function ballPhys(kind,p,v,dt){const R=BALL_R[kind];ballOld.copy(p);v.y-=14*dt;p.addScaledVector(v,dt);
+  let g=groundAt(p.x,p.z)+R;if(g-ballOld.y>.42+R){p.x=ballOld.x;p.z=ballOld.z;v.x*=-.4;v.z*=-.4;g=groundAt(p.x,p.z)+R;}// a step too tall to roll up
+  let thud=false;if(p.y<=g){p.y=g;if(v.y<-1.2){thud=v.y<-2;v.y=-v.y*(kind==='soccer'?.4:.74);}else v.y=0;}
+  if(p.y<=g+.02){const f=Math.pow(kind==='soccer'?.32:.5,dt);v.x*=f;v.z*=f;}
+  // trees, walls and the edge of the island
+  const ox=p.x,oz=p.z;collide(p,R);const nx=p.x-ox,nz=p.z-oz,nl=Math.hypot(nx,nz);if(nl>1e-5){const ux=nx/nl,uz=nz/nl,dot=v.x*ux+v.z*uz;if(dot<0){v.x-=1.6*dot*ux;v.z-=1.6*dot*uz;}}
+  return thud;}
+
+const bTmp=new THREE.Vector3(),bTmp2=new THREE.Vector3();
+anims.push((t,dt)=>{if(!started||!av)return;
+  const kind=ballKind(),P=player.pos,now=performance.now()/1000;
+  // the borrowed ball goes away if its owner leaves the room
+  if(BP.borrowed&&(!ballNet()||!mapOthers||!mapOthers.has(BP.borrowed.from))&&BP.st!=='fly'){BP.borrowed=null;ballHome(true);return;}
+  {const key=kind+(ballBusy()?'b':'');if(key!==BP.actsKey){BP.actsKey=key;renderActions();}}
+  for(const k in BP.m)if(k!==kind)BP.m[k].visible=false;
+  if(kind!==BP.kind){BP.kind=kind;ballHome(true);if(!kind)av.ballMove=null;}
+  if(!kind){ballSend(null);return;}
+  const m=myBallMesh(kind),R=BALL_R[kind],busy=ballBusy();
+  // in the closet you see it in your hand; during games and skating it's put away
+  if(closetOpen||busy){if(BP.st==='fly'&&BP.to&&BP.to.net){BP.st='away';BP.awayT=0;BP.to=null;}else if(BP.st!=='away')ballHome(true);m.visible=false;if(av.handBall)av.handBall.visible=!busy;av.ballMove=null;ballSend(null);return;}
+  if(av.handBall)av.handBall.visible=false;m.visible=BP.st!=='away';
+  const moving=player.speed>.6,fx=Math.sin(player.face),fz=Math.cos(player.face);
+  if(BP.st==='hand'){
+    if(kind==='soccer'){if(moving&&player.onGround){BP.st='loose';BP.flyT=1;BP.p.set(P.x+fx*.45,groundAt(P.x+fx*.45,P.z+fz*.45)+R,P.z+fz*.45);BP.v.set(fx*player.speed*1.3,0,fz*player.speed*1.3);BP.still=0;}
+      else{handSpot(av,kind,BP.p);if(av.ballMove&&!av.ballMove.act)av.ballMove=null;}}
+    else{if(moving&&player.onGround){const d=dribbleSpot(av,t,BP.p);if(BP.u<.5&&d.u>=.5)tone(110,.05,'sine',.07);BP.u=d.u;av.ballMove=Object.assign(av.ballMove||{},{drib:d.s});}
+      else{handSpot(av,kind,BP.p);if(av.ballMove){av.ballMove.drib=null;if(!av.ballMove.act)av.ballMove=null;}}}
+    m.position.copy(BP.p);}
+  else{if(av.ballMove&&av.ballMove.drib!=null){av.ballMove.drib=null;if(!av.ballMove.act)av.ballMove=null;}}
+  if(BP.st==='loose'||BP.st==='fly'){const vx=BP.v.x,vz=BP.v.z;
+    if(ballPhys(kind,BP.p,BP.v,dt))tone(kind==='soccer'?95:115,.05,'sine',.07);
+    ballRoll(m,vx,vz,dt,R);m.position.copy(BP.p);
+    const dx=BP.p.x-P.x,dz=BP.p.z-P.z,d=Math.hypot(dx,dz),onG=BP.p.y<groundAt(BP.p.x,BP.p.z)+R+.05;
+    if(BP.st==='loose'){BP.flyT+=dt;
+      if(kind==='soccer'){
+        // dribbling: the ball at your feet gets a little touch ahead the way you're walking
+        if(d<.55&&onG&&BP.p.y<P.y+.5){if(moving){const s=player.speed*1.35+.5;BP.v.set(fx*s,0,fz*s);BP.still=0;if(!BP.tap)tone(140,.03,'sine',.05);BP.tap=1;}
+          else if(BP.flyT>.4){BP.v.x*=.6;BP.v.z*=.6;if(d<.38&&d>1e-4){BP.p.x=P.x+dx/d*.38;BP.p.z=P.z+dz/d*.38;}}}else BP.tap=0;
+        // stand still next to it and you pick it up
+        if(!moving&&d<1.4&&Math.hypot(BP.v.x,BP.v.z)<.4){BP.still+=dt;if(BP.still>2.2)ballHome();}else BP.still=0;}
+      else if(BP.flyT>.6&&d<.8&&BP.p.y<P.y+1.6){ballHome();}// walk up to the basketball to pick it up
+      if(d>35){ballHome(true);toast(kind==='soccer'?'⚽ Your ball is back!':'🏀 Your ball is back!');}}
+    else{// passing to someone: steer it toward them as it goes, and they catch it when it gets there
+      BP.flyT+=dt;const tg=BP.to,tp=tg.me?P:tg.npc?tg.npc.pos:(mapOthers&&mapOthers.get(tg.net)||{}).pos;
+      if(!tp){BP.st='loose';BP.to=null;}
+      else{const ex=tp.x-BP.p.x,ez=tp.z-BP.p.z,ed=Math.hypot(ex,ez),hs=Math.hypot(BP.v.x,BP.v.z);
+        if(kind==='soccer'&&onG&&hs>.3&&ed>.2){const k=Math.min(1,dt*5);BP.v.x+=(ex/ed*hs-BP.v.x)*k;BP.v.z+=(ez/ed*hs-BP.v.z)*k;}
+        const reach=ed<.8&&BP.p.y<tp.y+1.8,stopped=hs<.6&&onG&&ed<5;
+        if(reach||stopped||BP.flyT>5){
+          if(tg.me){BP.passes++;BP.to=null;sfx('pop');
+            if(kind==='soccer'){BP.st='loose';BP.flyT=1;BP.v.set(0,0,0);if(d>.5){BP.p.x=P.x+fx*.45;BP.p.z=P.z+fz*.45;}}else ballHome(true);
+            if(BP.passes%5===0)banner(`${kind==='soccer'?'⚽':'🏀'} ${BP.passes} passes in a row!`);}
+          else if(tg.npc){BP.st='npc';BP.npc=tg.npc;BP.hold=.9+Math.random()*.6;BP.to=null;const f=tg.npc;f.tgt=null;f.wait=Math.max(f.wait,3);
+            friendBubble(f,rnd(kind==='soccer'?['Nice pass! ⚽','Got it! 🙌','Ooh, good kick!','Here it comes back!']:['Nice pass! 🏀','Got it! 🙌','Catch! 🏀','Good one!']));}
+          else{BP.st='away';BP.awayT=0;BP.to=null;if(BP.borrowed&&BP.borrowed.gone){BP.borrowed=null;}}}}}}
+  else if(BP.st==='npc'){const f=BP.npc;f.face=Math.atan2(P.x-f.pos.x,P.z-f.pos.z);f.g.rotation.y=f.face;f.tgt=null;f.wait=Math.max(f.wait,1.5);
+    const ffx=Math.sin(f.face),ffz=Math.cos(f.face);
+    if(kind==='soccer')BP.p.set(f.pos.x+ffx*.42,groundAt(f.pos.x+ffx*.42,f.pos.z+ffz*.42)+R,f.pos.z+ffz*.42);else handSpot(f,kind,BP.p);
+    m.position.copy(BP.p);BP.hold-=dt;
+    if(BP.hold<=0){ballAct(f,kind==='soccer'?'kick':'pass');if(kind==='bball')BP.p.set(f.pos.x+ffx*.35,f.pos.y+1.05,f.pos.z+ffz*.35);
+      ballLaunch(kind,BP.p,P);BP.st='fly';BP.to={me:1};BP.npc=null;tone(kind==='soccer'?150:220,.08,'sine',.12);}
+    if(Math.hypot(f.pos.x-P.x,f.pos.z-P.z)>40)ballHome(true);}
+  else if(BP.st==='away'){m.visible=false;BP.awayT+=dt;// an online friend has it: they pass it back
+    if(BP.awayT>45){ballHome(true);toast(kind==='soccer'?'⚽ Your ball is back!':'🏀 Your ball is back!');}}
+  ballSend(kind,dt);});
+
+/* ---------- online: friends see your ball (one entry in SHOW, 26c-friends-see.js) ----------
+   SHOW sends what kind of ball you have and what it's doing when that changes: in your hand, bouncing beside you
+   (their phone bounces it in time with your walk), out on the ground (then its spot comes 10 times a second as
+   {t:'ball',k:'at',p}), put away, or gone to someone else. A pass is {t:'ball',k:'pass',to,kind,c,p,v}. */
+function ballMd(){const k=ballKind();if(!k)return null;if(closetOpen)return 'hand';if(ballBusy())return 'away';
+  if(BP.st==='away'||(BP.st==='fly'&&BP.to&&BP.to.net))return 'gone';
+  if(BP.st==='hand')return av&&av.ballMove&&av.ballMove.drib!=null?'drib':'hand';return 'free';}
+SHOW.push({k:'ball',
+  mine(){const kind=ballKind();return kind?{kind,c:ballColor(kind)||null,md:ballMd()}:null;},
+  on(f,d){if(d.kind!=='soccer'&&d.kind!=='bball')return null;const m=ballMesh(d.kind);m.material=ballMat(d.kind,typeof d.c==='string'?d.c.slice(0,30):null);return {m};},
+  step(f,d,dt,h){const a=f.a,m=h.m,ex=(a.look&&a.look.extras)||{},theirs=!!a.handBall&&!!(d.kind==='soccer'?ex.ball:ex.bball);
+    const drib=d.md==='drib';if(!drib&&a.ballMove&&a.ballMove.drib!=null){a.ballMove.drib=null;if(!a.ballMove.act)a.ballMove=null;}
+    if(a.handBall)a.handBall.visible=d.md==='hand'&&theirs;
+    m.visible=!(d.md==='hand'&&theirs)&&d.md!=='away'&&d.md!=='gone';if(!m.visible)return;
+    if(drib){const r=dribbleSpot(a,performance.now()/1000,m.position);a.ballMove=Object.assign(a.ballMove||{},{drib:r.s});return;}
+    if(d.md==='hand'){handSpot(a,d.kind,m.position);return;}
+    if(!f.ballAt)return;bTmp2.copy(m.position);if(m.position.distanceTo(f.ballAt)>6)m.position.copy(f.ballAt);else m.position.lerp(f.ballAt,Math.min(1,dt*12));
+    ballRoll(m,(m.position.x-bTmp2.x)/Math.max(dt,1e-3),(m.position.z-bTmp2.z)/Math.max(dt,1e-3),dt,BALL_R[d.kind]);},
+  off(f,h){if(!h)return;scene.remove(h.m);const a=f.a;if(a){if(a.handBall)a.handBall.visible=true;if(a.ballMove&&a.ballMove.drib!=null){a.ballMove.drib=null;if(!a.ballMove.act)a.ballMove=null;}}}});
+// while my ball is out on the ground, tell the room where it is
+function ballSend(kind,dt){const n=ballNet();if(!n||!kind||ballMd()!=='free')return;BP.sendT-=dt;if(BP.sendT>0)return;BP.sendT=.1;
+  n.send({t:'ball',k:'at',p:BP.p.toArray().map(x=>+x.toFixed(2))});}
+function ballFromNet(id,name,d){if(!d||d.t!=='ball')return;const o=mapOthers&&mapOthers.get(id);
+  if(d.k==='at'&&Array.isArray(d.p)&&o){(o.ballAt||(o.ballAt=new THREE.Vector3())).set(+d.p[0]||0,+d.p[1]||0,+d.p[2]||0);}
+  else if(d.k==='pass'&&(d.kind==='soccer'||d.kind==='bball')){if(o&&o.a)ballAct(o.a,d.kind==='soccer'?'kick':'pass');
+    const n=ballNet(),me=n&&n.id&&n.id();if(!me||d.to!==me)return;
+    // it's coming to me: it's my ball now (my own again if it's the one I passed away)
+    BP.borrowed=d.kind===ownKind()?null:{kind:d.kind,c:typeof d.c==='string'?d.c.slice(0,30):null,from:id};
+    BP.kind=ballKind();BP.st='fly';BP.to={me:1};BP.flyT=0;BP.npc=null;
+    if(Array.isArray(d.p))BP.p.set(+d.p[0]||0,+d.p[1]||0,+d.p[2]||0);if(Array.isArray(d.v))BP.v.set(+d.v[0]||0,+d.v[1]||0,+d.v[2]||0);
+    toast(`${name||'Your friend'} passed you the ball! Tap ${d.kind==='soccer'?'⚽ Kick':'🏀 Pass'} to send it back`);}}
+addEventListener('load',()=>{if(window.__net)window.__net.on(ballFromNet);if(window.__game)window.__game.ball=()=>BP;});
