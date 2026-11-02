@@ -28,6 +28,8 @@ anims.push(()=>{if(!started)return;const p=player.pos;
   if(curZone!==shopZone){shopZone=curZone;if(!closetOpen&&curZone===BARB)setTimeout(()=>toast(isGuy(SAVE.look)?'Step on the ✂️ pad to sit in the barber chair 💈':'This barber shop is for guys 💈 Try the 🪞 glam mirror at the ⭐ Star Model Agency!'),1600);
     if(!closetOpen&&curZone===STOR)setTimeout(()=>toast('Step on the 👔 pad by the mirror to try on clothes and glasses!'),1600);}
   {const [lx,lz]=BARB.toLocal(p.x,p.z),d=Math.hypot(lx-BARB.bpad.lx,lz-BARB.bpad.lz);if(d<BARB.bpad.r&&player.onGround&&!closetOpen){if(!onBBPad){onBBPad=true;openBarber();}}else if(d>1.3)onBBPad=false;}
+  // the 🛍️ racks in the Sparkle Studio sell the same things as the store
+  for(const r of Z.studio.racks){const d=Math.hypot(p.x-r.at.x,p.z-r.at.z);if(d<r.r&&player.onGround&&!closetOpen){if(!r.on){r.on=true;openStore(r);}}else if(d>1.3)r.on=false;}
   {const [lx,lz]=STOR.toLocal(p.x,p.z),d=Math.hypot(lx-STOR.spad.lx,lz-STOR.spad.lz);if(d<STOR.spad.r&&player.onGround&&!closetOpen){if(!onSTPad){onSTPad=true;openStore();}}else if(d>1.3)onSTPad=false;}});
 
 /* ---------- 💈 the barber chair ---------- */
@@ -80,26 +82,30 @@ function barberClick(b){const L=SAVE.look,d=b.dataset;
 
 /* ---------- 👔 the clothing store ---------- */
 const STORE_TABS=[['glasses','🕶️','Glasses'],['tops','👕','Tops'],['bottoms','👖','Bottoms'],['shoes','👟','Shoes'],['hats','🧢','Hats'],['extras','⌚','Extras']];
-const storeTabs=()=>isGuy(SAVE.look)?STORE_TABS:STORE_TABS.slice(0,1);
-let storePrevTab='tops';
-function openStore(){if(closetOpen)return;buildShopNPCs();closeTalk();storeOpen=closetOpen=true;storePrevTab=ctab;ctab='glasses';storePick=null;setZoom('face');
-  player.pos.copy(zW(STOR,STOR.spad.lx,0,STOR.spad.lz));player.vy=0;player.speed=0;player.face=zFace(STOR,0,1);cam.closetYaw=player.face;cam.fv=null;
-  joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';document.body.classList.add('dressing');$('#ctitle').textContent='👔 Clothing Store';STOR.spad.lbl.visible=false;
-  const j=shopNPC.jay;if(j){say(j,isGuy(SAVE.look)?rnd(['Welcome in! 👔','Try anything on! 😎','New stuff just came in! ✨']):'Hi! Try on some glasses! 🕶️');j.a.play('wave');}
-  if(!isGuy(SAVE.look))setTimeout(()=>toast('The clothes here are for guys, but anyone can try on glasses! 🕶️'),900);
+const GIRL_STORE_TABS=[['dresses','👗','Dresses'],['tops','👚','Tops'],['bottoms','👖','Bottoms'],['shoes','👠','Shoes'],['hats','🎀','Hats'],['extras','👜','Extras'],['glasses','🕶️','Glasses']];
+const storeTabs=()=>isGuy(SAVE.look)?STORE_TABS:GIRL_STORE_TABS;
+const storeCat=()=>isGuy(SAVE.look)?STORE_CAT:GIRL_STORE_CAT;
+let storePrevTab='tops',storeRack=null;
+// open the store at its 👔 pad, or (rack) right where you stand at a 🛍️ rack in the Sparkle Studio
+function openStore(rack){if(closetOpen)return;buildShopNPCs();closeTalk();storeOpen=closetOpen=true;storeRack=rack||null;storePrevTab=ctab;ctab=isGuy(SAVE.look)?'tops':'dresses';storePick=null;setZoom('body');
+  if(rack){player.pos.set(rack.at.x,player.pos.y,rack.at.z);player.face=rack.face;}else{player.pos.copy(zW(STOR,STOR.spad.lx,0,STOR.spad.lz));player.face=zFace(STOR,0,1);}
+  player.vy=0;player.speed=0;cam.closetYaw=player.face;cam.fv=null;
+  joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';document.body.classList.add('dressing');$('#ctitle').textContent=rack?'🛍️ Fashion racks':'👔 Clothing Store';(rack?rack.lbl:STOR.spad.lbl).visible=false;if(rack)Z.studio.padLbl.visible=false;// the big 👗 Dress up! sign would stand between you and the camera
+  
+  const j=shopNPC.jay;if(j&&!rack){say(j,rnd(['Welcome in! 👔','Try anything on! 😎','New stuff just came in! ✨']));j.a.play('wave');}
   renderCloset();$('#closet').classList.add('show');$('#ccontent').scrollTop=0;sfx('tada');}
-function closeStore(){if(!storeOpen)return;storeOpen=closetOpen=false;storePick=null;ctab=storePrevTab;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');$('#ctitle').textContent='👗 My closet';STOR.spad.lbl.visible=true;
-  av.dress(SAVE.look);player.pos.copy(zW(STOR,STOR.spad.lx,0,STOR.spad.lz+1));player.face=zFace(STOR,0,1);cam.yaw=cam.cy=player.face+Math.PI;cam.fv=null;av.play('twirl');did('store');}
+function closeStore(){if(!storeOpen)return;const rack=storeRack;storeOpen=closetOpen=false;storePick=null;storeRack=null;ctab=storePrevTab;czoom='body';document.body.classList.remove('dressing');$('#closet').classList.remove('show');$('#ctitle').textContent='👗 My closet';
+  av.dress(SAVE.look);if(rack){rack.lbl.visible=Z.studio.padLbl.visible=true;player.pos.set(rack.out.x,player.pos.y,rack.out.z);player.face=rack.face;}else{STOR.spad.lbl.visible=true;player.pos.copy(zW(STOR,STOR.spad.lx,0,STOR.spad.lz+1));player.face=zFace(STOR,0,1);}
+  cam.yaw=cam.cy=player.face+Math.PI;cam.fv=null;av.play('twirl');did('store');}
 // try something on: it shows on you, but it's only yours once you buy it
 function tryOn(id){storePick=id;const L=JSON.parse(JSON.stringify(SAVE.look));applyItem(L,id);av.dress(L);av.play('twirl');sfx('pop');renderCloset();}
-function storeHTML(){const list=STORE_CAT[ctab]||[],have=SAVE.coins||0;let h=`<p class="drawhint">🪙 You have <b>${have}</b> coins. Tap something to try it on!</p>`;
+function storeHTML(){const list=storeCat()[ctab]||[],have=SAVE.coins||0;let h=`<p class="drawhint">🪙 You have <b>${have}</b> coins. Tap something to try it on!</p>`;
   if(storePick){const s=shopItem('look:'+storePick),mine=owns(s.k),L=SAVE.look,wearing=L.extras&&L.extras[storePick]||[L.top,L.bottom,L.shoes,L.hat].some(x=>x&&x.id===storePick);
     h+=`<div class="earn"><div><b>${s.e}</b><span><b>${s.n}</b><br>${s.d}</span><em>${mine?'✅ Yours':`🪙 ${s.p}`}</em></div></div><div class="chips" style="margin:8px 0">`+
       (mine?(wearing?`<button class="on">✅ You're wearing it</button>`:`<button data-swear="${storePick}">✨ Wear it</button>`)
         :have>=s.p?`<button class="on" data-sbuy="${storePick}">🛍️ Buy for ${s.p} 🪙</button>`:`<button disabled>🪙 You need ${s.p-have} more</button>`)+`<button data-sback="1">↩️ Take it off</button></div>`;
     if(!mine&&have<s.p)h+=`<p class="drawhint">Earn coins by finding ⭐ stars, taking care of your pet and helping the townspeople. Tap 🪙 at the top to see more ways.</p>`;}
   h+=`<div class="grid">${list.map(([id,e,n])=>{const s=shopItem('look:'+id),m=owns(s.k);return `<button class="item${storePick===id?' on':''}" data-spick="${id}"><b>${e}</b><span>${n}</span><em class="${m?'got':''}">${m?'✅ Yours':`🪙 ${s.p}`}</em></button>`;}).join('')}</div>`;
-  if(!isGuy(SAVE.look))h+=`<p class="drawhint">The clothes here are for guys. Girls' outfits are in the 🪙 coin shop and your 👗 closet.</p>`;
   return h;}
 function storeClick(b){const d=b.dataset;
   if(d.spick){tryOn(d.spick);return true;}
@@ -117,6 +123,6 @@ function shopCamClamp(z,tgt){const b=z.box;const [plx,plz]=z.toLocal(tgt.x,tgt.z
 {const tabsClick=$('#tabs').onclick,contentClick=$('#ccontent').onclick;
  $('#tabs').onclick=e=>{if(!barberOpen&&!storeOpen)return tabsClick(e);const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;sfx('pop');
    if(barberOpen){bview=BVIEW[ctab]??0;}
-   if(storeOpen){storePick=null;av.dress(SAVE.look);setZoom(ctab==='glasses'?'face':'body');}
+   if(storeOpen){storePick=null;av.dress(SAVE.look);setZoom(ctab==='glasses'||ctab==='hats'?'face':'body');}
    renderCloset();$('#ccontent').scrollTop=0;};
  $('#ccontent').onclick=e=>{if(!barberOpen&&!storeOpen)return contentClick(e);const b=e.target.closest('button');if(!b)return;if(barberOpen)barberClick(b);else storeClick(b);};}

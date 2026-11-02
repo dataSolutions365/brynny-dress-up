@@ -30,6 +30,10 @@
    cs.forEach((c,i)=>{const pts=[];for(let k=0;k<=8;k++){const t=k/8;pts.push(new THREE.Vector2(.07+t*.22,-t*.75));}
      const d=M(new THREE.LatheGeometry(pts,20),phys(c,{roughness:.8,sheen:1,sheenColor:new THREE.Color('#ffffff'),side:THREE.DoubleSide}),-.85+i*.34,1.6,0,rg);d.scale.z=.5;});
    obs.push({x:rg.position.x,z:rg.position.z,r:1.2});}
+ // a 🛍️ pad in front of each rack: step on it to shop the clothing store's outfits right here (see openStore in 24d)
+ z.racks=[deg(150),deg(330)].map(a=>{const lx=Math.sin(a)*2.5,lz=Math.cos(a)*2.5,p=floorPad(z,lx,lz,'#b388ff','🛍️','🛍️ Shop outfits',.13);
+   const [x,w]=z.toWorld(lx,lz),[ox,ow]=z.toWorld(Math.sin(a)*1.7,Math.cos(a)*1.7);
+   return Object.assign(p,{at:new THREE.Vector3(x,0,w),out:new THREE.Vector3(ox,0,ow),face:Math.atan2(-Math.sin(a),-Math.cos(a))});});
  // stage spot shine
  const sl=new THREE.PointLight('#ffb3e0',18,12,2);sl.position.set(0,4,0);g.add(sl);}
 
