@@ -14,10 +14,7 @@
  const bt=canvasTex(256,128,(x)=>{const c=['#ff3b6b','#ffffff','#4fb6ff','#ffffff','#ffd23f','#ffffff'];c.forEach((cc,i)=>{x.fillStyle=cc;x.fillRect(i*256/6,0,256/6+1,128);});});
  const ball=M(sph(.35,24,16),phys('#ffffff',{map:bt,roughness:.25,clearcoat:1}),-1,.35,3.5,g);
  z.ball={m:ball,vx:0,vz:0};
- // sandcastle
- const sc=new THREE.Group();sc.position.set(4,0,3.5);g.add(sc);const sandM=std('#e8c98f',{map:TEX.sand,roughness:1});
- M(box(1.4,.5,1.4),sandM,0,.25,0,sc);for(const [x,w] of [[-.6,-.6],[.6,-.6],[-.6,.6],[.6,.6]]){M(cyl(.25,.28,.9,12),sandM,x,.45,w,sc);M(new THREE.ConeGeometry(.3,.4,12),sandM,x,1.1,w,sc);}
- M(cyl(.004,.004,.6,4),std('#fff'),0,1,0,sc);M(box(.25,.15,.01),phys('#ff3b6b'),.13,1.2,0,sc);z.ob(4,3.5,1);
+ // the sandcastle you build yourself is in 24f-sandcastle.js
  // a little dock
  const wood=std('#a87a52',{roughness:.85});const dock=new THREE.Group();dock.position.set(-1,0,-8.5);g.add(dock);
  for(let k=0;k<10;k++)M(box(2,.08,.38),wood,0,.15,-k*.42,dock);for(const s of [-.9,.9])for(let k=0;k<3;k++)M(cyl(.08,.08,1.2,8),wood,s,-.3,-k*1.8,dock);
