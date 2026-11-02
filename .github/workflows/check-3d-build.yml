@@ -25,5 +25,7 @@ jobs:
         run: npm i --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
       - name: The character walks
         run: node 3d/tests/walk.mjs
+      - name: The flying rides take off, fly over the trees and land
+        run: node 3d/tests/fly.mjs
       - name: The 2D and 3D closets match
         run: node 3d/tests/closets-match.mjs

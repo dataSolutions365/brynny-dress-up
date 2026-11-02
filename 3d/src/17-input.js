@@ -37,7 +37,8 @@ canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercanc
 canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 $('#jump').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
-function jump(){if(closetOpen)return;if(player.onGround){player.vy=6.2;player.onGround=false;sfx('jump');}}
+function jump(){if(closetOpen)return;if(flyJump())return;// on a flying ride: take off (24h-flying.js)
+  if(player.onGround){player.vy=6.2;player.onGround=false;sfx('jump');}}
 let hintFaded=false;function fadeHint(){if(hintFaded)return;hintFaded=true;setTimeout(()=>$('#hint').style.opacity=0,2500);setTimeout(()=>$('#hint').style.display='none',3200);}
 if(!isTouch)$('#hint').innerHTML='Walk with W A S D or the arrow keys.<br>Drag to look around. Space to jump.';
 
