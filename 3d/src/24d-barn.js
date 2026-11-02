@@ -335,17 +335,17 @@ function stepFarm(a,dt){if(a.ridden)return;let sp=0;
   a.update(dt,sp);placeFarm(a);}
 
 /* ---------- riding ---------- */
-function startRide(a){if(!a||!a.F.ride)return;closeBarn(true);barnRide=a;a.ridden=true;a.ob.r=0;a.graze=0;
+function startRide(a){if(!a||!a.F.ride)return;closeBarn(true);if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);barnRide=a;BS.steed=a.k;persist();a.ridden=true;a.ob.r=0;a.graze=0;
   player.pos.set(a.pos.x,player.pos.y,a.pos.z);player.face=BZ.rot+a.face;cam.yaw=player.face+Math.PI;av.play('ride');
   $('#rideBtn').textContent=`${a.F.e} Hop off`;$('#rideBtn').style.display='block';did('ride',a.k);sfx('tada');a.speak(rnd(a.F.say));
-  toast(`Ride ${BS.own[a.k].n} anywhere in town! Tap “Hop off” to get down 💨`);}
+  toast(`Ride ${BS.own[a.k].n} anywhere in town! Tap “Hop off” to get down 💨`);renderActions();}
 function stopRide(){const a=barnRide;if(!a)return;barnRide=null;a.ridden=false;a.y=0;a.vy=0;$('#rideBtn').style.display='none';if(av.emote&&av.emote.id==='ride')av.emote=null;
   const P=player.pos,[lx,lz]=BZ.toLocal(P.x,P.z);
   if(paddockOk(lx,lz,a.rad*.7)){a.lx=lx;a.lz=lz;a.face=player.face-BZ.rot;const s=a.rad+.45;P.x+=Math.cos(player.face)*s;P.z-=Math.sin(player.face)*s;}
   else{burst(a.g.position.clone().add(new THREE.Vector3(0,a.h*.5,0)),'#ffd23f',30,2);const [x,z]=paddockSpot(a.rad);a.lx=x;a.lz=z;a.tgt=null;toast(`${BS.own[a.k].n} trotted home to the 🐴 Happy Barn 💖`);}
-  placeFarm(a);}
+  placeFarm(a);renderActions();}
 $('#rideBtn').onclick=()=>{sfx('pop');stopRide();};
-function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started){stopRide();return;}
+function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started||handsBusy()){stopRide();return;}// off during sports, contests and other games
   if(!av.emote||av.emote.id!=='ride')av.play('ride');
   a.pos.set(p.x,p.y,p.z);a.g.position.copy(a.pos);a.g.rotation.y=player.face;a.update(dt,player.speed*.55);
   // sit on the saddle: the avatar's 'ride' pose puts the hips at chair height, so lift everything up to the animal's back
@@ -435,7 +435,7 @@ $('#barnContent').onclick=e=>{const b=e.target.closest('button');if(!b||!barnOpe
   persist();renderBarn();};
 function adoptFarm(k){const F=FK[k];if(BS.own[k])return;
   if(F.s){if(starsLeft()<F.s)return;BS.spent=(BS.spent||0)+F.s;}else{if(fCoins()<F.c)return;SAVE.coins-=F.c;showCoins(true);}
-  BS.own[k]={n:F.nm,food:80,shine:80,love:70,t:Date.now()};BS.sel=k;persist();did('farm',k);
+  BS.own[k]={n:F.nm,food:80,shine:80,love:70,t:Date.now()};BS.sel=k;persist();did('farm',k);if(F.ride)renderActions();
   const a=farmAnimal(k);if(barnPreview===a)barnPreview=null;a.setTag(F.nm);a.happy=3;a.hop=3;barnSel=a;barnTab='mine';
   floaties(a.g.position.clone().add(new THREE.Vector3(0,a.h,0)),'💖',10);for(let i=0;i<3;i++)setTimeout(()=>burst(a.g.position.clone().add(new THREE.Vector3((Math.random()-.5)*1.5,a.h,(Math.random()-.5)*1.5)),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),40,3),i*220);
   sfx('tada');banner(`${F.e} Welcome home, ${F.nm}!`);a.speak(rnd(F.say));renderBarn();}
@@ -528,3 +528,4 @@ function barnCam(dt){const a=barnOpen?barnSel:zooOpen?zooSel:null;if(!a)return;c
 // your animals come back when the game starts
 for(const k of Object.keys(BS.own))if(FK[k]){const a=farmAnimal(k);a.setTag(BS.own[k].n);a.showDust(farmCare(k).shine);}
 if(BS.pal&&FA[BS.pal])palGo(BS.pal);else BS.pal=null;
+renderActions();// now the 🐎 button in the moves wheel can show your horse (17d-bicycle.js)

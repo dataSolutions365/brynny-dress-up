@@ -7,7 +7,7 @@ const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','
 // Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
 const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>skateActs().concat(isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+const allActs=()=>skateActs().concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -19,7 +19,10 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
 function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
   if(id==='skate'){toggleSkate();return;}
+  if(id==='bike'){toggleBike();return;}
+  if(id==='horse'){toggleHorse();return;}
   if(SK.on)stopSkate(true);
+  if(BIKE.on)stopBike(true);
   if(id==='dance'&&!picked){openDances();return;}
   // a dance picked from the Dance list counts as dancing for quests and challenges
   const dancing=DANCE_IDS.has(id);questEvent('act',dancing?'dance':id);const G=isGuy(av.look);
@@ -105,7 +108,7 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&
       if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
   $('#ccontent').innerHTML=h;}
 function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
-function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
+function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();renderActions();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
 $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
 $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');if(!b)return;if(glamOpen&&glamClick(b))return;

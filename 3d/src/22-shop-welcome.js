@@ -11,7 +11,9 @@ function earn(n,why){n=Math.round(n);if(!(n>0))return;SAVE.coins=(SAVE.coins||0)
   if(shopOpen)renderShop();}
 // other parts of the game (or future ones) can hand out coins with: dispatchEvent(new CustomEvent('brynny:earn',{detail:{n:5,why:'Baked a cake'}}))
 addEventListener('brynny:earn',e=>{const d=e.detail||{};earn(+d.n||0,d.why);});
-function lockBtn(k,ico,name){if(!locked(k))return '';const s=shopItem(k);return `<button class="item lock" data-lock="${k}"><b>${ico}</b><span>${name}</span><em>🔒 ${s.p} 🪙</em></button>`;}
+// a few things cost ⭐ stars instead of 🪙 coins (s.stars), spent like the barn's rare animals (starsLeft() in 24d-barn.js)
+const priceTxt=s=>s.stars?`⭐ ${s.stars}`:`${s.p} 🪙`;
+function lockBtn(k,ico,name){if(!locked(k))return '';const s=shopItem(k);return `<button class="item lock" data-lock="${k}"><b>${ico}</b><span>${name}</span><em>🔒 ${priceTxt(s)}</em></button>`;}
 
 // stars and quests pay out when they happen
 let starSeen=STARS.filter(s=>s.got).length;
@@ -25,17 +27,18 @@ function openGift(){if(!giftReady())return;did('gift');SAVE.giftDay=dayKey();per
 $('#play').addEventListener('click',()=>setTimeout(()=>{if(giftReady())toast('🎁 You have a daily gift! Tap 🪙 at the top to open it.');},4500));
 
 // buying
-function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');const have=SAVE.coins||0,need=s.p-have,mine=owns(k),wear=/^(look|pet):/.test(k);
+function askBuy(k){const s=shopItem(k);if(!s)return;sfx('pop');const have=s.stars?starsLeft():SAVE.coins||0,need=(s.stars||s.p)-have,cur=s.stars?'⭐':'🪙',mine=owns(k),wear=/^(look|pet):/.test(k);
   // clothing-store things are bought at the store
   if(s.tab==='store'&&!mine&&!storeOpen){$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>Get it at the 👔 Clothing Store for ${s.p} 🪙! It's past the 💃 Runway.</p><button class="btn" data-b="go">🗺️ Show me the way</button><button class="btn ghost" data-b="close">OK</button>`;$('#buy').dataset.k=k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p>`+
     (mine?(wear?`<button class="btn" data-b="wear">✨ Wear it</button>`:'')+`<button class="btn ghost" data-b="close">OK</button>`
-    :need<=0?`<button class="btn" data-b="buy">Buy for ${s.p} 🪙</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} 🪙</p>`
-    :`<p class="bneed">You need <b>${need}</b> more 🪙</p><p>Find ⭐ stars, take care of your pet, and help the townspeople to earn more!</p><button class="btn ghost" data-b="close">OK</button>`);
+    :need<=0?`<button class="btn" data-b="buy">Buy for ${priceTxt(s)}</button><button class="btn ghost" data-b="close">Not now</button><p>You have ${have} ${cur}${s.stars?' to spend':''}</p>`
+    :`<p class="bneed">You need <b>${need}</b> more ${cur}</p><p>${s.stars?'Finish ⭐ star challenges to earn more stars!':'Find ⭐ stars, take care of your pet, and help the townspeople to earn more!'}</p><button class="btn ghost" data-b="close">OK</button>`);
   $('#buy').dataset.k=k;$('#buy').classList.add('show');}
 $('#buy').onclick=e=>{const b=e.target.closest('[data-b]'),k=$('#buy').dataset.k;if(e.target.id==='buy'||b&&b.dataset.b==='close'){$('#buy').classList.remove('show');return;}
   if(!b)return;$('#buy').classList.remove('show');if(b.dataset.b==='buy')buy(k);if(b.dataset.b==='wear')wearIt(k);if(b.dataset.b==='go'){if(closetOpen)closeCloset();setDest(Z.store);}};
-function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;SAVE.coins-=s.p;SAVE.owned[k]=true;did('buy',k);persist();showCoins(true);sfx('tada');
+function buy(k){const s=shopItem(k);if(!s||owns(k))return;
+  if(s.stars){if(starsLeft()<s.stars)return;BS.spent=(BS.spent||0)+s.stars;}else{if((SAVE.coins||0)<s.p)return;SAVE.coins-=s.p;}SAVE.owned[k]=true;did('buy',k);persist();showCoins(true);sfx('tada');
   banner(`${s.e} It's yours!`);burst(new THREE.Vector3(player.pos.x,player.pos.y+1.3,player.pos.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff']),50,3,.18);
   const [kind,id]=k.split(':');
   if(kind==='look'||kind==='pet')wearIt(k);
@@ -45,7 +48,7 @@ function buy(k){const s=shopItem(k);if(!s||owns(k)||(SAVE.coins||0)<s.p)return;S
   refreshOpen();}
 function wearIt(k){const [kind,id]=k.split(':');
   if(kind==='look'){const L=SAVE.look;if(applyItem(L,id)==='extras'&&(!closetOpen||ctab==='extras'))lastExtra=id;
-    av.dress(L);persist();av.play('twirl');}
+    av.dress(L);persist();av.play('twirl');renderActions();}// the 🚲 Bike and 🛹 Ride buttons come and go with what you wear
   if(kind==='pet'){const pt=pPet||myPet();if(!pt){toast('Adopt a pet first, then they can wear it! 🐾');return;}const c=petCare(pt),it=PHATS.find(x=>x[0]===id);c.fit.hat={id,c:it[3]};dressPet(pt);persist();pt.happy=2;pt.speak('So fancy! 💖');}
   refreshOpen();}
 function refreshOpen(){if(shopOpen)renderShop();else if(parlorOpen)renderParlor();else if(closetOpen)renderCloset();}
@@ -63,7 +66,7 @@ function renderShop(){showCoins();const ST=seasonTab();if(ST)SHINT.season=`${ST[
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
       [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
-  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}"><b>${s.e}</b><span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
 $('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
 $('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};
