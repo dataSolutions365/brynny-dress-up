@@ -1154,6 +1154,7 @@ const lens=(c,op=.85)=>sym(`<rect x="121" y="85" width="26" height="17" rx="7" f
 const G=1;
 
 TOPS.push(
+ {id:'teamtee',name:'Team shirt',guy:G,c:'#2f6fd6',d:c=>{const n=parseInt(c.slice(1),16),t=((n>>16)*.3+(n>>8&255)*.59+(n&255)*.11)>170?'#2d2d3a':'#ffffff';return sleeve(c,0,30)+GT(c)+`<path d="M130 160 Q150 178 170 160" fill="none" stroke="${t}" stroke-width="5"/>`+num('10',t,shade(c,-.3),240,44);}},
  {id:'gtee',name:'T-shirt',guy:G,c:'#4fb6ff',d:c=>sleeve(c,0,28)+GT(c)+neck(c)},
  {id:'graphictee',name:'Graphic tee',guy:G,c:'#2d2d3a',d:c=>sleeve(c,0,28)+GT(c)+neck(c)+`<path d="M156 190 L136 222 L150 222 L142 250 L166 212 L152 212 L160 190 Z" fill="#ffd23f"/>`},
  {id:'polo',name:'Polo shirt',guy:G,c:'#2e9e4f',d:c=>sleeve(c,0,28)+GT(c)+collarP(shade(c,-.08))+`<path d="M150 170 L150 202" stroke="${shade(c,-.25)}" stroke-width="2"/>`+btns([182,194],shade(c,.5))},
@@ -1283,7 +1284,7 @@ const KEY={tops:'top',bottoms:'bottom',dresses:'dress',shoes:'shoes',hats:'hat'}
    Each body keeps its own hair and outfit in look.bodyLooks, so switching back and forth never loses a look. */
 const isGuy=L=>!!L&&L.body==='guy';
 const GUY_OK={hair:['crop','buzz','quiff','sidepart','curltop','spiky','flow','manbun','afro','pixie','curly','locs'],
-  tops:['gtee','graphictee','polo','buttonup','flannelover','crewneck','ghoodie','ziphoodie','quarterzip','puffer','varsity','jacket','jersey','tank','leather','hawaiian','baseball','football','camo','sweatervest','bballjersey','baseballtop','flannel','startee','sweater','xmas','moto','turtleneck','blazer','military'],
+  tops:['teamtee','gtee','graphictee','polo','buttonup','flannelover','crewneck','ghoodie','ziphoodie','quarterzip','puffer','varsity','jacket','jersey','tank','leather','hawaiian','baseball','football','camo','sweatervest','bballjersey','baseballtop','flannel','startee','sweater','xmas','moto','turtleneck','blazer','military'],
   bottoms:['khakis','slimjeans','baggyjeans','cargoshorts','gymshorts','sweats','cargopants','swimtrunks','ripped','camopants','chinoshorts','bballshorts','baseballpants','jeans','shorts','athshorts','joggers','cargo','skinny'],
   dresses:['suit','suit2','tux','tracksuit','sweatsuit','bballuni','coveralls','pumpkin','spacepup','werewolf','mummy','zombie','pajamas','jumpsuit'],
   shoes:['kicks','hightops','skateshoes','slides','oxfords','loafers','workboots','cleats','cowboyboots','goldkicks','runners','courtkicks','ballcleats','sneaker','boots','rain','snowboots','skates','paws','chunkyboots','sandals'],
@@ -1298,7 +1299,7 @@ function setBody(l,b){const cur=isGuy(l)?'guy':'girl';if(b===cur)return false;
   const back=l.bodyLooks&&l.bodyLooks[b];l.bodyLooks={...(l.bodyLooks||{}),[cur]:saved};delete l.bodyLooks[b];
   BODY_KEEP.forEach(k=>delete l[k]);
   const d=defaultLook();
-  Object.assign(l,back||(b==='guy'?{hairStyle:'crop',top:{id:'gtee',c:'#4fb6ff'},bottom:{id:'slimjeans',c:'#3a5bd9'},dress:null,shoes:{id:'hightops',c:'#2d2d3a'},hat:null,extras:{},makeup:{...NO_MAKEUP}}
+  Object.assign(l,back||(b==='guy'?{hairStyle:'crop',top:{id:'teamtee',c:'#2f6fd6'},bottom:{id:'baggyjeans',c:'#6f9be0'},dress:null,shoes:{id:'hightops',c:'#2d2d3a'},hat:null,extras:{},makeup:{...NO_MAKEUP}}
     :{hairStyle:d.hairStyle,top:d.top,bottom:d.bottom,dress:null,shoes:d.shoes,hat:null,extras:{},makeup:d.makeup}));
   if(!l.extras)l.extras={};if(!l.makeup)l.makeup={...NO_MAKEUP};
   if(b==='guy')l.body='guy';else delete l.body;
