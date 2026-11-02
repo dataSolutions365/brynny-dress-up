@@ -15,7 +15,7 @@ function startSkate(){if(SK.on||!hasBoard()||closetOpen||!started||boardBusy())r
 function stopSkate(quiet){if(!SK.on)return;SK.on=false;SK.v=0;av.skating=false;av.g.rotation.z=0;if(av.deck)av.deck.rotation.x=0;if(!quiet)sfx('pop');renderActions();}
 function toggleSkate(){if(SK.on)stopSkate();else startSkate();}
 // the stance: turn the hips side-on (feet across the board), turn the chest and head back toward where you're going
-function skatePose(a,tgt,sp,air,t){const push=SK.on&&!air&&sp>.05&&SK.pushing;
+function skatePose(a,tgt,sp,air,t){const push=a.skating&&!air&&sp>.05&&a.skatePush;
   tgt.sy=-1.35;tgt.st=.75;tgt.hy=.55;tgt.lean=.06;tgt.hd=0;tgt.spin=0;
   tgt.l0=tgt.l1=-.32;tgt.k0=tgt.k1=.62;tgt.an=-.25;tgt.l0z=-.2;tgt.l1z=.2;tgt.bob=-.07;
   tgt.a0x=tgt.a1x=0;tgt.a0z=-.9-Math.sin(t*2.3)*.12;tgt.a1z=.9-Math.sin(t*2.3+1)*.12;tgt.e0=tgt.e1=-.35;
@@ -27,7 +27,7 @@ anims.push((t,dt)=>{if(!started||!av)return;
   if(SK.on&&(!hasBoard()||closetOpen||boardBusy()))stopSkate(true);
   if(av.board)av.board.visible=!SK.on&&!boardBusy();
   if(av.deck)av.deck.visible=SK.on;
-  av.skating=SK.on;if(!SK.on){if(av.g.rotation.z)av.g.rotation.z=0;return;}
+  av.skating=SK.on;av.skatePush=SK.pushing;if(!SK.on){if(av.g.rotation.z)av.g.rotation.z=0;return;}
   // keep rolling after you let go of the joystick, slowing down little by little
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   const p=player.pos,pushing=Math.hypot(ix,iy)>.08;SK.pushing=pushing&&player.speed>SK.v+.05;

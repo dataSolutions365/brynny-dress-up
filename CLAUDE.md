@@ -10,6 +10,11 @@
 - HTML and CSS stay in `3d/index.html`. `online.js`, `challenges.js` and `seasons.js` are separate modules that talk
   to the game through `window.__game`.
 - No install is needed: plain Node runs the build, and GitHub Pages serves the files as they are.
+- Online play (`online.js`) shows each friend exactly as they are: their look, plus everything listed in `SHOW` in
+  `3d/src/26c-friends-see.js` (their pet, barn buddy, ride, skateboard, held bat/ball and what they're busy doing).
+  When you add a new ride (bicycle, horse...), a new pet, or something you hold, add an entry to `SHOW` so friends see it.
+  `3d/tests/online-see.mjs` checks it with two phones in one room:
+  `npm i --no-save playwright peer && npx playwright install chromium && node 3d/tests/online-see.mjs` (takes a few minutes).
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
