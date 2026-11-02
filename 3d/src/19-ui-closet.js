@@ -106,7 +106,8 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&
       if(lastExtra&&L.extras[lastExtra])h+=`<h3>Color</h3>`+sw(myColors(COLORS),L.extras[lastExtra],'item');}
     else{const cur=L[k];const none=ctab!=='shoes'&&ctab!=='dresses'?`<button class="item${!cur?' on':''}" data-item=""><b>🚫</b><span>None</span></button>`:'';
       h+=`<div class="grid">${none}${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
-      if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
+      if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');
+      if(ctab==='shoes'&&isRoller(cur))h+=`<h3>🛼 Wheels</h3>`+sw(myColors(COLORS),cur.w||ROLLERS[cur.id].w,'wheels');}}
   $('#ccontent').innerHTML=h;}
 function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();renderActions();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
@@ -126,7 +127,7 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
   if(b.dataset.mk){const v=b.dataset.v;L.makeup[b.dataset.mk]=v==='true'?true:v==='false'?false:v;return changed();}
   if(b.dataset.sw==='brush'){brush.c=b.dataset.c;brush.erase=false;renderCloset();return;}
   if(['shadow','lips','lipLiner','linerC'].includes(b.dataset.sw)){L.makeup[b.dataset.sw]=b.dataset.c||null;if(b.dataset.sw==='linerC'&&L.makeup.liner==='none')L.makeup.liner='thin';return changed();}
-  if(b.dataset.sw){const c=b.dataset.c,k=b.dataset.sw;if(k==='hair')L.hair.c=c;else if(k==='skin')L.skin=c;else if(k==='eyes')L.eyes=c;
+  if(b.dataset.sw){const c=b.dataset.c,k=b.dataset.sw;if(k==='hair')L.hair.c=c;else if(k==='wheels'){if(L.shoes)L.shoes.w=c;}else if(k==='skin')L.skin=c;else if(k==='eyes')L.eyes=c;
     else if(ctab==='extras'){if(lastExtra)L.extras[lastExtra]=c;}else{const cur=L[KEY[ctab]];if(cur)cur.c=c;}return changed();}
   if('item' in b.dataset){const id=b.dataset.item;const list=catOf(ctab);const it=list.find(x=>x[0]===id);
     if(ctab==='extras'){if(L.extras[id]){delete L.extras[id];lastExtra=null;}else{applyItem(L,id);lastExtra=id;}return changed();}

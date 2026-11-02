@@ -174,7 +174,7 @@ class Avatar{
   setSkin(c){this.skin.color.set(c);}
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
-    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;
+    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;this.wheels=[];this.rollers=null;this.rollOn=false;
     this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
@@ -272,7 +272,6 @@ class Avatar{
         if(s.id==='heels'){const m=mat(c,'shiny');shell(m,.7);P(cyl(.012,.008,.05,8),m,an,0,-.04,-.03);}
         if(s.id==='glass'){const m=mat(c,'glass');shell(m);P(sph(.012,8,6),mat('#ffffff','gem'),an,0,.012,.1);}
         if(s.id==='rain'){const m=mat(c,'shiny');shell(m);P(capTop(.064,.12),m,l.kn,0,-.22-this.legX,0);}
-        if(s.id==='skates'){const m=mat(c,'shiny');shell(m);P(capTop(.06,.06),m,l.kn,0,-.28-this.legX,0);const wm=mat('#ffd23f','shiny');for(const zz of [-.02,.11])P(cyl(.022,.022,.1,12),wm,an,0,-.065,zz).rotation.z=Math.PI/2;}
         if(s.id==='platforms'){const m=mat(c,'shiny');shell(m,.7);P(new THREE.BoxGeometry(.105,.075,.2),m,an,0,-.09,.055);P(new THREE.BoxGeometry(.095,.11,.075),m,an,0,-.075,-.03);
           const st=P(new THREE.TorusGeometry(.05,.008,8,24),m,an,0,.09,.0);st.rotation.x=Math.PI/2;this.lift=.06;}
         if(s.id==='furboots'){const m=mat(c,'fur');shell(mat(c,'fabric'),.9);P(new THREE.BoxGeometry(.11,.04,.22),mat('#3a3035','shiny'),an,0,-.045,.045);
@@ -397,6 +396,8 @@ class Avatar{
     const breathe=Math.sin(t*2)*.01;
     // walking the runway in the model contest: girls do a catwalk, guys a confident stride (24-model-agency.js sets runwayT)
     if(this.runwayT>0){this.runwayT-=dt;if(sp>.03)runwayWalk(this,tgt,sp);}
+    // wearing roller skates or inline skates (14f-roller-skates.js): a skating stride with swinging arms
+    if(this.rollers&&!air&&!this.emote&&!this.skating&&!this.biking&&!this.ballMove&&!(this.runwayT>0))rollerPose(this,tgt,sp,dt);else this.rollOn=false;
     const e=this.emote;let ext=0;
     if(e){e.t+=dt;const k=e.t;
       if(e.id==='wave'){tgt.a0z=-2.7;tgt.e0=0;tgt.a0x=0;ext=Math.sin(k*12)*.5;tgt.hd=.12;if(k>2)this.emote=null;}
@@ -430,6 +431,7 @@ class Avatar{
     damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;
     damp(this.hips.position,'y',this.hip+this.lift+tgt.bob,20);damp(this.spine.rotation,'x',tgt.lean+breathe,6);damp(this.hips.rotation,'y',tgt.sy,8);damp(this.head.rotation,'z',tgt.hd,8);
     damp(this.hips.position,'x',tgt.hx,14);damp(this.hips.rotation,'z',tgt.hr,10);damp(this.spine.rotation,'z',tgt.sz,10);damp(this.head.rotation,'y',tgt.hy,12);damp(L[0].hp.rotation,'z',tgt.l0z,12);damp(L[1].hp.rotation,'z',tgt.l1z,12);damp(A[1].el.rotation,'z',tgt.a1y,12);damp(this.spine.rotation,'y',tgt.st,10);this.tilt=(this.tilt||0)+(tgt.tilt-(this.tilt||0))*Math.min(1,dt*8);
+    if(this.wheels)rollerFeet(this,dt,speed);
     this.hips.rotation.x=this.emote&&this.emote.id==='flip'?this.flip:(this.tilt||0);this.spinY=e&&(e.id==='twirl'||e.id==='magic'||MOVE_ANIMS[e.id])?tgt.spin:0;
     // blink
     this.blink-=dt;const bl=this.blink<0?Math.max(.08,Math.abs(this.blink+.07)/.07):1;if(this.blink<-.14)this.blink=2+Math.random()*3.5;this.eyes.forEach(g=>g.scale.y=bl*(g.scale.x||1));

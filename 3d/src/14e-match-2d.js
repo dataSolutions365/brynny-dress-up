@@ -30,7 +30,7 @@ HAIRS.push(['wavy','🌊','Wavy'],['highbun','🩰','Ballerina bun'],['superlong
   GUY_TOPS.push(...from(TOPS,['startee','sweater','xmas','moto','turtleneck','blazer','military']));
   GUY_BOTTOMS.push(...from(BOTTOMS,['jeans','shorts','athshorts','joggers','cargo','skinny']));
   GUY_OUTFITS.push(...from(DRESSES,['werewolf','mummy','zombie','spacepup','pajamas','jumpsuit']));
-  GUY_SHOES.push(...from(SHOES,['sneaker','boots','rain','snowboots','skates','paws','chunkyboots','sandals']));
+  GUY_SHOES.push(...from(SHOES,['sneaker','boots','rain','snowboots','skates','inlines','paws','chunkyboots','sandals']));
   GUY_HATS.push(...from(HATS,['crown','witchhat','santahat','party','sunhat','pupears','wolfears','mummywrap']));
   GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','bball','vampcape','lei']));}
 // for 3d/tests/closets-match.mjs: every list of things to wear, read when it runs (holiday things are added by seasons.js)
