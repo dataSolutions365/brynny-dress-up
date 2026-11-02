@@ -52,6 +52,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
+  if(!flyStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
     const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
@@ -62,6 +63,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   const gy=groundAt(p.x,p.z);player.vy-=18*dt;p.y+=player.vy*dt;
   if(p.y<=gy){if(!player.onGround&&player.vy<-3)burst(new THREE.Vector3(p.x,gy+.05,p.z),'#ffffff',10,1);p.y=gy;player.vy=0;player.onGround=true;}else if(p.y>gy+.05)player.onGround=false;
   if(p.y<gy+.3&&player.vy<=0&&!player.onGround){p.y=Math.max(p.y,gy);}
+  }
   if(ct.on)contestStep(dt);
   if(glamOpen)AG.chair.rotation.y=player.face-AG.rot+Math.PI;
   av.g.position.copy(p);av.tag.visible=!closetOpen;av.update(dt,player.speed,!player.onGround);av.g.rotation.y=player.face+(av.spinY||0);
@@ -98,7 +100,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   const playMode=!closetOpen;
   const ZM={eyes:[.012,.3],lips:[-.058,.26],face:[-.01,.55]}[closetOpen?czoom:'']||null;
   if(ZM)player.face=angDamp(player.face,cam.closetYaw,Math.min(1,dt*8));
-  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist:ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
+  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist+flyCamBack():ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
   if(!started){cam.yaw+=dt*.12;}
   cam.cy=angDamp(cam.cy,tYaw,Math.min(1,dt*(playMode?14:6)));cam.cp+=(tPitch-cam.cp)*Math.min(1,dt*6);cam.cd+=(tDist-cam.cd)*Math.min(1,dt*5);
   const want=ZM?av.head.localToWorld(tmpV.set(0,ZM[0],.1)):tmpV.set(p.x,p.y+(playMode?1.15:.82),p.z);

@@ -59,12 +59,23 @@ SHOW.push({k:'pal',
     a.flying=fly;a.graze=0;a.g.position.copy(a.pos);a.g.rotation.y=a.face;a.update(dt,fly?0:sp);},
   off:(f,h)=>showFarmOff(h)});
 
+// 🪽 a friend flying on a dragon, winged unicorn or pterodactyl: work out how she climbs, dives and turns from where they are
+function showFly(f,d,dt,h){const a=h.a,A=f.a;if(!isFlyer(a))return false;
+  const st=h.fs||(h.fs={t:0,ph:0,flapW:1,glideT:0,flapsLeft:4,open:0,tuck:0,pitch:0,bank:0,lift:0,mode:'',sp:0,vy:0,turn:0,py:f.pos.y,yaw:f.cur??f.face});
+  const yaw=f.cur??f.face;st.t+=dt;
+  if(d.fly){if(!st.mode)st.t=0;st.mode=st.t<.3&&f.pos.y-groundAt(f.pos.x,f.pos.z)<.05?'crouch':'fly';}else st.mode='';
+  const vy=dt>0?(f.pos.y-st.py)/dt:0;st.py=f.pos.y;st.vy+=(vy-st.vy)*Math.min(1,dt*4);
+  const tr=dt>0?angDamp(0,yaw-st.yaw,1)/dt:0;st.yaw=yaw;st.turn+=(tr-st.turn)*Math.min(1,dt*4);st.sp=(f.sp||0)/.4;
+  if(!d.fly&&st.open<.02&&st.tuck<.02&&Math.abs(st.pitch)<.01&&Math.abs(st.bank)<.01){if(h.fs){h.fs=null;a.g.rotation.set(0,a.g.rotation.y,0);a.wingOpen=0;A.g.rotation.set(0,A.g.rotation.y,0);}return false;}
+  a.update(dt,d.fly?0:(f.sp||0)*.55);flyPose(a,A,f.pos,yaw,st,dt,false);return true;}
+
 // 🏇 riding a barn animal (horse, pony, unicorn, cow...): your friend sits up on its back
 SHOW.push({k:'ride',
-  mine(){const a=barnRide;return a&&BS.own[a.k]?{k:a.k,n:BS.own[a.k].n}:null;},
+  mine(){const a=barnRide;return a&&BS.own[a.k]?{k:a.k,n:BS.own[a.k].n,fly:FLY.on?1:0}:null;},
   on(f,d){const a=showFarm(d.k,d.n);return a?{a}:null;},
   step(f,d,dt,h){const a=h&&h.a;if(!a)return;const A=f.a;
     if(!A.emote||A.emote.id!=='ride')A.play('ride');
+    if(showFly(f,d,dt,h))return;// 🪽 up in the air on a flying ride (24h-flying.js)
     a.pos.copy(f.pos);a.g.position.copy(a.pos);a.g.rotation.y=f.cur??f.face;a.update(dt,(f.sp||0)*.55);
     A.g.position.y=f.pos.y+a.F.ride-.42;},
   off(f,h){showFarmOff(h);const A=f.a;if(A&&A.emote&&A.emote.id==='ride')A.emote=null;}});

@@ -3198,7 +3198,8 @@ canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercanc
 canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 $('#jump').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
-function jump(){if(closetOpen)return;if(player.onGround){player.vy=6.2;player.onGround=false;sfx('jump');}}
+function jump(){if(closetOpen)return;if(flyJump())return;// on a flying ride: take off (24h-flying.js)
+  if(player.onGround){player.vy=6.2;player.onGround=false;sfx('jump');}}
 let hintFaded=false;function fadeHint(){if(hintFaded)return;hintFaded=true;setTimeout(()=>$('#hint').style.opacity=0,2500);setTimeout(()=>$('#hint').style.display='none',3200);}
 if(!isTouch)$('#hint').innerHTML='Walk with W A S D or the arrow keys.<br>Drag to look around. Space to jump.';
 
@@ -3373,7 +3374,7 @@ anims.push((t,dt)=>{if(!started||!av)return;
 
 /* ---------- 🐎 call your horse (or any ride you own) from anywhere ---------- */
 // the animal that comes when you call: the last one you rode, or else your horse, unicorn, pony... (riding: 24d-barn.js)
-const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','nova'];
+const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','ptero','nova'];
 function myRides(){const own=(SAVE.barn&&SAVE.barn.own)||{};return Object.keys(own).filter(k=>FK[k]&&FK[k].ride).sort((a,b)=>(STEED_ORDER.indexOf(a)+99)%99-(STEED_ORDER.indexOf(b)+99)%99);}
 function mySteed(){const r=myRides();return r.includes(SAVE.barn&&SAVE.barn.steed)?SAVE.barn.steed:r[0]||null;}
 // (the moves wheel is first drawn before the barn file has loaded, so skip the horse button until it has)
@@ -5751,8 +5752,9 @@ const FARM=[
   // They live at the barn like the others, and you call them from anywhere with the ride button (24g-mounts.js).
   {k:'kitty',e:'🐱',n:'Big fluffy cat',nm:'Marshmallow',mount:10,ride:1.08,about:'A giant, super fluffy cat you can ride! She purrs when you hug her.',food:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],say:['Purrrrr 💕','Mrrrow! 🐱','*big fluffy stretch*']},
   {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
-  {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,ride:1.2,about:'A lavender unicorn with feathery wings that flap when you gallop.',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
-  {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars.',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
+  {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,fly:1,ride:1.2,about:'A lavender unicorn with feathery wings. Ride her and tap 🪽 Fly to soar over the treetops!',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
+  {k:'ptero',e:'🦅',n:'Pterodactyl',nm:'Sunny',mount:14,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
+  {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
 const ZOOA=[
@@ -6089,6 +6091,36 @@ class FarmAnimal{
       const tip=M(new THREE.OctahedronGeometry(.11),star,.32,-.36,-1.4,tail,false,false);tip.scale.set(.6,1,1.2);
       this.sparkle=true;
       Object.assign(o,{neck,head,tail,nTilt:.6,size:1.3,h:by+1.05,rad:.85,dustR:[r,r,len*.8]});}
+    // 🦅 a pterodactyl: long beak, a big orange crest and huge leathery wings that fold up along her sides on the ground
+    if(k==='ptero'){const r=.3,len=.5,leg=.5,by=leg+r*.55,skin=phys('#5fb8a8',{roughness:.55,sheen:.5,sheenColor:new THREE.Color('#d8fff4')}),belly=fm('#fff1d6'),
+        crestM=fShiny('#ff7a45',{roughness:.35}),beakM=fShiny('#ffcf6b',{roughness:.35}),
+        memM=phys('#ffa070',{roughness:.6,side:THREE.DoubleSide,transparent:true,opacity:.93,sheen:.4,sheenColor:new THREE.Color('#ffe0c8')}),boneM=fm('#4a9e90');
+      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(1,.92,1);
+      M(sph(r*.85,14,10),belly,0,-r*.28,len*.12,body).scale.set(.92,.72,1.25);
+      // a little fuzz along her back (real pterosaurs were fuzzy!)
+      for(let i=0;i<9;i++)M(sph(r*.13,8,6),boneM,0,r*.9,len*.5-i*len*.14,body,false,false).scale.set(1,.5,1.4);
+      fLegs(this,g,r*.62,len*.4,leg+.05,leg+.05,.06,skin,crestM);
+      // the wings: a leathery skin stretched from the long wing finger back to the body, with a front-edge bone and little claws
+      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.72,r*.5,len*.28);body.add(w);
+        const sh=new THREE.Shape();sh.moveTo(0,-.12);sh.lineTo(.75,-.1);sh.lineTo(1.65,.02);sh.quadraticCurveTo(1.3,.2,1.05,.3);sh.quadraticCurveTo(.75,.36,.6,.52);
+        sh.quadraticCurveTo(.3,.6,0,.62);sh.lineTo(0,-.12);
+        const m=M(new THREE.ShapeGeometry(sh,8),memM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.x=sx;
+        taperTube([fV(0,0,.1),fV(sx*.75,.01,.1),fV(sx*1.65,0,-.02)],q=>.05-.032*q,boneM,w,16,8);
+        for(const v of [.3,.8])taperTube([fV(sx*v*1.2,0,.08),fV(sx*v*1.05,0,-.5*v-.1)],q=>.014,boneM,w,6,5);// stiff fibers in the skin
+        for(let c=0;c<3;c++)M(new THREE.ConeGeometry(.018,.08,6),beakM,sx*.72,-.02,.15+c*.03,w).rotation.x=Math.PI/2+.4;
+        this.wings.push({w,sx,fly:0,fold:1.25});}
+      const neck=new THREE.Group();neck.position.set(0,by+r*.35,len/2+r*.45);neck.rotation.x=.45;g.add(neck);
+      taperTube([fV(0,0,0),fV(0,.28,.04),fV(0,.55,0)],q=>.13-.05*q,skin,neck,16,12);
+      const head=new THREE.Group();head.position.set(0,.58,0);head.rotation.x=-.45+.3;neck.add(head);const H=.2;
+      M(sph(H,22,16),skin,0,0,0,head).scale.set(.85,.9,1.15);
+      const beak=M(new THREE.ConeGeometry(H*.42,H*3.4,18),beakM,0,-H*.18,H*2.4,head);beak.rotation.x=Math.PI/2;beak.scale.set(.75,1,1);
+      M(new THREE.ConeGeometry(H*.36,H*2.4,16),beakM,0,-H*.36,H*1.9,head).rotation.x=Math.PI/2+.06;// the lower jaw
+      const crest=new THREE.Shape();crest.moveTo(0,0);crest.quadraticCurveTo(H*1.4,H*.9,H*2.6,H*1.25);crest.quadraticCurveTo(H*1.6,H*.15,H*.4,-H*.25);crest.lineTo(0,0);
+      const cm=M(new THREE.ExtrudeGeometry(crest,{depth:H*.08,bevelEnabled:true,bevelSize:H*.05,bevelThickness:H*.04,bevelSegments:2,curveSegments:10}),crestM,-H*.04,H*.45,H*.2,head);cm.rotation.y=-Math.PI/2;
+      fEyes(this,head,H,.5,.2,.62,.55,.26,'#7a3a12');fBlush(head,H,.62,-.15,.7);
+      const tail=new THREE.Group();tail.position.set(0,by+.02,-(len/2+r*.75));g.add(tail);taperTube([fV(0,0,0),fV(0,-.04,-.18),fV(0,-.04,-.34)],q=>.07*(1-q*.8),skin,tail,12,8);
+      this.sparkle=false;
+      Object.assign(o,{neck,head,tail,nTilt:.45,size:1.15,h:by+1.05,rad:.7,dustR:[r,r,len*.8]});}
     return o;}
   setTag(n){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();this.tag=null;}if(!n)return;
     this.tag=sprite(labelTex('💖 '+n,{size:58,fg:'#d6453d',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);this.tag.position.y=this.h+.15;this.g.add(this.tag);}
@@ -6102,7 +6134,7 @@ class FarmAnimal{
     if(this.biped&&this.neck&&run>.05)this.neck.position.z=(this.nz0??(this.nz0=this.neck.position.z))+Math.sin(this.phase*2)*.02;
     if(this.tail)this.tail.rotation.y=Math.sin(t*(this.happy>0?9:2.2))*(this.happy>0?.5:.18);
     if(this.F.wingsRun)this.flying=run>.3;// winged rides flap hard while you gallop
-    if(this.wings)for(const w of this.wings)w.w.rotation.z=w.fly?w.sx*(-.2+Math.sin(t*(this.flying?14:6))*(this.flying?.6:.25)):w.sx*(this.happy>0||this.y>.02?.5+Math.sin(t*22)*.5:.05);
+    if(this.wings)for(const w of this.wings){if(w.fold){const op=this.wingOpen||0;w.w.rotation.y=w.sx*w.fold*(1-op);w.w.scale.x=.5+.5*op;}w.w.rotation.z=w.fly?w.sx*(-.2+Math.sin(t*(this.flying?14:6))*(this.flying?.6:.25)):w.sx*(this.happy>0||this.y>.02?.5+Math.sin(t*22)*.5:.05);}
     if(this.head){this.wig=Math.max(0,this.wig-dt);this.head.rotation.z=Math.sin(t*14)*.18*this.wig;}
     this.happy=Math.max(0,this.happy-dt);
     this.blink-=dt;const bl=this.blink<0?Math.max(.1,Math.abs(this.blink+.07)/.07):1;if(this.blink<-.14)this.blink=2+Math.random()*4;this.eyes.forEach(e=>e.scale.y=bl);
@@ -6147,14 +6179,17 @@ function startRide(a){if(!a||!a.F.ride)return;closeBarn(true);if(BIKE.on)stopBik
   player.pos.set(a.pos.x,player.pos.y,a.pos.z);player.face=BZ.rot+a.face;cam.yaw=player.face+Math.PI;av.play('ride');
   $('#rideBtn').textContent=`${a.F.e} Hop off`;$('#rideBtn').style.display='block';did('ride',a.k);sfx('tada');a.speak(rnd(a.F.say));
   toast(`Ride ${BS.own[a.k].n} anywhere in town! Tap “Hop off” to get down 💨`);renderActions();}
-function stopRide(){const a=barnRide;if(!a)return;barnRide=null;a.ridden=false;a.y=0;a.vy=0;$('#rideBtn').style.display='none';if(av.emote&&av.emote.id==='ride')av.emote=null;
+function stopRide(force){const a=barnRide;if(!a)return;
+  if(FLY.on){if(!force){flyLand(true);return;}flyEnd(true);}// up in the air: land first (24h-flying.js)
+  flyStraighten(a);FLY.settle=0;FLY.open=FLY.tuck=0;barnRide=null;a.ridden=false;a.y=0;a.vy=0;$('#rideBtn').style.display='none';if(av.emote&&av.emote.id==='ride')av.emote=null;
   const P=player.pos,[lx,lz]=BZ.toLocal(P.x,P.z);
   if(paddockOk(lx,lz,a.rad*.7)){a.lx=lx;a.lz=lz;a.face=player.face-BZ.rot;const s=a.rad+.45;P.x+=Math.cos(player.face)*s;P.z-=Math.sin(player.face)*s;}
   else{burst(a.g.position.clone().add(new THREE.Vector3(0,a.h*.5,0)),'#ffd23f',30,2);const [x,z]=paddockSpot(a.rad);a.lx=x;a.lz=z;a.tgt=null;toast(`${BS.own[a.k].n} trotted home to the 🐴 Happy Barn 💖`);}
   placeFarm(a);renderActions();}
 $('#rideBtn').onclick=()=>{sfx('pop');stopRide();};
-function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started||handsBusy()){stopRide();return;}// off during sports, contests and other games
+function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started||handsBusy()){stopRide(true);return;}// off during sports, contests and other games
   if(!av.emote||av.emote.id!=='ride')av.play('ride');
+  if(flyRide(a,dt))return;// up in the air on a flying ride (24h-flying.js)
   a.pos.set(p.x,p.y,p.z);a.g.position.copy(a.pos);a.g.rotation.y=player.face;a.update(dt,player.speed*.55);
   // sit on the saddle: the avatar's 'ride' pose puts the hips at chair height, so lift everything up to the animal's back
   av.g.position.y=p.y+a.F.ride-.42;}
@@ -7364,6 +7399,181 @@ function closeRides(){$('#rides').classList.remove('show');}
 $('#rideList').addEventListener('click',e=>{const b=e.target.closest('[data-steed]');if(!b)return;closeRides();callSteed(b.dataset.steed);});
 $('#ridesClose').onclick=closeRides;
 $('#rides').onclick=e=>{if(e.target.id==='rides')closeRides();};
+// ---- src/24h-flying.js ----
+/* ================= 🪽 FLYING RIDES: take off and soar over the treetops =================
+   The rides with wings (FARM entries with fly:1 in 24d-barn.js: 🦄 Cloud the winged unicorn, 🦅 Sunny the pterodactyl
+   and 🐉 Nova the starlight dragon) can fly:
+   - While riding one, the JUMP button says 🪽 FLY. Tap it: she crouches, leaps and flaps up above the trees.
+   - In the air, steer with the joystick like walking. Hold ⬆️ to go higher and ⬇️ to go lower (Space / Shift on a keyboard).
+     Let go of the joystick and she slows down and hovers in place.
+   - 🛬 Land glides down to the nearest open patch of ground (never onto a roof or into a tree). "Hop off" in the air lands first.
+   - She stays over the island (a gentle turn back at the edge) and rises over buildings and trees instead of going through them.
+   How it looks: wing beats with a quick downstroke, flap-and-glide when cruising, legs tucked up, the body banks into turns,
+   tips nose-up when climbing and nose-down when diving, and bobs a little with each wing beat. The rider leans with her.
+   Friends online see it all: the 'ride' entry in 26c-friends-see.js sends fly:1 and uses flyPose() below. */
+const FLYK={// hz: wing beats a second, amp: how far the wings swing, glide: how much of the cruise is gliding, spd: top speed
+  pegacorn:{hz:2.2,amp:.6,base:.12,glide:.3,spd:12,tuckF:.9,tuckB:1.05},
+  ptero:{hz:1.3,amp:.5,base:.04,glide:.75,spd:13,tuckF:1.15,tuckB:1.3},
+  nova:{hz:1.55,amp:.58,base:.08,glide:.5,spd:12.5,tuckF:.85,tuckB:1.15}};
+const flyK=k=>FLYK[k]||FLYK.nova;
+const FLY_CRUISE=10,FLY_MAX=26,FLY_EDGE=R-4;// cruise height (the tallest trees are about 7.5), the ceiling, how far out you can go
+const FLY={on:false,mode:'',t:0,hd:0,sp:0,vy:0,tgt:0,turn:0,landAt:0,hopOff:false,spot:null,spotT:0,edgeT:0,lowT:0,
+  upBtn:false,downBtn:false,ph:0,flapW:1,glideT:0,flapsLeft:4,pitch:0,bank:0,tuck:0,open:0,lift:0,beatT:0,settle:0};
+const isFlyer=a=>!!(a&&a.F&&a.F.fly);
+
+/* ---------- what's below you: a height map of every building, tree and lamp on the island (made once) ---------- */
+const FG={o:Math.ceil(R+4),h:null};
+function flyGrid(){if(FG.h)return;const o=FG.o,n=o*2+1,h=new Float32Array(n*n);
+  const skip=new Set([av.g,...FRIENDS.map(f=>f.g),...PETS.map(p=>p.g),...Object.values(FA).map(a=>a.g),...STARS.map(s=>s.m)]);
+  const box=new THREE.Box3();scene.updateMatrixWorld(true);
+  const walk=ob=>{if(skip.has(ob))return;
+    if(ob.isMesh&&!ob.isInstancedMesh&&!ob.isSkinnedMesh&&ob.geometry){const gm=ob.geometry;if(!gm.boundingBox)gm.computeBoundingBox();box.copy(gm.boundingBox).applyMatrix4(ob.matrixWorld);
+      // skip the ground and sea (huge and flat), things floating up in the sky, and flat things on the ground
+      if(box.max.x-box.min.x<30&&box.max.z-box.min.z<30&&box.min.y<9&&box.max.y>.6){
+        const x0=Math.max(0,Math.floor(box.min.x)+o),x1=Math.min(n-1,Math.ceil(box.max.x)+o),z0=Math.max(0,Math.floor(box.min.z)+o),z1=Math.min(n-1,Math.ceil(box.max.z)+o);
+        for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){const i=z*n+x;if(h[i]<box.max.y)h[i]=box.max.y;}}}
+    for(const c of ob.children)walk(c);};
+  walk(scene);FG.h=h;}
+// the highest thing within about a wingspan of (x,z), or the ground
+function flyFloor(x,z,rr=1){const g=groundAt(x,z);if(!FG.h)return Math.max(g,7.6);const o=FG.o,n=o*2+1,cx=Math.round(x)+o,cz=Math.round(z)+o;let m=g;
+  for(let dz=-rr;dz<=rr;dz++)for(let dx=-rr;dx<=rr;dx++){const X=cx+dx,Z_=cz+dz;if(X<0||Z_<0||X>=n||Z_>=n)continue;const v=FG.h[Z_*n+X];if(v>m)m=v;}return m;}
+const flyOpen=(x,z)=>flyFloor(x,z,2)<groundAt(x,z)+.5&&!obs.some(o=>o.r>0&&Math.hypot(o.x-x,o.z-z)<o.r+1);
+// the nearest open patch of ground to land on
+function flyLandSpot(x,z){if(flyOpen(x,z))return [x,z];
+  for(let r=1.5;r<30;r+=1.5)for(let i=0;i<16;i++){const a=i/16*Math.PI*2+r,sx=x+Math.sin(a)*r,sz=z+Math.cos(a)*r;if(Math.hypot(sx,sz)<FLY_EDGE-1&&flyOpen(sx,sz))return [sx,sz];}
+  return [x,z];}
+
+/* ---------- take off, land ---------- */
+function flyJump(){const a=barnRide;if(!isFlyer(a))return false;// a jump while on a flying ride is a take-off
+  if(!FLY.on&&player.onGround&&performance.now()-FLY.landAt>600)flyStart();return true;}
+function flyStart(){const a=barnRide;if(!isFlyer(a)||FLY.on)return;flyGrid();
+  Object.assign(FLY,{on:true,mode:'crouch',t:0,hd:player.face,sp:Math.min(player.speed,6),vy:0,turn:0,hopOff:false,spot:null,glideT:0,flapsLeft:4,flapW:1,settle:0,lowT:0});
+  player.onGround=false;player.vy=0;sfx('jump');a.speak(rnd(a.F.say));did('fly',a.k);
+  if(!SAVE.flyTip){SAVE.flyTip=1;persist();setTimeout(()=>toast(isTouch?'Steer with the joystick. Hold ⬆️ to go higher, ⬇️ to go lower, and tap 🛬 Land to come down!':'Steer with W A S D. Hold Space to go higher, Shift to go lower, and press L to land!'),900);}}
+function flyLand(hopOff){if(!FLY.on)return;if(FLY.mode!=='land'){FLY.mode='land';FLY.spot=null;FLY.spotT=0;}FLY.hopOff=FLY.hopOff||!!hopOff;}
+// down on the ground again (snap: right now, e.g. when a game or the closet opens while you're up in the air)
+function flyEnd(snap){if(!FLY.on)return;const p=player.pos;FLY.on=false;FLY.mode='';FLY.landAt=performance.now();
+  if(snap){const [x,z]=flyLandSpot(p.x,p.z);p.x=x;p.z=z;FLY.tuck=0;FLY.open=0;FLY.pitch=FLY.bank=0;}
+  p.y=groundAt(p.x,p.z);collide(p);player.vy=0;player.onGround=true;player.face=FLY.hd;FLY.settle=snap?0:.6;
+  if(!snap&&barnRide){burst(new THREE.Vector3(p.x,p.y+.05,p.z),'#ffffff',16,1.4);tone(150,.18,'sine',.08,0,90);}
+  if(snap)flyStraighten(barnRide);
+  const hop=FLY.hopOff;FLY.hopOff=false;if(hop&&barnRide)stopRide();}
+function flyStraighten(a){if(a){a.g.rotation.set(0,a.g.rotation.y,0);a.wingOpen=0;}av.g.rotation.set(0,av.g.rotation.y,0);}
+
+/* ---------- every frame while flying (called from the game loop instead of walking) ---------- */
+function flyStep(dt,ix,iy,mag){flyHud();if(!FLY.on)return false;const a=barnRide,p=player.pos;
+  if(!isFlyer(a)){FLY.on=false;player.onGround=false;return false;}
+  FLY.t+=dt;const K=flyK(a.k);
+  const up=FLY.upBtn||keys.Space,down=FLY.downBtn||keys.ShiftLeft||keys.ShiftRight||keys.KeyC;
+  if(keys.KeyL&&FLY.mode!=='land'&&FLY.mode!=='crouch')flyLand(false);
+  // which way you want to go: the joystick, the same as walking (or toward the landing spot)
+  let want=FLY.hd,wantSp=0;
+  if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;want=Math.atan2((fx*-iy+rx*ix)/n,(fz*-iy+rz*ix)/n);wantSp=K.spd*mag;}
+  if(FLY.mode==='crouch'||FLY.mode==='up')wantSp=Math.max(wantSp,2.5);// a take-off always carries you forward a little
+  // landing: pick an open patch a little ahead (once), glide over to it and come down on it
+  let spotD=99,toX=0,toZ=0;
+  if(FLY.mode==='land'){if(mag>.08)FLY.spot=null;// steering while landing: a new spot is picked where you let go
+    else{if(!FLY.spot)FLY.spot=flyLandSpot(p.x+Math.sin(FLY.hd)*FLY.sp*.7,p.z+Math.cos(FLY.hd)*FLY.sp*.7);
+      const dx=FLY.spot[0]-p.x,dz=FLY.spot[1]-p.z;spotD=Math.hypot(dx,dz);if(spotD>.05){toX=dx/spotD;toZ=dz/spotD;}
+      if(spotD>.3){want=Math.atan2(dx,dz);wantSp=Math.min(7,spotD*.8+.6);}}}
+  // stay over the island: past the edge, turn gently back toward the middle
+  const rr=Math.hypot(p.x,p.z);if(rr>FLY_EDGE-6){const inw=Math.atan2(-p.x,-p.z),k=Math.min(1,(rr-(FLY_EDGE-6))/6);
+    if(Math.abs(angDamp(0,inw-FLY.hd,1))>Math.PI/2){want=angDamp(want,inw,k);if(wantSp<4)wantSp=4;}
+    if(rr>FLY_EDGE-1&&performance.now()-FLY.edgeT>6000){FLY.edgeT=performance.now();toast('🌊 That\'s the edge of the island! Turning back ✨');}}
+  // turn like a real flyer: a limited turn rate makes smooth curves, and speed builds up and dies down gently
+  const dTurn=angDamp(0,want-FLY.hd,1),rate=(FLY.sp<3?3.4:2.3)*dt,step=Math.max(-rate,Math.min(rate,dTurn));
+  if(wantSp>0){FLY.hd+=step;FLY.turn+=(step/dt-FLY.turn)*Math.min(1,dt*5);}else FLY.turn*=Math.max(0,1-dt*4);
+  FLY.sp+=(wantSp*(Math.abs(dTurn)>2?.6:1)-FLY.sp)*Math.min(1,dt*(wantSp>FLY.sp?1.3:.8));
+  let vx=Math.sin(FLY.hd)*FLY.sp,vz=Math.cos(FLY.hd)*FLY.sp;
+  // close to the landing spot: slow right down and drift onto it (no overshooting and circling back)
+  if(spotD<3.5){FLY.sp=Math.min(FLY.sp,spotD*1.6+.1);const k=Math.min(1,FLY.sp);vx=toX*FLY.sp*k+vx*(1-k)*.3;vz=toZ*FLY.sp*k+vz*(1-k)*.3;}
+  // over buildings and trees: rise over them before you get there; never go through them
+  let nx=p.x+vx*dt,nz=p.z+vz*dt;const nr=Math.hypot(nx,nz);if(nr>FLY_EDGE){nx*=FLY_EDGE/nr;nz*=FLY_EDGE/nr;}
+  const below=flyFloor(nx,nz),ahead=Math.max(below,flyFloor(nx+vx*.8,nz+vz*.8),flyFloor(nx+vx*.35,nz+vz*.35));
+  if(FLY.mode==='crouch'||p.y>=below-.15){p.x=nx;p.z=nz;}else{FLY.sp*=.6;}// a wall in front of you: stop and climb
+  const g=groundAt(p.x,p.z),clear=ahead>g+.1?ahead+.45:g,under=below>g+.1?below+.45:g;
+  // up and down
+  if(FLY.mode==='crouch'){FLY.vy=0;if(FLY.t>.32){FLY.mode='up';FLY.vy=4.6;FLY.ph=Math.PI*.5;sfx('jump');}}
+  else{
+    if(FLY.mode==='up'){FLY.tgt=Math.max(g+FLY_CRUISE,clear+2.5);if(p.y>FLY.tgt-1.2)FLY.mode='fly';}
+    else if(FLY.mode==='fly'){if(up)FLY.tgt+=5.5*dt;if(down)FLY.tgt-=5.5*dt;FLY.tgt=Math.min(FLY_MAX,Math.max(clear+.15,FLY.tgt,g));if(!up)FLY.tgt=Math.max(FLY.tgt,clear+.15);
+      // coming all the way down with ⬇️ onto open ground lands you
+      if(down&&p.y<g+.5&&clear<=g+.01){FLY.mode='land';FLY.spot=[p.x,p.z];}}
+    if(FLY.mode==='land'){// a gentle slope down to the spot, staying above trees and roofs on the way
+      FLY.tgt=Math.max(spotD<1.2?g:g+(spotD-1.2)*.6,spotD>3?clear:under);if(FLY.tgt>p.y&&FLY.tgt<p.y+.5)FLY.tgt=p.y;}
+    const dy=FLY.tgt-p.y,landing=FLY.mode==='land'&&FLY.tgt===g,hg=p.y-g;
+    let wantVy=Math.max(-4.5,Math.min(5.5,dy*1.6));
+    if(landing)wantVy=-Math.max(.45,Math.min(3.2,hg*1.3));// flare: slower and slower as the ground comes up
+    FLY.vy+=(wantVy-FLY.vy)*Math.min(1,dt*(FLY.mode==='up'?2:3));}
+  // something tall coming up: climb over it smoothly
+  if(p.y<clear&&FLY.mode!=='crouch'){const need=Math.min(6.5,(clear-p.y)*3+.5);if(FLY.vy<need)FLY.vy+=(need-FLY.vy)*Math.min(1,dt*6);}
+  p.y+=FLY.vy*dt;
+  if(p.y<g){p.y=g;}
+  if(FLY.mode==='land'&&FLY.tgt===g&&p.y<=g+.03){flyEnd(false);return true;}
+  // in the air for a long time below the treetops (stuck under a roof?): pop back up
+  FLY.lowT=p.y<below-.2?FLY.lowT+dt:0;if(FLY.lowT>1.5){p.y=below+.5;FLY.lowT=0;}
+  player.face=FLY.hd;player.speed=FLY.sp*.4;player.onGround=false;player.vy=0;
+  flyHud();return true;}
+
+/* ---------- how she looks in the air: wings, tucked legs, banking, bobbing (for you and for friends online) ---------- */
+// st: FLY for you, or a small object per friend. It needs sp, vy, turn, mode and keeps its own wing beat, tilt and tuck.
+function flyPose(a,A,P,yaw,st,dt,me){const K=flyK(a.k),air=st.mode&&st.mode!=='crouch';
+  const climb=st.vy>.6||st.mode==='up',hover=st.sp<3.5,diving=st.vy<-1.2&&!hover;
+  // flap hard to climb, take off and hover; flap-and-glide when cruising; glide when diving
+  let wantFlap=1;
+  if(!air)wantFlap=st.mode==='crouch'?0:1;
+  else if(!climb&&!hover){if(diving)wantFlap=0;else{st.glideT-=dt;if(st.glideT<=0){if(st.flapsLeft>0)wantFlap=1;else{st.glideT=1.2+K.glide*2.2;st.flapsLeft=Math.max(2,Math.round(5-K.glide*4));}}else wantFlap=0;}}
+  if(climb||hover)st.glideT=0;
+  st.flapW+=(wantFlap-st.flapW)*Math.min(1,dt*(wantFlap?5:2.5));
+  const effort=st.mode==='up'?1.35:climb?1.2:hover?1.1:1,prev=st.ph;
+  st.ph+=dt*Math.PI*2*K.hz*effort*(1-.35*Math.cos(st.ph));// the downstroke is quicker than the upstroke, like real wings
+  if(Math.floor((prev+Math.PI/2)/(Math.PI*2))!==Math.floor((st.ph+Math.PI/2)/(Math.PI*2))){// top of a wing beat: a downstroke starts
+    if(st.flapsLeft>0&&wantFlap&&!climb&&!hover)st.flapsLeft--;
+    if(me&&st.flapW>.5&&air)tone(120+Math.random()*20,.16,'sine',.05,0,70);}
+  const s=Math.sin(st.ph),crouch=st.mode==='crouch'?Math.min(1,st.t/.3):0;
+  const flapAng=K.base+K.amp*s*(climb?1.15:1),glideAng=K.base*.5+.06+Math.sin(st.t*2.7)*.025;
+  let ang=glideAng+(flapAng-glideAng)*st.flapW;if(crouch)ang=K.base+.85*crouch;// wings up high, ready for the first big beat
+  st.open+=((air||crouch?1:0)-st.open)*Math.min(1,dt*4);a.wingOpen=st.open;
+  if(a.wings)for(const w of a.wings)w.w.rotation.z=w.sx*ang;
+  // legs tuck up once you're off the ground, and come down again to land
+  const gy=groundAt(P.x,P.z),hgt=P.y-gy,tuckWant=air?Math.max(0,Math.min(1,(hgt-.25)/1.1)):0;
+  st.tuck+=(tuckWant-st.tuck)*Math.min(1,dt*4);
+  if(st.tuck>.001)a.legs.forEach((l,i)=>{l.g.rotation.x+=st.tuck*(i<2?K.tuckF:K.tuckB);});
+  a.graze=.3*st.tuck;// neck stretched forward
+  // tilt: nose up when climbing (and to brake for a landing), nose down in a dive; lean into turns
+  const brake=st.mode==='land'&&hgt<2.5?.25*(1-hgt/2.5):0;
+  // (coming straight down slowly is a hover, not a dive, so she stays level and leans back a little to brake)
+  const tip=Math.atan2(st.vy,Math.max(3,st.sp))*.75*(st.vy<0?Math.min(1,st.sp/6):1);
+  const wantPitch=air?Math.max(-.4,Math.min(.38,tip+brake+(st.mode==='land'&&st.sp<3?.12:0))):-.12*crouch;
+  const wantBank=air?Math.max(-.55,Math.min(.55,st.turn*Math.min(st.sp,12)*.075)):0;
+  st.pitch+=(wantPitch-st.pitch)*Math.min(1,dt*3);st.bank+=(wantBank-st.bank)*Math.min(1,dt*3.5);
+  // bob a little with each wing beat (up on the downstroke), and squat before the leap
+  st.lift=air?-.06*s*st.flapW*(hover?1.4:1):-.12*crouch;
+  // put it all together, turning around the saddle so you stay sitting on her back
+  const ride=a.F.ride,e=a.g.rotation;e.order='YXZ';e.set(-st.pitch,yaw,-st.bank);
+  const sx=P.x,sy=P.y+ride+st.lift,sz=P.z,v=tmpFly.set(0,-ride,0).applyEuler(e);
+  a.pos.set(sx+v.x,sy+v.y,sz+v.z);a.g.position.copy(a.pos);
+  if(A){const r=A.g.rotation;r.order='YXZ';r.set(-st.pitch,yaw,-st.bank);v.set(0,-.42,0).applyEuler(r);A.g.position.set(sx+v.x,sy+v.y,sz+v.z);}}
+const tmpFly=new THREE.Vector3();
+
+// your ride, every frame (from rideStep in 24d-barn.js); false = not flying, ride normally
+function flyRide(a,dt){if(!isFlyer(a))return false;
+  if(!FLY.on&&FLY.settle<=0&&!FLY.open&&!FLY.tuck){if(a.wingOpen){a.wingOpen=0;}return false;}
+  if(!FLY.on){FLY.settle-=dt;FLY.mode='';FLY.sp=player.speed;FLY.vy=0;FLY.turn=0;if(FLY.settle<=0&&FLY.open<.02&&FLY.tuck<.02){FLY.open=FLY.tuck=0;flyStraighten(a);flyHud();return false;}}
+  a.update(dt,FLY.on?0:player.speed*.55);
+  flyPose(a,av,player.pos,player.face,FLY,dt,true);return true;}
+
+/* ---------- buttons ---------- */
+let flyHudS='';
+function flyHud(){const a=barnRide,fl=isFlyer(a),s=!fl?'':FLY.on?(FLY.mode==='land'?'L':'F'):'G';if(s===flyHudS)return;flyHudS=s;
+  $('#jump').textContent=s==='G'?'🪽 FLY':s?'⬆️ UP':'JUMP';$('#jump').classList.toggle('fly',!!s);
+  $('#flyDown').style.display=s==='F'||s==='L'?'grid':'none';document.body.classList.toggle('flying',s==='F'||s==='L');// the moves wheel steps aside for ⬇️
+  if(a)$('#rideBtn').textContent=s==='F'?'🛬 Land':s==='L'?'🛬 Landing…':`${a.F.e} Hop off`;}
+$('#rideBtn').onclick=()=>{sfx('pop');if(FLY.on){flyLand(false);return;}stopRide();};
+{const hold=(el,k)=>{el.addEventListener('pointerdown',e=>{e.preventDefault();FLY[k]=true;});for(const t of ['pointerup','pointercancel','pointerleave'])el.addEventListener(t,()=>{FLY[k]=false;});};
+  hold($('#jump'),'upBtn');hold($('#flyDown'),'downBtn');}
+// the camera backs off a little when you're high up, so you can see the island below
+function flyCamBack(){const a=barnRide;if(!FLY.on||!isFlyer(a))return 0;const p=player.pos;return 2.2*Math.max(0,Math.min(1,(p.y-groundAt(p.x,p.z))/8));}
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -7419,6 +7629,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
+  if(!flyStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
     const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
@@ -7429,6 +7640,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   const gy=groundAt(p.x,p.z);player.vy-=18*dt;p.y+=player.vy*dt;
   if(p.y<=gy){if(!player.onGround&&player.vy<-3)burst(new THREE.Vector3(p.x,gy+.05,p.z),'#ffffff',10,1);p.y=gy;player.vy=0;player.onGround=true;}else if(p.y>gy+.05)player.onGround=false;
   if(p.y<gy+.3&&player.vy<=0&&!player.onGround){p.y=Math.max(p.y,gy);}
+  }
   if(ct.on)contestStep(dt);
   if(glamOpen)AG.chair.rotation.y=player.face-AG.rot+Math.PI;
   av.g.position.copy(p);av.tag.visible=!closetOpen;av.update(dt,player.speed,!player.onGround);av.g.rotation.y=player.face+(av.spinY||0);
@@ -7465,7 +7677,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   const playMode=!closetOpen;
   const ZM={eyes:[.012,.3],lips:[-.058,.26],face:[-.01,.55]}[closetOpen?czoom:'']||null;
   if(ZM)player.face=angDamp(player.face,cam.closetYaw,Math.min(1,dt*8));
-  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist:ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
+  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist+flyCamBack():ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
   if(!started){cam.yaw+=dt*.12;}
   cam.cy=angDamp(cam.cy,tYaw,Math.min(1,dt*(playMode?14:6)));cam.cp+=(tPitch-cam.cp)*Math.min(1,dt*6);cam.cd+=(tDist-cam.cd)*Math.min(1,dt*5);
   const want=ZM?av.head.localToWorld(tmpV.set(0,ZM[0],.1)):tmpV.set(p.x,p.y+(playMode?1.15:.82),p.z);
@@ -7669,7 +7881,7 @@ onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('ta
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
   sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
-Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
+Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
 // ---- src/26b-portrait.js ----
 /* ================= PORTRAITS FOR THE 2D STUDIO ================= */
 // The 2D studio's top-left picture can be "my 3D character" or "my pet". Whenever your look (or your pet's outfit)
@@ -7757,12 +7969,23 @@ SHOW.push({k:'pal',
     a.flying=fly;a.graze=0;a.g.position.copy(a.pos);a.g.rotation.y=a.face;a.update(dt,fly?0:sp);},
   off:(f,h)=>showFarmOff(h)});
 
+// 🪽 a friend flying on a dragon, winged unicorn or pterodactyl: work out how she climbs, dives and turns from where they are
+function showFly(f,d,dt,h){const a=h.a,A=f.a;if(!isFlyer(a))return false;
+  const st=h.fs||(h.fs={t:0,ph:0,flapW:1,glideT:0,flapsLeft:4,open:0,tuck:0,pitch:0,bank:0,lift:0,mode:'',sp:0,vy:0,turn:0,py:f.pos.y,yaw:f.cur??f.face});
+  const yaw=f.cur??f.face;st.t+=dt;
+  if(d.fly){if(!st.mode)st.t=0;st.mode=st.t<.3&&f.pos.y-groundAt(f.pos.x,f.pos.z)<.05?'crouch':'fly';}else st.mode='';
+  const vy=dt>0?(f.pos.y-st.py)/dt:0;st.py=f.pos.y;st.vy+=(vy-st.vy)*Math.min(1,dt*4);
+  const tr=dt>0?angDamp(0,yaw-st.yaw,1)/dt:0;st.yaw=yaw;st.turn+=(tr-st.turn)*Math.min(1,dt*4);st.sp=(f.sp||0)/.4;
+  if(!d.fly&&st.open<.02&&st.tuck<.02&&Math.abs(st.pitch)<.01&&Math.abs(st.bank)<.01){if(h.fs){h.fs=null;a.g.rotation.set(0,a.g.rotation.y,0);a.wingOpen=0;A.g.rotation.set(0,A.g.rotation.y,0);}return false;}
+  a.update(dt,d.fly?0:(f.sp||0)*.55);flyPose(a,A,f.pos,yaw,st,dt,false);return true;}
+
 // 🏇 riding a barn animal (horse, pony, unicorn, cow...): your friend sits up on its back
 SHOW.push({k:'ride',
-  mine(){const a=barnRide;return a&&BS.own[a.k]?{k:a.k,n:BS.own[a.k].n}:null;},
+  mine(){const a=barnRide;return a&&BS.own[a.k]?{k:a.k,n:BS.own[a.k].n,fly:FLY.on?1:0}:null;},
   on(f,d){const a=showFarm(d.k,d.n);return a?{a}:null;},
   step(f,d,dt,h){const a=h&&h.a;if(!a)return;const A=f.a;
     if(!A.emote||A.emote.id!=='ride')A.play('ride');
+    if(showFly(f,d,dt,h))return;// 🪽 up in the air on a flying ride (24h-flying.js)
     a.pos.copy(f.pos);a.g.position.copy(a.pos);a.g.rotation.y=f.cur??f.face;a.update(dt,(f.sp||0)*.55);
     A.g.position.y=f.pos.y+a.F.ride-.42;},
   off(f,h){showFarmOff(h);const A=f.a;if(A&&A.emote&&A.emote.id==='ride')A.emote=null;}});

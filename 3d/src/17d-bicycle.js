@@ -87,7 +87,7 @@ anims.push((t,dt)=>{if(!started||!av)return;
 
 /* ---------- 🐎 call your horse (or any ride you own) from anywhere ---------- */
 // the animal that comes when you call: the last one you rode, or else your horse, unicorn, pony... (riding: 24d-barn.js)
-const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','nova'];
+const STEED_ORDER=['horse','unicorn','pony','donkey','cow','trike','trex','longneck','kitty','crest','pegacorn','ptero','nova'];
 function myRides(){const own=(SAVE.barn&&SAVE.barn.own)||{};return Object.keys(own).filter(k=>FK[k]&&FK[k].ride).sort((a,b)=>(STEED_ORDER.indexOf(a)+99)%99-(STEED_ORDER.indexOf(b)+99)%99);}
 function mySteed(){const r=myRides();return r.includes(SAVE.barn&&SAVE.barn.steed)?SAVE.barn.steed:r[0]||null;}
 // (the moves wheel is first drawn before the barn file has loaded, so skip the horse button until it has)
