@@ -8,7 +8,7 @@ const tagColor=L=>isGuy(L)?'#2f7be5':'#ff4d8d';
 
 const GUY_HAIRS=[['crop','💇‍♂️','Crew cut'],['buzz','🪒','Buzz cut'],['quiff','😎','Swoop'],['sidepart','👔','Side part'],['curltop','🌀','Curly top'],['spiky','⚡','Spiky'],['flow','🏄','Surfer flow'],['manbun','🥷','Man bun'],['afro','☁️','Afro']];
 const GUY_OUTFITS=[['suit','🤵','Sharp suit','#1f2a44'],['suit2','💼','Everyday suit','#6b7280'],['tux','🎩','Tuxedo','#1a1a1a'],['tracksuit','🏃','Tracksuit','#d62839'],['sweatsuit','🛋️','Sweatsuit','#8a8f99'],['bballuni','🏀','Basketball uniform','#4f2d7f'],['coveralls','🔧','Mechanic coveralls','#2f4a7a']];
-const GUY_TOPS=[['gtee','👕','T-shirt','#4fb6ff'],['graphictee','⚡','Graphic tee','#2d2d3a'],['polo','⛳','Polo shirt','#2e9e4f'],['buttonup','👔','Button-up shirt','#cfe3ff'],['flannelover','🍁','Flannel over tee','#c0392b'],
+const GUY_TOPS=[['teamtee','🏆','Team shirt','#2f6fd6'],['gtee','👕','T-shirt','#4fb6ff'],['graphictee','⚡','Graphic tee','#2d2d3a'],['polo','⛳','Polo shirt','#2e9e4f'],['buttonup','👔','Button-up shirt','#cfe3ff'],['flannelover','🍁','Flannel over tee','#c0392b'],
   ['crewneck','🧶','Sweatshirt','#8a8f99'],['ghoodie','🧥','Hoodie','#2d2d3a'],['ziphoodie','🤐','Zip hoodie','#3a5bd9'],['quarterzip','⛷️','Quarter-zip','#1f2a44'],['puffer','❄️','Puffer jacket','#2d2d3a'],
   ['varsity','🏈','Varsity jacket','#d62839'],['jacket','🧥','Jean jacket','#5b8fd6'],['jersey','🏀','Jersey','#4fb6ff'],['tank','🎽','Tank top','#ffffff']];
 const GUY_BOTTOMS=[['khakis','👖','Khakis','#c8b28a'],['slimjeans','👖','Tight jeans','#3a5bd9'],['baggyjeans','👖','Baggy jeans','#6f9be0'],['cargoshorts','🩳','Cargo shorts','#8a7a52'],['gymshorts','🏃','Gym shorts','#2d2d3a'],
@@ -28,10 +28,14 @@ const hairsOf=L=>isGuy(L)?GUY_HAIRS.concat(BCUTS.filter(c=>(SAVE.cuts||{})[c[0]]
 const tabsOf=()=>isGuy(SAVE.look)?GUY_TABS:TABS;
 const LOOK_ALL=a=>a.concat(...Object.values(GUY_CAT));
 const defaultGuyLook=(from)=>({body:'guy',style:(from&&from.style)||'glam',skin:(from&&from.skin)||'#f7cfae',eyes:(from&&from.eyes)||'#6b4a2b',hair:{id:'crop',c:'#4a2c1a'},
-  top:{id:'gtee',c:'#4fb6ff'},bottom:{id:'slimjeans',c:'#3a5bd9'},dress:null,shoes:{id:'kicks',c:'#ffffff'},hat:null,extras:{},makeup:Object.assign(defaultMakeup(),{blush:'none'})});
+  top:{id:'teamtee',c:'#2f6fd6'},bottom:{id:'baggyjeans',c:'#6f9be0'},dress:null,shoes:{id:'kicks',c:'#ffffff'},hat:null,extras:{},makeup:Object.assign(defaultMakeup(),{blush:'none'})});
 // what goes on when a top or bottom replaces a full outfit
-const plainTop=L=>isGuy(L)?{id:'gtee',c:'#4fb6ff'}:{id:'tee',c:'#ff6fae'};
-const plainBottom=L=>isGuy(L)?{id:'slimjeans',c:'#3a5bd9'}:{id:'jeans',c:'#3a5bd9'};
+const plainTop=L=>isGuy(L)?{id:'teamtee',c:'#2f6fd6'}:{id:'tee',c:'#ff6fae'};
+const plainBottom=L=>isGuy(L)?{id:'baggyjeans',c:'#6f9be0'}:{id:'jeans',c:'#3a5bd9'};
+// guys who never changed out of the old starting clothes (a T-shirt and tight jeans) get the new team shirt and baggy jeans
+{const old=L=>isGuy(L)&&!L.dress&&L.top&&L.top.id==='gtee'&&L.top.c==='#4fb6ff'&&L.bottom&&L.bottom.id==='slimjeans'&&L.bottom.c==='#3a5bd9';
+  const fix=L=>{if(old(L)){L.top={id:'teamtee',c:'#2f6fd6'};L.bottom={id:'baggyjeans',c:'#6f9be0'};}};
+  fix(SAVE.look);if(SAVE.looks&&SAVE.looks.guy)fix(SAVE.looks.guy.look);}
 // switch between playing a girl and a guy; each keeps its own look (and face paint)
 function switchBody(b){const cur=isGuy(SAVE.look)?'guy':'girl';if(b===cur)return false;
   SAVE.looks=SAVE.looks||{};SAVE.looks[cur]={look:SAVE.look,paint:SAVE.facePaint||null};
@@ -84,6 +88,9 @@ const guyBelt=(k,c='#3a2a1e')=>{const b=beltRing(k,k.mat(c,'shiny'),k.hips,.142,
 const crewNeck=(k,m,r=.056,t=.011)=>{const o=k.P(new THREE.TorusGeometry(r,t,8,24),m,k.spine,0,.468,0);o.rotation.x=Math.PI/2;return o;};
 const shirtCollar=(k,m)=>{crewNeck(k,m,.058,.009);for(const s of [-1,1])frontStrip(k,m,lineOf(s*.012,.463,s*.045,.418,.004,.016,3),.004);};
 const cuffs=(k,m,r=.045,t=.014)=>{for(const a of k.arms)k.P(new THREE.TorusGeometry(r,t,8,20),m,a.el,0,-.19,0).rotation.x=Math.PI/2;};
+// fills in the top of each shoulder so a short-sleeve shirt doesn't show skin between the body and the sleeve
+const shirtShoulders=(k,m)=>{for(const a of k.arms){k.P(sph(.052,18,14),m,a.sh,0,-.03,0).scale.set(1.04,.82,1);
+  const y=k.P(new THREE.CapsuleGeometry(.04,.1,6,16),m,k.spine,a.sx*.11,.4,0);y.rotation.z=Math.PI/2+a.sx*.2;y.scale.set(.9,1,.85);}};
 const waistband=(k,m)=>{const o=beltRing(k,m,k.spine,.098,.014,.055);o.scale.set(k.av.shellX,1,.8);};
 // pants: slim legs hug the leg; loose legs are open tubes so they hang wide
 function looseLegs(k,m,r=.088,{thigh=.46,shin=.4,hem=1.06}={}){m.side=THREE.DoubleSide;
@@ -145,7 +152,11 @@ const GUY_WEAR={
 
   /* tops */
   // 👕 T-shirt with a crew neck and a little longer sleeves
-  gtee(k,c){const m=k.mat(c);k.topShell(m,'short');for(const a of k.arms)k.P(capTop(.052,.04),m,a.sh,0,-.04,0);crewNeck(k,m);},
+  gtee(k,c){const m=k.mat(c);k.topShell(m,'short');shirtShoulders(k,m);for(const a of k.arms)k.P(capTop(.055,.05),m,a.sh,0,-.02,0);crewNeck(k,m);},
+  // 🏆 Team shirt: a sporty tee with stripes on the sleeves, a trim collar and a big number on the front
+  teamtee(k,c){const m=k.mat(c),tr=k.mat(trimOf(c));k.topShell(m,'short');shirtShoulders(k,m);
+    for(const a of k.arms){k.P(capTop(.055,.07),m,a.sh,0,-.03,0);for(const y of [-.115,-.135])k.P(new THREE.TorusGeometry(.058,.005,6,20),tr,a.sh,0,y,0).rotation.x=Math.PI/2;}
+    crewNeck(k,tr,.056,.011);frontText(k,'10',trimOf(c),.28,.15);},
   // ⚡ Graphic tee
   graphictee(k,c){GUY_WEAR.gtee(k,c);const t=canvasTex(128,128,(x)=>{x.font='88px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('⚡',64,70);});
     const dm=new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.7,depthWrite:false});k.av.mats.push(dm);k.P(new THREE.PlaneGeometry(.13,.13),dm,k.spine,0,.28,.107).castShadow=false;},
