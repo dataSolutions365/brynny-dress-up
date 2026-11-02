@@ -36,7 +36,7 @@ const DRESSES=[['gown','👸','Princess gown','#ff8fc8'],['party','🎉','Party 
   ['leotard','🤸','Gymnast','#8e6cff'],['cheer','📣','Cheer outfit','#ff4d8d'],['tennis','🎾','Tennis dress','#ffffff'],['swimsuit','🩱','Swimsuit','#2fd1c5'],['minidress','✨','Sequin dress','#ffd23f'],['jumpsuit','👖','Jumpsuit','#ff6f61'],
   ['pajamas','🌙','Pajamas','#b388ff'],['redcarpet','🌹','Red carpet gown','#c2185b'],['spacepup','🐶','Space pup suit','#3f7fd9'],['island','🌺','Island dress','#d62839'],['vampire','🧛','Vampire gown','#2d2d3a'],['werewolf','🐺','Werewolf','#7a5230'],
   ['mummy','🧻','Mummy wraps','#efe6cf'],['zombie','🧟','Zombie rags','#6b7d3a'],['redtulle','💃','Red tulle gown','#d7263d'],['catsuit','🦹','Denim catsuit','#2d2d3a']];
-const SHOES=[['sneaker','👟','Sneakers','#ffffff'],['boots','👢','Boots','#8a5a3b'],['heels','👠','Heels','#ff3b6b'],['glass','💎','Glass slippers','#cfefff'],['rain','☔','Rain boots','#ffd23f'],['skates','🛼','Roller skates','#ff6fae'],['flats','🥿','Ballet flats','#ffb3d1'],['platforms','👡','Platform heels','#1d1a1f'],['furboots','☁️','Fluffy boots','#f4eadf'],['sandals','🩴','Sandals','#ffd23f'],
+const SHOES=[['sneaker','👟','Sneakers','#ffffff'],['boots','👢','Boots','#8a5a3b'],['heels','👠','Heels','#ff3b6b'],['glass','💎','Glass slippers','#cfefff'],['rain','☔','Rain boots','#ffd23f'],['skates','🛼','Roller skates','#ff6fae'],['inlines','🛼','Inline skates','#2d2d3a'],['flats','🥿','Ballet flats','#ffb3d1'],['platforms','👡','Platform heels','#1d1a1f'],['furboots','☁️','Fluffy boots','#f4eadf'],['sandals','🩴','Sandals','#ffd23f'],
   // from the 2D game
   ['hightops','👟','High-tops','#b388ff'],['cleats','⚽','Soccer cleats','#ff8a1f'],['maryjanes','🎀','Mary Janes','#2d2d3a'],['pointe','🩰','Ballet slippers','#ffc2d8'],['kneeboots','👢','Tall boots','#2d2d3a'],['snowboots','❄️','Snow boots','#ff6fae'],
   ['witchboots','🧙','Witch boots','#2d2d3a'],['paws','🐾','Monster paws','#7a5230'],['furwarmers','☁️','Fluffy leg warmers','#ffffff'],['chunkyboots','💗','Chunky boots','#ff6fae'],['laceheels','👡','Lace-up heels','#d6d9e2']];
@@ -1457,7 +1457,7 @@ class Avatar{
   setSkin(c){this.skin.color.set(c);}
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
-    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;
+    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;this.wheels=[];this.rollers=null;this.rollOn=false;
     this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
@@ -1555,7 +1555,6 @@ class Avatar{
         if(s.id==='heels'){const m=mat(c,'shiny');shell(m,.7);P(cyl(.012,.008,.05,8),m,an,0,-.04,-.03);}
         if(s.id==='glass'){const m=mat(c,'glass');shell(m);P(sph(.012,8,6),mat('#ffffff','gem'),an,0,.012,.1);}
         if(s.id==='rain'){const m=mat(c,'shiny');shell(m);P(capTop(.064,.12),m,l.kn,0,-.22-this.legX,0);}
-        if(s.id==='skates'){const m=mat(c,'shiny');shell(m);P(capTop(.06,.06),m,l.kn,0,-.28-this.legX,0);const wm=mat('#ffd23f','shiny');for(const zz of [-.02,.11])P(cyl(.022,.022,.1,12),wm,an,0,-.065,zz).rotation.z=Math.PI/2;}
         if(s.id==='platforms'){const m=mat(c,'shiny');shell(m,.7);P(new THREE.BoxGeometry(.105,.075,.2),m,an,0,-.09,.055);P(new THREE.BoxGeometry(.095,.11,.075),m,an,0,-.075,-.03);
           const st=P(new THREE.TorusGeometry(.05,.008,8,24),m,an,0,.09,.0);st.rotation.x=Math.PI/2;this.lift=.06;}
         if(s.id==='furboots'){const m=mat(c,'fur');shell(mat(c,'fabric'),.9);P(new THREE.BoxGeometry(.11,.04,.22),mat('#3a3035','shiny'),an,0,-.045,.045);
@@ -1680,6 +1679,8 @@ class Avatar{
     const breathe=Math.sin(t*2)*.01;
     // walking the runway in the model contest: girls do a catwalk, guys a confident stride (24-model-agency.js sets runwayT)
     if(this.runwayT>0){this.runwayT-=dt;if(sp>.03)runwayWalk(this,tgt,sp);}
+    // wearing roller skates or inline skates (14f-roller-skates.js): a skating stride with swinging arms
+    if(this.rollers&&!air&&!this.emote&&!this.skating&&!this.biking&&!this.ballMove&&!(this.runwayT>0))rollerPose(this,tgt,sp,dt);else this.rollOn=false;
     const e=this.emote;let ext=0;
     if(e){e.t+=dt;const k=e.t;
       if(e.id==='wave'){tgt.a0z=-2.7;tgt.e0=0;tgt.a0x=0;ext=Math.sin(k*12)*.5;tgt.hd=.12;if(k>2)this.emote=null;}
@@ -1713,6 +1714,7 @@ class Avatar{
     damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;
     damp(this.hips.position,'y',this.hip+this.lift+tgt.bob,20);damp(this.spine.rotation,'x',tgt.lean+breathe,6);damp(this.hips.rotation,'y',tgt.sy,8);damp(this.head.rotation,'z',tgt.hd,8);
     damp(this.hips.position,'x',tgt.hx,14);damp(this.hips.rotation,'z',tgt.hr,10);damp(this.spine.rotation,'z',tgt.sz,10);damp(this.head.rotation,'y',tgt.hy,12);damp(L[0].hp.rotation,'z',tgt.l0z,12);damp(L[1].hp.rotation,'z',tgt.l1z,12);damp(A[1].el.rotation,'z',tgt.a1y,12);damp(this.spine.rotation,'y',tgt.st,10);this.tilt=(this.tilt||0)+(tgt.tilt-(this.tilt||0))*Math.min(1,dt*8);
+    if(this.wheels)rollerFeet(this,dt,speed);
     this.hips.rotation.x=this.emote&&this.emote.id==='flip'?this.flip:(this.tilt||0);this.spinY=e&&(e.id==='twirl'||e.id==='magic'||MOVE_ANIMS[e.id])?tgt.spin:0;
     // blink
     this.blink-=dt;const bl=this.blink<0?Math.max(.08,Math.abs(this.blink+.07)/.07):1;if(this.blink<-.14)this.blink=2+Math.random()*3.5;this.eyes.forEach(g=>g.scale.y=bl*(g.scale.x||1));
@@ -2767,7 +2769,7 @@ HAIRS.push(['wavy','🌊','Wavy'],['highbun','🩰','Ballerina bun'],['superlong
   GUY_TOPS.push(...from(TOPS,['startee','sweater','xmas','moto','turtleneck','blazer','military']));
   GUY_BOTTOMS.push(...from(BOTTOMS,['jeans','shorts','athshorts','joggers','cargo','skinny']));
   GUY_OUTFITS.push(...from(DRESSES,['werewolf','mummy','zombie','spacepup','pajamas','jumpsuit']));
-  GUY_SHOES.push(...from(SHOES,['sneaker','boots','rain','snowboots','skates','paws','chunkyboots','sandals']));
+  GUY_SHOES.push(...from(SHOES,['sneaker','boots','rain','snowboots','skates','inlines','paws','chunkyboots','sandals']));
   GUY_HATS.push(...from(HATS,['crown','witchhat','santahat','party','sunhat','pupears','wolfears','mummywrap']));
   GUY_EXTRAS.push(...from(EXTRAS,['wand','present','ball','bball','vampcape','lei']));}
 // for 3d/tests/closets-match.mjs: every list of things to wear, read when it runs (holiday things are added by seasons.js)
@@ -2775,6 +2777,80 @@ addEventListener('load',()=>{if(window.__game)window.__game.closets=()=>({hairs:
   cat:Object.fromEntries(Object.entries(CAT).map(([k,l])=>[k,l.map(x=>x[0])])),guy:Object.fromEntries(Object.entries(GUY_CAT).map(([k,l])=>[k,l.map(x=>x[0])])),
   store:Object.fromEntries(Object.entries(STORE_CAT).map(([k,l])=>[k,l.map(x=>x[0])])),
   holiday:SHOP.filter(s=>s.hol&&s.k.startsWith('look:')).map(s=>s.k.slice(5)),girlOnly:[...GIRL_ONLY]});});
+// ---- src/14f-roller-skates.js ----
+/* ================= 🛼 ROLLER SKATES =================
+   Two kinds of real skates you can wear from the Shoes tab (same ids in the 2D studio):
+   - skates:  four-wheel quad skates, a laced high-top boot on a metal plate, two wheels front and back, and a toe stop
+   - inlines: inline skates, a tall hard cuff with a buckle strap, four wheels in a row on a frame, and a heel brake
+   The boot takes the shoe color. The wheels have their own color (look.shoes.w), picked in the closet under "Wheels".
+   Wearing either one makes you roll: a bit faster than walking, wheels spinning, and a skating stride where
+   the legs push out to the side and the arms swing (rollerPose, called from Avatar.update in 14-avatar.js). */
+const ROLLERS={skates:{w:'#ffd23f',lift:.077},inlines:{w:'#4fb6ff',lift:.092}};
+const isRoller=s=>!!(s&&ROLLERS[s.id]);
+// rolling speed while wearing skates (off while riding, on a board, or in games that need your hands)
+const rollerBoost=()=>av&&av.rollers&&!SK.on&&!boardBusy()?1.35:1;
+
+// a wheel that can spin: a group at the axle, so turning group.rotation.x rolls it forward
+function rollerWheel(k,an,x,y,z,r,w,wm,hub,stripe){const g=new THREE.Group();g.position.set(x,y,z);an.add(g);k.av.parts.push(g);g.geometry={dispose(){}};
+  k.P(cyl(r,r,w,22),wm,g).rotation.z=Math.PI/2;
+  k.P(cyl(r*.48,r*.48,w+.003,14),hub,g).rotation.z=Math.PI/2;
+  // light stripes on both faces of the wheel so you can see it turning
+  for(const s of [-1,1])for(const a of [0,Math.PI/2]){const b=k.P(box(.002,r*1.5,r*.22),stripe,g,s*(w/2+.001),0,0);b.rotation.x=a;}
+  k.av.wheels.push({g,r});}
+
+function rollerBoot(k,l,m,dk,tall){const an=l.an,X=k.av.legX;
+  k.P(sph(.06,20,14),m,an,0,-.006,.045).scale.set(1.2,.95,2.05);// around the foot
+  k.P(sph(.067,18,14),m,an,0,.004,-.004);// round over the ankle
+  k.P(cyl(.064,.068,tall,26),m,l.kn,0,-.37-X+tall/2,0);// up the shin
+  k.P(new THREE.TorusGeometry(.064,.015,10,26),dk,l.kn,0,-.37-X+tall,0).rotation.x=Math.PI/2;// padded collar
+  k.P(new RoundedBoxGeometry(.118,.026,.235,2,.01),dk,an,0,-.064,.045);}// sole
+
+const ROLLER_BUILD={
+  // 🛼 quad skates, like a classic rink skate
+  skates(k,c,wc){const m=k.mat(c,'shiny'),dk=k.mat(shadeC(c,-.35),'shiny'),met=k.mat('#c9ced6','metal'),rub=k.mat('#2a2a2e','shiny'),wm=k.mat(wc,'shiny'),lace=k.mat(shadeC(c,.75),'fabric'),X=k.av.legX;
+    for(const l of k.legs){const an=l.an;rollerBoot(k,l,m,dk,.13);
+      // laces criss-crossing up the front, with shiny eyelets
+      for(let i=0;i<4;i++){const y=-.37-X+.022+i*.028;for(const s of [-1,1]){const b=k.P(box(.05,.007,.006),lace,l.kn,0,y+.006,.066);b.rotation.z=s*.32;}
+        for(const s of [-1,1])k.P(sph(.006,8,6),met,l.kn,s*.026,y,.062);}
+      for(let i=0;i<2;i++){const b=k.P(box(.052,.007,.006),lace,an,0,.03-i*.022,.098+i*.018);b.rotation.x=-.75;}
+      k.P(box(.07,.012,.2),met,an,0,-.083,.045);// metal plate
+      for(const z of [-.008,.1]){k.P(box(.045,.026,.032),met,an,0,-.095,z);const ax=k.P(cyl(.006,.006,.13,8),met,an,0,-.105,z);ax.rotation.z=Math.PI/2;
+        for(const s of [-1,1])rollerWheel(k,an,s*.052,-.105,z,.034,.03,wm,met,lace);}
+      const ts=k.P(cyl(.019,.023,.034,16),rub,an,0,-.104,.163);ts.rotation.x=.45;}// toe stop
+    k.av.lift=ROLLERS.skates.lift;k.av.rollers='skates';},
+  // 🛼 inline skates, like a sporty rollerblade
+  inlines(k,c,wc){const m=k.mat(c,'shiny'),dk=k.mat(shadeC(c,-.45),'shiny'),met=k.mat('#c9ced6','metal'),frm=k.mat('#3a3d44','metal'),rub=k.mat('#2a2a2e','shiny'),wm=k.mat(wc,'shiny'),lite=k.mat('#ffffff','shiny'),X=k.av.legX;
+    for(const l of k.legs){const an=l.an;rollerBoot(k,l,m,dk,.17);
+      // the hard cuff: a wide strap with a silver buckle, and a strap over the top of the foot
+      k.P(cyl(.071,.073,.026,26),dk,l.kn,0,-.37-X+.115,0);k.P(box(.03,.02,.012),met,l.kn,l.sx*.02,-.37-X+.115,.072);
+      const st=k.P(new THREE.TorusGeometry(.064,.012,8,22,Math.PI),dk,an,0,-.024,.07);st.scale.set(1.05,.85,1);
+      k.P(box(.024,.016,.012),met,an,l.sx*.03,.026,.072);
+      // the frame under the boot, and four wheels in a row
+      for(const s of [-1,1])k.P(box(.007,.042,.27),frm,an,s*.018,-.094,.048);
+      for(const z of [-.06,.012,.084,.156]){rollerWheel(k,an,0,-.122,z,.032,.022,wm,met,lite);const b=k.P(cyl(.006,.006,.044,8),met,an,0,-.122,z);b.rotation.z=Math.PI/2;}
+      if(l.sx>0){const br=k.P(cyl(.022,.026,.045,16),rub,an,0,-.118,-.118);br.rotation.x=-.5;}}// heel brake on one skate
+    k.av.lift=ROLLERS.inlines.lift;k.av.rollers='inlines';}};
+for(const id in ROLLER_BUILD)OUTFITS2D[id]=(k,c)=>{const s=k.av.look.shoes||{};ROLLER_BUILD[id](k,c,s.w||ROLLERS[id].w);};
+
+// 🛼 the skating stride: a push out to the side and back with one leg while gliding on the other bent leg,
+// the body leaning forward, and the arms swinging opposite the legs (the arm on the pushing side swings back)
+function rollerPose(a,tgt,sp,dt){if(sp<.04){a.rollOn=false;return;}a.rollOn=true;
+  a.rph=(a.rph||0)+dt*(3.2+sp*2.4);const s=Math.sin(a.rph),k=Math.min(1,sp*1.5),p0=Math.max(0,-s),p1=Math.max(0,s);
+  tgt.l0=(-.28+p0*.8)*k;tgt.l1=(-.28+p1*.8)*k;tgt.k0=.12+(.5-p0*.38)*k;tgt.k1=.12+(.5-p1*.38)*k;
+  tgt.l0z=-(.05+p0*.42)*k;tgt.l1z=(.05+p1*.42)*k;
+  // sink down onto the gliding leg so the wheels stay on the ground
+  const T=.38+a.legX,S=.37+a.legX,h=(l,kn,lz)=>(T*Math.cos(l)+S*Math.cos(l+kn))*Math.cos(lz);
+  tgt.bob=Math.max(h(tgt.l0,tgt.k0,tgt.l0z),h(tgt.l1,tgt.k1,tgt.l1z))-(T+S);
+  tgt.a0x=-s*1.15*k;tgt.a1x=s*1.15*k;
+  tgt.a0z=-.18+(p1*.3-p0*.4)*k;tgt.a1z=.18+(p1*.4-p0*.3)*k;
+  tgt.e0=-.35-p1*.65*k;tgt.e1=-.35-p0*.65*k;
+  tgt.lean=.34*k;tgt.sy=s*.16*k;tgt.st=-s*.22*k;tgt.hx=-s*.05*k;tgt.hd=s*.04*k;tgt.hy=s*.12*k;}
+// keep the skates flat on the ground while the legs bend and push out, and roll the wheels
+function rollerFeet(a,dt,speed){const L=a.legs;
+  if(a.rollOn)for(const l of L){l.an.rotation.x=-(l.hp.rotation.x+l.kn.rotation.x);l.an.rotation.z=-l.hp.rotation.z;}
+  else if(a.wasRoll)for(const l of L)l.an.rotation.z=0;
+  a.wasRoll=a.rollOn;
+  if(a.wheels.length&&speed>.02)for(const w of a.wheels)w.g.rotation.x+=speed*dt/w.r;}
 // ---- src/15-player-friends-townspeople.js ----
 /* ================= PLAYER ================= */
 if(!SAVE.look)SAVE.look=defaultLook();
@@ -3475,7 +3551,8 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&
       if(lastExtra&&L.extras[lastExtra])h+=`<h3>Color</h3>`+sw(myColors(COLORS),L.extras[lastExtra],'item');}
     else{const cur=L[k];const none=ctab!=='shoes'&&ctab!=='dresses'?`<button class="item${!cur?' on':''}" data-item=""><b>🚫</b><span>None</span></button>`:'';
       h+=`<div class="grid">${none}${inSeason(list).map(([id,ico,n])=>lockBtn('look:'+id,ico,n)||`<button class="item${cur&&cur.id===id?' on':''}" data-item="${id}"><b>${ico}</b><span>${n}</span></button>`).join('')}</div>`;
-      if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');}}
+      if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');
+      if(ctab==='shoes'&&isRoller(cur))h+=`<h3>🛼 Wheels</h3>`+sw(myColors(COLORS),cur.w||ROLLERS[cur.id].w,'wheels');}}
   $('#ccontent').innerHTML=h;}
 function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();renderActions();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
@@ -3495,7 +3572,7 @@ $('#ccontent').onclick=e=>{const L=SAVE.look;const b=e.target.closest('button');
   if(b.dataset.mk){const v=b.dataset.v;L.makeup[b.dataset.mk]=v==='true'?true:v==='false'?false:v;return changed();}
   if(b.dataset.sw==='brush'){brush.c=b.dataset.c;brush.erase=false;renderCloset();return;}
   if(['shadow','lips','lipLiner','linerC'].includes(b.dataset.sw)){L.makeup[b.dataset.sw]=b.dataset.c||null;if(b.dataset.sw==='linerC'&&L.makeup.liner==='none')L.makeup.liner='thin';return changed();}
-  if(b.dataset.sw){const c=b.dataset.c,k=b.dataset.sw;if(k==='hair')L.hair.c=c;else if(k==='skin')L.skin=c;else if(k==='eyes')L.eyes=c;
+  if(b.dataset.sw){const c=b.dataset.c,k=b.dataset.sw;if(k==='hair')L.hair.c=c;else if(k==='wheels'){if(L.shoes)L.shoes.w=c;}else if(k==='skin')L.skin=c;else if(k==='eyes')L.eyes=c;
     else if(ctab==='extras'){if(lastExtra)L.extras[lastExtra]=c;}else{const cur=L[KEY[ctab]];if(cur)cur.c=c;}return changed();}
   if('item' in b.dataset){const id=b.dataset.item;const list=catOf(ctab);const it=list.find(x=>x[0]===id);
     if(ctab==='extras'){if(L.extras[id]){delete L.extras[id];lastExtra=null;}else{applyItem(L,id);lastExtra=id;}return changed();}
@@ -5152,7 +5229,7 @@ const CT_THEMES=[
   {id:'spooky',e:'🎃',n:'Spooky Glam',tip:'Witchy and cool! Black, purple and orange, with a cape or a wand.',dress:['witch'],top:['hoodie','sequin','jacket'],bottom:['leggings','skirt','tutu'],shoes:['boots','platforms'],hat:['witchhat','catears'],extras:['cape','wand'],fams:['black','purple','orange','green']},
   {id:'winter',e:'❄️',n:'Winter Wonderland',tip:'Cozy and snowy! Sweaters, fluffy coats, boots and scarves.',dress:['santa'],top:['sweater','furcoat','hoodie'],bottom:['jeans','leggings','maxi'],shoes:['boots','furboots'],hat:['santahat','bow'],extras:['scarf'],fams:['white','red','blue','silver']},
   {id:'garden',e:'🌷',n:'Garden Party',tip:'Pretty as a flower! Fairy dresses, flower crowns and wings.',dress:['fairy','sundress','party'],top:['hearttee','tank'],bottom:['skirt','tutu','maxi'],shoes:['flats','sandals'],hat:['flowers','bow'],extras:['wings','purse'],fams:['pink','green','yellow','purple']},
-  {id:'pop',e:'🎤',n:'Pop Star',tip:'Shine on stage! Sparkly tops, party dresses and platform heels.',dress:['party'],top:['sequin','startee','jacket'],bottom:['skirt','leggings','tutu','shorts'],shoes:['platforms','heels','skates'],hat:['cap','bow'],extras:['glasses','purse'],fams:['pink','purple','blue','gold']},
+  {id:'pop',e:'🎤',n:'Pop Star',tip:'Shine on stage! Sparkly tops, party dresses and platform heels.',dress:['party'],top:['sequin','startee','jacket'],bottom:['skirt','leggings','tutu','shorts'],shoes:['platforms','heels','skates','inlines'],hat:['cap','bow'],extras:['glasses','purse'],fams:['pink','purple','blue','gold']},
   {id:'galaxy',e:'🌌',n:'Galaxy Night',tip:'Out of this world! Starry gowns, sparkles, wings and halos.',dress:['stargown','mermaid','gown'],top:['sequin'],bottom:['leggings','maxi'],shoes:['platforms','glass'],hat:['tiara'],extras:['wings','halo','unicorn'],fams:['purple','blue','black','silver']},
   {id:'pink',e:'💗',n:'Pretty in Pink',tip:'Everything pink! Pink clothes, pink shoes, pink hat, pink lips.',pink:true,dress:ALL(DRESSES),top:ALL(TOPS),bottom:ALL(BOTTOMS),shoes:ALL(SHOES),hat:ALL(HATS),extras:ALL(EXTRAS),fams:['pink']}];
 // what guys wear for each theme (the lists above are ids from the girls' closet). Holiday rounds from seasons.js are here too.
@@ -7343,7 +7420,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
   const p=player.pos;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
-    const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost();// a bit quicker on the open grass between places, normal speed inside them
+    const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
     const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
     const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
     player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;
