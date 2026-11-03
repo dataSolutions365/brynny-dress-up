@@ -194,6 +194,6 @@ function applyItem(L,id,c){const [tab,it]=findItem(id);if(!it)return null;c=c||i
 function barberDress(k,look){const av=k.av,h=look.hair||{},cut=BCUT[h.id];
   if(cut){const cap=av.hairMeshes[0];if(cap){cap.visible=false;av.hairMeshes=av.hairMeshes.filter(m=>m!==cap);}
     const m=k.mat(h.c||'#2b1d16','hair');const n0=av.parts.length;
-    if(h.id!=='bald'){const g=shellGeo(av,cut[3]);fuzz(g,.0012,200);k.P(g,m,k.head);}
+    if(h.id!=='bald'){const g=shellGeo(av,av.guy?guyHatPress(look,cut[3]):cut[3]);fuzz(g,.0012,200);k.P(g,m,k.head);}
     if(cut[4])cut[4](k,m);av.hairMeshes=av.hairMeshes.concat(av.parts.slice(n0).filter(o=>o.isMesh));}
   if(look.beard&&look.beard.id&&look.beard.id!=='none')buildBeard(k,look.beard);}

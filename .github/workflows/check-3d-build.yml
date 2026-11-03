@@ -37,5 +37,7 @@ jobs:
         run: node 3d/tests/ocean.mjs
       - name: The Jump Park trampolines bounce, flip, slam dunk and splash into the foam pit
         run: node 3d/tests/jump-park.mjs
+      - name: Every guy haircut looks like its name and hats sit on the hair
+        run: node 3d/tests/guy-hair.mjs
       - name: The 2D and 3D closets match
         run: node 3d/tests/closets-match.mjs

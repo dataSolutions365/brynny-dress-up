@@ -58,6 +58,12 @@
   after the game has started, unless it's a plain `BufferGeometry` or `PlaneGeometry` (those are never shared).
   When the phone gives the graphics back, the game carries on by itself in Light mode.
 
+- Guy hair (`3d/src/14e2-guy-hair-real.js`): each guy cut in `GUY_REAL` is a shell that follows the head with a natural
+  hairline, plus locks of hair (strands, spikes, curls, locs, a bun) merged into one shape and cached, so friends with the same
+  cut share it. A guy's hat is sized to his hair by `fitGuyHat` and the hair under it is pressed flat by `guyHatPress`.
+  When you add a guy cut, give it a `thick`, `flow` and `uv` (and `locks` for texture), and keep it under 60,000 points:
+  `3d/tests/guy-hair.mjs` (run on every PR) checks each cut looks like its name and hats sit on the hair.
+
 ## Outfits go in both games
 - Everything you can wear in the 2D studio (`index.html`) must also be wearable in the 3D world, and the other way round,
   with the same id, for girls and for guys. Add a new outfit, costume, hair style or accessory to both in the same PR.
