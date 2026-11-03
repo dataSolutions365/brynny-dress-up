@@ -99,13 +99,17 @@ SHOW.push({k:'skate',
 // 🚲 riding your bike (17d-bicycle.js): your friend pedals around on a bike the color you picked
 SHOW.push({k:'bike',
   mine(){return BIKE.on&&hasBike()?{c:String(SAVE.look.extras.bicycle)}:null;},
-  on(f,d){const b=makeBike();b.g.visible=true;try{b.frame.color.set(String(d.c||'#ff6fae').slice(0,30));}catch(e){}return {b,spin:0,crank:0,lean:0,yaw:null};},
-  step(f,d,dt,h){const A=f.a,b=h.b,sp=f.sp||0;A.biking=true;
-    h.crank+=dt*Math.min(9,sp*.9);A.bikeCrank=h.crank;h.spin+=sp*dt/b.R;for(const w of b.wheels)w.rotation.x=h.spin;b.crank.rotation.x=h.crank;
+  on(f,d){const b=makeBike();b.g.visible=true;try{b.frame.color.set(String(d.c||'#ff6fae').slice(0,30));}catch(e){}if(f.a)f.a.bikeW=0;
+    return {b,spin:0,crank:-Math.PI/2-.5,lean:0,steer:0,stand:1,still:1,yaw:null,sp:0,acc:0,a:f.a};},
+  // the same riding as yours (bikeStep and bikeRide in 17d-bicycle.js): their phone only sends where they are and how fast,
+  // so pedaling is when they keep their speed up, and coasting is when they're slowing down
+  step(f,d,dt,h){const A=f.a,b=h.b,sp=f.sp||0;if(!A)return;A.biking=true;if(h.a!==A){h.a=A;A.bikeW=0;}
+    h.acc+=((sp-h.sp)/Math.max(dt,.001)-h.acc)*Math.min(1,dt*3);h.sp=sp;
     const yaw=f.cur??f.face,turn=h.yaw==null?0:((yaw-h.yaw+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;h.yaw=yaw;
-    h.lean+=(Math.max(-.25,Math.min(.25,-turn/Math.max(dt,.001)*.01))-h.lean)*Math.min(1,dt*6);
-    A.g.rotation.z=h.lean;b.g.position.copy(f.pos);b.g.rotation.set(0,yaw,0);b.g.rotateZ(h.lean);},
-  off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;}}});
+    bikeStep(h,b,dt,sp,sp>.15&&h.acc>-.3*sp,turn/Math.max(dt,.001),!f.air);
+    A.g.rotation.z=h.lean;b.g.position.copy(A.g.position);b.g.rotation.set(0,yaw,0);b.g.rotateZ(h.lean);h.air=!!f.air;
+    bikeRide(A,b,h,dt);},
+  off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;bikeUnride(A);}}});
 
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){

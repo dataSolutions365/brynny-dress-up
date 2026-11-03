@@ -18,6 +18,10 @@
   `npm i --no-save playwright peer && npx playwright install chromium && node 3d/tests/online-see.mjs` (takes a few minutes).
 - Rides with `fly:1` in FARM (`3d/src/24d-barn.js`) can fly: `3d/src/24h-flying.js` does the take-off, flying and landing,
   and friends see it through the `ride` entry. `3d/tests/fly.mjs` (run on every PR) checks one takes off, clears the trees and lands.
+- Riding the 🚲 bike (`3d/src/17d-bicycle.js`): `bikeStep()` turns the wheels, cranks and handlebars and works out the lean,
+  `bikeRide()` puts the rider's hips on the saddle, hands on the grips and feet on the pedals every frame (it runs after
+  `Avatar.update`, so it wins over the walking pose). Friends online use the same two functions. `3d/tests/bike.mjs`
+  (run on every PR) checks the feet stay on the pedals, the hands on the grips, coasting, and a foot down when stopped.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
