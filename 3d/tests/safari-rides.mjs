@@ -139,7 +139,10 @@ try {
     // walk her off the sand into the water behind the zoo
     const shore = await page.evaluate(() => { const G = window.__game, Z = G.Z.zoo, [x, z] = Z.toWorld(0, G.ZOO_SHORE.edge + 1); return { x, z, face: Math.atan2(-Z.x, -Z.z) + Math.PI }; });
     await page.evaluate(s => { const G = window.__game; G.player.pos.set(s.x, 0, s.z); G.player.face = s.face; G.cam.yaw = s.face + Math.PI; if ('cy' in G.cam) G.cam.cy = G.cam.yaw; }, shore);
-    await page.keyboard.down('ArrowUp'); await page.waitForTimeout(2200); await page.keyboard.up('ArrowUp');
+    // keep walking until it's in deep water (a zoo animal on the sand can be in the way for a moment, so give it up to 8 s)
+    await page.keyboard.down('ArrowUp');
+    for (let t = 0; t < 40; t++) { await page.waitForTimeout(200); if (t >= 10 && await page.evaluate(() => { const p = window.__game.player.pos; return window.__game.waterAt(p.x, p.z).k > .97; })) break; }
+    await page.keyboard.up('ArrowUp');
     await page.waitForTimeout(2500);
     const r = await page.evaluate(() => { const G = window.__game, a = G.ride(), av = G.av(), p = G.player.pos; const hp = new G.THREE.Vector3(); av.hips.getWorldPosition(hp); return { k: a && a.k, y: a && a.g.position.y, ay: hp.y, d: Math.hypot(p.x, p.z), k2: G.waterAt(p.x, p.z).k }; });
     console.log(`${SK} in the water: ${r.d.toFixed(1)} m from the middle of town, depth ${r.k2.toFixed(2)}, animal at ${r.y && r.y.toFixed(2)} m, rider's hips at ${r.ay.toFixed(2)} m (water at -0.35 m)`);
@@ -151,9 +154,13 @@ try {
   }
     await page.evaluate(() => window.__game.stopRide(true));
     // the zoo's hippo lives in the water behind the zoo, and swimming next to it counts for its challenge
+    // she spends most of her time in the water but now and then comes up on the sand, so for the test put her in the water and keep her there
+    await page.evaluate(() => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'), W = G.HIPPO_WATER;
+      a.lx = 0; a.lz = (W.near + W.far) / 2; a.tgt = null; a.next = null; a.wait = 1e9; const [x, z] = a.Z.toWorld(a.lx, a.lz); a.pos.set(x, a.pos.y, z); });
+    await page.waitForTimeout(1500);
     const zh = await page.evaluate(() => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'); return { y: a.g.position.y, x: a.pos.x, z: a.pos.z, lz: a.lz }; });
     console.log(`zoo hippo: local z ${zh.lz.toFixed(1)} (shore at ${(await page.evaluate(() => window.__game.ZOO_SHORE.edge)).toFixed(1)}), height ${zh.y.toFixed(2)} m`);
-    await page.evaluate(h => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'); G.player.pos.set(a.pos.x + 1.6, 0, a.pos.z); }, zh);
+    await page.evaluate(h => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'); G.player.pos.set(a.pos.x + 1.6, 0, a.pos.z); G.player.speed = 0; }, zh);
     await page.waitForTimeout(3000);
     const hw = await page.evaluate(() => window.__game.hipWith());
     if (!(hw > .5)) fail(`Swimming next to the zoo's hippo should count for its challenge (${hw.toFixed(1)} s).`);
