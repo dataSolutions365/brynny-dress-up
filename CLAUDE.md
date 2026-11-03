@@ -38,6 +38,9 @@
   whale and Shelly the sea turtle swim along beside you; Pip the seal sits on her rock. 🐟 Feed sends `did('seafeed', kind)`.
   🐢 Shelly, 🐬 Splash and 🐋 Big Blue are rides you earn in the 🌊 Ocean tab of `3d/challenges.js` (ids in `SEA_RIDES`), and only work in the water.
   `3d/tests/ocean.mjs` (run on every PR) checks you swim, the animals come to you, feeding counts, the rides stay locked until earned and you sit on their back.
+- 📍 The Places tab of ⭐ Star Challenges (`placesHTML()` in `3d/challenges.js`) is a legend of every place in town with the challenges
+  you do there, grouped by each challenge's `go` place (no `go` puts it under "Anywhere in town"). Give a new challenge a `go` and it shows up
+  under that place by itself. `3d/tests/challenge-places.mjs` (run on every PR) checks every challenge is listed once.
 - 🤸 Jump Park (behind Christmas Village): the building is `3d/src/12e-place-jump-park.js`, the bouncing, flips, slam dunks and
   foam pit are `3d/src/26e-jump-park.js` (25-game-loop.js asks `jpLand()` on every landing; the Jump button calls `jpJump()`).
   `3d/tests/jump-park.mjs` (run on every PR) checks you bounce, go higher and flip when tapping Jump, dunk, and sink into the pit.
