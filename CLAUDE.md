@@ -25,9 +25,11 @@
   `bikeRide()` puts the rider's hips on the saddle, hands on the grips and feet on the pedals every frame (it runs after
   `Avatar.update`, so it wins over the walking pose). Friends online use the same two functions. `3d/tests/bike.mjs`
   (run on every PR) checks the feet stay on the pedals, the hands on the grips, coasting, and a foot down when stopped.
-- 🦁 Safari rides (Kivu the okapi, Tembo the elephant, Jabari the lion) are earned rides in `3d/src/24i-earned-rides.js` with
+- 🦁 Safari rides (okapi, zebra, rhino, elephant, crowned crane, lion, giraffe) are earned rides in `3d/src/24i-earned-rides.js` with
   `earn:{by:'chal',ids:[...]}`: they come once every challenge id listed is done in the 🦁 Safari tab of `3d/challenges.js`.
-  They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`);
+  They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`,
+  the zebra, giraffe, rhino, flying crowned crane and the zoo's gorilla in `3d/src/24c9c-safari-more.js`, which share textures and
+  materials through `safM` to save memory on phones; the saddle size for each ride is in `SADDLE`);
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
   `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned and the rider sits on the saddle.
 - 🤸 Jump Park (behind Christmas Village): the building is `3d/src/12e-place-jump-park.js`, the bouncing, flips, slam dunks and
