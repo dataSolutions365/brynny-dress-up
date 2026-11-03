@@ -2746,6 +2746,51 @@ const GIRL_STORE_CAT={glasses:STORE_GLASSES,dresses:[],tops:[],bottoms:[],shoes:
     SHOP.push({k:'look:'+id,tab:'store',st:tab,e,n,p,d:`New at the store! Made for guys. Find it in your closet's ${TAB_NAME[tab]}.`});});
   for(const tab in FASHION_GIRL)FASHION_GIRL[tab].forEach(([id,e,n,c,p])=>{const it=[id,e,n,c];CAT[tab].push(it);GIRL_STORE_CAT[tab].push(it);
     SHOP.push({k:'look:'+id,tab:'store',st:tab,girl:true,e,n,p,d:`New at the store! Find it in your closet's ${TAB_NAME[tab]}.`});});}
+// ---- src/14d-fashion2-earned.js ----
+/* ================= 🏆 MODERN FASHION YOU EARN: can't be bought, only won =================
+   Picked from what's in style now (fall 2026): cable knits, shearling jackets, parachute pants, barrel-leg jeans,
+   utility vests, denim maxi skirts and chunky sneakers. In the 3D world they're locked 🔒 in your closet until you earn them
+   by winning contests and games or by playing days in a row (24i-earned-rides.js gives them out, the ⭐🏆 Rewards tab shows how close you are).
+   Every one is in the 2D studio too (index.html), with the same id, free to try there.
+   who: 'both' = girls and guys, 'guy' or 'girl' = only that closet. */
+const EARN_LOOKS=[
+  {id:'cableknit',tab:'tops',e:'🧶',n:'Cable-knit sweater',c:'#f2e6d0',who:'both',earn:{by:'days',goal:2}},
+  {id:'parachute',tab:'bottoms',e:'🪂',n:'Parachute pants',c:'#2d2d3a',who:'both',earn:{by:'wins',goal:1}},
+  {id:'barreljeans',tab:'bottoms',e:'👖',n:'Barrel jeans',c:'#5b7fb8',who:'both',earn:{by:'wins',goal:2}},
+  {id:'utilityvest',tab:'tops',e:'🦺',n:'Utility vest',c:'#5d6b3a',who:'guy',earn:{by:'days',goal:4}},
+  {id:'denimmaxi',tab:'bottoms',e:'💙',n:'Denim maxi skirt',c:'#5b7fb8',who:'girl',earn:{by:'days',goal:4}},
+  {id:'shearling',tab:'tops',e:'🐑',n:'Shearling jacket',c:'#8a5a3b',who:'both',earn:{by:'days',goal:5}},
+  {id:'chunkykicks',tab:'shoes',e:'👟',n:'Chunky sneakers',c:'#ffffff',who:'both',earn:{by:'wins',goal:5}},
+];
+Object.assign(OUTFITS2D,{
+  // 🧶 Cable-knit sweater: soft knit with braided cables down the front, ribbed neck, cuffs and hem
+  cableknit(k,c){const m=fabMat(k,c,'knit');k.topShell(m,'long');const rib=k.mat(shadeC(c,-.12));crewNeck(k,rib,.058,.016);cuffs(k,rib,.046,.016);waistband(k,rib);
+    for(const x of [-.055,0,.055])for(let i=0;i<9;i++){const y=.105+i*.036;frontDot(k,rib,y,x+(i%2?.006:-.006),.0105);}},
+  // 🪂 Parachute pants: baggy and shiny, with drawstrings and toggles at the ankles
+  parachute(k,c){const m=k.mat(c,'shiny');m.roughness=.35;k.waist(m);looseLegs(k,m,.094,{hem:.92});const dk=k.mat(shadeC(c,-.2),'shiny');ankleCuffs(k,dk,.08);drawstrings(k);
+    const X=k.av.legX,t=k.mat('#1a1a1a');for(const l of k.legs){k.P(cyl(.003,.003,.05,6),k.mat('#ffffff'),l.kn,l.sx*.03,-.36-X,.075);k.P(cyl(.008,.008,.016,8),t,l.kn,l.sx*.03,-.39-X,.077);}
+    for(const l of k.legs)beltRing(k,dk,l.kn,.092,.006,-.02);},
+  // 👖 Barrel jeans: roomy at the knee and curving in at the ankle, with a belt
+  barreljeans(k,c){const m=k.mat(c,'denim');k.waist(m);looseLegs(k,m,.093,{hem:.74});guyBelt(k,'#3a2a1e');},
+  // 🦺 Utility vest: lots of pockets and a zip, over a plain tee
+  utilityvest(k,c){k.topShell(k.mat('#ececec'),'short');for(const a of k.arms)k.P(capTop(.055,.05),k.mat('#ececec'),a.sh,0,-.02,0);
+    const m=k.mat(c);const b=k.P(new THREE.CapsuleGeometry(.138,.2,6,24),m,k.spine,0,.25,0);b.scale.set(k.av.shellX*1.02,1,.84);
+    const dk=k.mat(shadeC(c,-.18));standCollar(k,m,.066,.04);
+    for(const s of [-1,1]){frontStrip(k,dk,lineOf(s*.06,.37,s*.06,.31,.045,.045,2),.016);frontStrip(k,dk,lineOf(s*.065,.2,s*.065,.12,.055,.055,2),.017);}
+    frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.47,0,.06,.005,.005,10),.017);},
+  // 💙 Denim maxi skirt: long and straight, with a front seam and gold stitching
+  denimmaxi(k,c){const m=k.mat(c,'denim');k.waist(m);k.skirt(m,.8,.22,{curve:.9,folds:.03,k:8});beltRing(k,k.mat(shadeC(c,-.15),'denim'),k.hips,.14,.012,.1);k.av.legAmp=.34;},
+  // 🐑 Shearling jacket: suede with a big fluffy cream collar, cuffs and hem
+  shearling(k,c){const m=k.mat(c);m.roughness=.95;k.topShell(m,'long');const cr=k.mat('#f4ebdc');cr.roughness=1;
+    crewNeck(k,cr,.07,.028);for(const s of [-1,1])frontStrip(k,cr,lineOf(s*.03,.46,s*.075,.33,.035,.012,5),.006);cuffs(k,cr,.05,.02);waistband(k,cr);
+    frontStrip(k,k.mat(shadeC(c,-.35)),lineOf(0,.36,0,.05,.004,.004,6),.004);},
+  // 👟 Chunky sneakers: big layered soles with a colored stripe
+  chunkykicks(k,c){shoeShell(k,k.mat(c),.95,1.1);solePad(k,k.mat('#f4f4f4','shiny'),.06,.13,.25);
+    const acc=k.mat(isLight(c)?'#8fb8ff':trimOf(c),'shiny');k.legs.forEach(l=>k.P(box(.134,.012,.254),acc,l.an,0,-.032,.045));shoeTrim(k,k.mat(shadeC(c,-.25),'shiny'));},
+});
+for(const L of EARN_LOOKS){const it=[L.id,L.e,L.n,L.c];if(L.who!=='guy')CAT[L.tab].push(it);if(L.who!=='girl')GUY_CAT[L.tab].push(it);
+  SHOP.push({k:'look:'+L.id,tab:'earned',st:L.tab,girl:L.who==='girl',guy:L.who==='guy',e:L.e,n:L.n,p:0,prize:L.earn.goal,earn:L.earn,
+    d:`Modern fashion you can't buy! Earn it and find it in your closet's ${TAB_NAME[L.tab]}.`});}
 // ---- src/14e-match-2d.js ----
 /* ================= MATCH THE 2D STUDIO =================
    Everything you can wear in the 2D studio (index.html) can be worn here too, with the same ids, so a look matches
@@ -4791,7 +4836,7 @@ function earn(n,why){n=Math.round(n);if(!(n>0))return;SAVE.coins=(SAVE.coins||0)
 // other parts of the game (or future ones) can hand out coins with: dispatchEvent(new CustomEvent('brynny:earn',{detail:{n:5,why:'Baked a cake'}}))
 addEventListener('brynny:earn',e=>{const d=e.detail||{};earn(+d.n||0,d.why);});
 // a few things cost ⭐ stars instead of 🪙 coins (s.stars), spent like the barn's rare animals (starsLeft() in 24d-barn.js)
-const priceTxt=s=>s.stars?`⭐ ${s.stars}`:`${s.p} 🪙`;
+const priceTxt=s=>s.earn?earnTag(s.earn):s.stars?`⭐ ${s.stars}`:`${s.p} 🪙`;
 function lockBtn(k,ico,name){if(!locked(k))return '';const s=shopItem(k);return `<button class="item lock" data-lock="${k}"><b>${ico}</b><span>${name}</span><em>🔒 ${priceTxt(s)}</em></button>`;}
 
 // stars and quests pay out when they happen
@@ -4848,7 +4893,7 @@ const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only com
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
       [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
-  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.earn?`🏆 ${s.earn.by==='wins'?`Win ${s.earn.goal}`:`${s.earn.goal} days`}`:s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.earn?earnTag(s.earn):s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
 $('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
 $('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};
@@ -6404,7 +6449,7 @@ function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div
     <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt').map(farm).join('')}
     <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
     <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
-    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?`🏆 ${f.earn.by==='wins'?`Win ${f.earn.goal}`:`${f.earn.goal} days`}`:f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
+    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
     <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
@@ -7488,7 +7533,7 @@ function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
 
 // 🏆 the prize dragon comes once you've earned enough stars (your star rank never goes down, so she stays)
 function askPrize(s){const st=starsEarned();
-  if(s.earn){const f=FK[s.k.slice(6)];$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':'Come back and play tomorrow! A day counts as soon as you start playing.'} This ride can't be bought. ${f.nm} comes to you by herself!</p><button class="btn ghost" data-b="close">OK</button>`;
+  if(s.earn){const f={earn:s.earn},ride=s.k.startsWith('mount:');$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':'Come back and play tomorrow! A day counts as soon as you start playing.'} ${ride?`This ride can't be bought. ${FK[s.k.slice(6)].nm} comes to you by herself!`:`This can't be bought. It shows up in your closet once you earn it!`}</p><button class="btn ghost" data-b="close">OK</button>`;
     $('#buy').dataset.k=s.k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">You've earned <b>${st}</b> of ${s.prize} ⭐</p><p>Finish ⭐🏆 challenges to earn more stars. She comes to you by herself!</p><button class="btn ghost" data-b="close">OK</button>`;
   $('#buy').dataset.k=s.k;$('#buy').classList.add('show');}
@@ -7683,7 +7728,8 @@ $('#rideBtn').onclick=()=>{sfx('pop');if(FLY.on){flyLand(false);return;}stopRide
 // the camera backs off a little when you're high up, so you can see the island below
 function flyCamBack(){const a=barnRide;if(!FLY.on||!isFlyer(a))return 0;const p=player.pos;return 2.2*Math.max(0,Math.min(1,(p.y-groundAt(p.x,p.z))/8));}
 // ---- src/24i-earned-rides.js ----
-/* ================= 🏆 RIDES YOU EARN: special rides you can't buy with stars or coins =================
+/* ================= 🏆 RIDES (AND OUTFITS) YOU EARN: special things you can't buy with stars or coins =================
+   (the modern outfits you earn the same way are listed in 14d-fashion2-earned.js; they're given out here too)
    - 🐼 Bamboo the giant panda: play 3 days in a row.        🦁 Goldie the champion lion: win 3 contests or games.
    - 🦌 Comet the flying reindeer: play 7 days in a row.     🔥 Blaze the phoenix: win 10 contests or games.
    - A "win" is 1st place in the 👑 model contest, the 🎂 cake contest or the 🐾 pet contest, or beating Kai 1-on-1 at basketball.
@@ -7791,7 +7837,11 @@ function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.las
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
   const nx=EARNED.find(f=>f.earn.by==='days'&&!BS.own[f.k]&&D.n<f.earn.goal);
   if(D.n>1)setTimeout(()=>toast(`🔥 ${D.n} days in a row!${nx?` ${nx.earn.goal-D.n} more for ${nx.e} ${nx.nm}`:''}`),5000);}
-function erCheck(){if(!started)return;erPlayedToday();
+// the modern outfits from 14d-fashion2-earned.js: they unlock in your closet (all of them, so they're there if you switch girl/guy)
+function erLooks(){for(const L of EARN_LOOKS){const k='look:'+L.id;if(owns(k)||erHave(L)<L.earn.goal)continue;
+  SAVE.owned[k]=true;persist();const mine=L.who==='both'||(L.who==='guy')===isGuy(SAVE.look);
+  if(mine){banner(`🏆 You earned ${L.e} ${L.n}!`);toast(`Find it in your closet's ${TAB_NAME[L.tab]} 👗`);sfx('tada');did('prize',L.id);return true;}}return false;}
+function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
   for(const f of EARNED)if(!BS.own[f.k]&&erHave(f)>=f.earn.goal){getMount(f.k,true);sfx('tada');
     burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);break;}}
 setInterval(erCheck,1500);
@@ -7802,7 +7852,11 @@ addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
 function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const goal=f.earn?f.earn.goal:f.prize,have=f.earn?erHave(f):starsEarned();
   return {k:f.k,e:f.e,n:f.n,nm:f.nm,by:f.earn?f.earn.by:'stars',goal,have:Math.min(goal,have),own:!!BS.own[f.k],fly:!!f.fly,what:f.earn?erWhat(f):`Earn ${f.prize} ⭐ stars`};});}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0})});});
+function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
+  have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
+// the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
+function earnTag(e){return `🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0})});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
