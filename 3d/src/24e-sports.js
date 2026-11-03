@@ -198,7 +198,7 @@ function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;S
   else 
   if(m==='ft'){coins=SP.score*2+(SP.score===10?10:0);best=spBest('ft',SP.score);h=`<h2>${SP.score>=8?'🏆 Sharpshooter!':SP.score>=5?'🏀 Nice shooting!':'🏀 Good try!'}</h2><div class="spBig">${SP.score} / 10</div><p>free throws made${best?' · New best! 🎉':''}</p>`;}
   else if(m==='shoot'){coins=Math.round(SP.score/2);best=spBest('shoot',SP.score);h=`<h2>${SP.score>=20?'🔥 On fire!':'🏀 Time!'}</h2><div class="spBig">${SP.score} pts</div><p>in 60 seconds${best?' · New best! 🎉':''}</p>`;}
-  else if(m==='v1'){const win=SP.score>SP.opp;coins=win?30:10;if(win){SAVE.sports.v1w=(SAVE.sports.v1w||0)+1;persist();}h=`<h2>${win?'🏆 You win!':'😅 Kai wins this time'}</h2><div class="spBig">${SP.score} - ${SP.opp}</div><p>${win?'You beat Kai 1-on-1!':'Practice your shot and try again!'}</p>`;}
+  else if(m==='v1'){const win=SP.score>SP.opp;coins=win?30:10;if(win){SAVE.sports.v1w=(SAVE.sports.v1w||0)+1;persist();did('sport','v1win');}h=`<h2>${win?'🏆 You win!':'😅 Kai wins this time'}</h2><div class="spBig">${SP.score} - ${SP.opp}</div><p>${win?'You beat Kai 1-on-1!':'Practice your shot and try again!'}</p>`;}
   else if(m==='bat'){const B=SP.bat;coins=B.hits*2+B.hr*5;const nb=spBest('hr',B.hr);const nf=B.far&&spBest('far',B.far);
     h=`<h2>${B.hr?'💥 Slugger!':B.hits?'⚾ Nice hitting!':'⚾ Good try!'}</h2><div class="spBig">${B.hits} hits · ${B.hr} 🏠</div><p>${B.far?`Longest hit: ${B.far} ft`:'Watch the ball and swing when it gets to the plate!'}${nb||nf?' · New best! 🎉':''}</p>`;}
   if(quit)coins=0;

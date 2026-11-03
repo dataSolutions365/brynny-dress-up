@@ -32,6 +32,7 @@ const FARM=[
   {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
   {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
+FARM.push(...earnedRideList());// 🏆 rides you can only earn, not buy (24i-earned-rides.js)
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
 const ZOOA=[
   {k:'zebra',e:'🦓',n:'Zebra',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
@@ -93,6 +94,7 @@ class FarmAnimal{
       const tail=new THREE.Group();tail.position.set(0,by+r*.45,-(len/2+r*.85));g.add(tail);
       maneM.forEach((m,i)=>{const s=(i-(maneM.length-1)/2)*.03*sc;taperTube([fV(s,0,0),fV(s,-.08*sc,-.14*sc),fV(s*1.5,-.35*sc,-.2*sc),fV(s*2,-.6*sc,-.16*sc)],q=>(.07-.035*q)*sc*(maneM.length>1?.6:1),m,tail,20,8);});
       Object.assign(o,{neck,head,tail,nTilt:.78,size:sc,h:by+nl+.35*sc,rad:.45*sc,dustR:[r,r,len*.7]});return {fur,head,H,neck};};
+    if(earnedRideModel.call(this,k,{g,body,o,horseLike}))return o;// 🏆 the rides you earn (24i-earned-rides.js)
     if(k==='horse'){const h=horseLike(1.05,'#9a5f34','#3b2416',{light:'#c48a5c'});M(sph(h.H*.3,10,8),fm('#ffffff'),0,h.H*.35,h.H*.95,h.head).scale.set(.5,1.2,.4);}
     if(k==='donkey'){const h=horseLike(.88,'#9d968f','#4a4440',{short:true,light:'#ece6df',hoof:'#3b2a22'});
       for(const sx of [-1,1]){const e=M(new THREE.CapsuleGeometry(h.H*.17,h.H*.95,6,10),h.fur,sx*h.H*.42,h.H*1.15,-h.H*.15,h.head);e.rotation.z=-sx*.3;e.scale.z=.6;M(new THREE.CapsuleGeometry(h.H*.09,h.H*.75,6,8),fm('#4a4440'),sx*h.H*.44,h.H*1.15,-h.H*.06,h.head).rotation.z=-sx*.3;}
@@ -546,7 +548,7 @@ function clearPreview(){if(barnPreview&&!BS.own[barnPreview.k]){const a=barnPrev
 function previewFarm(k){if(barnPreview&&barnPreview.k===k)return;clearPreview();const a=farmAnimal(k);if(!BS.own[k]){a.lx=CARE_SPOT[0];a.lz=CARE_SPOT[1]+.6;a.face=.35;barnPreview=a;a.setTag('');}barnSel=a;
   a.speak(rnd(a.F.say));a.hop=1;placeFarm(a);}
 const FTABS=[['mine','💖','My animals'],['adopt','🪙','Adopt'],['rare','⭐','Rare'],['pals','🐉','Buddies']];
-const tabList=t=>FARM.filter(f=>t==='mounts'?f.mount||f.prize:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
+const tabList=t=>FARM.filter(f=>t==='mounts'?f.mount||f.prize||f.earn:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
 const fMeter=(e,n,v)=>`<div class="meter">${e} ${n}<i><b style="width:${Math.round(v)}%"></b></i></div>`;
 function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
   $('#barnTabs').innerHTML=FTABS.map(([id,e,n])=>`<button class="tab${id===barnTab?' on':''}" data-ftab="${id}"><b>${e}</b>${n}</button>`).join('');
@@ -662,7 +664,7 @@ function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div
     <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt').map(farm).join('')}
     <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
     <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
-    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
+    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?`🏆 ${f.earn.by==='wins'?`Win ${f.earn.goal}`:`${f.earn.goal} days`}`:f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
     <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
