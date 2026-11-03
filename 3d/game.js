@@ -2747,6 +2747,51 @@ const GIRL_STORE_CAT={glasses:STORE_GLASSES,dresses:[],tops:[],bottoms:[],shoes:
     SHOP.push({k:'look:'+id,tab:'store',st:tab,e,n,p,d:`New at the store! Made for guys. Find it in your closet's ${TAB_NAME[tab]}.`});});
   for(const tab in FASHION_GIRL)FASHION_GIRL[tab].forEach(([id,e,n,c,p])=>{const it=[id,e,n,c];CAT[tab].push(it);GIRL_STORE_CAT[tab].push(it);
     SHOP.push({k:'look:'+id,tab:'store',st:tab,girl:true,e,n,p,d:`New at the store! Find it in your closet's ${TAB_NAME[tab]}.`});});}
+// ---- src/14d-fashion2-earned.js ----
+/* ================= 🏆 MODERN FASHION YOU EARN: can't be bought, only won =================
+   Picked from what's in style now (fall 2026): cable knits, shearling jackets, parachute pants, barrel-leg jeans,
+   utility vests, denim maxi skirts and chunky sneakers. In the 3D world they're locked 🔒 in your closet until you earn them
+   by winning contests and games or by playing days in a row (24i-earned-rides.js gives them out, the ⭐🏆 Rewards tab shows how close you are).
+   Every one is in the 2D studio too (index.html), with the same id, free to try there.
+   who: 'both' = girls and guys, 'guy' or 'girl' = only that closet. */
+const EARN_LOOKS=[
+  {id:'cableknit',tab:'tops',e:'🧶',n:'Cable-knit sweater',c:'#f2e6d0',who:'both',earn:{by:'days',goal:2}},
+  {id:'parachute',tab:'bottoms',e:'🪂',n:'Parachute pants',c:'#2d2d3a',who:'both',earn:{by:'wins',goal:1}},
+  {id:'barreljeans',tab:'bottoms',e:'👖',n:'Barrel jeans',c:'#5b7fb8',who:'both',earn:{by:'wins',goal:2}},
+  {id:'utilityvest',tab:'tops',e:'🦺',n:'Utility vest',c:'#5d6b3a',who:'guy',earn:{by:'days',goal:4}},
+  {id:'denimmaxi',tab:'bottoms',e:'💙',n:'Denim maxi skirt',c:'#5b7fb8',who:'girl',earn:{by:'days',goal:4}},
+  {id:'shearling',tab:'tops',e:'🐑',n:'Shearling jacket',c:'#8a5a3b',who:'both',earn:{by:'days',goal:5}},
+  {id:'chunkykicks',tab:'shoes',e:'👟',n:'Chunky sneakers',c:'#ffffff',who:'both',earn:{by:'wins',goal:5}},
+];
+Object.assign(OUTFITS2D,{
+  // 🧶 Cable-knit sweater: soft knit with braided cables down the front, ribbed neck, cuffs and hem
+  cableknit(k,c){const m=fabMat(k,c,'knit');k.topShell(m,'long');const rib=k.mat(shadeC(c,-.12));crewNeck(k,rib,.058,.016);cuffs(k,rib,.046,.016);waistband(k,rib);
+    for(const x of [-.055,0,.055])for(let i=0;i<9;i++){const y=.105+i*.036;frontDot(k,rib,y,x+(i%2?.006:-.006),.0105);}},
+  // 🪂 Parachute pants: baggy and shiny, with drawstrings and toggles at the ankles
+  parachute(k,c){const m=k.mat(c,'shiny');m.roughness=.35;k.waist(m);looseLegs(k,m,.094,{hem:.92});const dk=k.mat(shadeC(c,-.2),'shiny');ankleCuffs(k,dk,.08);drawstrings(k);
+    const X=k.av.legX,t=k.mat('#1a1a1a');for(const l of k.legs){k.P(cyl(.003,.003,.05,6),k.mat('#ffffff'),l.kn,l.sx*.03,-.36-X,.075);k.P(cyl(.008,.008,.016,8),t,l.kn,l.sx*.03,-.39-X,.077);}
+    for(const l of k.legs)beltRing(k,dk,l.kn,.092,.006,-.02);},
+  // 👖 Barrel jeans: roomy at the knee and curving in at the ankle, with a belt
+  barreljeans(k,c){const m=k.mat(c,'denim');k.waist(m);looseLegs(k,m,.093,{hem:.74});guyBelt(k,'#3a2a1e');},
+  // 🦺 Utility vest: lots of pockets and a zip, over a plain tee
+  utilityvest(k,c){k.topShell(k.mat('#ececec'),'short');for(const a of k.arms)k.P(capTop(.055,.05),k.mat('#ececec'),a.sh,0,-.02,0);
+    const m=k.mat(c);const b=k.P(new THREE.CapsuleGeometry(.138,.2,6,24),m,k.spine,0,.25,0);b.scale.set(k.av.shellX*1.02,1,.84);
+    const dk=k.mat(shadeC(c,-.18));standCollar(k,m,.066,.04);
+    for(const s of [-1,1]){frontStrip(k,dk,lineOf(s*.06,.37,s*.06,.31,.045,.045,2),.016);frontStrip(k,dk,lineOf(s*.065,.2,s*.065,.12,.055,.055,2),.017);}
+    frontStrip(k,k.mat('#d9d9d9','metal'),lineOf(0,.47,0,.06,.005,.005,10),.017);},
+  // 💙 Denim maxi skirt: long and straight, with a front seam and gold stitching
+  denimmaxi(k,c){const m=k.mat(c,'denim');k.waist(m);k.skirt(m,.8,.22,{curve:.9,folds:.03,k:8});beltRing(k,k.mat(shadeC(c,-.15),'denim'),k.hips,.14,.012,.1);k.av.legAmp=.34;},
+  // 🐑 Shearling jacket: suede with a big fluffy cream collar, cuffs and hem
+  shearling(k,c){const m=k.mat(c);m.roughness=.95;k.topShell(m,'long');const cr=k.mat('#f4ebdc');cr.roughness=1;
+    crewNeck(k,cr,.07,.028);for(const s of [-1,1])frontStrip(k,cr,lineOf(s*.03,.46,s*.075,.33,.035,.012,5),.006);cuffs(k,cr,.05,.02);waistband(k,cr);
+    frontStrip(k,k.mat(shadeC(c,-.35)),lineOf(0,.36,0,.05,.004,.004,6),.004);},
+  // 👟 Chunky sneakers: big layered soles with a colored stripe
+  chunkykicks(k,c){shoeShell(k,k.mat(c),.95,1.1);solePad(k,k.mat('#f4f4f4','shiny'),.06,.13,.25);
+    const acc=k.mat(isLight(c)?'#8fb8ff':trimOf(c),'shiny');k.legs.forEach(l=>k.P(box(.134,.012,.254),acc,l.an,0,-.032,.045));shoeTrim(k,k.mat(shadeC(c,-.25),'shiny'));},
+});
+for(const L of EARN_LOOKS){const it=[L.id,L.e,L.n,L.c];if(L.who!=='guy')CAT[L.tab].push(it);if(L.who!=='girl')GUY_CAT[L.tab].push(it);
+  SHOP.push({k:'look:'+L.id,tab:'earned',st:L.tab,girl:L.who==='girl',guy:L.who==='guy',e:L.e,n:L.n,p:0,prize:L.earn.goal,earn:L.earn,
+    d:`Modern fashion you can't buy! Earn it and find it in your closet's ${TAB_NAME[L.tab]}.`});}
 // ---- src/14e-match-2d.js ----
 /* ================= MATCH THE 2D STUDIO =================
    Everything you can wear in the 2D studio (index.html) can be worn here too, with the same ids, so a look matches
@@ -3300,14 +3345,16 @@ anims.push((t,dt)=>{if(!started||!av)return;
 /* ================= 🚲 BICYCLE and 🐎 HORSE (rides from the moves wheel) =================
    - 🚲 Bike: an extra you buy in the shop with ⭐ stars, in the closet's Extras like in the 2D studio (index.html).
      While you wear it, tap 🚲 Bike in the moves wheel to hop on and pedal around town: faster than walking,
-     you keep rolling for a bit when you let go of the joystick, you lean into turns, and JUMP does a little bunny hop.
+     you sit on the saddle with your hands on the grips and your feet pedaling the cranks round (faster the faster you go),
+     you coast with the pedals still when you let go of the joystick, the bike leans and the handlebars turn in turns,
+     a foot comes down when you stop, and JUMP does a little bunny hop.
      Tap 🚲 Hop off to walk again.
    - 🐎 Horse: once you adopt a horse (or a pony, unicorn, donkey... any animal you can ride) at the Happy Barn, tap it in
      the moves wheel and it trots over to you wherever you are, so you can ride it around town (24d-barn.js does the riding).
      Before you have one, the button shows the way to the barn.
    Only barn animals made for riding can be ridden (never pets like dogs and cats).
    Both are put away during sports, contests and other hands-on games, the same as the skateboard. */
-const BIKE={on:false,v:0,dir:0,lean:0,crank:0,spin:0,air:false,col:''};
+const BIKE={on:false,v:0,dir:0,lean:0,crank:0,spin:0,steer:0,stand:0,still:0,pedal:false,air:false,col:''};
 const bikeBoost=()=>BIKE.on?1.7:1;
 // "rideActs" are added to the front of the moves wheel (19-ui-closet.js); the horse one comes from the barn
 const hasBike=()=>!!(SAVE.look&&SAVE.look.extras&&SAVE.look.extras.bicycle)&&owns('look:bicycle');
@@ -3319,47 +3366,138 @@ const rideActs=()=>RIDE_ACTS.flatMap(f=>f());
 
 /* ---------- the bike model: chunky and cute like the rest of the town ---------- */
 // makeBike() builds one; friends online get their own (26c-friends-see.js)
+// It is a grown-up size so a rider's legs reach the pedals: the seat slides up or down to fit whoever rides it,
+// the handlebars and front wheel turn when you steer, and the pedals stay flat under your feet as the cranks go round.
+const BIKE_S=1.2,BIKE_GEAR=2.4;// how big the bike is, and how many times the back wheel turns for each turn of the pedals
 function makeBike(){const g=new THREE.Group();g.visible=false;scene.add(g);
+  // everything sits in "in": scaled up, and moved forward so the seat is right under the rider's hips
+  const inn=new THREE.Group();inn.scale.setScalar(BIKE_S);inn.position.z=.17;g.add(inn);
   const frame=phys('#ff6fae',{roughness:.3,clearcoat:1}),tire=std('#2d2d3a',{roughness:.9}),rim=phys('#e8e8ee',{metalness:.7,roughness:.25}),
     seat=std('#3a2a30',{roughness:.6}),grip=std('#ffffff',{roughness:.5}),bask=std('#d9a066',{roughness:.9});
   const R=.27,WB=.47,BB=[0,.3,.02];// wheel radius, half the wheelbase, where the pedals turn
   // a tube from one point to another
-  const tube=(a,b,r=.022,m=frame)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A),t=M(cyl(r,r,d.length(),10),m,0,0,0,g);
+  const tube=(a,b,r=.022,m=frame,par=inn)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A),t=M(cyl(r,r,d.length(),10),m,0,0,0,par);
     t.position.copy(A).add(B).multiplyScalar(.5);t.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return t;};
-  const wheels=[];
-  for(const z of [-WB,WB]){const w=new THREE.Group();w.position.set(0,R,z);g.add(w);
+  const wheel=(par,x,y,z)=>{const w=new THREE.Group();w.position.set(x,y,z);par.add(w);
     const ti=M(new THREE.TorusGeometry(R-.025,.03,10,32),tire,0,0,0,w);ti.rotation.y=Math.PI/2;
     const ri=M(new THREE.TorusGeometry(R-.06,.012,6,28),rim,0,0,0,w,false);ri.rotation.y=Math.PI/2;
     for(let i=0;i<6;i++){const s=M(cyl(.005,.005,(R-.06)*2,4),rim,0,0,0,w,false);s.rotation.x=i*Math.PI/6;}
-    M(cyl(.03,.03,.06,12),rim,0,0,0,w,false).rotation.z=Math.PI/2;wheels.push(w);}
+    M(cyl(.03,.03,.06,12),rim,0,0,0,w,false).rotation.z=Math.PI/2;return w;};
   const back=[0,R,-WB],front=[0,R,WB],seatP=[0,.6,-.14],head=[0,.66,.36],bb=BB;
   tube(back,bb);tube(back,seatP,.02);tube(bb,[0,.62,-.13],.026);tube(bb,head,.028);tube([0,.6,-.12],[0,.64,.34],.024);
-  tube(head,front,.022);tube([0,.66,.36],[0,.86,.32],.024);// fork and steering post
-  const bar=M(cyl(.018,.018,.46,10),frame,0,.86,.32,g);bar.rotation.z=Math.PI/2;
-  for(const x of [-.21,.21])M(cyl(.024,.024,.08,10),grip,x,.86,.32,g).rotation.z=Math.PI/2;
-  const sb=M(new RoundedBoxGeometry(.13,.04,.2,3,.018),seat,0,.635,-.15,g);
+  // the seat on its post: slides up and down to fit the rider (bikeRide)
+  const seatG=new THREE.Group();inn.add(seatG);
+  tube([0,.5,-.125],[0,.64,-.145],.016,rim,seatG);M(new RoundedBoxGeometry(.13,.04,.2,3,.018),seat,0,.635,-.15,seatG);
+  // the front: fork, front wheel, handlebars and basket all turn together around the head tube
+  const axis=new THREE.Vector3(0,.66-R,-(.36-WB)).normalize(),steer=new THREE.Group();steer.position.set(...head);inn.add(steer);
+  const rel=p=>[p[0]-head[0],p[1]-head[1],p[2]-head[2]];
+  const wheels=[wheel(inn,...back),wheel(steer,...rel(front))];
+  tube(rel(head),rel(front),.022,frame,steer);tube(rel(head),rel([0,.93,.31]),.024,frame,steer);
+  M(cyl(.018,.018,.46,10),frame,...rel([0,.93,.31]),steer).rotation.z=Math.PI/2;
+  const grips=[];for(const x of [-.21,.21]){M(cyl(.024,.024,.08,10),grip,...rel([x,.93,.31]),steer).rotation.z=Math.PI/2;const o=new THREE.Object3D();o.position.set(...rel([x,.93,.31]));steer.add(o);grips.push(o);}
   // a little basket on the front with flowers in it
-  M(new RoundedBoxGeometry(.24,.13,.16,2,.02),bask,0,.8,.47,g);
-  for(const [x,c] of [[-.06,'#ff8fc8'],[0,'#ffd23f'],[.06,'#8fd8ff']])M(sph(.03,8,6),std(c),x,.88,.47,g,false);
-  // the pedals go round with your feet
-  const crank=new THREE.Group();crank.position.set(...bb);g.add(crank);M(cyl(.06,.06,.02,16),rim,0,0,0,crank).rotation.z=Math.PI/2;
-  const pedals=[];for(const s of [-1,1]){const arm=M(box(.016,.15,.03),rim,s*.05,-s*.06,0,crank,false);const pd=M(box(.08,.02,.05),tire,s*.09,-s*.13,0,crank,false);pedals.push(pd,arm);}
-  return {g,wheels,crank,frame,R};}
+  M(new RoundedBoxGeometry(.24,.13,.16,2,.02),bask,...rel([0,.85,.47]),steer);
+  for(const [x,c] of [[-.06,'#ff8fc8'],[0,'#ffd23f'],[.06,'#8fd8ff']])M(sph(.03,8,6),std(c),...rel([x,.93,.47]),steer,false);
+  // the cranks go round with your feet, and each pedal stays flat under your shoe
+  const crank=new THREE.Group();crank.position.set(...bb);inn.add(crank);M(cyl(.06,.06,.02,16),rim,0,0,0,crank).rotation.z=Math.PI/2;
+  const pedals=[];for(const s of [-1,1]){M(box(.016,.15,.03),rim,s*.05,-s*.06,0,crank,false);const pd=new THREE.Group();pd.position.set(s*.09,-s*.13,0);crank.add(pd);M(box(.08,.02,.05),tire,0,0,0,pd,false);pedals.push(pd);}
+  return {g,inn,wheels,crank,pedals,grips,seatG,steer,axis,frame,R:R*BIKE_S,crankR:.13*BIKE_S,seatTop:.655*BIKE_S};}
 const BK=makeBike();
 
+/* ---------- riding it for real: bikeRide() puts the rider's body on the bike every frame ----------
+   Hips on the saddle, hands on the grips, the balls of the feet on the pedals as they go round (the legs bend to
+   follow them exactly), a little rock of the hips with each push, the body leaning forward more the faster you go,
+   and when you stop, one foot comes down to the ground and the bike tips onto it.
+   s is the ride: {crank, lean, steer, stand (0..1 foot down), air, v}. Used for you and for friends online. */
+const BKR={v:new THREE.Vector3(),w:new THREE.Vector3(),u:new THREE.Vector3(),c:new THREE.Vector3(),n:new THREE.Vector3(),z:new THREE.Vector3(),
+  m:new THREE.Matrix4(),inv:new THREE.Matrix4(),mh:new THREE.Matrix4(),ms:new THREE.Matrix4(),qp:new THREE.Quaternion(),q:new THREE.Quaternion(),q2:new THREE.Quaternion(),e:new THREE.Euler(),
+  pv:[new THREE.Vector3(),new THREE.Vector3()],gv:[new THREE.Vector3(),new THREE.Vector3()],cc:new THREE.Vector3(),gr:new THREE.Vector3()};
+// two-bone reach (thigh+shin or upper arm+forearm): bend toward "pole", returns the root's local turn and how much the middle joint bends
+function reach2(J,T,a,b,pole,qParent,bendSign,out){const t=BKR.v.copy(T).sub(J);let d=t.length();d=Math.min((a+b)*.999,Math.max(Math.abs(a-b)+.001,d));t.normalize();
+  const cb=Math.min(1,Math.max(-1,(a*a+d*d-b*b)/(2*a*d))),cg=Math.min(1,Math.max(-1,(a*a+b*b-d*d)/(2*a*b))),be=Math.acos(cb);
+  const p=BKR.w.copy(pole).addScaledVector(t,-pole.dot(t)).normalize();
+  const u=BKR.u.copy(t).multiplyScalar(Math.cos(be)).addScaledVector(p,Math.sin(be)).normalize();
+  const c=BKR.c.copy(p).addScaledVector(u,-p.dot(u)).normalize();
+  const n=bendSign>0?BKR.n.crossVectors(c,u):BKR.n.crossVectors(u,c);
+  const ny=BKR.z.copy(u).negate(),nz=new THREE.Vector3().crossVectors(n,ny);
+  BKR.m.makeBasis(n,ny,nz);out.q.setFromRotationMatrix(BKR.m);out.q.premultiply(BKR.q2.copy(qParent).invert());out.bend=bendSign*(Math.PI-Math.acos(cg));return out;}
+const KNEE_POLE=[new THREE.Vector3(-.15,.3,1),new THREE.Vector3(.15,.3,1)],ELBOW_POLE=[new THREE.Vector3(-.6,-1,-.7),new THREE.Vector3(.6,-1,-.7)];
+const BK_RX=new THREE.Vector3(1,0,0);
+function bikeRide(a,bk,s,dt){if(!a||!a.legs||!bk)return;
+  a.bikeW=Math.min(1,(a.bikeW||0)+dt*4);const W=a.bikeW;
+  // where the bike's pedals, grips and cranks are, seen from the rider's body
+  bk.steer.quaternion.setFromAxisAngle(bk.axis,s.steer||0);
+  for(const p of bk.pedals)p.rotation.x=0;
+  bk.g.updateMatrixWorld(true);a.g.updateMatrix();BKR.inv.copy(a.g.matrix).invert();
+  const loc=(o,v)=>o.getWorldPosition(v).applyMatrix4(BKR.inv);
+  const cc=loc(bk.crank,BKR.cc);
+  const L=a.legs,A=a.arms,th=-L[0].kn.position.y,sh=-L[0].an.position.y,leg=th+sh;
+  // the saddle goes to the height where your leg is nearly straight at the bottom of each push
+  const fb=.15,ay=.014+.062*Math.cos(fb)+.045*Math.sin(fb),az=.062*Math.sin(fb)-.045*Math.cos(fb);
+  const dx=Math.abs(bk.pedals[1].position.x*BIKE_S)-Math.abs(L[1].hp.position.x),dz=cc.z+az;
+  const sitY=cc.y-bk.crankR+ay+Math.sqrt(Math.max(.01,(leg*.94)**2-dz*dz-dx*dx))-L[0].hp.position.y;
+  bk.seatG.position.y=(sitY-.0975-bk.seatTop)/BIKE_S;
+  // one foot down on the ground when stopped (the left one), the bike tipped onto that side
+  const st=s.stand||0;let foot=null;
+  if(st>.001){const P=BKR.gr.set(-.26,0,.14).applyMatrix4(a.g.matrix);P.y=a.g.position.y-(s.groundDrop||0)+.07;foot=P.applyMatrix4(BKR.inv);}
+  const standY=foot?foot.y+Math.sqrt(Math.max(.01,(leg*.97)**2-(Math.abs(foot.x)-Math.abs(L[0].hp.position.x))**2-(foot.z-.1)**2))-L[0].hp.position.y:sitY;
+  const v=s.v||0,ped=s.pedal?1:0;
+  const hy=sitY+(s.air?.035:0)+(Math.min(sitY,standY)-sitY)*st,hz=.1*st;
+  const rock=Math.sin(s.crank||0)*.035*ped*(1-st);
+  const lean=(.42+Math.min(.12,v*.014))*(1-st)+.24*st;
+  // hips and back
+  const H=a.hips,SP=a.spine;
+  H.position.set(H.position.x*(1-W),H.position.y+(hy-H.position.y)*W,H.position.z+(hz-H.position.z)*W);
+  H.quaternion.slerp(BKR.q.setFromEuler(BKR.e.set(0,0,rock)),W);SP.quaternion.slerp(BKR.q.setFromEuler(BKR.e.set(lean,0,-rock*.6)),W);
+  a.head.rotation.x=-lean*.55*W;a.head.rotation.z=-(s.lean||0)*.5*W;
+  H.updateMatrix();SP.updateMatrix();BKR.mh.copy(H.matrix);BKR.ms.multiplyMatrices(BKR.mh,SP.matrix);
+  const out={q:new THREE.Quaternion(),bend:0};
+  // legs: balls of the feet on the pedals, toes dipping a little at the bottom and back of each turn
+  BKR.qp.setFromRotationMatrix(BKR.mh);
+  for(let i=0;i<2;i++){const l=L[i],sx=l.sx,pd=bk.pedals[sx<0?0:1];
+    const P=loc(pd,BKR.pv[i]),psi=Math.atan2(P.z-cc.z,P.y-cc.y);let fp=.15-.15*Math.sin(psi);
+    pd.rotation.x=fp-bk.crank.rotation.x;
+    const T=BKR.gv[i].set(P.x,P.y+.014+.062*Math.cos(fp)+.045*Math.sin(fp),P.z+.062*Math.sin(fp)-.045*Math.cos(fp));
+    if(foot&&sx<0){T.lerp(foot,st);fp*=1-st;}
+    const J=l.hp.position.clone().applyMatrix4(BKR.mh);
+    reach2(J,T,th,sh,KNEE_POLE[sx<0?0:1],BKR.qp,1,out);
+    l.hp.quaternion.slerp(out.q,W);l.kn.quaternion.slerp(BKR.q.setFromAxisAngle(BK_RX,out.bend),W);
+    // the foot's turn in the body = hips * hip * knee * ankle, so pick the ankle turn that gives the wanted toe dip
+    BKR.q2.copy(BKR.qp).multiply(l.hp.quaternion).multiply(l.kn.quaternion).invert();l.an.quaternion.slerp(BKR.q2.multiply(BKR.q.setFromAxisAngle(BK_RX,fp)),W);}
+  // arms: hands on the grips, elbows a little bent and pointing out
+  BKR.qp.setFromRotationMatrix(BKR.ms);
+  for(let i=0;i<2;i++){const ar=A[i],sx=ar.sx,g=bk.grips[sx<0?0:1];
+    const T=loc(g,BKR.gv[i]),J=ar.sh.position.clone().applyMatrix4(BKR.ms);
+    reach2(J,T,-ar.el.position.y,-ar.hand.position.y+.04*ar.hand.scale.x,ELBOW_POLE[sx<0?0:1],BKR.qp,-1,out);
+    ar.sh.quaternion.slerp(out.q,W);ar.el.quaternion.slerp(BKR.q.setFromAxisAngle(BK_RX,out.bend),W);}}
+// back to normal when you hop off
+function bikeUnride(a){if(!a||!a.legs)return;a.bikeW=0;a.hips.position.z=0;a.head.rotation.x=0;
+  for(const l of a.legs){l.hp.rotation.y=0;l.kn.rotation.y=l.kn.rotation.z=0;l.an.rotation.y=l.an.rotation.z=0;}
+  for(const r of a.arms){r.sh.rotation.y=0;r.el.rotation.y=0;}}
+// how the bike moves for one step: pedals turn with the back wheel while you pedal, spin free when you coast
+// (and come round level, ready for the next push), the front wheel steers and you lean into turns like a real bike,
+// and after you stop for a moment a foot comes down. Shared with friends online (26c-friends-see.js).
+function bikeStep(s,bk,dt,v,pedal,yawRate,ground){
+  s.v=v;s.pedal=pedal;s.spin+=v*dt/bk.R;for(const w of bk.wheels)w.rotation.x=s.spin;
+  s.still=v<.15&&!pedal&&ground?(s.still||0)+dt:0;
+  if(pedal)s.crank+=dt*v/bk.R/BIKE_GEAR;
+  else{const want=s.still>.25?-Math.PI/2-.5:Math.PI/2,k=Math.PI*(s.still>.25?2:1);const tgt=want+Math.round((s.crank-want)/k)*k;s.crank+=(tgt-s.crank)*Math.min(1,dt*3);}
+  bk.crank.rotation.x=s.crank;
+  const lean=-Math.max(-.35,Math.min(.35,Math.atan(v*yawRate/9.8)*.8));
+  s.stand=(s.stand||0)+((s.still>.25?1:0)-(s.stand||0))*Math.min(1,dt*(s.still>.25?3:8));
+  s.lean+=((lean+.1*s.stand)-s.lean)*Math.min(1,dt*6);
+  s.steer+=(Math.max(-.5,Math.min(.5,yawRate*.35/(1+v*.4)))-s.steer)*Math.min(1,dt*8);}
+
 function bikeBusy(){return closetOpen||!started||handsBusy()||!!barnRide||!hasBike();}
-function startBike(){if(BIKE.on||bikeBusy())return;if(SK.on)stopSkate(true);BIKE.on=true;BIKE.v=0;BIKE.dir=player.face;av.emote=null;
+function startBike(){if(BIKE.on||bikeBusy())return;if(SK.on)stopSkate(true);BIKE.on=true;BIKE.v=0;BIKE.dir=player.face;BIKE.stand=1;BIKE.still=1;BIKE.crank=-Math.PI/2-.5;av.emote=null;av.bikeW=0;
   sfx('pop');tone(880,.05,'triangle',.08);tone(1180,.06,'triangle',.08,.08);// ring ring!
   renderActions();did('bike');
   if(!SAVE.biked){SAVE.biked=1;persist();toast('🚲 Ride your bike anywhere in town! Tap JUMP to hop, tap 🚲 Hop off to walk');}}
-function stopBike(quiet){if(!BIKE.on)return;BIKE.on=false;BIKE.v=0;av.biking=false;av.g.rotation.z=0;BK.g.visible=false;if(!quiet)sfx('pop');renderActions();}
+function stopBike(quiet){if(!BIKE.on)return;BIKE.on=false;BIKE.v=0;av.biking=false;av.g.rotation.z=0;bikeUnride(av);BK.g.visible=false;if(!quiet)sfx('pop');renderActions();}
 function toggleBike(){if(BIKE.on)stopBike();else startBike();}
-// sitting on the seat, feet going round on the pedals, hands on the handlebars
-function bikePose(a,tgt,sp,air,t){const c=a===av?BIKE.crank:(a.bikeCrank||0);
-  tgt.bob=-(a.hip-(.66+a.legX));tgt.lean=.32;tgt.sy=0;tgt.st=0;tgt.hy=0;tgt.hd=0;tgt.spin=0;tgt.l0z=tgt.l1z=0;
-  tgt.l0=-1.05-Math.sin(c)*.38;tgt.k0=1.15+Math.sin(c)*.5;tgt.l1=-1.05+Math.sin(c)*.38;tgt.k1=1.15-Math.sin(c)*.5;tgt.an=.1;
-  tgt.a0x=tgt.a1x=-1.05;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.35;
-  if(air){tgt.bob+=.05;tgt.l0=tgt.l1=-1.05;tgt.k0=tgt.k1=1.25;}}
+// the walking pose while bikeRide() takes over (it sets the arms, legs, hips and back exactly every frame)
+function bikePose(a,tgt,sp,air,t){tgt.lean=.42;tgt.sy=0;tgt.st=0;tgt.hy=0;tgt.hd=0;tgt.spin=0;tgt.l0z=tgt.l1z=0;tgt.hx=0;tgt.hr=0;tgt.sz=0;tgt.tilt=0;
+  tgt.bob=-(a.hip-(.66+a.legX));tgt.l0=tgt.l1=-1.05;tgt.k0=tgt.k1=1.15;tgt.an=.1;tgt.a0x=tgt.a1x=-1.05;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.35;}
 anims.push((t,dt)=>{if(!started||!av)return;
   if(BIKE.on&&bikeBusy())stopBike(true);
   av.biking=BIKE.on;
@@ -3367,22 +3505,22 @@ anims.push((t,dt)=>{if(!started||!av)return;
   const col=hasBike()&&SAVE.look.extras.bicycle;if(col&&BIKE.col!==col){BIKE.col=col;BK.frame.color.set(col);}
   // in the closet it stands next to you so you can see it
   const parked=!BIKE.on&&hasBike()&&closetOpen&&$('#closet').classList.contains('show');BK.g.visible=BIKE.on||parked;
-  if(parked){const f=player.face;BK.g.position.set(player.pos.x+Math.cos(f)*.75,player.pos.y,player.pos.z-Math.sin(f)*.75);BK.g.rotation.set(0,f+.5,0);BK.crank.rotation.x=.6;}
+  if(parked){const f=player.face;BK.g.position.set(player.pos.x+Math.cos(f)*.85,player.pos.y,player.pos.z-Math.sin(f)*.85);BK.g.rotation.set(0,f+.5,0);BK.crank.rotation.x=.6;BK.steer.quaternion.identity();}
   if(!BIKE.on)return;
   // keep rolling after you let go of the joystick, slowing down little by little
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   const p=player.pos,pushing=Math.hypot(ix,iy)>.08;
   const turn=((player.face-BIKE.dir+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
-  if(pushing){BIKE.v=player.speed;BIKE.dir=player.face;BIKE.crank+=dt*Math.min(9,player.speed*.9);}
+  if(pushing){BIKE.v=player.speed;BIKE.dir=player.face;}
   else if(BIKE.v>.15){BIKE.v*=Math.pow(.5,dt);const old=p.clone();p.x+=Math.sin(BIKE.dir)*BIKE.v*dt;p.z+=Math.cos(BIKE.dir)*BIKE.v*dt;collide(p);
     if(groundAt(p.x,p.z)-p.y>.45||p.distanceTo(old)<BIKE.v*dt*.3){p.x=old.x;p.z=old.z;BIKE.v=0;}player.speed=BIKE.v;}
   else BIKE.v=0;
-  // wheels roll with how far you went, lean into turns
-  const sp=pushing?player.speed:BIKE.v;BIKE.spin+=sp*dt/BK.R;for(const w of BK.wheels)w.rotation.x=BIKE.spin;BK.crank.rotation.x=BIKE.crank;
-  BIKE.lean+=(Math.max(-.25,Math.min(.25,-turn/Math.max(dt,.001)*.01))-BIKE.lean)*Math.min(1,dt*6);
+  const sp=pushing?player.speed:BIKE.v;
+  bikeStep(BIKE,BK,dt,sp,pushing&&sp>.15,turn/Math.max(dt,.001),player.onGround);
   av.g.position.copy(p);av.g.rotation.z=BIKE.lean;
   BK.g.position.copy(p);BK.g.rotation.set(0,player.face,0);BK.g.rotateZ(BIKE.lean);
-  const air=!player.onGround;if(BIKE.air&&!air)tone(220,.05,'triangle',.05);BIKE.air=air;});
+  const air=!player.onGround;if(BIKE.air&&!air)tone(220,.05,'triangle',.05);BIKE.air=air;
+  bikeRide(av,BK,BIKE,dt);});
 
 /* ---------- 🐎 call your horse (or any ride you own) from anywhere ---------- */
 // the animal that comes when you call: the last one you rode, or else your horse, unicorn, pony... (riding: 24d-barn.js)
@@ -4792,7 +4930,7 @@ function earn(n,why){n=Math.round(n);if(!(n>0))return;SAVE.coins=(SAVE.coins||0)
 // other parts of the game (or future ones) can hand out coins with: dispatchEvent(new CustomEvent('brynny:earn',{detail:{n:5,why:'Baked a cake'}}))
 addEventListener('brynny:earn',e=>{const d=e.detail||{};earn(+d.n||0,d.why);});
 // a few things cost ⭐ stars instead of 🪙 coins (s.stars), spent like the barn's rare animals (starsLeft() in 24d-barn.js)
-const priceTxt=s=>s.stars?`⭐ ${s.stars}`:`${s.p} 🪙`;
+const priceTxt=s=>s.earn?earnTag(s.earn):s.stars?`⭐ ${s.stars}`:`${s.p} 🪙`;
 function lockBtn(k,ico,name){if(!locked(k))return '';const s=shopItem(k);return `<button class="item lock" data-lock="${k}"><b>${ico}</b><span>${name}</span><em>🔒 ${priceTxt(s)}</em></button>`;}
 
 // stars and quests pay out when they happen
@@ -4849,7 +4987,7 @@ const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only com
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
       [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
-  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.earn?earnTag(s.earn):s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
 $('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
 $('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};
@@ -5895,6 +6033,7 @@ const FARM=[
   {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
   {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
+FARM.push(...earnedRideList());// 🏆 rides you can only earn, not buy (24i-earned-rides.js)
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
 const ZOOA=[
   {k:'zebra',e:'🦓',n:'Zebra',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
@@ -5960,6 +6099,7 @@ class FarmAnimal{
       const tail=new THREE.Group();tail.position.set(0,by+r*.45,-(len/2+r*.85));g.add(tail);
       maneM.forEach((m,i)=>{const s=(i-(maneM.length-1)/2)*.03*sc;taperTube([fV(s,0,0),fV(s,-.08*sc,-.14*sc),fV(s*1.5,-.35*sc,-.2*sc),fV(s*2,-.6*sc,-.16*sc)],q=>(.07-.035*q)*sc*(maneM.length>1?.6:1),m,tail,20,8);});
       Object.assign(o,{neck,head,tail,nTilt:.78,size:sc,h:by+nl+.35*sc,rad:.45*sc,dustR:[r,r,len*.7]});return {fur,head,H,neck};};
+    if(earnedRideModel.call(this,k,{g,body,o,horseLike}))return o;// 🏆 the rides you earn (24i-earned-rides.js)
     if(k==='horse'){const h=horseLike(1.05,'#9a5f34','#3b2416',{light:'#c48a5c'});M(sph(h.H*.3,10,8),fm('#ffffff'),0,h.H*.35,h.H*.95,h.head).scale.set(.5,1.2,.4);}
     if(k==='donkey'){const h=horseLike(.88,'#9d968f','#4a4440',{short:true,light:'#ece6df',hoof:'#3b2a22'});
       for(const sx of [-1,1]){const e=M(new THREE.CapsuleGeometry(h.H*.17,h.H*.95,6,10),h.fur,sx*h.H*.42,h.H*1.15,-h.H*.15,h.head);e.rotation.z=-sx*.3;e.scale.z=.6;M(new THREE.CapsuleGeometry(h.H*.09,h.H*.75,6,8),fm('#4a4440'),sx*h.H*.44,h.H*1.15,-h.H*.06,h.head).rotation.z=-sx*.3;}
@@ -6415,7 +6555,7 @@ function clearPreview(){if(barnPreview&&!BS.own[barnPreview.k]){const a=barnPrev
 function previewFarm(k){if(barnPreview&&barnPreview.k===k)return;clearPreview();const a=farmAnimal(k);if(!BS.own[k]){a.lx=CARE_SPOT[0];a.lz=CARE_SPOT[1]+.6;a.face=.35;barnPreview=a;a.setTag('');}barnSel=a;
   a.speak(rnd(a.F.say));a.hop=1;placeFarm(a);}
 const FTABS=[['mine','💖','My animals'],['adopt','🪙','Adopt'],['rare','⭐','Rare'],['pals','🐉','Buddies']];
-const tabList=t=>FARM.filter(f=>t==='mounts'?f.mount||f.prize:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
+const tabList=t=>FARM.filter(f=>t==='mounts'?f.mount||f.prize||f.earn:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
 const fMeter=(e,n,v)=>`<div class="meter">${e} ${n}<i><b style="width:${Math.round(v)}%"></b></i></div>`;
 function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
   $('#barnTabs').innerHTML=FTABS.map(([id,e,n])=>`<button class="tab${id===barnTab?' on':''}" data-ftab="${id}"><b>${e}</b>${n}</button>`).join('');
@@ -6531,7 +6671,7 @@ function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div
     <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt').map(farm).join('')}
     <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
     <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
-    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
+    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
     <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
@@ -7036,7 +7176,7 @@ function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;S
   else 
   if(m==='ft'){coins=SP.score*2+(SP.score===10?10:0);best=spBest('ft',SP.score);h=`<h2>${SP.score>=8?'🏆 Sharpshooter!':SP.score>=5?'🏀 Nice shooting!':'🏀 Good try!'}</h2><div class="spBig">${SP.score} / 10</div><p>free throws made${best?' · New best! 🎉':''}</p>`;}
   else if(m==='shoot'){coins=Math.round(SP.score/2);best=spBest('shoot',SP.score);h=`<h2>${SP.score>=20?'🔥 On fire!':'🏀 Time!'}</h2><div class="spBig">${SP.score} pts</div><p>in 60 seconds${best?' · New best! 🎉':''}</p>`;}
-  else if(m==='v1'){const win=SP.score>SP.opp;coins=win?30:10;if(win){SAVE.sports.v1w=(SAVE.sports.v1w||0)+1;persist();}h=`<h2>${win?'🏆 You win!':'😅 Kai wins this time'}</h2><div class="spBig">${SP.score} - ${SP.opp}</div><p>${win?'You beat Kai 1-on-1!':'Practice your shot and try again!'}</p>`;}
+  else if(m==='v1'){const win=SP.score>SP.opp;coins=win?30:10;if(win){SAVE.sports.v1w=(SAVE.sports.v1w||0)+1;persist();did('sport','v1win');}h=`<h2>${win?'🏆 You win!':'😅 Kai wins this time'}</h2><div class="spBig">${SP.score} - ${SP.opp}</div><p>${win?'You beat Kai 1-on-1!':'Practice your shot and try again!'}</p>`;}
   else if(m==='bat'){const B=SP.bat;coins=B.hits*2+B.hr*5;const nb=spBest('hr',B.hr);const nf=B.far&&spBest('far',B.far);
     h=`<h2>${B.hr?'💥 Slugger!':B.hits?'⚾ Nice hitting!':'⚾ Good try!'}</h2><div class="spBig">${B.hits} hits · ${B.hr} 🏠</div><p>${B.far?`Longest hit: ${B.far} ft`:'Watch the ball and swing when it gets to the plate!'}${nb||nf?' · New best! 🎉':''}</p>`;}
   if(quit)coins=0;
@@ -7601,11 +7741,11 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{openS
      With more than one ride the button says 🏇 Rides and opens a list to pick from.
    - They live at the 🐴 Happy Barn when you're not riding, so you can feed, brush and rename them there.
    - Friends online see you riding them through the 'ride' entry in 26c-friends-see.js (any barn animal you ride). */
-const MOUNTS=FARM.filter(f=>f.mount||f.prize);
+const MOUNTS=FARM.filter(f=>f.mount||f.prize||f.earn);// earn = 🏆 rides you earn by winning or playing days in a row (24i-earned-rides.js)
 STABS.splice(1,0,['rides','🦖','Rides']);
 SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn, and the dinosaurs and unicorn there can be ridden too.';
-for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize,
-  d:f.prize?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
+for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize||(f.earn&&f.earn.goal),earn:f.earn,
+  d:f.prize||f.earn?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
 
 // it's yours: it moves into the barn, and the ride button calls it
 function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
@@ -7615,6 +7755,8 @@ function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
 
 // 🏆 the prize dragon comes once you've earned enough stars (your star rank never goes down, so she stays)
 function askPrize(s){const st=starsEarned();
+  if(s.earn){const f={earn:s.earn},ride=s.k.startsWith('mount:');$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':'Come back and play tomorrow! A day counts as soon as you start playing.'} ${ride?`This ride can't be bought. ${FK[s.k.slice(6)].nm} comes to you by herself!`:`This can't be bought. It shows up in your closet once you earn it!`}</p><button class="btn ghost" data-b="close">OK</button>`;
+    $('#buy').dataset.k=s.k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">You've earned <b>${st}</b> of ${s.prize} ⭐</p><p>Finish ⭐🏆 challenges to earn more stars. She comes to you by herself!</p><button class="btn ghost" data-b="close">OK</button>`;
   $('#buy').dataset.k=s.k;$('#buy').classList.add('show');}
 function checkPrizes(){if(!started)return;for(const f of MOUNTS)if(f.prize&&!BS.own[f.k]&&starsEarned()>=f.prize){getMount(f.k,true);sfx('tada');
@@ -7807,6 +7949,136 @@ $('#rideBtn').onclick=()=>{sfx('pop');if(FLY.on){flyLand(false);return;}stopRide
   hold($('#jump'),'upBtn');hold($('#flyDown'),'downBtn');}
 // the camera backs off a little when you're high up, so you can see the island below
 function flyCamBack(){const a=barnRide;if(!FLY.on||!isFlyer(a))return 0;const p=player.pos;return 2.2*Math.max(0,Math.min(1,(p.y-groundAt(p.x,p.z))/8));}
+// ---- src/24i-earned-rides.js ----
+/* ================= 🏆 RIDES (AND OUTFITS) YOU EARN: special things you can't buy with stars or coins =================
+   (the modern outfits you earn the same way are listed in 14d-fashion2-earned.js; they're given out here too)
+   - 🐼 Bamboo the giant panda: play 3 days in a row.        🦁 Goldie the champion lion: win 3 contests or games.
+   - 🦌 Comet the flying reindeer: play 7 days in a row.     🔥 Blaze the phoenix: win 10 contests or games.
+   - A "win" is 1st place in the 👑 model contest, the 🎂 cake contest or the 🐾 pet contest, or beating Kai 1-on-1 at basketball.
+   - A day counts once you start playing that day. Miss a day and the streak starts again at 1 (rides you already earned stay yours).
+   - They show in the shop's 🦖 Rides tab and the ⭐🏆 challenges' 🏇 Rides tab with how close you are, and come to you by themselves.
+   - Once earned they work like the shop rides (24g-mounts.js): they live at the 🐴 Happy Barn and Comet and Blaze can fly (24h-flying.js).
+   The FARM entries and the models below are function declarations so 24d-barn.js can use them before this file runs
+   (it adds the entries to FARM and builds the models from FarmAnimal.build). Friends online see them through the 'ride' entry. */
+function earnedRideList(){return [
+  {k:'panda',e:'🐼',n:'Giant panda',nm:'Bamboo',earn:{by:'days',goal:3},ride:1.08,about:'A big cuddly panda who only comes to players who play 3 days in a row. Slow, soft and always munching bamboo!',food:[['🎋','Bamboo'],['🍎','Apple'],['🍠','Sweet potato']],say:['*munch munch* 🎋','Hug time! 🐼','*happy roly-poly*']},
+  {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',earn:{by:'wins',goal:3},ride:1.13,about:'A golden lion with a royal crown, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
+  {k:'comet',e:'🦌',n:'Flying reindeer',nm:'Comet',earn:{by:'days',goal:7},fly:1,ride:1.15,about:'A magic reindeer with a glowing red nose who flies without wings! Only for players who play 7 days in a row.',food:[['🥕','Carrot'],['🍪','Cookie'],['🍎','Apple']],say:['*jingle jingle* 🔔','Up to the stars! ✨','*nose glows bright* ❤️']},
+  {k:'phoenix',e:'🔥',n:'Phoenix',nm:'Blaze',earn:{by:'wins',goal:10},fly:1,wingsRun:1,ride:1.12,about:'A legendary fire bird with glowing golden feathers. Only for super champions who win 10 contests or games!',food:[['🌶️','Hot pepper'],['🍒','Cherries'],['🌻','Sunflower seeds']],say:['*sparkly whoosh* 🔥','Skreee! ✨','Let\'s light up the sky!']},
+];}
+
+// the models (called from FarmAnimal.build with this = the animal). Returns true when it built one.
+function earnedRideModel(k,{g,body,o,horseLike}){
+  // 🐼 a round, fuzzy panda: black legs, shoulder band, ears and eye patches
+  if(k==='panda'){const r=.42,len=.5,leg=.36,by=leg+r*.62,wh=fm('#f7f5ef',{roughness:1}),bl=fm('#2a2a33',{roughness:1});
+    body.position.y=by;const t=M(fuzz(new THREE.CapsuleGeometry(r,len,10,24),.015,30),wh,0,0,0,body);t.rotation.x=Math.PI/2;
+    const band=M(new THREE.CylinderGeometry(r*1.04,r*1.04,.22,28,1,true),bl,0,0,len*.22,body);band.rotation.x=Math.PI/2;band.material=bl.clone();band.material.side=THREE.DoubleSide;
+    fLegs(this,g,r*.58,len*.42,leg+.06,leg+.06,.14,bl,null);
+    for(const l of this.legs)M(sph(.15,12,10),bl,0,-(leg+.06)+.07,.03,l.g).scale.set(1,.6,1.2);// big soft paws
+    const neck=new THREE.Group();neck.position.set(0,by+r*.35,len/2+r*.55);neck.rotation.x=.3;g.add(neck);M(sph(.3,16,12),wh,0,.05,0,neck);
+    const head=new THREE.Group();head.position.set(0,.24,.06);head.rotation.x=-.3+.1;neck.add(head);const H=.32;
+    M(fuzz(sph(H,24,18),.01,40),wh,0,0,0,head).scale.set(1.12,.96,.96);
+    for(const sx of [-1,1]){M(sph(H*.3,12,10),bl,sx*H*.74,H*.74,-H*.1,head).scale.set(1,1,.6);
+      const p=M(sph(H*.27,14,10),bl,sx*H*.38,H*.06,H*.78,head,false,false);p.scale.set(.85,1.15,.5);p.rotation.z=sx*.55;}
+    fEyes(this,head,H,.38,.1,.9,.38,.19);
+    M(sph(H*.42,14,10),wh,0,-H*.32,H*.78,head).scale.set(1.2,.78,.8);
+    M(sph(H*.11,10,8),bl,0,-H*.17,H*1.1,head,false,false).scale.set(1.4,.8,.7);
+    fBlush(head,H,.68,-.28,.72);
+    const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.9));g.add(tail);M(sph(.1,10,8),wh,0,0,0,tail);
+    Object.assign(o,{neck,head,tail,nTilt:.3,size:1.1,h:by+.85,rad:.7,dustR:[r,r,len*.8]});return true;}
+  // 🦁 a golden lion with a big fluffy mane and a little royal crown
+  if(k==='goldlion'){const r=.36,len=.62,leg=.5,by=leg+r*.65,fur=fm('#f2b54a'),light=fm('#ffe4ad'),mane=fm('#c8682a',{roughness:1}),mane2=fm('#e88a35',{roughness:1}),
+      gold=fShiny('#ffd23f',{metalness:.6,roughness:.25}),gem=phys('#ff4d8d',{roughness:.1,clearcoat:1,emissive:'#ff4d8d',emissiveIntensity:.3});
+    body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),fur,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.8,14,10),light,0,-r*.32,len*.1,body).scale.set(.92,.72,1.3);
+    fLegs(this,g,r*.55,len*.45,leg+.05,leg+.05,.1,fur,null);
+    for(const l of this.legs)M(sph(.12,12,10),light,0,-(leg+.05)+.06,.03,l.g).scale.set(1,.6,1.25);
+    const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.45);neck.rotation.x=.5;g.add(neck);
+    M(sph(.26,16,12),fur,0,.05,0,neck);fFluff(neck,mane2,.3,.3,.26,26,.12,.05,-.02);
+    const head=new THREE.Group();head.position.set(0,.24,.06);head.rotation.x=-.5+.1;neck.add(head);const H=.28;
+    M(sph(H,22,16),fur,0,0,0,head).scale.set(1.05,.95,1);
+    fFluff(head,mane,H*1.25,H*1.25,H*.6,48,H*.32,0,-H*.3);
+    for(const sx of [-1,1])M(sph(H*.25,12,10),fur,sx*H*.66,H*.8,-H*.02,head).scale.set(1,1,.5);
+    M(sph(H*.42,14,10),light,0,-H*.3,H*.78,head).scale.set(1.25,.75,.8);
+    M(sph(H*.12,10,8),std('#7a3a22'),0,-H*.1,H*1.06,head,false,false).scale.set(1.3,.8,.7);
+    fEyes(this,head,H,.42,.12,.82,.38,.22,'#8a5a12');fBlush(head,H,.64,-.18,.74);
+    const crown=new THREE.Group();crown.position.set(0,H*1.12,-H*.05);head.add(crown);
+    M(cyl(H*.36,H*.32,H*.2,18),gold,0,0,0,crown);
+    for(let i=0;i<5;i++){const a=i/5*Math.PI*2;M(new THREE.ConeGeometry(H*.08,H*.24,8),gold,Math.sin(a)*H*.34,H*.2,Math.cos(a)*H*.34,crown);}
+    M(sph(H*.075,10,8),gem,0,0,H*.35,crown,false,false);
+    const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.85));g.add(tail);
+    taperTube([fV(0,0,0),fV(0,-.12,-.3),fV(0,-.08,-.6),fV(0,.1,-.8)],q=>.05-.018*q,fur,tail,16,8);M(sph(.1,10,8),mane,0,.13,-.83,tail);
+    this.sparkle=true;
+    Object.assign(o,{neck,head,tail,nTilt:.5,size:1.05,h:by+.9,rad:.65,dustR:[r,r,len*.8]});return true;}
+  // 🦌 a reindeer with big antlers, a glowing red nose and a jingle bell (she flies without wings, it's magic)
+  if(k==='comet'){const h=horseLike(1,'#a8744a','#f4ede4',{light:'#f3e2cc',hoof:'#4a3324'}),H=h.H,antM=fShiny('#f6e7c8',{roughness:.5});
+    for(const sx of [-1,1]){taperTube([fV(sx*H*.3,H*.7,-H*.1),fV(sx*H*.7,H*1.5,-H*.3),fV(sx*H*1,H*2.3,-H*.2),fV(sx*H*1.2,H*2.9,H*.1)],q=>H*(.1-.055*q),antM,h.head,16,8);
+      taperTube([fV(sx*H*.62,H*1.35,-H*.28),fV(sx*H*.5,H*1.9,H*.3)],q=>H*(.065-.035*q),antM,h.head,8,6);
+      taperTube([fV(sx*H*.95,H*2.2,-H*.2),fV(sx*H*.72,H*2.7,H*.4)],q=>H*(.06-.03*q),antM,h.head,8,6);}
+    M(sph(H*.2,14,10),phys('#ff3b3b',{emissive:'#ff2020',emissiveIntensity:1.2,roughness:.25,clearcoat:1}),0,-H*.28,H*1.84,h.head,false,false);
+    M(new THREE.TorusGeometry(.13,.028,8,20),phys('#d6453d',{roughness:.5}),0,.07,0,h.neck).rotation.x=Math.PI/2;
+    M(sph(.055,12,10),fShiny('#ffd23f',{metalness:.6,roughness:.25}),0,.03,.15,h.neck);
+    const spot=fm('#fff7ec');for(let i=0;i<7;i++)M(sph(.035,8,6),spot,Math.sin(i*2.2)*.16,.27,(i/6-.5)*.5,body,false,false).scale.set(1,.4,1);
+    this.sparkle=true;return true;}
+  // 🔥 a phoenix: a fire bird with glowing feather wings, a feathery crest and a long flowing tail
+  if(k==='phoenix'){const by=.8,red=phys('#ff5a3c',{roughness:.5,sheen:.6,sheenColor:new THREE.Color('#ffd27a'),emissive:'#ff3a10',emissiveIntensity:.12}),belly=fm('#ffc24a'),
+      gold=fShiny('#ffd23f',{metalness:.4,roughness:.3}),tips=[fm('#ffd23f',{emissive:'#ffb000',emissiveIntensity:.35}),fm('#ff8a2a',{emissive:'#ff6a00',emissiveIntensity:.25}),fm('#ff4d6d',{emissive:'#ff2a50',emissiveIntensity:.2})];
+    body.position.y=by;M(sph(.4,24,18),red,0,0,0,body).scale.set(.85,.8,1.25);M(sph(.3,16,12),belly,0,-.12,.2,body).scale.set(.9,.8,1.1);
+    this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*.28,.16,.06);body.add(w);const up=new THREE.Group();up.rotation.z=sx*.4;w.add(up);
+      for(let i=0;i<7;i++){const L=.75-i*.06,p=new THREE.Group();p.position.z=-i*.065;p.rotation.y=sx*i*.12;up.add(p);
+        const f=M(new THREE.CapsuleGeometry(.07,L,4,10),i<2?red:tips[i%3],sx*(L/2+.05),0,0,p,true,false);f.rotation.z=Math.PI/2;f.scale.set(.35,1,1);}
+      M(sph(.1,10,8),red,0,0,-.15,up,true,false).scale.set(1,.6,1.8);this.wings.push({w,sx,fly:1});}
+    for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.15,.55,-.02);g.add(lg);M(capTop(.045,.46),gold,0,0,0,lg);
+      M(sph(.07,10,8),gold,0,-.53,.05,lg).scale.set(1,.4,1.6);this.legs.push({g:lg,ph});}
+    const neck=new THREE.Group();neck.position.set(0,by+.18,.38);neck.rotation.x=.2;g.add(neck);
+    taperTube([fV(0,0,0),fV(0,.18,.04),fV(0,.32,0)],q=>.13-.03*q,red,neck,12,10);
+    const head=new THREE.Group();head.position.set(0,.36,.02);head.rotation.x=-.2;neck.add(head);const H=.2;
+    M(sph(H,22,16),red,0,0,0,head).scale.set(.95,.95,1.05);
+    const bk=M(new THREE.ConeGeometry(H*.32,H*.9,14),gold,0,-H*.12,H*1.2,head);bk.rotation.x=Math.PI/2;bk.scale.set(.8,1,1);
+    for(let i=0;i<4;i++){const s=(i-1.5);taperTube([fV(0,H*.7,-H*.1),fV(s*H*.12,H*1.4,-H*.5),fV(s*H*.25,H*1.9,-H*1.1)],q=>H*(.09-.07*q),tips[i%3],head,12,6);}
+    fEyes(this,head,H,.5,.2,.66,.6,.24,'#7a3a12');fBlush(head,H,.62,-.15,.72);
+    const tail=new THREE.Group();tail.position.set(0,by+.05,-.45);g.add(tail);
+    for(let i=0;i<5;i++){const s=(i-2)*.08;taperTube([fV(s*.5,0,0),fV(s,-.08,-.4),fV(s*1.6,-.12,-.85),fV(s*2.2,0,-1.25)],q=>.06*(1-q*.6),tips[i%3],tail,20,8);M(sph(.06,8,6),gold,s*2.2,0,-1.27,tail,false,false);}
+    this.sparkle=true;
+    Object.assign(o,{neck,head,tail,nTilt:.2,size:1.1,h:by+.95,rad:.7,biped:true,dustR:[.35,.3,.45]});return true;}
+  return false;}
+
+/* ---------- earning them: wins and days in a row (saved in SAVE.earn) ---------- */
+const EARNED=FARM.filter(f=>f.earn);
+for(const f of EARNED)STEED_ORDER.push(f.k);
+SHINT.rides+=' The 🏆 ones can\'t be bought: win contests and play days in a row to earn them!';
+FLYK.comet={hz:.9,amp:.0,base:0,glide:.9,spd:12.5,tuckF:1.05,tuckB:1.2};
+FLYK.phoenix={hz:1.8,amp:.62,base:.1,glide:.55,spd:13.5,tuckF:.9,tuckB:.9};
+// first time: wins you already had count (the win challenges you finished, and your 1-on-1 wins against Kai)
+if(!SAVE.earn){const d=(SAVE.chal&&SAVE.chal.done)||{};SAVE.earn={wins:(d.win?1:0)+(d.cakeWin?1:0)+(d.petWin?1:0)+((SAVE.sports&&SAVE.sports.v1w)||0),days:{last:null,n:0,best:0}};persist();}
+const ER=SAVE.earn;ER.days||={last:null,n:0,best:0};ER.wins||=0;
+const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:0;
+const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:`Play ${f.earn.goal} days in a row`;
+// a new day you played: one more day in the streak if you also played yesterday, otherwise start again at 1
+function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.last===k)return;
+  const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
+  const nx=EARNED.find(f=>f.earn.by==='days'&&!BS.own[f.k]&&D.n<f.earn.goal);
+  if(D.n>1)setTimeout(()=>toast(`🔥 ${D.n} days in a row!${nx?` ${nx.earn.goal-D.n} more for ${nx.e} ${nx.nm}`:''}`),5000);}
+// the modern outfits from 14d-fashion2-earned.js: they unlock in your closet (all of them, so they're there if you switch girl/guy)
+function erLooks(){for(const L of EARN_LOOKS){const k='look:'+L.id;if(owns(k)||erHave(L)<L.earn.goal)continue;
+  SAVE.owned[k]=true;persist();const mine=L.who==='both'||(L.who==='guy')===isGuy(SAVE.look);
+  if(mine){banner(`🏆 You earned ${L.e} ${L.n}!`);toast(`Find it in your closet's ${TAB_NAME[L.tab]} 👗`);sfx('tada');did('prize',L.id);return true;}}return false;}
+function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
+  for(const f of EARNED)if(!BS.own[f.k]&&erHave(f)>=f.earn.goal){getMount(f.k,true);sfx('tada');
+    burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);break;}}
+setInterval(erCheck,1500);
+addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
+  const won=((k==='contest'||k==='cakect'||k==='petct')&&a===0)||(k==='sport'&&a==='v1win');if(!won)return;
+  ER.wins++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
+  if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
+// for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
+function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const goal=f.earn?f.earn.goal:f.prize,have=f.earn?erHave(f):starsEarned();
+  return {k:f.k,e:f.e,n:f.n,nm:f.nm,by:f.earn?f.earn.by:'stars',goal,have:Math.min(goal,have),own:!!BS.own[f.k],fly:!!f.fly,what:f.earn?erWhat(f):`Earn ${f.prize} ⭐ stars`};});}
+function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
+  have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
+// the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
+function earnTag(e){return `🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0})});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -8115,6 +8387,8 @@ onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('ta
 window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
   sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
 Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
+// 🚲 for the bike test (3d/tests/bike.mjs)
+Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
 // ---- src/26b-portrait.js ----
 /* ================= PORTRAITS FOR THE 2D STUDIO ================= */
 // The 2D studio's top-left picture can be "my 3D character" or "my pet". Whenever your look (or your pet's outfit)
@@ -8242,13 +8516,17 @@ SHOW.push({k:'skate',
 // 🚲 riding your bike (17d-bicycle.js): your friend pedals around on a bike the color you picked
 SHOW.push({k:'bike',
   mine(){return BIKE.on&&hasBike()?{c:String(SAVE.look.extras.bicycle)}:null;},
-  on(f,d){const b=makeBike();b.g.visible=true;try{b.frame.color.set(String(d.c||'#ff6fae').slice(0,30));}catch(e){}return {b,spin:0,crank:0,lean:0,yaw:null};},
-  step(f,d,dt,h){const A=f.a,b=h.b,sp=f.sp||0;A.biking=true;
-    h.crank+=dt*Math.min(9,sp*.9);A.bikeCrank=h.crank;h.spin+=sp*dt/b.R;for(const w of b.wheels)w.rotation.x=h.spin;b.crank.rotation.x=h.crank;
+  on(f,d){const b=makeBike();b.g.visible=true;try{b.frame.color.set(String(d.c||'#ff6fae').slice(0,30));}catch(e){}if(f.a)f.a.bikeW=0;
+    return {b,spin:0,crank:-Math.PI/2-.5,lean:0,steer:0,stand:1,still:1,yaw:null,sp:0,acc:0,a:f.a};},
+  // the same riding as yours (bikeStep and bikeRide in 17d-bicycle.js): their phone only sends where they are and how fast,
+  // so pedaling is when they keep their speed up, and coasting is when they're slowing down
+  step(f,d,dt,h){const A=f.a,b=h.b,sp=f.sp||0;if(!A)return;A.biking=true;if(h.a!==A){h.a=A;A.bikeW=0;}
+    h.acc+=((sp-h.sp)/Math.max(dt,.001)-h.acc)*Math.min(1,dt*3);h.sp=sp;
     const yaw=f.cur??f.face,turn=h.yaw==null?0:((yaw-h.yaw+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;h.yaw=yaw;
-    h.lean+=(Math.max(-.25,Math.min(.25,-turn/Math.max(dt,.001)*.01))-h.lean)*Math.min(1,dt*6);
-    A.g.rotation.z=h.lean;b.g.position.copy(f.pos);b.g.rotation.set(0,yaw,0);b.g.rotateZ(h.lean);},
-  off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;}}});
+    bikeStep(h,b,dt,sp,sp>.15&&h.acc>-.3*sp,turn/Math.max(dt,.001),!f.air);
+    A.g.rotation.z=h.lean;b.g.position.copy(A.g.position);b.g.rotation.set(0,yaw,0);b.g.rotateZ(h.lean);h.air=!!f.air;
+    bikeRide(A,b,h,dt);},
+  off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;bikeUnride(A);}}});
 
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){

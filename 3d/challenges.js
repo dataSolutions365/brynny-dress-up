@@ -101,7 +101,7 @@ const DAILY = [
   { id: 'd_bath', e: '🛁', t: 'Give your pet a bath', go: 'parlor', ev: { k: 'bath' } },
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
@@ -219,6 +219,11 @@ css.textContent = `
 .cq.done strong{color:#2e9b5a}
 .cq.done>b{filter:saturate(.6)}
 .cnote{font-size:13px;color:var(--muted);text-align:center;margin:4px 0 2px;font-weight:600}
+.crides .cq>b{font-size:30px}
+.cq .own{flex:0 0 auto;font-size:13px;font-weight:700;color:#2e9b5a;white-space:nowrap}
+.cq .lock{flex:0 0 auto;font-size:18px}
+.cstreak{display:flex;gap:6px;margin:2px 0 2px}.cstreak span{flex:1;background:#fff3e0;border-radius:14px;padding:7px 8px;text-align:center;font-weight:700;font-size:14px;color:#a3541c}
+.cstreak span small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
 .cbonus{background:linear-gradient(90deg,#efe3ff,#ffe6f2);border-radius:14px;padding:8px 12px;font-weight:600;font-size:14px;text-align:center}
 `;
 document.head.appendChild(css);
@@ -245,9 +250,10 @@ function render() {
     const list = id === 'today' ? todays() : LIST.filter(c => c.tab === id), open = list.filter(c => !isDone(c)).length;
     return `<button class="tab${tab === id ? ' on' : ''}" data-tab="${id}"><b>${e}</b>${n}${open && id === 'today' ? '<s></s>' : ''}</button>`;
   }).join('');
+  if (tab === 'rides') { $('#chalList').innerHTML = ridesHTML(); return; }
   const list = tab === 'today' ? todays() : LIST.filter(c => c.tab === tab), here = zoneId();
   let h = '';
-  if (tab === 'today') h += `<div class="cnote">New challenges every day! Finish all 3 for +${DAY_BONUS} bonus ⭐</div>`;
+  if (tab === 'today') { const st = G.earnState ? G.earnState() : null; h += `<div class="cnote">${st && st.streak > 1 ? `🔥 Day ${st.streak} in a row! ` : ''}New challenges every day! Finish all 3 for +${DAY_BONUS} bonus ⭐</div>`; }
   const sorted = list.slice().sort((a, b) => isDone(a) - isDone(b));
   h += sorted.map(ch => {
     const d = isDone(ch), p = progress(ch), g = goalOf(ch);
@@ -258,6 +264,23 @@ function render() {
   const left = LIST.filter(c => c.tab === tab && !isDone(c)).length;
   if (tab !== 'today' && !left) h += '<div class="cbonus">🎉 You finished every challenge here!</div>';
   $('#chalList').innerHTML = h;
+}
+// 🏆 special rides and outfits you can't buy: win contests and play days in a row (the game side is 3d/src/24i-earned-rides.js)
+function ridesHTML() {
+  const rides = G.earnedRides ? G.earnedRides() : [], st = G.earnState ? G.earnState() : { wins: 0, streak: 0, best: 0 };
+  const looks = G.earnedLooks ? G.earnedLooks() : [];
+  let h = '<div class="cnote">Special rides and outfits you can\'t buy! Win contests and play days in a row to earn them.</div>';
+  h += `<div class="cstreak"><span>🔥 ${st.streak} ${st.streak === 1 ? 'day' : 'days'} in a row<small>Best: ${st.best}</small></span><span>🏆 ${st.wins} ${st.wins === 1 ? 'win' : 'wins'}<small>Contests and 1-on-1</small></span></div>`;
+  h += '<div class="crides" style="display:flex;flex-direction:column;gap:7px">' + rides.sort((a, b) => a.own - b.own).map(r => {
+    const bar = r.own ? 'Yours! Tap 🏇 with your moves to ride' : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
+    return `<div class="cq${r.own ? ' done' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}${r.fly ? ' 🪽' : ''}</strong><i>${r.own ? '' : r.what + ' · '}${bar}</i></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+  }).join('') + '</div>';
+  if (looks.length) h += '<div class="cnote" style="margin-top:8px">👗 Modern outfits</div><div class="crides" style="display:flex;flex-direction:column;gap:7px">' + looks.sort((a, b) => a.own - b.own).map(r => {
+    const bar = r.own ? `Yours! It's in your closet's ${r.where}` : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
+    return `<div class="cq${r.own ? ' done' : ''}"><b>${r.e}</b><div><strong>${r.n}</strong><i>${r.own ? '' : r.what + ' · '}${bar}</i></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+  }).join('') + '</div>';
+  h += '<div class="cnote">🏆 Wins: 1st place in the model, cake or pet contest, or beating Kai 1-on-1 at basketball.<br>🔥 A day counts as soon as you start playing. Miss a day and the streak starts over, but what you earned stays yours.</div>';
+  return h;
 }
 function openPanel() {
   if (!G.started() || G.busy()) return;

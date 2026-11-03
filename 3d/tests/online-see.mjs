@@ -95,6 +95,12 @@ try {
   // A rides a blue bike: B sees them pedaling one
   await A.evaluate(() => { const r = window.__game.SHOW.find(s => s.k === 'bike'); r._mine = r.mine; r.mine = () => ({ c: '#3a8dff' }); });
   await until(B, () => { const o = [...window.__net.friends().values()][0], s = o.shows.bike; return s && s.h.b.g.visible && s.h.b.frame.color.getHexString() === '3a8dff' && o.a.biking; }, null, "the host rides a blue bike on the guest's phone");
+  // and really rides it: sitting on the saddle, hands on the grips, feet on the pedals (bikeRide in 3d/src/17d-bicycle.js)
+  await until(B, () => { const G = window.__game, T = G.THREE, o = [...window.__net.friends().values()][0], s = o.shows.bike; if (!s) return false;
+    const a = o.a, bk = s.h.b; G.scene.updateMatrixWorld(true); const w = (ob, x, y, z) => ob.localToWorld(new T.Vector3(x, y, z));
+    const feet = a.legs.map(l => w(l.an, 0, -.062, .045).distanceTo(w(bk.pedals[l.sx < 0 ? 0 : 1], 0, .012, 0)));
+    const hands = a.arms.map(r => w(r.hand, 0, -.04, 0).distanceTo(bk.grips[r.sx < 0 ? 0 : 1].getWorldPosition(new T.Vector3())));
+    return a.bikeW >= 1 && Math.max(feet[1], ...hands) < .03; }, null, "with their hands on the grips and feet on the pedals");
   await A.evaluate(() => { const r = window.__game.SHOW.find(s => s.k === 'bike'); r.mine = r._mine; });
   await until(B, () => { const o = [...window.__net.friends().values()][0]; return !o.shows.bike && !o.a.biking; }, null, 'and gets off the bike');
 
