@@ -25,13 +25,18 @@
   `bikeRide()` puts the rider's hips on the saddle, hands on the grips and feet on the pedals every frame (it runs after
   `Avatar.update`, so it wins over the walking pose). Friends online use the same two functions. `3d/tests/bike.mjs`
   (run on every PR) checks the feet stay on the pedals, the hands on the grips, coasting, and a foot down when stopped.
-- 🦁 Safari rides (okapi, zebra, rhino, elephant, crowned crane, lion, giraffe) are earned rides in `3d/src/24i-earned-rides.js` with
+- 🦁 Safari rides (okapi, zebra, rhino, gorilla, hippo, cheetah, tiger, elephant, crowned crane, lion, giraffe) are earned rides in `3d/src/24i-earned-rides.js` with
   `earn:{by:'chal',ids:[...]}`: they come once every challenge id listed is done in the 🦁 Safari tab of `3d/challenges.js`.
   They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`,
   the zebra, giraffe, rhino, flying crowned crane and the zoo's gorilla in `3d/src/24c9c-safari-more.js`, which share textures and
   materials through `safM` to save memory on phones; the saddle size for each ride is in `SADDLE`);
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
-  `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned and the rider sits on the saddle.
+  🐆🐅 The cheetah and tiger (zoo animals and the Duma and Raja rides) are one builder, `bigCat()` in `3d/src/24c9e-big-cats.js`.
+  🦛 The hippo model is `3d/src/24c9d-hippo.js`. Animals with `swim` (the zoo hippo and Kiboko the hippo ride) sink into the canal
+  round the city through `swimSink()` in `3d/src/26f2-hippo-swim.js` (rideStep, the zoo and friends online all call it), and Kiboko is the
+  only barn ride `seaKeep()` lets into the water. The back of the Safari Zoo's fence is open (`ZOO_SHORE` in `3d/src/12d-place-zoo.js`):
+  the animals walk out to drink at the water, and the zoo hippo lives in the water there (`HIPPO_WATER` in `3d/src/24d-barn.js`).
+  `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned, the rider sits on the saddle, and Kiboko swims.
 - 🌊 The canal and 🐬 Dolphin Bay: `3d/src/26f-ocean.js`. The coast is a ring of water all the way round the island (`CANAL.inR` to
   `CANAL.outR`) with a grassy far bank (instanced palms and bushes); the bit past the Beach is the 'bay' zone, the rest shows as 🌊 Canal.
   You wade in off any shore and swim (not on a bike, skateboard or barn ride: `collide()` asks `seaKeep()`). Swimming keeps you at ground

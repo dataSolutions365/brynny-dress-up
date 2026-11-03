@@ -1,5 +1,9 @@
-/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi, elephants, lion and gorilla live in 24d-barn.js) ===== */
-// local layout: +z points back toward Halloween Hollow (the gate)
+/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi, elephants, lion, gorilla and hippo live in 24d-barn.js) =====
+   The back of the fence is open down to the water round the city: the animals walk down to the shore to drink, and the hippo
+   lives in the water there (26f2-hippo-swim.js). ZOO_SHORE says where. */
+// local layout: +z points back toward Halloween Hollow (the gate), -z out to the water
+// the way out the back to the shore: how wide the gap in the fence is (radians), and where the water's edge is (local z)
+const ZOO_SHORE={gapA:.32,edge:-(R+.9-Z.zoo.d)};
 {const z=Z.zoo,g=z.g;
  const grassT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e3c77a';x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(170,140,60,.4)':c<.7?'rgba(255,240,170,.55)':'rgba(140,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(-Math.PI/2+(Math.random()-.5)*.6);x.fillRect(0,0,5+Math.random()*8,1.3);x.restore();}},4);
  patch(z.r,std('#ffffff',{map:grassT,roughness:1}),z.x,z.z);
@@ -8,7 +12,13 @@
   const p=M(new THREE.PlaneGeometry(2.2,2.4+z.gap),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
  const wood=std('#9a6a43',{roughness:.85}),bark=std('#7a5236',{roughness:.9}),leafM=phys('#6fa83a',{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')});
  z.fence=z.r-.45;const S=z.fence/5.55;// S: the zoo grew bigger for the elephants, so everything inside spreads out with it
- ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a');
+ ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a',ZOO_SHORE.gapA);
+ // a sandy trail out the back gap, down to the water where the animals drink
+ {const pm=std('#e8d3a0',{roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;const L=-ZOO_SHORE.edge-z.fence+1.4,zc=-z.fence-L/2+.9;
+  const p=M(new THREE.PlaneGeometry(3,L),pm,0,.014,zc,g,false,true);p.rotation.x=-Math.PI/2;
+  const sg=new THREE.Group();sg.position.set(2.1,0,-z.fence-.6);sg.rotation.y=Math.PI;g.add(sg);M(cyl(.05,.05,1.4,8),wood,0,.7,0,sg);
+  const t=canvasTex(256,96,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#2f6a8a';c.font='700 34px Fredoka, sans-serif';c.textAlign='center';c.fillText('🦛 To the water',W/2,60);});
+  M(box(1.1,.42,.05),wood,0,1.35,0,sg);M(new THREE.PlaneGeometry(1,.36),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.35,.03,sg,false,false);z.ob(2.1,-z.fence-.6,.15);}
  // flat-topped acacia trees, the giraffes' favorite snack
  const acacia=(lx,lz,s)=>{const tg=new THREE.Group();tg.position.set(lx,0,lz);tg.scale.setScalar(s);g.add(tg);
    M(cyl(.12,.2,2.6,10),bark,0,1.3,0,tg);for(const [a,l] of [[.6,1.1],[-.7,1],[2.4,.9]]){const b=M(cyl(.05,.08,l,8),bark,Math.sin(a)*.35,2.5,Math.cos(a)*.35,tg);b.rotation.set(Math.cos(a)*.7,0,-Math.sin(a)*.7);}
@@ -27,7 +37,7 @@
  {const bg=new THREE.Group();const [x,w]=z.toWorld(-2.2,z.r-.9);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
   for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);
   const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#5a8a3a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Safari Zoo',W/2,70);
-    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants, 🦁 a lion, 🦍 a gorilla, an okapi!',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants 🦁 Lion 🦍 Gorilla 🦛 Hippo 🐆 🐅',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
   for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
   obs.push({x,z:w,r:.4});}
  // the animals keep away from these (trees, rocks, water, feeder)

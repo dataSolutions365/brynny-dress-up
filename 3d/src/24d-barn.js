@@ -49,6 +49,12 @@ const ZOOA=[
     facts:[['🥗','Diet','Carnivore. Zebras, antelopes, buffalo and other big animals. A male can eat about 40 kg (90 lb) in one meal!'],['🌍','Habitat','Savannas and grasslands of Africa, plus one forest in India.'],['⏳','Lifespan','About 10 to 14 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','Lions sleep up to 20 hours a day! A lion\'s roar can be heard 8 km (5 miles) away.']]},
   {k:'gorilla',e:'🦍',n:'Gorilla',food:[['🍌','Banana'],['🌿','Leaves']],say:['*chest pat pat* 🦍','*happy rumbly grunt*','*sits and munches*'],
     facts:[['🥗','Diet','Mostly a herbivore. Leaves, stems, bamboo shoots and fruit, plus the odd ant or termite. A big male eats about 18 kg (40 lb) a day!'],['🌍','Habitat','Rainforests and mountain forests of central Africa.'],['⏳','Lifespan','About 35 to 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','The biggest ape in the world! Grown-up males get a patch of silver hair on their backs, so they are called silverbacks. Every gorilla has its own nose print, like a fingerprint.']]},
+  {k:'hippo',e:'🦛',n:'Hippo',swim:.85,food:[['🍉','Watermelon'],['🌾','Grass']],say:['*big hippo yawn* 🦛','*blub blub* 💦','*happy grunty honk*'],
+    facts:[['🥗','Diet','Herbivore. At night it walks out of the water to eat grass, about 40 kg (90 lb) a night!'],['🌍','Habitat','Rivers, lakes and swamps of Africa, south of the Sahara.'],['⏳','Lifespan','About 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','Hippos spend all day in the water to stay cool, and they can hold their breath for 5 minutes. They can\'t really swim: they walk and bounce along the bottom! Their name means "river horse".']]},
+  {k:'cheetah',e:'🐆',n:'Cheetah',food:[['🍖','Meat'],['🥩','Steak']],say:['*chirp chirp*','*fast tail flick*','*soft purr*'],
+    facts:[['🥗','Diet','Carnivore. Gazelles, impalas and hares, which it catches with a super fast sprint.'],['🌍','Habitat','Open grasslands and savannas of Africa, and a few in Iran.'],['⏳','Lifespan','About 10 to 12 years in the wild, and up to 17 in zoos.'],['✨','Fun fact','The fastest land animal in the world: up to 110 km/h (70 mph)! It can\'t roar, but it chirps like a bird. The black "tear marks" under its eyes stop the sun from dazzling it.']]},
+  {k:'tiger',e:'🐅',n:'Tiger',food:[['🍖','Meat'],['🐟','Fish']],say:['*deep rumbly growl*','*friendly chuff chuff*','*big stretch*'],
+    facts:[['🥗','Diet','Carnivore. Deer, wild pigs and buffalo. A tiger can eat 40 kg (88 lb) in one meal!'],['🌍','Habitat','Forests, grasslands and mangrove swamps of Asia, from India to Russia.'],['⏳','Lifespan','About 10 to 15 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','The biggest cat in the world! No two tigers have the same stripes, and the stripes are on its skin too. Unlike most cats, tigers love to swim.']]}
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -487,7 +493,7 @@ function stepFarm(a,dt){if(a.ridden)return;let sp=0;
   else if(zooOpen&&a===zooSel){// stop and look at you while you pet and feed it
     const [px,pz]=a.Z.toLocal(player.pos.x,player.pos.z);a.face=angDamp(a.face,Math.atan2(px-a.lx,pz-a.lz),Math.min(1,dt*4));a.tgt=null;}
   else{a.wait-=dt;
-    if(!a.tgt&&a.wait<=0){if(Math.random()<.45){a.graze=0;a.tgt=a.spot(a.rad);}else{a.wait=2+Math.random()*4;a.grazing=Math.random()<.6;}}
+    if(!a.tgt&&a.wait<=0){if(Math.random()<.45){a.graze=0;a.tgt=a.spot(a.rad,a);}else{a.wait=2+Math.random()*4;a.grazing=Math.random()<.6;}}
     if(a.tgt){const dx=a.tgt[0]-a.lx,dz=a.tgt[1]-a.lz,d=Math.hypot(dx,dz);
       if(d<.15){a.tgt=null;a.wait=1.5+Math.random()*4;a.grazing=Math.random()<.6;}
       else{sp=(.55+.25*Math.random()*0)*Math.max(.7,Math.sqrt(a.size));const st=Math.min(d,sp*dt),nx=a.lx+dx/d*st,nz=a.lz+dz/d*st;
@@ -519,7 +525,8 @@ function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||
   if(flyRide(a,dt))return;// up in the air on a flying ride (24h-flying.js)
   a.pos.set(p.x,p.y,p.z);a.g.position.copy(a.pos);a.g.rotation.y=player.face;a.update(dt,player.speed*.55);
   // sit on the saddle: the avatar's 'ride' pose puts the hips at chair height, so lift everything up to the animal's back
-  av.g.position.y=p.y+a.F.ride-.42;}
+  av.g.position.y=p.y+a.F.ride-.42;
+  if(a.F.swim)swimSink(a,av,p,dt,true);}// 🦛 swims in deep water, with you on its back (26f2-hippo-swim.js)
 // how much faster than walking: bigger animals go faster, unless the ride says (boost)
 const rideBoost=()=>barnRide?barnRide.F.boost||1+Math.min(.9,barnRide.size*.5):1;
 
@@ -638,8 +645,25 @@ function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
-  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=zooSpot(a.rad);placeFarm(a);}
+// 🚰 out the back gap of the fence and down the trail to the shore, where the animals drink (it fans out wider by the water)
+function zooShoreOk(lx,lz,r){const f=ZZ.fence,e=ZOO_SHORE.edge;if(lz>-f+1.6+r||lz<e)return false;return Math.abs(lx)<1.3-r*.5+Math.max(0,(-f-lz))*.55;}
+function zooOk2(lx,lz,r){return zooOk(lx,lz,r)||zooShoreOk(lx,lz,r);}
+// now and then an animal walks down to the water for a drink (it stops at the edge and puts its head down)
+// (going in or out, it walks to the gap in the fence first)
+function zooSpot2(r,a){const f=ZZ.fence,out=a&&a.lz<-f+.3;
+  if(a&&a.next){const n=a.next;a.next=null;return n;}
+  if(out){a.next=zooSpot(r);return [0,-f+.6+r];}
+  if(Math.random()<.2){const lz=ZOO_SHORE.edge+r*.6+.15,w=1.3+(-f-lz)*.55-r-.3,s=[(Math.random()*2-1)*Math.max(0,w),lz];
+    if(a){a.next=s;return [0,-f+.6+r];}return s;}
+  return zooSpot(r);}
+// 🦛 the hippo lives in the water just off the zoo's shore, and sometimes comes up onto the sand
+const HIPPO_WATER={x:9,near:-(R+3.2-ZZ.d),far:-(R+12-ZZ.d)};
+function zooOkH(lx,lz,r){return (Math.abs(lx)<HIPPO_WATER.x&&lz<ZOO_SHORE.edge+.5&&lz>HIPPO_WATER.far)||zooShoreOk(lx,lz,r);}
+function zooSpotH(r){const W=HIPPO_WATER;if(Math.random()<.8)return [(Math.random()*2-1)*(W.x-1),W.near-1-Math.random()*(W.near-W.far-1.5)];
+  const lz=ZOO_SHORE.edge-.2;return [(Math.random()*2-1)*2.5,lz];}
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1],['hippo',1],['cheetah',1],['tiger',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk2;a.spot=zooSpot2;a.mates=ZA;
+  if(a.F.swim){a.ok=zooOkH;a.spot=zooSpotH;}
+  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=a.spot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
   let best=null,bd=1e9;for(const a of ZA){const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
@@ -656,14 +680,14 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
-    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&f.model===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
   if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
-function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA)stepFarm(a,dt);zooButton(p);
+function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA){stepFarm(a,dt);if(a.F.swim)swimSink(a,null,a.pos,dt);}zooButton(p);
   if(zooOpen&&zooSel&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>8)closeZoo();}
 
 /* ---------- the animal book: every animal in the game, where to find it and what it costs ---------- */
