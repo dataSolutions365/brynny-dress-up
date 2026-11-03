@@ -8495,7 +8495,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
 function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elapsedTime;if(started)adaptRes(rawDt);
   // movement input
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
-  let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
+  let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||daddyFrozen())mag=0;// DADDY POWERS: remove "||daddyFrozen()" with 27-daddy-powers.js
   const p=player.pos;
   if(!flyStep(dt,ix,iy,mag)&&!daddyFlyStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead
   // ^ DADDY POWERS: when removing 27-daddy-powers.js, take out "&&!daddyFlyStep(dt,ix,iy,mag)" above and this line
@@ -9122,12 +9122,16 @@ addEventListener('load',()=>{if(window.__net)window.__net.on(ballFromNet);if(win
    - Teleport: open the map and tap anywhere on the island, and you're there in a puff of sparkles.
    - Super strength: walk up to something small that never moves (a pumpkin, a rock, a flower pot) and a ✋ button shows up.
      Tap it to lift it over your head, and tap again to throw it. Things go back where they were when the game reloads.
+   - ❄️ Freeze breath (button on the left, or F): blows icy breath at the closest person in front of you (family playing
+     online, or a townsperson). They're stuck in a block of ice for 10 seconds: on their own phone they can't walk or jump.
+   - ⚡ Lightning landing (button on the left while flying, or Z): the quick way down. Lightning flashes and you shoot
+     straight down to the ground like a bolt, landing with a thunder boom and a scorch mark. It doesn't hit anybody.
    The suit swaps your look while it's on (your own outfit waits in SAVE.daddyLook), so friends online see it too, and they
    see the lightning, the cape, mask and badge (the 'hero' entry in SHOW at the bottom), and see Daddy jump
    sky-high, fly around and pop up somewhere else (they get your position as usual). They don't see the thing you carry.
 
-   TO REMOVE: delete this file, then search 3d/src for "DADDY POWERS" and undo the 3 small hooks it finds
-   (a line in 17-input.js and 26-map.js; in 25-game-loop.js the "&&!daddyFlyStep(...)" part and the note under it),
+   TO REMOVE: delete this file, then search 3d/src for "DADDY POWERS" and undo the small hooks it finds
+   (a line in 17-input.js and 26-map.js; in 25-game-loop.js "||daddyFrozen()", "&&!daddyFlyStep(...)" and the notes),
    then run: node 3d/build.mjs */
 const DAD={fly:false,vx:0,vz:0,vy:0,tilt:0,tip:false,cands:null,near:null,held:null,thrown:[],scanT:0};
 const DAD_KEY=/^\s+daddy\s*$/i;// a space (or more) in front of "Daddy"
@@ -9138,14 +9142,15 @@ if(SAVE.daddySuit&&!SAVE.daddyLook)SAVE.daddySuit=0;// suited up in an older ver
 for(const id of ['#wname','#setName'])$(id).addEventListener('input',e=>{const on=DAD_KEY.test(e.target.value);if(!!SAVE.daddy!==on){SAVE.daddy=on?1:0;persist();}});
 
 /* ---------- super jump, and take off ---------- */
-function daddyJump(){if(!daddyOn()||barnRide)return false;
+function daddyJump(){if(daddyFrozen())return true;// frozen in ice: no jumping
+  if(!daddyOn()||barnRide)return false;
   if(DAD.fly)return true;// up in the air already: holding JUMP climbs (in daddyFlyStep)
   if(player.onGround){player.vy=17;player.onGround=false;sfx('jump');burst(player.pos.clone().add(new THREE.Vector3(0,.1,0)),'#ffffff',18,1.6);return true;}
   daddyTakeOff();return true;}// a second tap in the air: fly
 function daddyTakeOff(){flyGrid();Object.assign(DAD,{fly:true,vx:0,vz:0,vy:Math.max(0,player.vy*.3)});player.vy=0;player.onGround=false;
   tone(520,.25,'triangle',.08,0,1040);$('#flyDown').style.display='grid';document.body.classList.add('flying');
   if(!DAD.tip){DAD.tip=true;toast(isTouch?'🦸 Hold JUMP to go up, ⬇️ to go down. Go all the way down to land.':'🦸 Hold Space to go up, Shift to go down. Go all the way down to land.');}}
-function daddyLand(snap){if(!DAD.fly)return;const p=player.pos;DAD.fly=false;
+function daddyLand(snap){if(!DAD.fly)return;const p=player.pos;DAD.fly=false;DAD.dive=false;
   $('#flyDown').style.display='none';document.body.classList.remove('flying');av.g.rotation.x=0;DAD.tilt=0;
   if(snap){collide(p);p.y=groundAt(p.x,p.z);player.vy=0;player.onGround=true;}
   else{player.vy=0;burst(new THREE.Vector3(p.x,p.y+.05,p.z),'#ffffff',14,1.3);}}
@@ -9153,7 +9158,13 @@ function daddyLand(snap){if(!DAD.fly)return;const p=player.pos;DAD.fly=false;
 /* ---------- flying, every frame (from the game loop, instead of walking) ---------- */
 function daddyFlyStep(dt,ix,iy,mag){if(!DAD.fly)return false;
   if(!daddyOn()||barnRide||closetOpen){daddyLand(true);return false;}
-  const p=player.pos,up=FLY.upBtn||keys.Space,down=FLY.downBtn||keys.ShiftLeft||keys.ShiftRight||keys.KeyC,top=30;
+  const p=player.pos;
+  if(DAD.dive){// ⚡ lightning landing: straight down, fast, then a strike where you land
+    const g=groundAt(p.x,p.z);p.y-=45*dt;player.face=angDamp(player.face,player.face,1);av.g.rotation.order='YXZ';av.g.rotation.x=0;
+    if(p.y<=g){p.y=g;DAD.dive=false;daddyLand(false);collide(p);p.y=groundAt(p.x,p.z);player.onGround=true;player.vy=0;
+      strikeFx(p.x,p.z,true);DAD.stk={x:+p.x.toFixed(2),z:+p.z.toFixed(2),n:(DAD.stk?DAD.stk.n:0)+1,t:Date.now()};doAction('pose');return true;}
+    player.speed=0;player.onGround=false;player.vy=0;return true;}
+  const up=FLY.upBtn||keys.Space,down=FLY.downBtn||keys.ShiftLeft||keys.ShiftRight||keys.KeyC,top=30;
   let wx=0,wz=0;
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;
     wx=(fx*-iy+rx*ix)/n*top*mag;wz=(fz*-iy+rz*ix)/n*top*mag;player.face=angDamp(player.face,Math.atan2(wx,wz),Math.min(1,dt*6));}
@@ -9278,7 +9289,7 @@ function heroZap(x,y,z,flash){const pts=[new THREE.Vector3(x+(Math.random()-.5)*
 const suitBtn=document.createElement('button');suitBtn.className='rb';suitBtn.id='dadSuit';suitBtn.setAttribute('aria-label','Hero');suitBtn.innerHTML='🦸<small>Hero</small>';suitBtn.style.display='none';// beside 📸 (below the row on a sideways phone), so the icons don't get pushed around
 {const st=document.createElement('style');st.textContent='#dadSuit{position:absolute;top:0;right:70px}@media (max-height:520px){#dadSuit{top:62px;right:0}}';document.head.appendChild(st);}
 $('#side').appendChild(suitBtn);
-function suitUp(){const p=player.pos;if(SK.on)stopSkate(true);if(BIKE.on)stopBike(true);if(barnRide)stopRide(true);
+function suitUp(){const p=player.pos;DAD.suitN=Date.now();if(SK.on)stopSkate(true);if(BIKE.on)stopBike(true);if(barnRide)stopRide(true);
   heroZap(p.x,p.y,p.z,true);
   setTimeout(()=>{if(!SAVE.daddySuit){SAVE.daddyLook=SAVE.look;SAVE.look=heroLook(SAVE.look);}SAVE.daddySuit=1;persist();rebuildPlayer();doAction('cheer');toast('⚡ SUPER DADDY! ⚡');},180);}
 // back in your own clothes (quiet: no sparkles, e.g. when the closet opens)
@@ -9291,10 +9302,74 @@ onTick.push(dt=>{if(SAVE.daddySuit&&(closetOpen||!daddyKey()))suitOff(true);// b
   if(on&&(!DAD.gear||DAD.gear.a!==av)){heroOff(DAD.gear);DAD.gear=heroGear(av);}
   else if(!on&&DAD.gear){heroOff(DAD.gear);DAD.gear=null;}
   if(DAD.gear){heroCape(DAD.gear,performance.now()/1000,player.speed,!player.onGround,DAD.fly);if(DAD.fly)heroFlyPose(av);}});
+/* ---------- ❄️ freeze breath and ⚡ lightning strike (buttons on the left while suited up) ---------- */
+// Both reach friends online through the 'hero' entry below: it carries a little note {to, n, t} for the latest freeze
+// and {x, z, n, t} for the latest strike, and every phone in the room plays it once.
+const FREEZE_S=10;
+DAD.ice=new Map();// who is frozen in ice right now: key -> {g (their model), until, box}
+let dadIceMat=null;
+const iceMat=()=>dadIceMat||(dadIceMat=new THREE.MeshPhysicalMaterial({color:'#bfeeff',transparent:true,opacity:.45,roughness:.08,clearcoat:1,depthWrite:false}));
+function iceOn(key,g,ms){const old=DAD.ice.get(key);if(old)iceGone(key,true);
+  const box=new THREE.Mesh(new THREE.BoxGeometry(.95,2.05,.95),iceMat());box.position.y=1.0;g.add(box);
+  DAD.ice.set(key,{g,box,until:performance.now()+ms});const p=g.getWorldPosition(new THREE.Vector3());
+  burst(p.clone().add(new THREE.Vector3(0,1,0)),'#dff7ff',36,2.4);tone(1400,.35,'sine',.07,0,600);tone(900,.5,'triangle',.05,.05,300);}
+function iceGone(key,quiet){const c=DAD.ice.get(key);if(!c)return;DAD.ice.delete(key);c.box.parent&&c.box.parent.remove(c.box);c.box.geometry.dispose();
+  if(!quiet){const p=c.g.getWorldPosition(new THREE.Vector3());burst(p.add(new THREE.Vector3(0,1,0)),'#8fd8ff',40,3.2);tone(500,.15,'triangle',.06,0,900);}}
+// icy breath puffing from (a) toward (b)
+function breathFx(a,b){let t=0;const from=a.clone().add(new THREE.Vector3(0,1.5,0)),to=b.clone().add(new THREE.Vector3(0,1,0));tone(300,.7,'sawtooth',.03,0,120);
+  const fn=dt=>{t+=dt;const k=Math.min(1,t/.6);burst(from.clone().lerp(to,k),'#dff7ff',8,.6,.22);if(t>.6)onTick.splice(onTick.indexOf(fn),1);};onTick.push(fn);}
+// am I frozen (on my own phone)? Then the joystick and JUMP do nothing (see the hooks in 17-input.js and 25-game-loop.js)
+const daddyFrozen=()=>DAD.ice.has('me');
+// everyone Daddy could freeze: family online, and the townspeople
+function freezeTargets(){const out=[];const net=window.__net;
+  if(net&&net.friends)for(const [id,o] of net.friends())out.push({key:'net:'+id,id,pos:o.pos,g:()=>o.a.g});
+  for(const f of FRIENDS)out.push({key:'town:'+f.name,town:f,pos:f.pos,g:()=>f.g});return out;}
+function daddyFreeze(){const p=player.pos,fx=Math.sin(player.face),fz=Math.cos(player.face);let best=null,bs=1e9;
+  for(const t of freezeTargets()){const dx=t.pos.x-p.x,dz=t.pos.z-p.z,d=Math.hypot(dx,dz);if(d>10||d<.1)continue;
+    const ahead=(dx*fx+dz*fz)/d,score=d*(ahead>.4?1:2.5);if(ahead<-.2&&d>3)continue;if(score<bs){bs=score;best=t;}}
+  const tgt=best?best.pos:p.clone().add(new THREE.Vector3(fx*5,0,fz*5));breathFx(p,tgt);doAction('kiss');
+  if(!best){toast('❄️ Nobody close enough to freeze');return;}
+  if(best.town){best.town.tgt=null;best.town.wait=FREEZE_S;}
+  setTimeout(()=>iceOn(best.key,best.g(),FREEZE_S*1000),450);
+  if(best.id)DAD.frz={to:best.id,n:(DAD.frz?DAD.frz.n:0)+1,t:Date.now()};}
+// ⚡ shoot straight down to the ground like a lightning bolt (only while flying; daddyFlyStep does the fall)
+function daddyStrike(){if(!DAD.fly||DAD.dive)return;const p=player.pos;DAD.dive=true;DAD.vx=DAD.vz=0;
+  heroZap(p.x,p.y-1.1+.2,p.z,true);tone(1800,.2,'sawtooth',.05,0,300);}
+// where you hit the ground: a bolt, a shock ring and a scorch mark (on your phone, and on friends' phones from the note)
+function strikeFx(x,z,flash){const g=groundAt(x,z);
+  heroZap(x,g-1.1,z,flash);burst(new THREE.Vector3(x,g+.2,z),'#ffe066',60,5);
+  const mark=new THREE.Mesh(new THREE.CircleGeometry(1.3,28),new THREE.MeshBasicMaterial({color:'#1a1410',transparent:true,opacity:.7,depthWrite:false}));
+  mark.rotation.x=-Math.PI/2;mark.position.set(x,g+.03,z);scene.add(mark);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.8,1,40),new THREE.MeshBasicMaterial({color:'#fff6b0',transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(x,g+.06,z);scene.add(ring);
+  let t=0;const fn=dt=>{t+=dt;ring.scale.setScalar(1+t*9);ring.material.opacity=Math.max(0,.9-t*1.8);mark.material.opacity=Math.max(0,.7*(1-t/6));
+    if(t>6){for(const m of [mark,ring]){scene.remove(m);m.geometry.dispose();m.material.dispose();}onTick.splice(onTick.indexOf(fn),1);}};onTick.push(fn);}
+// the two buttons
+const mkPower=(id,txt,bottom,bg,fn)=>{const b=document.createElement('button');b.className='hud';b.id=id;b.textContent=txt;
+  b.style.cssText=`left:calc(env(safe-area-inset-left) + 22px);bottom:calc(env(safe-area-inset-bottom) + ${bottom}px);width:64px;height:64px;border-radius:50%;display:none;place-items:center;font-size:28px;background:${bg};border:3px solid rgba(255,255,255,.85);box-shadow:0 6px 18px rgba(59,35,87,.3);pointer-events:auto;touch-action:none`;
+  document.body.appendChild(b);b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(daddyOn()&&!closetOpen)fn();});return b;};
+const freezeBtn=mkPower('dadFreeze','❄️',310,'radial-gradient(circle at 35% 30%,#e8fbff,#7fd3ff)',daddyFreeze);
+const strikeBtn=mkPower('dadStrike','⚡',230,'radial-gradient(circle at 35% 30%,#fff3b0,#ffc83d)',daddyStrike);
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||!daddyOn()||closetOpen)return;if(e.code==='KeyF')daddyFreeze();if(e.code==='KeyZ')daddyStrike();});
+let frozenToastT=0;
+onTick.push(dt=>{const on=daddyOn()&&started&&!closetOpen;freezeBtn.style.display=on?'grid':'none';strikeBtn.style.display=on&&DAD.fly&&!DAD.dive?'grid':'none';
+  const now=performance.now();
+  for(const [k,c] of [...DAD.ice]){if(now>c.until){iceGone(k);if(k==='me')toast('💧 You thawed out!');continue;}
+    if(k==='me'&&c.g!==av.g){c.box.parent&&c.box.parent.remove(c.box);av.g.add(c.box);c.g=av.g;}// your model was rebuilt: move the ice over
+    if(k.startsWith('net:')){const o=window.__net&&window.__net.friends().get(k.slice(4));if(!o){iceGone(k,true);continue;}if(o.a.g!==c.g){c.box.parent&&c.box.parent.remove(c.box);o.a.g.add(c.box);c.g=o.a.g;}}}
+  if(daddyFrozen()&&(frozenToastT-=dt)<=0){frozenToastT=1;const s=Math.ceil((DAD.ice.get('me').until-now)/1000);toast(`❄️ Frozen! ${s}…`);}});
+// a freeze or strike that Daddy (friend f) sent, played once on this phone
+function heroNotes(f,d){const P=f.pos,fresh=n=>n&&Math.abs(Date.now()-(+n.t||0))<6000;
+  if(fresh(d.f)&&d.f.n!==f.heroF){f.heroF=d.f.n;const net=window.__net,mine=net&&net.id&&d.f.to===net.id();
+    const o=!mine&&net&&net.friends().get(d.f.to),tp=mine?player.pos:o?o.pos:null;
+    if(tp){breathFx(P,tp);setTimeout(()=>{if(mine){iceOn('me',av.g,FREEZE_S*1000);player.vy=0;}else if(o)iceOn('net:'+d.f.to,o.a.g,FREEZE_S*1000);},450);}}
+  if(fresh(d.s)&&d.s.n!==f.heroS){f.heroS=d.s.n;strikeFx(+d.s.x||0,+d.s.z||0,false);}}
 // friends online see the suit, and the lightning when you put it on
 SHOW.push({k:'hero',
-  mine(){return daddyOn()?{on:1}:null;},
-  on(f,d){const P=f.pos,now=performance.now();if(!(now-(f.heroZ||0)<4000))heroZap(P.x,P.y,P.z,false);f.heroZ=now;return {gear:heroGear(f.a),a:f.a};},
+  mine(){return daddyOn()?{z:DAD.suitN||0,f:DAD.frz||null,s:DAD.stk||null}:null;},
+  // (any change here takes the suit off and puts it on again on friends' phones, so the lightning only plays for a new suit-up)
+  on(f,d){const P=f.pos;if(d.z!==f.heroZ){if(f.heroZ!==undefined||Math.abs(Date.now()-(+d.z||0))<6000)heroZap(P.x,P.y,P.z,false);f.heroZ=d.z;}
+    heroNotes(f,d);return {gear:heroGear(f.a),a:f.a};},
   step(f,d,dt,h){if(!h)return;if(h.a!==f.a){heroOff(h.gear);h.gear=heroGear(f.a);h.a=f.a;}const fly=!!f.air&&f.pos.y-groundAt(f.pos.x,f.pos.z)>2.5,r=f.a.g.rotation;// way up in the air: flying like a superhero
     h.tilt=(h.tilt||0)+((fly?Math.min(1,(f.sp||0)/10)*1.1:0)-(h.tilt||0))*Math.min(1,dt*4);r.order='YXZ';r.x=h.tilt;
     heroCape(h.gear,performance.now()/1000,f.sp||0,!!f.air,fly);if(fly)heroFlyPose(f.a);},

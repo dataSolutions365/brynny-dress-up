@@ -50,7 +50,7 @@ function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
 function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elapsedTime;if(started)adaptRes(rawDt);
   // movement input
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
-  let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock())mag=0;
+  let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||daddyFrozen())mag=0;// DADDY POWERS: remove "||daddyFrozen()" with 27-daddy-powers.js
   const p=player.pos;
   if(!flyStep(dt,ix,iy,mag)&&!daddyFlyStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead
   // ^ DADDY POWERS: when removing 27-daddy-powers.js, take out "&&!daddyFlyStep(dt,ix,iy,mag)" above and this line
