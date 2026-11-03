@@ -115,7 +115,7 @@ async function share() {
 let peerLib = null;
 function loadPeer() {
   if (window.Peer) return Promise.resolve(window.Peer);
-  if (!peerLib) peerLib = new Promise((ok, no) => { const s = document.createElement('script'); s.src = PEERJS; s.onload = () => ok(window.Peer); s.onerror = () => { peerLib = null; no(new Error('load')); }; document.head.appendChild(s); });
+  if (!peerLib) peerLib = new Promise((ok, no) => { const s = document.createElement('script'); s.crossOrigin = 'anonymous'; s.src = PEERJS; s.onload = () => ok(window.Peer); s.onerror = () => { peerLib = null; no(new Error('load')); }; document.head.appendChild(s); });
   return peerLib;
 }
 const newCode = () => Array.from({ length: 5 }, () => ABC[Math.random() * ABC.length | 0]).join('');
@@ -277,7 +277,7 @@ function addOther(id, d, quiet) {
 function removeOther(id, quiet) {
   const o = others.get(id); if (!o) return;
   if (G.friendShowClear) G.friendShowClear(o);
-  G.scene.remove(o.a.g); others.delete(id);
+  G.scene.remove(o.a.g); if (G.freeObj) G.freeObj(o.a.g); others.delete(id);
   if (!quiet) G.toast(`${o.name} left 👋`);
   badge();
 }
@@ -295,7 +295,7 @@ function handle(id, d) {
     if ((d.look.style || 'glam') !== (o.a.look.style || 'glam') || (d.look.body || 'girl') !== (o.a.look.body || 'girl') || JSON.stringify(d.look.face || {}) !== JSON.stringify(o.a.look.face || {})) {
       const n = new G.Avatar(d.look, o.name, o.tc);
       if (G.friendShowClear) G.friendShowClear(o);
-      G.scene.remove(o.a.g); o.a = n; o.g = n.g; o.say = null; G.scene.add(n.g); n.g.position.copy(o.pos);
+      G.scene.remove(o.a.g); if (G.freeObj) G.freeObj(o.a.g); o.a = n; o.g = n.g; o.say = null; G.scene.add(n.g); n.g.position.copy(o.pos);
     } else { try { o.a.dress(d.look); } catch (e) { } }
     if (G.friendShow) G.friendShow(o, o.show);
   }

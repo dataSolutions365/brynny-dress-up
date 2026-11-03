@@ -147,12 +147,15 @@ function showWorld(){renderer.setAnimationLoop(tick);
 function compileWait(){const mats=renderer.compile(scene,camera);return new Promise(res=>{const check=()=>{
     try{mats.forEach(m=>{const pr=renderer.properties.get(m).currentProgram;if(!pr||pr.isReady())mats.delete(m);});}catch(e){mats.clear();}
     if(mats.size)setTimeout(check,10);else res();};setTimeout(check,10);});}
-function warmUp(){scene.updateMatrixWorld(true);let c;try{c=compileWait();
+function warmUp(){try{shareShapes(scene);}catch(e){}// thousands of copies of the same shape become one each (01c-memory.js)
+  scene.updateMatrixWorld(true);let c;try{c=compileWait();
     const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=compileWait();renderer.setRenderTarget(null);c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
   // never wait forever: if building the shaders takes too long, just start (the first frame finishes the job)
   Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
 // The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
 // while thousands of them were sent over. Draw everything once, behind the loading screen, so they are all there already.
-function preUpload(){if(LITE)return;const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;// skip the shadow pass for this one giant frame
+// On a phone, only the things near the start (the first places you see when you look around) are sent now: sending the whole
+// island in one giant frame made iPhones run out of graphics memory a few seconds after opening.
+function preUpload(){if(LITE)return;const off=[],near=isTouch?40:Infinity,v=new THREE.Vector3();try{scene.traverse(o=>{if(o.frustumCulled&&(near===Infinity||o.getWorldPosition(v).distanceTo(player.pos)<near)){o.frustumCulled=false;off.push(o);}});const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;// skip the shadow pass for this one giant frame
   try{renderer.render(scene,camera);}finally{renderer.shadowMap.autoUpdate=au;renderer.shadowMap.needsUpdate=true;}}catch(e){}off.forEach(o=>o.frustumCulled=true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);

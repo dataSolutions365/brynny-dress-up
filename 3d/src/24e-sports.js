@@ -104,7 +104,7 @@ const spBallTex=canvasTex(256,128,(x)=>{x.fillStyle='#ff7a1f';x.fillRect(0,0,256
 spBallMat.map=spBallTex;
 function spNewBall(){const z=Z.court;const m=M(sph(SP_BR,24,16),spBallMat,0,-5,0,z.g,true,false);
   const b={m,p:new THREE.Vector3(0,-5,0),v:new THREE.Vector3(),st:'hold',by:'me',pts:2,made:false,bounces:0,age:0,rim:0,gone:0,blockAt:-1};SP.balls.push(b);return b;}
-function spDropBall(b){const i=SP.balls.indexOf(b);if(i>=0)SP.balls.splice(i,1);Z.court.g.remove(b.m);if(SP.ball===b)SP.ball=null;}
+function spDropBall(b){const i=SP.balls.indexOf(b);if(i>=0)SP.balls.splice(i,1);Z.court.g.remove(b.m);freeObj(b.m);if(SP.ball===b)SP.ball=null;}
 function spStepBall(b,dt){const C=SPC,n=5,h=dt/n,p=b.p,v=b.v;b.age+=dt;
   if(b.blockAt>=0&&b.age>=b.blockAt){b.blockAt=-1;b.blocked=true;v.set((Math.random()<.5?-1:1)*(2+Math.random()*2),1.5,3+Math.random()*2);tone(140,.12,'square',.12);}
   for(let k=0;k<n;k++){const py=p.y;v.y-=SP_G*h;p.addScaledVector(v,h);
