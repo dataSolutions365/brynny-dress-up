@@ -62,6 +62,12 @@
   rolling with gravity on the ramps, air out of the half-pipe, ollies, grinds on `SKZ.rails` and the trick buttons. Change a ramp's
   numbers in `SKZ` and both the look and the riding follow. Friends see the lean and the tricks through the `park` entry in `SHOW`.
   `3d/tests/skate-park.mjs` (run on every PR) rides it on all three.
+- 🍝 Rosie's Restaurant (between the Birthday Party and the Sweet Bakery): the building, tables, pads and the food models
+  (`makeFood(kind)` gives `{g, bits}`; bits disappear one by one as you eat) are in `3d/src/12g-place-restaurant.js` (`RST`).
+  `3d/src/24l-restaurant.js` does sitting down to eat (Rosie walks the food over from the kitchen pass on her tray, `did('eat', food)`)
+  and the 🛵 delivery rush (3 customers at places around town, a time limit, the food box on your back; `did('deliver', 0)` is a win
+  and counts toward the 🏆 earned rides). Add a food by adding it to `FOOD_MAIN`/`FOOD_SWEET` and a builder in `FOOD_BUILD`
+  (and its id to `FOOD_MAINS`/`FOOD_SWEETS` in `3d/challenges.js`). `3d/tests/restaurant.mjs` (run on every PR) eats a meal and wins a rush.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.

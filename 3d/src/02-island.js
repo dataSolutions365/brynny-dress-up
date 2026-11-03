@@ -48,6 +48,8 @@ const ZONES=[
   {id:'jump',name:'🤸 Jump Park',ang:120,d:57,r:7,music:'stadium-cheer',p0:43.2},
   // in the open grass between the Runway and the Beach path (ramps and tricks: 12f-place-skate-park.js, 24k-skate-park.js)
   {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
+  // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
+  {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;

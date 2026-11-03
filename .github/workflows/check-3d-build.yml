@@ -39,6 +39,8 @@ jobs:
         run: node 3d/tests/jump-park.mjs
       - name: Every guy haircut looks like its name and hats sit on the hair
         run: node 3d/tests/guy-hair.mjs
+      - name: Rosie serves your food at the restaurant, and the delivery rush works
+        run: node 3d/tests/restaurant.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
       - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)

@@ -25,6 +25,8 @@ const guy = () => !!SAVE.look && SAVE.look.body === 'guy';
 // how much you've swum, and with whom, from 3d/src/26f-ocean.js (for the 🌊 Ocean challenges)
 const sea = () => (G.seaState && G.seaState()) || { swum: 0, dolphin: 0, whale: 0, turtle: 0, spouts: 0 };
 const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0, kn: {} };
+// the foods on Rosie's menu (FOOD_MAIN and FOOD_SWEET in 3d/src/12g-place-restaurant.js)
+const FOOD_MAINS = ['pizza', 'burger', 'pasta', 'pancakes', 'sushi', 'salad'], FOOD_SWEETS = ['sundae', 'cake', 'cookies'];
 const LIST = [
   // ✨ Sparkle Studio
   { id: 'dress', tab: 'studio', e: '👗', t: 'Put on a dress', r: 1, go: 'studio', poll: () => SAVE.look.dress ? 1 : 0 },
@@ -56,6 +58,14 @@ const LIST = [
   { id: 'cakeContest', tab: 'bakery', e: '⏱️', t: 'Enter a cake contest', r: 1, go: 'bakery', ev: { k: 'cakect' } },
   { id: 'cakeWin', tab: 'bakery', e: '👑', t: 'Win a cake contest', r: 2, go: 'bakery', ev: { k: 'cakect', a: p => p === 0 } },
   { id: 'wish', tab: 'bakery', e: '🕯️', t: 'Blow out the candles and make a wish', r: 1, go: 'bakery', ev: { k: 'wish' } },
+  // 🍝 Rosie's Restaurant (3d/src/24l-restaurant.js): sit down and eat, and the 🛵 delivery rush around town
+  { id: 'eatMeal', tab: 'food', e: '🍽️', t: "Eat a meal at Rosie's Restaurant", r: 1, go: 'diner', ev: { k: 'eat' } },
+  { id: 'eatDessert', tab: 'food', e: '🍨', t: 'Have dessert after your meal', r: 1, go: 'diner', ev: { k: 'eat', a: a => FOOD_SWEETS.includes(a) } },
+  { id: 'eat3', tab: 'food', e: '😋', t: 'Try 3 different foods on the menu', r: 2, goal: 3, u: true, go: 'diner', ev: { k: 'eat', a: a => FOOD_MAINS.includes(a) } },
+  { id: 'eatAll', tab: 'food', e: '👨‍🍳', t: 'Try every food on the menu', r: 3, goal: FOOD_MAINS.length, u: true, go: 'diner', ev: { k: 'eat', a: a => FOOD_MAINS.includes(a) } },
+  { id: 'rush', tab: 'food', e: '🛵', t: 'Try a delivery rush', r: 1, go: 'diner', ev: { k: 'deliver' } },
+  { id: 'rushWin', tab: 'food', e: '🏆', t: 'Deliver all 3 orders before time runs out', r: 2, go: 'diner', ev: { k: 'deliver', a: p => p === 0 } },
+  { id: 'rushWin5', tab: 'food', e: '⚡', t: 'Win 5 delivery rushes', r: 3, goal: 5, go: 'diner', ev: { k: 'deliver', a: p => p === 0 } },
   // ⭐ Star Model Agency
   { id: 'glam', tab: 'agency', get e() { return guy() ? '🪞' : '💄'; }, t: 'Sit at the glam mirror', r: 1, go: 'agency', ev: { k: 'glam' } },
   { id: 'makeup', tab: 'agency', get e() { return guy() ? '🧴' : '💋'; }, get t() { return guy() ? 'Try skin care: brows, a tan or freckles' : 'Wear 3 kinds of makeup'; }, r: 1, go: 'agency', poll: () => guy() ? glam().skin : glam().mk >= 3 ? 1 : 0 },
@@ -166,8 +176,10 @@ const DAILY = [
   { id: 'd_glam', get e() { return guy() ? '🪞' : '💄'; }, t: 'Sit at the glam mirror', go: 'agency', ev: { k: 'glam' } },
   { id: 'd_bath', e: '🛁', t: 'Give your pet a bath', go: 'parlor', ev: { k: 'bath' } },
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
+  { id: 'd_eat', e: '🍝', t: "Eat a meal at Rosie's Restaurant", go: 'diner', ev: { k: 'eat' } },
+  { id: 'd_rush', e: '🛵', t: 'Do a delivery rush', go: 'diner', ev: { k: 'deliver' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 

@@ -133,6 +133,7 @@ function showDoing(){
   if(ck.on)return '🏆 Cake contest';if(pc.on)return '🏆 Pet contest';if(ct.on)return '📸 Model contest';
   if(glamOpen)return '💄 Glam mirror';if(barberOpen)return '💈 At the barber';if(storeOpen)return '👕 Clothes shopping';
   if(bakeryOpen)return '🎂 Baking a cake';if(parlorOpen)return '🐾 Pet Parlor spa';if(barnOpen)return '🐴 At the barn';if(zooOpen)return '🦒 At the zoo';
+  if(DL.on)return '🛵 Delivering food';if(restOpen)return meal.mode==='rush'?'🛵 At Rosie\'s':'🍝 Eating at Rosie\'s';
   if(garageOpen)return '🔧 Fixing a car';if(sandOpen)return '🏰 Building a sandcastle';if(shopOpen)return '🪙 At the shop';if(mapOpen)return '🗺️ Looking at the map';
   if(talkF)return `💬 Talking to ${talkF.name}`;if(closetOpen)return '👗 Getting dressed';return null;}
 function showHold(){if(SP.mode==='bat')return 'bat';if(SP.mode&&SP.ball&&SP.ball.st==='hold'&&SP.poss==='me')return 'ball';return null;}
@@ -149,6 +150,13 @@ SHOW.push({k:'doing',
   // a friend who rebuilds (new body or face) gets a new avatar: move the sign over
   step(f,d,dt,h){if(h.sign&&h.g!==f.a.g){h.g.remove(h.sign);f.a.g.add(h.sign);h.g=f.a.g;}},
   off(f,h){if(!h)return;if(h.sign&&h.g)h.g.remove(h.sign);if(h.prop&&h.hand)h.hand.remove(h.prop);}});
+
+// 🛵 the red food box on your back during a delivery rush (24l-restaurant.js)
+SHOW.push({k:'dbox',
+  mine(){return DL.on?{i:DL.i}:null;},
+  on(f){const sp=f.a&&f.a.spine;if(!sp)return null;const b=deliveryBox();b.position.set(0,.2,-.25);sp.add(b);return {b,sp};},
+  step(f,d,dt,h){if(h&&f.a&&f.a.spine!==h.sp){h.sp.remove(h.b);h.sp=f.a.spine;h.sp.add(h.b);}},
+  off(f,h){if(h&&h.sp)h.sp.remove(h.b);}});
 
 /* ---------- what online.js calls ---------- */
 // everything about you, for friends
