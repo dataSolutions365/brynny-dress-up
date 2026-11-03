@@ -9,8 +9,8 @@
 const MOUNTS=FARM.filter(f=>f.mount||f.prize);
 STABS.splice(1,0,['rides','🦖','Rides']);
 SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn, and the dinosaurs and unicorn there can be ridden too.';
-for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,n:f.n,stars:f.mount,prize:f.prize,
-  d:f.prize?f.about:`${f.about} Tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
+for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize,
+  d:f.prize?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
 
 // it's yours: it moves into the barn, and the ride button calls it
 function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
@@ -25,6 +25,8 @@ function askPrize(s){const st=starsEarned();
 function checkPrizes(){if(!started)return;for(const f of MOUNTS)if(f.prize&&!BS.own[f.k]&&starsEarned()>=f.prize){getMount(f.k,true);sfx('tada');
   burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);}}
 setInterval(checkPrizes,1500);
+// draw the pictures of your rides soon after you start, so the ride button shows your real animal
+setTimeout(function warmPics(){if(!started)return setTimeout(warmPics,2000);if(myRides().length)thumbsSoon();},4000);
 
 /* ---------- 🏇 pick a ride: every animal you own that you can ride ---------- */
 function renderRides(){const now=mySteed();
