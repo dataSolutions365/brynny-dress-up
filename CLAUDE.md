@@ -50,6 +50,9 @@
   rolling with gravity on the ramps, air out of the half-pipe, ollies, grinds on `SKZ.rails` and the trick buttons. Change a ramp's
   numbers in `SKZ` and both the look and the riding follow. Friends see the lean and the tricks through the `park` entry in `SHOW`.
   `3d/tests/skate-park.mjs` (run on every PR) rides it on all three.
+- Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
+  follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
+  or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

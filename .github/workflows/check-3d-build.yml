@@ -41,5 +41,7 @@ jobs:
         run: node 3d/tests/guy-hair.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
+      - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)
+        run: node 3d/tests/townspeople.mjs
       - name: The 2D and 3D closets match
         run: node 3d/tests/closets-match.mjs
