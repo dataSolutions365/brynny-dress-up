@@ -134,9 +134,12 @@ function skateParkStep(dt,ix,iy,mag){const z=Z.skate,P=SKP,p=player.pos,kind=skW
     const hit=skRailHit(P.lx,P.lz,nx,nz,y);if(hit){let vx=dx*P.S,vz=dz*P.S;const d=vx*hit[0]+vz*hit[1];vx-=1.3*d*hit[0];vz-=1.3*d*hit[1];P.S=Math.hypot(vx,vz);if(P.S>.05)P.hd=Math.atan2(vx,vz);nx=P.lx;nz=P.lz;}
     const hn=skH(nx,nz);
     // the ground drops away faster than you'd fall (the lip of a ramp, the top of the stairs): you're flying
-    if(hn<y+vys*h-.5*SK_G*h*h-.012){P.air=true;P.airT=0;P.vx=dx*vh;P.vz=dz*vh;P.vy=vys;P.lx=nx;P.lz=nz;P.y=y+vys*h;
+    // or you reach the coping of a steep wall going up: off you go too, whatever the size of this step (else you'd roll on over the deck)
+    const up=G2>2.5&&vys>0&&hn>y-.1,lip=up&&(()=>{const[a,b]=skGrad(nx,nz,hn);return a*a+b*b<.2;})();
+    if(lip||hn<y+vys*h-.5*SK_G*h*h-.012){P.air=true;P.airT=0;P.vx=dx*vh;P.vz=dz*vh;P.vy=vys;
+      if(lip&&hn>y+vys*h){P.y=y;}else{P.lx=nx;P.lz=nz;P.y=y+vys*h;}
       // straight up off the top of a steep wall onto its deck (the half-pipe, the quarter pipe, not the kicker): go up and come back down onto the ramp, turning around in the air
-      if(G2>2.5&&vys>0&&hn>y-.1){const gl=Math.sqrt(G2),ux=gx/gl,uz=gz/gl,a=P.vx*ux+P.vz*uz;P.vx+=(-.3-a)*ux;P.vz+=(-.3-a)*uz;
+      if(up){const gl=Math.sqrt(G2),ux=gx/gl,uz=gz/gl,a=P.vx*ux+P.vz*uz;P.vx+=(-.3-a)*ux;P.vz+=(-.3-a)*uz;
         const T=2*P.vy/SK_G,side=skAng(P.face-Math.atan2(ux,uz))>=0?1:-1;P.vert={f0:P.face,f1:P.face+side*Math.PI,t:0,T:Math.max(.3,T),vy0:Math.max(1,P.vy),n0:P.n.clone()};}
       continue;}
     P.lx=nx;P.lz=nz;P.y=hn;}
