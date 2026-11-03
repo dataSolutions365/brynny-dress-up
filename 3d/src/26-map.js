@@ -7,6 +7,7 @@ const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=m
 function drawWorld(x,w2s,k,size){
   x.fillStyle='#2ab0d4';x.fillRect(0,0,size,size);
   const [cx,cy]=w2s(0,0);
+  canalBank(x,cx,cy,k);// the grassy far bank of the canal (26f-ocean.js)
   x.beginPath();x.arc(cx,cy,(R+2.4)*k,0,Math.PI*2);x.fillStyle='#f1d9a6';x.fill();
   x.beginPath();x.arc(cx,cy,R*k,0,Math.PI*2);x.fillStyle='#8fd36f';x.fill();
   // beach dock
@@ -40,7 +41,7 @@ function drawMini(){const S=miniCv.width,h=S/2,k=S/54;// ~54 world units across
   drawArrow(x,h,h,pa,15,'#8e6cff');x.restore();}
 // full map is fixed (start view: the plaza is "up"), so places never move around.
 // It can zoom in (➕ / pinch) and be dragged around, so names stay big enough to read on a phone.
-const MAPW=R+3,MAPZ=[1,1.6,2.4];
+const MAPW=R+19,MAPZ=[1,1.6,2.4];
 const mv={zi:0,z:1,ox:0,oy:0};// zoom step, zoom, and how far the view is dragged (canvas px)
 const mapK=()=>mapCv.width/(MAPW*2)*mv.z;
 // world (x,z) -> canvas px; lay=true gives the un-dragged spot used for laying out tags

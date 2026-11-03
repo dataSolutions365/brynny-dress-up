@@ -70,30 +70,37 @@ try {
   if (SHOTS) { await page.keyboard.down('ArrowUp'); await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + 1; }); await shot('swimming'); await page.keyboard.up('ArrowUp'); }
   await page.waitForTimeout(800); s = await st();
   if (s.s.swum <= sw0) fail('Swimming should count steps for the 🌊 Ocean challenges.');
-  if (s.bay > B.r) fail(`You should stay inside the bay (${s.bay.toFixed(1)} from its middle, it is ${B.r} big).`);
 
-  // the open sea everywhere else is still off limits
-  await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [-ux * (R + 8), -uz * (R + 8)]);
-  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(300); await page.keyboard.up('ArrowUp');// moving is what keeps you in bounds
-  await page.waitForTimeout(400); s = await st();
-  if (s.d > R + 1) fail(`Out at sea on the far side of the island you should be put back on the shore (at ${s.d.toFixed(1)}).`);
+  // the canal goes all the way round: you can swim on the far side of the island too, but not past the far bank
+  const C = await page.evaluate(() => window.__game.CANAL);
+  await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [-ux * (R + 9), -uz * (R + 9)]);
+  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(300); await page.keyboard.up('ArrowUp');
+  await page.waitForTimeout(900); s = await st();
+  console.log(`far side: ${s.d.toFixed(1)} from the middle, deep ${s.k.toFixed(2)}, zone ${s.zone}`);
+  if (s.d < R + 5 || s.k < .9) fail(`You should be able to swim in the canal on the far side of the island (at ${s.d.toFixed(1)}, deep ${s.k.toFixed(2)}).`);
+  if (s.zone !== 'canal') fail(`Out in the canal you should be in the Canal, not ${s.zone}.`);
+  await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [-ux * (C.outR + 10), -uz * (C.outR + 10)]);
+  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(300); await page.keyboard.up('ArrowUp');
+  await page.waitForTimeout(300); s = await st();
+  if (s.d > C.outR) fail(`You should stay on the water side of the far bank (at ${s.d.toFixed(1)}, the bank is at ${C.outR}).`);
+  if (SHOTS) { await page.evaluate(([x, z]) => { const G = window.__game; G.player.pos.set(x, 0, z); G.cam.yaw = Math.atan2(x, z) + Math.PI / 2; G.cam.pitch = .25; }, [-ux * (R + 9), -uz * (R + 9)]); await shot('canal-far-side'); }
 
-  // the sea animals come and swim next to you
-  await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [B.x, B.z]);
-  let close = {};
-  for (let i = 0; i < 15; i++) {
-    await page.waitForTimeout(1000);
-    close = await page.evaluate(() => { const G = window.__game, p = G.player.pos, o = {}; for (const c of G.SEAS) { if (c.fixed) continue; const d = Math.hypot(c.pos.x - p.x, c.pos.z - p.z); o[c.kind] = Math.min(o[c.kind] ?? 99, d); } return o; });
-    if (close.dolphin < 3.5 && close.whale < 7 && close.turtle < 3) break;
+  // the sea animals never follow you (only adopted pets do): they keep swimming their own way, and swimming next to one counts
+  const near = async (nm, gap) => { await page.evaluate(([nm, gap]) => { const G = window.__game, c = G.SEAS.find(c => c.nm === nm), a = Math.atan2(c.pos.x, c.pos.z);
+    G.player.pos.set(c.pos.x - Math.sin(a) * gap, 0, c.pos.z - Math.cos(a) * gap); }, [nm, gap]); };// beside it, toward the island
+  for (const [nm, gap] of [['Splash', 2], ['Big Blue', 4.5], ['Shelly', 1.5]]) {
+    await near(nm, gap); await page.waitForTimeout(150);
+    const a0 = await page.evaluate(nm => { const G = window.__game, c = G.SEAS.find(c => c.nm === nm); return { x: c.pos.x, z: c.pos.z }; }, nm);
+    await page.waitForTimeout(3000);
+    const r = await page.evaluate(([nm, a0]) => { const G = window.__game, c = G.SEAS.find(c => c.nm === nm), p = G.player.pos;
+      return { you: Math.hypot(c.pos.x - p.x, c.pos.z - p.z), went: Math.hypot(c.pos.x - a0.x, c.pos.z - a0.z), mode: c.mode }; }, [nm, a0]);
+    console.log(`${nm}: swam ${r.went.toFixed(1)} on its way, now ${r.you.toFixed(1)} from you (you stayed still)`);
+    if (r.went < 1.5) fail(`${nm} should keep swimming its own way (moved ${r.went.toFixed(1)}).`);
+    if (r.you < r.went * .6) fail(`${nm} should not follow you (it is ${r.you.toFixed(1)} from you after swimming ${r.went.toFixed(1)}).`);
   }
-  console.log('closest to you: ' + Object.entries(close).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(', '));
-  if (!(close.dolphin < 3.5)) fail('The dolphins should come and swim right next to you.');
-  if (!(close.whale < 7)) fail('Big Blue should come and swim next to you.');
-  if (!(close.turtle < 3)) fail('Shelly should come and swim next to you.');
-  await page.waitForTimeout(2000);
   s = await st();
-  if (!(s.s.dolphin >= 1 && s.s.whale >= 1 && s.s.turtle >= 1)) fail(`Swimming with them should count: ${JSON.stringify(s.s)}`);
-  if (SHOTS) { await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + .5; G.cam.pitch = .45; }); await shot('swimming-with-friends'); }
+  if (!(s.s.dolphin >= 1 && s.s.whale >= 1 && s.s.turtle >= 1)) fail(`Swimming next to them should count: ${JSON.stringify(s.s)}`);
+  if (SHOTS) { await near('Splash', 2.5); await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + .5; G.cam.pitch = .45; }); await shot('swimming-next-to-dolphins'); }
 
   // feed a dolphin with the 🐟 button; Splash's ride is locked
   await page.evaluate(() => { const G = window.__game, d = G.SEAS.find(c => c.nm === 'Splash'); G.player.pos.set(d.pos.x + .8, 0, d.pos.z); });
