@@ -25,8 +25,9 @@ function stepPushables(p,dt){
     for(const b of PUSH){if(b===o||b.z!==z)continue;const bq=b.m.position,bx=q.x-bq.x,bz=q.z-bq.z,bd=Math.hypot(bx,bz),mm=o.r+b.r;
       if(bd<mm&&bd>1e-4){const ux=bx/bd,uz=bz/bd,push=(mm-bd)/2;q.x+=ux*push;q.z+=uz*push;bq.x-=ux*push;bq.z-=uz*push;
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
+// past the island's edge you may only be out swimming in 🐬 Dolphin Bay (seaKeep in 26f-ocean.js)
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
-  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim){p.x*=lim/d;p.z*=lim/d;}}
+  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!(p===player.pos&&seaKeep(p,lim))){p.x*=lim/d;p.z*=lim/d;}}
 // "tried to walk but didn't move": a bug like this throws no error, so watch for it and report it once per visit
 const walkW={t0:0,d:0,sent:false};// t0: when this push on the joystick started (real time, so slow phones count the same)
 function walkWatch(mag,step){if(walkW.sent)return;if(mag<.5){walkW.t0=0;walkW.d=0;return;}const now=performance.now();if(!walkW.t0)walkW.t0=now;walkW.d+=step;

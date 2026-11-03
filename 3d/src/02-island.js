@@ -28,6 +28,8 @@ const ZONES=[
   {id:'christmas',name:'🎄 Christmas Village',ang:120,d:34,r:8.5,music:'winter-days'},
   // the beach sits at the shore so its dock reaches out over the water
   {id:'beach',name:'🏖️ Beach Day',ang:180,d:R-10.5,r:10,music:'sea-waves'},
+  // the sea right past the Beach, where you swim with dolphins and a whale (26f-ocean.js). No path, it's water.
+  {id:'bay',name:'🐬 Dolphin Bay',ang:180,d:R+14,r:16,music:'sea-waves',nopath:true},
   {id:'runway',name:'💃 Runway',ang:240,d:34,r:8.5,music:'fashion-walk'},
   {id:'spring',name:'🌷 Spring Garden',ang:300,d:34,r:8.5,music:'spring-birds'},
   {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:57,r:7,music:'clouds'},

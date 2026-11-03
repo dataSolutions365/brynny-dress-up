@@ -22,6 +22,8 @@ const glam = () => G.glamCheck(SAVE.look);
 // guys get grooming at the glam mirror instead of makeup, nails and braids, so those challenges change for them
 const guy = () => !!SAVE.look && SAVE.look.body === 'guy';
 // wins, days in a row and more, from 3d/src/24i-earned-rides.js (for the 🦁 Safari challenges)
+// how much you've swum, and with whom, from 3d/src/26f-ocean.js (for the 🌊 Ocean challenges)
+const sea = () => (G.seaState && G.seaState()) || { swum: 0, dolphin: 0, whale: 0, turtle: 0, spouts: 0 };
 const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0, kn: {} };
 const LIST = [
   // ✨ Sparkle Studio
@@ -112,6 +114,17 @@ const LIST = [
   { id: 'saf_kai10', tab: 'safari', grp: 'twiga', e: '🏀', t: 'Beat Kai 1-on-1 at basketball 10 times', r: 3, goal: 10, go: 'court', poll: () => es().kai },
   { id: 'saf_stars150', tab: 'safari', grp: 'twiga', e: '🌟', t: 'Earn 150 ⭐', r: 3, goal: 150, poll: () => C.stars || 0 },
   { id: 'saf_days21', tab: 'safari', grp: 'twiga', e: '🔥', t: 'Play 21 days in a row', r: 3, goal: 21, poll: () => es().best },
+  // 🌊 Ocean: swim in 🐬 Dolphin Bay off the Beach. Finish all of a sea animal's challenges (grp) and you can ride it in the bay (3d/src/26f-ocean.js)
+  { id: 'sea_swim', tab: 'ocean', grp: 'shelly', e: '🏊', t: 'Swim 100 steps out in Dolphin Bay', r: 2, goal: 100, go: 'bay', poll: () => sea().swum },
+  { id: 'sea_turtle', tab: 'ocean', grp: 'shelly', e: '🐢', t: 'Swim next to Shelly the sea turtle for 20 seconds', r: 2, goal: 20, go: 'bay', poll: () => sea().turtle },
+  { id: 'sea_feedT', tab: 'ocean', grp: 'shelly', e: '🪼', t: 'Feed Shelly 3 times', r: 2, goal: 3, go: 'bay', ev: { k: 'seafeed', a: a => a === 'turtle' } },
+  { id: 'sea_dolph', tab: 'ocean', grp: 'splash', e: '🐬', t: 'Swim with the dolphins for 45 seconds', r: 2, goal: 45, go: 'bay', poll: () => sea().dolphin },
+  { id: 'sea_feedD', tab: 'ocean', grp: 'splash', e: '🐟', t: 'Feed the dolphins 5 times', r: 2, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'dolphin' } },
+  { id: 'sea_feedAll', tab: 'ocean', grp: 'splash', e: '🦭', t: 'Feed all 4 sea animals: dolphin, turtle, whale and Pip the seal', r: 3, goal: 4, u: true, go: 'bay', ev: { k: 'seafeed' } },
+  { id: 'sea_whale', tab: 'ocean', grp: 'bigblue', e: '🐋', t: 'Swim next to Big Blue the whale for 60 seconds', r: 3, goal: 60, go: 'bay', poll: () => sea().whale },
+  { id: 'sea_spout', tab: 'ocean', grp: 'bigblue', e: '💦', t: 'See Big Blue spout 10 times', r: 2, goal: 10, go: 'bay', poll: () => sea().spouts },
+  { id: 'sea_swim1k', tab: 'ocean', grp: 'bigblue', e: '🌊', t: 'Swim 1000 steps in the sea', r: 3, goal: 1000, go: 'bay', poll: () => sea().swum },
+  { id: 'sea_feedW', tab: 'ocean', grp: 'bigblue', e: '🦐', t: 'Feed Big Blue 5 times', r: 3, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'whale' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 const DAILY = [
@@ -129,7 +142,7 @@ const DAILY = [
   { id: 'd_bath', e: '🛁', t: 'Give your pet a bath', go: 'parlor', ev: { k: 'bath' } },
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
@@ -254,6 +267,7 @@ css.textContent = `
 .cstreak span small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
 .csaf{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#ffe9b8,#f6d79a);border-radius:16px;padding:8px 12px;margin-top:6px;color:#5a3a12}
 .csaf>b{font-size:30px;font-weight:400;line-height:1}.csaf>b img,.crides .cq>b img{width:60px;height:60px;object-fit:contain;display:block}.csaf div{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.csaf strong{font-size:16px}.csaf span{font-size:12px;font-weight:600;color:#7a5a2a}
+.csaf.sea{background:linear-gradient(90deg,#c9f0ff,#a3def5);color:#0f4a66}.csaf.sea span{color:#2b6680}
 .csaf .own{font-size:13px;font-weight:700;color:#2e9b5a;white-space:nowrap}.csaf .lock{font-size:18px}.csaf.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9)}
 .cbonus{background:linear-gradient(90deg,#efe3ff,#ffe6f2);border-radius:14px;padding:8px 12px;font-weight:600;font-size:14px;text-align:center}
 `;
@@ -286,6 +300,7 @@ function render() {
   let h = '';
   if (tab === 'today') { const st = G.earnState ? G.earnState() : null; h += `<div class="cnote">${st && st.streak > 1 ? `🔥 Day ${st.streak} in a row! ` : ''}New challenges every day! Finish all 3 for +${DAY_BONUS} bonus ⭐</div>`; }
   if (tab === 'safari') { $('#chalList').innerHTML = safariHTML(list, here); return; }
+  if (tab === 'ocean') { $('#chalList').innerHTML = oceanHTML(list, here); return; }
   const sorted = list.slice().sort((a, b) => isDone(a) - isDone(b));
   h += sorted.map(ch => {
     return chRow(ch, here);
@@ -311,6 +326,18 @@ function safariHTML(list, here) {
     h += mine.map(ch => chRow(ch, here)).join('');
   }
   return h;
+}
+// 🌊 the Ocean tab: each sea animal you can ride, with its challenges. Finish them all to ride it in Dolphin Bay.
+function oceanHTML(list, here) {
+  const rides = G.seaRides ? G.seaRides() : [];
+  let h = '<div class="cnote">🐬 Swim out from the Beach into Dolphin Bay! Finish every challenge for a sea animal and you can ride it in the bay.</div>';
+  for (const r of rides) {
+    const mine = list.filter(c => c.grp === r.k); if (!mine.length) continue;
+    const n = mine.filter(isDone).length;
+    h += `<div class="csaf sea${r.own ? ' own' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}</strong><span>${r.own ? 'Yours! Swim up to them in the bay and tap Ride' : `${n} of ${mine.length} challenges done`}</span></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += mine.map(ch => chRow(ch, here)).join('');
+  }
+  return h + '<div class="cnote">🦭 Pip the seal lives on her rock in the bay. You can\'t ride her, but she loves fish!</div>';
 }
 // 🏆 special rides and outfits you can't buy: win contests and play days in a row (the game side is 3d/src/24i-earned-rides.js)
 function ridesHTML() {
