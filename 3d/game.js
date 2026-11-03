@@ -11403,7 +11403,7 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{water
    TO REMOVE IT: take the suit off first, delete this file, then run: node 3d/build.mjs
    The few lines in other files that call into here (17-input.js, 25-game-loop.js, 26-map.js and ../seasons.js, marked
    "DADDY POWERS") go through window.__daddy, so they simply do nothing once this file is off or gone. */
-const DADDY_ENABLED=true;
+const DADDY_ENABLED=false;
 if(!DADDY_ENABLED&&SAVE.daddySuit){if(SAVE.daddyLook)SAVE.look=SAVE.daddyLook;delete SAVE.daddyLook;SAVE.daddySuit=0;persist();rebuildPlayer();}// turned off while suited up: your own clothes back
 if(DADDY_ENABLED){
 const DAD={fly:false,vx:0,vz:0,vy:0,tilt:0,tip:false,cands:null,near:null,held:null,thrown:[],scanT:0};
