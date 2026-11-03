@@ -25,9 +25,11 @@
   `bikeRide()` puts the rider's hips on the saddle, hands on the grips and feet on the pedals every frame (it runs after
   `Avatar.update`, so it wins over the walking pose). Friends online use the same two functions. `3d/tests/bike.mjs`
   (run on every PR) checks the feet stay on the pedals, the hands on the grips, coasting, and a foot down when stopped.
-- 🦁 Safari rides (Kivu the okapi, Tembo the elephant, Jabari the lion) are earned rides in `3d/src/24i-earned-rides.js` with
+- 🦁 Safari rides (okapi, zebra, rhino, elephant, crowned crane, lion, giraffe) are earned rides in `3d/src/24i-earned-rides.js` with
   `earn:{by:'chal',ids:[...]}`: they come once every challenge id listed is done in the 🦁 Safari tab of `3d/challenges.js`.
-  They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`);
+  They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`,
+  the zebra, giraffe, rhino, flying crowned crane and the zoo's gorilla in `3d/src/24c9c-safari-more.js`, which share textures and
+  materials through `safM` to save memory on phones; the saddle size for each ride is in `SADDLE`);
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
   `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned and the rider sits on the saddle.
 - 🤸 Jump Park (behind Christmas Village): the building is `3d/src/12e-place-jump-park.js`, the bouncing, flips, slam dunks and
@@ -43,6 +45,12 @@
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
   2D studio (snake game's Firebase project), marked `where: 3D world …`.
+- Graphics memory (`3d/src/01c-memory.js`): iPhones drop the whole 3D picture when the game uses too much of it.
+  When you throw a 3D thing away for good (an old avatar, a ball, a picture's model), call `freeObj(thing)` after removing it,
+  or its shapes and pictures stay on the graphics chip forever. Identical shapes are shared automatically by `shareShapes()`
+  at start-up and on every `Avatar.dress`, so never change a shape's numbers (`geometry.translate`, writing to `attributes`)
+  after the game has started, unless it's a plain `BufferGeometry` or `PlaneGeometry` (those are never shared).
+  When the phone gives the graphics back, the game carries on by itself in Light mode.
 
 ## Outfits go in both games
 - Everything you can wear in the 2D studio (`index.html`) must also be wearable in the 3D world, and the other way round,

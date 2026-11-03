@@ -72,6 +72,10 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
   Object.assign(o,{neck,head,tail,nTilt:.55,gz:.55,size:1.2,h:by+.85,rad:.65,dustR:[r,r,len*.8]});};
 
 // a saddle for the safari rides (and a decorated blanket for the elephant), so you can tell they're yours and ready to ride
+// where the saddle sits on each ride: r = body radius under it, sx/sy = body shape, y/z = where on the body, col = blanket color, seatY = saddle height
+const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
+  punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
+  neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31}};
 function safariGear(k,g,body,o){
   const leather=phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4}),dkL=phys('#3e2112',{roughness:.6}),brass=phys('#d4a64a',{metalness:.8,roughness:.3});
   const blanket=(col,trim,r,len,y,z,sx,sy,arc)=>{const bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
@@ -86,8 +90,8 @@ function safariGear(k,g,body,o){
     const gem=phys('#2a6fd6',{roughness:.15,clearcoat:1});for(const s of [-1,1])M(sph(.05,10,8),gem,s*.62,-.18,-.05,body,false,false);
     const col=M(new THREE.TorusGeometry(.5,.035,8,36),phys('#c79a4a',{roughness:.9}),0,.0,.0,o.neck);col.rotation.x=Math.PI/2+.12;col.scale.set(1,1.15,1);
     return;}
-  // the okapi and the lion: a leather saddle on a blanket, held on with a girth strap
-  const L=k==='jabari'?{r:.36,sx:.88,sy:.95,y:.0,z:.06,col:'#2f4a7a',seatY:.33}:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27};
+  // the others: a leather saddle on a blanket, held on with a girth strap (sizes for each animal in SADDLE)
+  const L=SADDLE[k]||SADDLE.kivu;
   blanket(L.col,'#e8c46a',L.r*1.04,.42,L.y,L.z,L.sx,L.sy,2.3);
   const sg=new THREE.Group();sg.position.set(0,L.seatY+L.y,L.z);body.add(sg);
   M(sph(.17,20,12),leather,0,0,0,sg).scale.set(.95,.22,1.25);

@@ -179,6 +179,11 @@ body.flying #actions{display:none!important}
 #glLost{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;font:600 21px Fredoka,system-ui,sans-serif;color:#3b2357;background:radial-gradient(circle at 50% 42%,#fff4fa,#ffd6ea 75%)}
 #glLost.show{display:flex}
 #glLost button{border:0;border-radius:999px;padding:12px 24px;font:inherit;background:#ff6fae;color:#fff}
+#glLost .glWait{font-size:17px;font-weight:500;opacity:.75;animation:glPulse 1.2s ease-in-out infinite alternate}
+@keyframes glPulse{to{opacity:.35}}
+#glLost .glNote{font-size:15px;font-weight:500;opacity:.75;max-width:300px}
+#glLost button,#glLost .glNote,#glLost.stuck .glWait{display:none}
+#glLost.stuck button,#glLost.stuck .glNote{display:block}
 #loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-size:22px;font-weight:600;z-index:40;background:radial-gradient(circle at 50% 42%,#fff4fa,#ffd6ea 75%);transition:opacity .5s;padding:20px;text-align:center}
 #loading.done{opacity:0;pointer-events:none}
 /* Tiereyn the squirrel runs in circles while the world builds. Only transform animations, so she keeps running even while the phone is busy. */
@@ -294,7 +299,7 @@ body.shopping #zoomCtl,body.talking #zoomCtl{display:none!important}
 /* ---------- problems: save what went wrong to the same list as the 2D studio (snake game's Firebase, dressup_errors) ---------- */
 // Errors, lost 3D graphics, and "tried to walk but didn't move" (a bug that throws no error) all land there,
 // marked "3D world", so a grown-up can look them up. At most 5 per visit; names, photos and messages are never sent.
-(()=>{const VERSION='3d-2026-11-01',MAX=5,queue=[];let saved=0,send=null,loading=false;
+(()=>{const VERSION='3d-2026-11-03',MAX=5,queue=[];let saved=0,send=null,loading=false;
   const STATS={apiKey:'AIzaSyAA8sqDROwZoVvcy8MoJ1cTmGlg0GCP_nY',authDomain:'snake-game-2e23b.firebaseapp.com',projectId:'snake-game-2e23b',appId:'1:185426735320:web:84d5c2b47233711dd527ad'};
   const SDK='https://www.gstatic.com/firebasejs/10.14.1/';
   const cut=(v,n)=>String(v==null?'':v).slice(0,n);
@@ -304,11 +309,18 @@ body.shopping #zoomCtl,body.talking #zoomCtl{display:none!important}
       send=e=>f.addDoc(f.collection(db,'dressup_errors'),{...e,at:f.serverTimestamp()}).catch(()=>{});
       queue.splice(0).forEach(send);}catch(e){loading=false;}}
   function where(extra){let s='3D world';try{const p=document.getElementById('place');if(p&&p.textContent)s+=' | place: '+p.textContent;
-    const g=window.__game;if(g&&g.player){const q=g.player.pos;s+=` | at ${q.x.toFixed(1)},${q.z.toFixed(1)}`;}}catch(e){}return extra?s+' | '+extra:s;}
+    const g=window.__game;if(g&&g.player){const q=g.player.pos;s+=` | at ${q.x.toFixed(1)},${q.z.toFixed(1)}`;}
+    const st=g&&g.gameStatus&&g.gameStatus();if(st)s+=' | '+st;}catch(e){}return extra?s+' | '+extra:s;}
   window.reportProblem=(error,extra)=>{try{if(saved>=MAX||location.protocol==='file:')return;saved++;
-    const e={message:cut(error&&error.message||error,500),stack:cut(error&&error.stack,1500),where:cut(where(extra),200),version:VERSION,device:cut(navigator.userAgent,300)};
+    const e={message:cut(error&&error.message||error,500),stack:cut(error&&error.stack,1500),where:cut(where(extra),400),version:VERSION,device:cut(navigator.userAgent,300)};
     if(send)send(e);else{queue.push(e);connect();}}catch(x){}};
-  addEventListener('error',e=>{if(e.error||e.message)reportProblem(e.error||e.message,'error');});
+  // Safari only says "Script error." for a mistake in a script from another website, so say which file it came from,
+  // and the line, which helps find it even when the message is hidden
+  const file=u=>{try{const x=new URL(u,location.href);return x.origin===location.origin?x.pathname.split('/').pop():x.host+x.pathname;}catch(_){return String(u||'');}};
+  addEventListener('error',e=>{if(!e.error&&!e.message)return;const at=e.filename?`${file(e.filename)}:${e.lineno||0}:${e.colno||0}`:'';
+    const hidden=!e.error&&/^script error\.?$/i.test(e.message||'');
+    reportProblem(hidden?`Script error (the browser hid the details${at?'':'; it came from a script on another website or the browser itself'})`:e.error||e.message,
+      'error'+(at?' in '+at:''));});
   addEventListener('unhandledrejection',e=>reportProblem(e.reason||'promise failed','promise'));})();
 </script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -362,7 +374,7 @@ var t=setInterval(function(){var e=document.getElementById('loadMsg');if(!e||doc
 <div class="hud" id="banner"></div>
 <div class="hud pill" id="toast"></div>
 <button id="newver" type="button">✨ New version! Tap to refresh</button>
-<div id="glLost"><div>The 3D world took a little nap 😴</div><button type="button" onclick="location.reload()">Tap to wake it up</button><div style="font-size:15px;font-weight:500;opacity:.75;max-width:300px">It will start in Light mode so it fits on this phone. You can switch back in ⚙️ Settings.</div></div>
+<div id="glLost"><div>The 3D world took a little nap 😴</div><div class="glWait">Waking it up…</div><button type="button" onclick="location.reload()">Tap to wake it up</button><div class="glNote">It will start in Light mode so it fits on this phone. You can switch back in ⚙️ Settings.</div></div>
 <div class="hud" id="mkChal"><b id="mkChalT"></b><span id="mkChalTime"></span><span id="mkChalRes"></span><button id="mkChalDone">✨ Finish</button></div>
 <div id="flash"></div>
 <button class="hud" id="mini" aria-label="Open the map"><canvas id="miniCv" width="216" height="216"></canvas><small>🗺️ Map</small></button>
@@ -657,12 +669,24 @@ setTimeout(()=>{const l=document.getElementById('loading');if(l&&!window.__game)
   const check=async()=>{if(busy||document.hidden)return;busy=true;const s=await stamp();busy=false;if(!s)return;if(first===null){first=s;return;}if(s!==first)document.getElementById('newver').classList.add('show');};
   document.getElementById('newver').onclick=()=>location.reload();
   addEventListener('load',check);document.addEventListener('visibilitychange',check);setInterval(check,5*60*1000);})();
-// iPhones can drop the 3D graphics when memory runs low or the app sits in the background; show a way back instead of a frozen picture
+// iPhones can drop the 3D graphics when memory runs low or the app sits in the background. Usually the phone gives them
+// back a moment later (webglcontextrestored): the game carries on where it was (see 3d/src/01c-memory.js) and this
+// screen goes away by itself. Only if they're still gone a few seconds after the game is on screen again does it
+// show the button that starts the game again.
+// Reports: a nap while playing is always reported (that's running out of memory). A nap in the background is normal
+// for iPhones, so it's only reported if the graphics didn't come back.
 const T0=Date.now();
-document.getElementById('c').addEventListener('webglcontextlost',e=>{e.preventDefault();
-  let lite=false;try{const v=localStorage.getItem('brynny.lite3d');lite=!!v&&v!=='off';localStorage.setItem('brynny.lite3d',String(Date.now()));}catch(x){}// next start uses light mode (see 3d/src/01-setup.js)
-  const g=window.__game,dressing=document.body.classList.contains('dressing');
-  window.reportProblem&&reportProblem('The 3D graphics were lost (phone memory or background)',`graphics | ${Math.round((Date.now()-T0)/1000)}s after opening${dressing?' | in the closet':''}${document.hidden?' | in background':''}${lite?' | already light mode':''}`);document.getElementById('glLost').classList.add('show');});
+(()=>{const cv=document.getElementById('c'),box=document.getElementById('glLost');let lost=null,waitT=0;
+  const goLite=()=>{let was=false;try{const v=localStorage.getItem('brynny.lite3d');was=!!v&&v!=='off';if(!was)localStorage.setItem('brynny.lite3d',String(Date.now()));}catch(x){}return was;};// next start uses light mode (see 3d/src/01-setup.js)
+  const report=(bg,lite)=>{lost.told=true;window.reportProblem&&reportProblem('The 3D graphics were lost (phone memory or background)',
+    `graphics | ${lost.at}s after opening${bg?' | in background':''}${lite?' | already light mode':''}${bg&&lost.stuck?' | did not come back':''}`);};
+  const later=()=>{clearTimeout(waitT);if(!lost||document.hidden)return;
+    waitT=setTimeout(()=>{if(!lost)return;lost.stuck=true;box.classList.add('stuck');const lite=goLite();if(!lost.told)report(lost.bg,lite);},6000);};
+  cv.addEventListener('webglcontextlost',e=>{e.preventDefault();lost={at:Math.round((Date.now()-T0)/1000),bg:document.hidden,told:false,stuck:false};
+    if(!lost.bg)report(false,goLite());
+    box.classList.remove('stuck');box.classList.add('show');later();});
+  cv.addEventListener('webglcontextrestored',()=>{lost=null;clearTimeout(waitT);box.classList.remove('show','stuck');});
+  document.addEventListener('visibilitychange',later);})();
 </script>
 <script>
 // save the game for offline play (see sw.js)

@@ -114,12 +114,14 @@ const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:
   fragmentShader:'uniform vec3 top,mid,bot;varying vec3 vP;void main(){float h=vP.y;vec3 c=mix(mid,top,smoothstep(.0,.7,h));c=mix(bot,c,smoothstep(-.02,.22,h));gl_FragColor=vec4(c,1.);\n#include <colorspace_fragment>\n}'});
 const sky=new THREE.Mesh(new THREE.SphereGeometry(500,32,16),skyMat);sky.renderOrder=-1;scene.add(sky);
 
-/* light from the sky for realistic reflections */
-{const pm=new THREE.PMREMGenerator(renderer);const env=new THREE.Scene();
+/* light from the sky for realistic reflections (made again if the phone drops the graphics, see 01c-memory.js) */
+function makeEnv(){const pm=new THREE.PMREMGenerator(renderer);const env=new THREE.Scene();
  env.add(new THREE.Mesh(new THREE.SphereGeometry(50,32,16),skyMat));
  const gnd=new THREE.Mesh(new THREE.CircleGeometry(48,32),new THREE.MeshBasicMaterial({color:'#b3a88f'}));gnd.rotation.x=-Math.PI/2;gnd.position.y=-2;env.add(gnd);
  const sunBall=new THREE.Mesh(new THREE.SphereGeometry(5,16,8),new THREE.MeshBasicMaterial({color:new THREE.Color(8,7.5,6.5)}));sunBall.position.set(25,35,18);env.add(sunBall);
- scene.environment=pm.fromScene(env,.02).texture;pm.dispose();}
+ const old=makeEnv.rt;makeEnv.rt=pm.fromScene(env,.02);scene.environment=makeEnv.rt.texture;pm.dispose();
+ env.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==skyMat)o.material.dispose();});if(old)try{old.dispose();}catch(e){}}
+makeEnv();
 
 const hemi=new THREE.HemisphereLight('#dff0ff','#7a6a55',.55);scene.add(hemi);
 const sun=new THREE.DirectionalLight('#fff2e2',2.6);
