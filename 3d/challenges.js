@@ -241,7 +241,7 @@ css.textContent = `
 .cstreak{display:flex;gap:6px;margin:2px 0 2px}.cstreak span{flex:1;background:#fff3e0;border-radius:14px;padding:7px 8px;text-align:center;font-weight:700;font-size:14px;color:#a3541c}
 .cstreak span small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
 .csaf{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#ffe9b8,#f6d79a);border-radius:16px;padding:8px 12px;margin-top:6px;color:#5a3a12}
-.csaf>b{font-size:30px;font-weight:400;line-height:1}.csaf div{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.csaf strong{font-size:16px}.csaf span{font-size:12px;font-weight:600;color:#7a5a2a}
+.csaf>b{font-size:30px;font-weight:400;line-height:1}.csaf>b img,.crides .cq>b img{width:60px;height:60px;object-fit:contain;display:block}.csaf div{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.csaf strong{font-size:16px}.csaf span{font-size:12px;font-weight:600;color:#7a5a2a}
 .csaf .own{font-size:13px;font-weight:700;color:#2e9b5a;white-space:nowrap}.csaf .lock{font-size:18px}.csaf.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9)}
 .cbonus{background:linear-gradient(90deg,#efe3ff,#ffe6f2);border-radius:14px;padding:8px 12px;font-weight:600;font-size:14px;text-align:center}
 `;
@@ -295,7 +295,7 @@ function safariHTML(list, here) {
   for (const k of ['kivu', 'tembo', 'jabari']) {
     const r = rides.find(x => x.k === k), mine = list.filter(c => c.grp === k); if (!mine.length) continue;
     const n = mine.filter(isDone).length;
-    h += `<div class="csaf${r && r.own ? ' own' : ''}"><b>${r ? r.e : '🦁'}</b><div><strong>${r ? `${r.nm} the ${r.n.toLowerCase()}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += `<div class="csaf${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '🦁'}</b><div><strong>${r ? `${r.nm} the ${r.n.toLowerCase()}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
     h += mine.map(ch => chRow(ch, here)).join('');
   }
   return h;
@@ -308,7 +308,7 @@ function ridesHTML() {
   h += `<div class="cstreak"><span>🔥 ${st.streak} ${st.streak === 1 ? 'day' : 'days'} in a row<small>Best: ${st.best}</small></span><span>🏆 ${st.wins} ${st.wins === 1 ? 'win' : 'wins'}<small>Contests and 1-on-1</small></span></div>`;
   h += '<div class="crides" style="display:flex;flex-direction:column;gap:7px">' + rides.sort((a, b) => a.own - b.own).map(r => {
     const bar = r.own ? 'Yours! Tap 🏇 with your moves to ride' : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
-    return `<div class="cq${r.own ? ' done' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}${r.fly ? ' 🪽' : ''}</strong><i>${r.own ? '' : r.what + ' · '}${bar}</i></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    return `<div class="cq${r.own ? ' done' : ''}"><b>${r.pic ? `<img src="${r.pic}" alt="">` : r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}${r.fly ? ' 🪽' : ''}</strong><i>${r.own ? '' : r.what + ' · '}${bar}</i></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
   }).join('') + '</div>';
   if (looks.length) h += '<div class="cnote" style="margin-top:8px">👗 Modern outfits</div><div class="crides" style="display:flex;flex-direction:column;gap:7px">' + looks.sort((a, b) => a.own - b.own).map(r => {
     const bar = r.own ? `Yours! It's in your closet's ${r.where}` : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
