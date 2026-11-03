@@ -53,9 +53,26 @@ After you change something in `3d/src/`, run `node 3d/build.mjs` and reload the 
 **Your saved game:** the game saves in the browser (`brynny3d.v1` for 3D). Testing on your computer won't touch
 Brynny's saved progress on her phone.
 
-**Editing on github.com instead:** you can click a file, press the ✏️ pencil, change it and save it to a new branch.
-That's perfect for `3d/challenges.js`, `3d/seasons.js`, `index.html` and `pets.html`. For anything in `3d/src/` you
-still need the rebuild step, so it's easier to do those on a computer (or ask Claude).
+### VS Code or GitHub: which one?
+
+| You're changing... | Use | Why |
+|---|---|---|
+| Anything in `3d/src/` (most of the 3D game) | **VS Code** | It needs the rebuild step, and github.com has nowhere to run it. |
+| `3d/challenges.js`, `3d/seasons.js`, `3d/index.html` | Either | No rebuild needed. |
+| `index.html` (2D studio), `pets.html` | Either | No rebuild needed. |
+
+**The VS Code way (for the 3D code):**
+1. Install [VS Code](https://code.visualstudio.com) and [Node.js](https://nodejs.org) (the "LTS" version).
+2. Clone the repo once: in VS Code open **Source Control**, choose **Clone Repository**, and paste the repo's link.
+3. Make a new branch (click the branch name at the bottom-left, then **Create new branch**).
+4. Edit the file in `3d/src/` and save it.
+5. Open the terminal (**Terminal → New Terminal**) and run `node 3d/build.mjs`.
+6. Try it: run `npx serve .` and open the address it prints with `/3d/` on the end.
+7. Commit **both** changed files (your `3d/src/` file and `3d/game.js`), then push. VS Code offers to open a pull request.
+
+**The GitHub way (for the files that don't need a rebuild):** open the file on github.com, press the ✏️ pencil,
+make the change, and choose "Create a new branch and start a pull request" when you save. If you edit a `3d/src/`
+file this way, the check on the pull request turns red until someone runs `node 3d/build.mjs` (you can ask Claude).
 
 **When it goes live:** the website (GitHub Pages) updates a minute or two after a change is merged into `main`.
 
