@@ -186,6 +186,8 @@ class Avatar{
     /* hair */
     const hair0=this.parts.length;
     {const h=look.hair,m=mat(h.c,'hair');const HL=Math.min(1.3,Math.max(.35,h.len||1)),HC=h.curl||0,HV=h.vol||0;if(h.shine){m.roughness=.16;m.clearcoat=.7;m.clearcoatRoughness=.12;m.sheenRoughness=.18;}
+      // guys get real-looking cuts (14e2-guy-hair-real.js); everything else starts from a short cap
+      if(this.guy&&GUY_REAL[h.id])guyRealHair(this,look,P,m,mat);else{
       const cap=P(new THREE.SphereGeometry(.142,32,20,0,Math.PI*2,0,Math.PI*.6),m,head,0,.008,-.004);cap.scale.set(1.03,1.1,1.05);cap.rotation.x=-.85;
       const side=(r0,r1,hh,y,open=1.25,zoff=-.02)=>{const g=new THREE.CylinderGeometry(r0,r1,hh,32,1,true,open,Math.PI*2-open*2);const c=P(g,m,head,0,y,zoff);c.material=m;m.side=THREE.DoubleSide;return c;};
       const id=h.id;
@@ -218,7 +220,7 @@ class Avatar{
       if(id==='highpony'){P(sph(.046,14,12),m,head,0,.135,-.115);P(new THREE.TorusGeometry(.034,.013,8,20),mat('#ff6fae','shiny'),head,0,.14,-.13).rotation.x=Math.PI/2-.9;
         const t=P(capTop(.05*(1+HV*.4),(this.glam?.34:.26)*HL),m,head,0,.145,-.15);t.rotation.x=.75;}
       // guy hair styles live in 14c-guy.js
-      if(GUY_HAIR[id])GUY_HAIR[id]({P,m,mat,head,cap,side,hang,HL,HV,glam:this.glam});
+      if(GUY_HAIR[id])GUY_HAIR[id]({P,m,mat,head,cap,side,hang,HL,HV,glam:this.glam});}
       (h.clips||[]).forEach(([x,y,z,c])=>{const cm=mat(c||'#ff6fae','shiny'),cg=new THREE.Group();cg.position.set(x,y,z);cg.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(x,y-.02,z).normalize());head.add(cg);this.parts.push(cg);cg.geometry={dispose(){}};
         for(const sd of [-1,1]){const l=P(new THREE.ConeGeometry(.016,.032,12),cm,cg,sd*.016,0,0);l.rotation.z=sd*Math.PI/2;l.scale.z=.45;}P(sph(.009,10,8),cm,cg);});}
     this.hairMeshes=this.parts.slice(hair0).filter(o=>o.isMesh);
@@ -295,6 +297,7 @@ class Avatar{
     // the hand itself and its nails; everything put in a hand after this is something held (see HANDS_FREE in 14d-dances.js)
     for(const a of arms)for(const c of a.hand.children)c.userData.body=1;this.handMode=-1;
     /* hats */
+    const hat0=this.parts.length;
     {const h=look.hat;if(h){const c=h.c,id=h.id;
       if(id==='tiara'){const m=mat(c,'metal');const t=P(new THREE.TorusGeometry(.115,.008,8,40,Math.PI),m,head,0,.07,.0);t.rotation.x=-1.1;
         for(let i=-2;i<=2;i++){const a=Math.PI/2+i*.32;const x=Math.cos(a)*.115,z=Math.sin(a)*.115*.45;const g=P(new THREE.OctahedronGeometry(i?.017:.026,0),mat(i?'#ff8fc8':'#8fd8ff','gem'),head,x,.12+(i?0:.012)+Math.sin(a)*.04,z+.03);g.scale.y=1.4;}}
@@ -309,6 +312,7 @@ class Avatar{
       if(id==='cap'){const m=mat(c);P(new THREE.SphereGeometry(.146,28,14,0,Math.PI*2,0,Math.PI/2),m,head,0,.025,-.005).scale.set(1.02,.9,1.04);const b=P(cyl(.1,.1,.012,24),m,head,0,.04,.14);b.scale.z=.9;b.rotation.x=.15;}
       if(id==='flowers'){const fc=[c,'#ffffff','#ffd23f',c,'#b388ff'];for(let i=0;i<11;i++){const a=i/11*Math.PI*2;P(sph(.026,10,8),mat(fc[i%5],'shiny'),head,Math.sin(a)*.125,.105+Math.cos(a)*.015,Math.cos(a)*.122-.01);}}
       if(id==='bow'){const m=mat(c,'shiny');for(const s of [-1,1]){const l=P(new THREE.ConeGeometry(.045,.1,16),m,head,.06+s*.055,.15,-.04);l.rotation.z=s*Math.PI/2;l.scale.z=.45;}P(sph(.022,10,8),m,head,.06,.15,-.04);}}}
+    const hatParts=this.parts.slice(hat0);
     /* extras */
     {const ex=look.extras||{};
       if(ex.wings){const wm=new THREE.MeshPhysicalMaterial({color:ex.wings,roughness:.15,transparent:true,opacity:.55,side:THREE.DoubleSide,iridescence:1,iridescenceIOR:1.5,depthWrite:false,emissive:ex.wings,emissiveIntensity:.15});this.mats.push(wm);
@@ -344,9 +348,11 @@ class Avatar{
     /* outfits brought over from the 2D game live in 14b-outfits-2d.js (OUTFITS2D[id](kit,color)) */
     {const kit={P,mat,spine,hips,head,arms,legs,topShell,skirt,waist,legsShell,decal,av:this};
       for(const C of [OUTFITS2D,GUY_WEAR,window.__costumes])if(C){
-        for(const slot of ['dress','top','bottom','shoes','hat']){const it=look[slot];if(look.dress&&(slot==='top'||slot==='bottom'))continue;if(it&&C[it.id])C[it.id](kit,it.c);}
+        for(const slot of ['dress','top','bottom','shoes','hat']){const it=look[slot];if(look.dress&&(slot==='top'||slot==='bottom'))continue;if(it&&C[it.id]){const n=this.parts.length;C[it.id](kit,it.c);if(slot==='hat')hatParts.push(...this.parts.slice(n));}}
         for(const id in (look.extras||{}))if(C[id])C[id](kit,look.extras[id]);}
-      barberDress(kit,look);}
+      barberDress(kit,look);
+      // a guy's hat sits on his hair, not floating around it (14e2-guy-hair-real.js)
+      if(this.guy)fitGuyHat(this,look,hatParts);}
     /* makeup */
     {const mk=look.makeup||defaultMakeup();
       this.lipM.color.set(mk.lips||(this.guy?new THREE.Color(look.skin).multiplyScalar(.82).lerp(new THREE.Color('#b0685f'),.35):this.glam?new THREE.Color(look.skin).multiplyScalar(.8).lerp(new THREE.Color('#c9566a'),.7):'#d77a86'));const gl=mk.gloss||(this.glam&&!mk.lips&&!this.guy);this.lipM.roughness=gl?.12:.45;this.lipM.clearcoat=gl?1:.3;if(this.browM)this.browM.color.set(mk.browC||new THREE.Color(look.hair.c).multiplyScalar(.55));this.lipM.clearcoatRoughness=mk.gloss?.02:.2;
