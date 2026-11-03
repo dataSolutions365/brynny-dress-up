@@ -1,27 +1,61 @@
-/* ================= 🌊 DOLPHIN BAY: swim in the sea off the Beach, with dolphins, a whale, a sea turtle and a seal =================
-   - The bay is the 'bay' zone in ZONES (02-island.js): a circle of sea just past the Beach. Walk off the sand (or jump off the dock)
-     and you wade in, then swim. collide() (25-game-loop.js) asks seaKeep() whether you may be out there.
+/* ================= 🌊 THE CANAL AND DOLPHIN BAY: swim all the way around the island, with dolphins, a whale, a sea turtle and a seal =================
+   - The coast is a canal: a ring of water (CANAL.inR to CANAL.outR) all the way around the island, with a grassy bank with palm trees on
+     the far side. Walk off any shore (or jump off the dock) and you wade in, then swim. collide() (25-game-loop.js) asks seaKeep() whether
+     you may be out there. The part right past the Beach is 🐬 Dolphin Bay (the 'bay' zone in 02-island.js); the rest is the 🌊 Canal.
+   - For other files (the safari hippo swims here, zoo animals drink here): seaDepth(x,z) 0 on land .. 1 deep, inCanal(x,z),
+     canalSpot(ang,t) a spot in the water (t 0 the island shore .. 1 the far bank), CANAL, WATER_Y the water line.
    - Swimming: the game still keeps you at ground height 0 (so the camera, stars and zones work as usual); this file just sinks
      your body into the water and poses you (crawl stroke when you move, treading water when you stop) after Avatar.update.
      Not on a bike, a skateboard or a barn ride: hop off first.
-   - Sea animals: 🐬 three dolphins (one is Splash), 🐋 Big Blue the humpback whale, 🐢 Shelly the sea turtle, and 🦭 Pip the seal
-     on her rock. Swim near them and they come and swim along beside you. Tap 🐟 Feed when you're close.
+   - Sea animals: 🐬 three dolphins (one is Splash) and 🐋 Big Blue the humpback whale swim all the way round the canal, 🐢 Shelly the
+     sea turtle paddles near the Beach, and 🦭 Pip the seal sits on her rock in the bay. They never follow you (only adopted pets do): swim
+     up next to one and swim along beside it. They show on the minimap. Tap 🐟 Feed when you're close.
    - 🌊 Ocean challenges (the Ocean tab in challenges.js, ids in SEA_RIDES[].ids): finish all of an animal's challenges and you can
      ride it in the bay (🐢 Shelly, 🐬 Splash, 🐋 Big Blue). Pip the seal is just for feeding.
    - Friends online see you swimming, and on your sea ride, through the 'sea' entry in SHOW (26c-friends-see.js).
-   Everything is low-poly with a few shared materials and no textures, and it all hides when you're far from the bay (iPhone memory). */
-const BAY=Z.bay,WATER_Y=-.35;
+   Everything is low-poly with a few shared materials and no textures, and each animal hides when it's far from you (iPhone memory). */
+const BAY=Z.bay,WATER_Y=-.35,CANAL={inR:R+1.6,outR:R+17};
+const CANAL_ZONE={id:'canal',name:'🌊 Canal',music:'sea-waves'};// where you are when you swim anywhere but the bay (25-game-loop.js)
 MAPC.bay='#7fd6ee';
 // how deep you are: 0 on the sand, 1 swimming (the island's sand edge ends at R+1.6)
-const seaDepth=(x,z)=>Math.max(0,Math.min(1,(Math.hypot(x,z)-(R+1.3))/2.6));
-const inBay=(x,z,pad=0)=>Math.hypot(x-BAY.x,z-BAY.z)<BAY.r+pad;
+function seaDepth(x,z){const d=Math.hypot(x,z);return d>CANAL.outR?0:Math.max(0,Math.min(1,(d-(R+1.3))/2.6));}
+function inCanal(x,z){const d=Math.hypot(x,z);return d>CANAL.inR&&d<CANAL.outR;}
+// a spot in the canal at angle ang (like ZONES: x=sin, z=cos), t 0 at the island's shore .. 1 at the far bank
+function canalSpot(ang,t){const r=CANAL.inR+(CANAL.outR-CANAL.inR)*t;return [Math.sin(ang)*r,Math.cos(ang)*r];}
 let seaNoRideT=0;
-// collide() asks: the player is past the island's edge; may they be out here? Moves them into the bay if that's nearer than the shore.
+// collide() asks: the player is past the island's edge; may they be out here? Keeps them on the water side of the far bank.
 function seaKeep(p,lim){if(!started)return false;
-  if(barnRide||BIKE.on||SK.on){if(inBay(p.x,p.z,-1)&&performance.now()>seaNoRideT){seaNoRideT=performance.now()+5000;toast('Hop off to go swimming 🏊');}return false;}
-  const bd=Math.hypot(p.x-BAY.x,p.z-BAY.z),edge=BAY.r-.4;if(bd<=edge)return true;
-  if(bd-edge<Math.hypot(p.x,p.z)-lim){p.x=BAY.x+(p.x-BAY.x)/bd*edge;p.z=BAY.z+(p.z-BAY.z)/bd*edge;return true;}
-  return false;}
+  if((barnRide&&!barnRide.F.swim)||BIKE.on||SK.on){// a barn ride with swim:1 in FARM (the safari hippo) may go in
+    if(performance.now()>seaNoRideT){seaNoRideT=performance.now()+5000;toast('Hop off to go swimming 🏊');}return false;}
+  const d=Math.hypot(p.x,p.z),edge=CANAL.outR-.5;if(d>edge){p.x*=edge/d;p.z*=edge/d;}
+  return true;}
+
+/* ---------- the far bank of the canal: sand, grass and palm trees all the way round ---------- */
+const BANK={in:CANAL.outR+1.2,out:CANAL.outR+18};
+{const sand=std('#f1d9a6',{map:TEX.sand,roughness:1});
+  // the sandy slope up out of the water (seen from the island side), the grass on top, and the slope down to the open sea
+  const wall=M(new THREE.CylinderGeometry(BANK.in,CANAL.outR-1,3,128,1,true),sand.clone(),0,-1.5,0,scene,false,true);wall.material.side=THREE.BackSide;
+  const top=M(new THREE.RingGeometry(BANK.in,BANK.out,128,1),groundMat,0,.004,0,scene,false,true);top.rotation.x=-Math.PI/2;
+  const beach=M(new THREE.RingGeometry(BANK.in,BANK.in+2.2,128,1),sand,0,.012,0,scene,false,false);beach.rotation.x=-Math.PI/2;
+  sand.polygonOffset=true;sand.polygonOffsetFactor=-2;sand.polygonOffsetUnits=-2;
+  M(new THREE.CylinderGeometry(BANK.out,BANK.out+2,3,128,1,true),sand,0,-1.5,0,scene,false,true);
+  // palm trees and bushes: one shape each for all of them (instanced), so the whole bank is only a few draws
+  let sd=7;const rr=()=>((sd=(sd*16807)%2147483647)-1)/2147483646;
+  const NP=46,NB=90,mx=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),sc=new THREE.Vector3();
+  const trunk=new THREE.InstancedMesh(cyl(.13,.2,4.2,7),std('#9a7046',{roughness:.9}),NP),leaf=new THREE.InstancedMesh(new THREE.ConeGeometry(.5,2.6,4,1),std('#3f9a3a',{roughness:.7,side:THREE.DoubleSide}),NP*6),
+    bush=new THREE.InstancedMesh(sph(1,8,6),std('#4fa645',{roughness:.9}),NB);
+  let li=0;
+  for(let i=0;i<NP;i++){const a=(i+rr()*.6)/NP*Math.PI*2,r=BANK.in+3.5+rr()*9,x=Math.sin(a)*r,z=Math.cos(a)*r,lean=(rr()-.5)*.35,s=.8+rr()*.5;
+    e.set(lean,rr()*6,lean*.5);q.setFromEuler(e);mx.compose(v.set(x,2.1*s,z),q,sc.set(s,s,s));trunk.setMatrixAt(i,mx);
+    const tx=x+Math.sin(e.y)*lean*2*s,tz=z+Math.cos(e.y)*lean*2*s;
+    for(let k=0;k<6;k++){e.set(Math.PI/2+.55,k/6*Math.PI*2+rr(),0,'YXZ');q.setFromEuler(e);const d=new THREE.Vector3(0,0,1.1*s).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,e.y,0)));
+      mx.compose(v.set(tx+d.x,4.2*s,tz+d.z),q,sc.set(1.3*s,s,.15*s));leaf.setMatrixAt(li++,mx);}}
+  for(let i=0;i<NB;i++){const a=rr()*Math.PI*2,r=BANK.in+2.6+rr()*13,s=.5+rr()*.6;mx.compose(v.set(Math.sin(a)*r,s*.35,Math.cos(a)*r),q.identity(),sc.set(s*1.2,s*.75,s*1.2));bush.setMatrixAt(i,mx);}
+  for(const m of [trunk,leaf,bush]){m.instanceMatrix.needsUpdate=true;m.castShadow=false;m.receiveShadow=false;m.computeBoundingSphere();scene.add(m);}}
+// on the minimap and the big map (26-map.js drawWorld): the far bank all the way round
+function canalBank(x,cx,cy,k){x.beginPath();x.arc(cx,cy,BANK.out*k,0,Math.PI*2);x.fillStyle='#8fd36f';x.fill();
+  x.beginPath();x.arc(cx,cy,BANK.in*k,0,Math.PI*2);x.fillStyle='#f1d9a6';x.fill();
+  x.beginPath();x.arc(cx,cy,(CANAL.outR+.2)*k,0,Math.PI*2);x.fillStyle='#2ab0d4';x.fill();}
 
 /* ---------- the swimming pose (for you and for friends online) ---------- */
 // k: 0 standing .. 1 swimming, mv: 0 still .. 1 full speed, ph: stroke time. Run it after Avatar.update. Returns how far to sink the body.
@@ -83,11 +117,11 @@ function seaSeal(){const g=new THREE.Group();
   return {g,head,flip:fl};}
 const SEA_BUILD={dolphin:seaDolphin,whale:seaWhale,turtle:seaTurtle};
 
-// who lives in the bay. path: a loop around the bay (rx, rz, how fast); slot: where they swim next to you (x to the side, z ahead)
+// who lives in the canal (near = how close counts as swimming next to it). Paths are in seaAdd() below.
 const SEA_KIND={
-  dolphin:{e:'🐬',food:[['🐟','fish'],['🦑','squid']],reach:3.6,withR:9,near:4.5,spd:3.8,ride:2.3,say:['*click click* 🐬','Eee-eee! 💙','*happy splash*']},
-  whale:{e:'🐋',food:[['🦐','krill'],['🐟','little fish']],reach:7,withR:14,near:8,spd:2,ride:1.6,say:['*whooOOOoo* 🐋','*big happy spout* 💦','*gentle rumble*']},
-  turtle:{e:'🐢',food:[['🪼','jellyfish'],['🥬','sea grass']],reach:3,withR:8,near:4,spd:1.2,ride:1.35,say:['*slow happy blink*','*paddle paddle* 🐢','*munch* 🌿']},
+  dolphin:{e:'🐬',food:[['🐟','fish'],['🦑','squid']],reach:3.6,near:5,spd:3.8,ride:2.3,say:['*click click* 🐬','Eee-eee! 💙','*happy splash*']},
+  whale:{e:'🐋',food:[['🦐','krill'],['🐟','little fish']],reach:7,near:8,spd:2,ride:1.6,say:['*whooOOOoo* 🐋','*big happy spout* 💦','*gentle rumble*']},
+  turtle:{e:'🐢',food:[['🪼','jellyfish'],['🥬','sea grass']],reach:3,near:4,spd:1.2,ride:1.35,say:['*slow happy blink*','*paddle paddle* 🐢','*munch* 🌿']},
   seal:{e:'🦭',food:[['🐟','fish']],reach:3.6,say:['Ork ork! 👏','*flipper clap* 👏','*happy wiggle*']}};
 // the rides you earn with 🌊 Ocean challenges (challenges.js has the same ids, grp = k)
 const SEA_RIDES=[
@@ -96,39 +130,46 @@ const SEA_RIDES=[
   {k:'bigblue',kind:'whale',nm:'Big Blue',n:'Humpback whale',ids:['sea_whale','sea_spout','sea_swim1k','sea_feedW']}];
 SAVE.sea||={swum:0,with:{},spouts:0,own:{}};const SEA=SAVE.sea;SEA.with||={};SEA.own||={};
 
-const SEAS=[],bayAt=(lx,lz)=>[BAY.x+lx,BAY.z+lz];// bay-centred spots (the bay sits straight out from the Beach, so +z is toward the shore)
-const seaToward=Math.atan2(-BAY.x,-BAY.z);// the way to the island
+const SEAS=[];
 function seaAdd(kind,nm,m,o={}){const c={kind,nm,K:SEA_KIND[kind],m,g:m.g,pos:new THREE.Vector3(),face:0,y:0,pitch:0,mode:'roam',t:Math.random()*9,a:o.a||0,
   path:o.path,slot:o.slot,leap:0,leapT:3+Math.random()*4,happy:0,spout:6+Math.random()*4,withT:0};
   c.g.rotation.order='YXZ';const [x,z]=o.path?seaPathAt(c,c.a):o.at;c.pos.set(x,0,z);c.g.position.set(x,WATER_Y,z);scene.add(c.g);SEAS.push(c);return c;}
-// a loop around the bay, a little egg-shaped and turned so it doesn't look like a circle
-function seaPathAt(c,a){const P=c.path,x=Math.sin(a)*P.rx,z=Math.cos(a)*P.rz,r=P.rot||0;return bayAt(x*Math.cos(r)-z*Math.sin(r),x*Math.sin(r)+z*Math.cos(r));}
+// where an animal swims: all the way round the canal (dir 1 or -1), or back and forth along a stretch of it (span, around ang0),
+// t = how far out in the canal (0 shore .. 1 far bank), weaving in and out a little
+function seaPathAng(c,a){const P=c.path;return P.span?P.ang0+Math.asin(Math.sin(a))*2/Math.PI*P.span:a*P.dir;}// back and forth at an even speed
+function seaPathAt(c,a){const P=c.path;return canalSpot(seaPathAng(c,a),Math.max(.12,Math.min(.88,P.t+Math.sin(a*(P.span?2:7)+P.ph)*.12)));}
+// carry on along the path from where it is now (after swimming with you)
+function seaPathFrom(c){const P=c.path,ang=Math.atan2(c.pos.x,c.pos.z);
+  if(P.span){const q=Math.max(-1,Math.min(1,(((ang-P.ang0+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI)/P.span));c.a=q*Math.PI/2;}
+  else{const a=ang*P.dir,k=Math.round((c.a-a)/(Math.PI*2));c.a=a+k*Math.PI*2;}}
+const seaPathRate=c=>{const P=c.path,r=(CANAL.inR+CANAL.outR)/2;return P.spd/(r*(P.span?P.span*2/Math.PI:1));};
 {const d0=seaDolphin();
   const dols=[d0,{...d0,g:d0.g.clone()},{...d0,g:d0.g.clone()}];for(const d of dols)d.tail=d.g.getObjectByName('tail');
-  dols.forEach((d,i)=>{const c=seaAdd('dolphin',i?['Bubbles','Coral'][i-1]:'Splash',d,{path:{rx:10.5,rz:8,spd:3.6,rot:.3},a:i*.35,slot:[[-1.9,.5],[1.9,.4],[0,2.8]][i]});if(i)c.g.scale.setScalar(.85);});}
-seaAdd('whale','Big Blue',seaWhale(),{path:{rx:8.5,rz:7,spd:1.6,rot:-.4},a:2.6,slot:[4.4,0]});
-seaAdd('turtle','Shelly',seaTurtle(),{path:{rx:5,rz:3.5,spd:1,rot:.8},a:1,slot:[1.5,-.6]});
+    // the pod starts near the bay and swims round the whole canal (about 2 minutes a lap)
+  dols.forEach((d,i)=>{const c=seaAdd('dolphin',i?['Bubbles','Coral'][i-1]:'Splash',d,{path:{dir:1,t:[.45,.62,.3][i],ph:i*1.7,spd:3.3},a:deg(140)-i*.06,slot:[[-1.9,.5],[1.9,.4],[0,2.8]][i]});if(i)c.g.scale.setScalar(.85);});}
+// Big Blue goes the other way round, slowly, out in the middle of the canal
+seaAdd('whale','Big Blue',seaWhale(),{path:{dir:-1,t:.55,ph:0,spd:1.9},a:-deg(200),slot:[4.4,0]});
+// Shelly paddles back and forth near the Beach
+seaAdd('turtle','Shelly',seaTurtle(),{path:{ang0:deg(180),span:.3,t:.4,ph:1,spd:1.3},a:.4,slot:[1.5,-.6]});
 // 🦭 Pip on her rock near the shore
-const SEAL={rock:null,c:null};{const [x,z]=bayAt(5.5,9.5);const rk=new THREE.Group();rk.position.set(x,WATER_Y,z);scene.add(rk);
+const SEAL={rock:null,c:null};{const [x,z]=canalSpot(deg(172),.42);const rk=new THREE.Group();rk.position.set(x,WATER_Y,z);scene.add(rk);
   const r=M(new THREE.DodecahedronGeometry(1.2,0),SEA_M.rock,0,-.15,0,rk,false,true);r.scale.set(1.45,.62,1.15);
   M(new THREE.DodecahedronGeometry(.6,0),SEA_M.rock,.9,-.2,-.6,rk,false,true).scale.set(1,.6,1);obs.push({x,z,r:1.6});SEAL.rock=rk;
-  const s=seaSeal();s.g.position.set(-.1,.72,.1);s.g.rotation.y=seaToward+.4;rk.add(s.g);
+  const s=seaSeal();s.g.position.set(-.1,.72,.1);s.g.rotation.y=Math.atan2(-x,-z)+.4;rk.add(s.g);
   SEAL.c={kind:'seal',nm:'Pip',K:SEA_KIND.seal,m:s,g:s.g,pos:new THREE.Vector3(x,0,z),happy:0,t:0,fixed:true};SEAS.push(SEAL.c);}
 
 /* ---------- you in the water ---------- */
 const SW={withNow:{},k:0,ph:0,ride:null,splashT:0,hello:{},wasAir:false,sink:0,warn:0};
-const seaVisible=()=>Math.hypot(player.pos.x-BAY.x,player.pos.z-BAY.z)<75;
-let seaShown=true;
-function seaShow(v){if(v===seaShown)return;seaShown=v;for(const c of SEAS)c.g.visible=v;SEAL.rock.visible=v;}
+// each animal is only drawn when it's near you (the canal goes all the way round, so most are far away)
+const seaNearYou=(c,r=80)=>Math.hypot(player.pos.x-c.pos.x,player.pos.z-c.pos.z)<r;
 const seaSwimming=()=>SW.k>.6;
 
 function seaStep(dt){const p=player.pos,t=performance.now()/1000;
-  seaShow(seaVisible());
   // how deep you are, eased so wading in looks smooth
   const want=started&&!FLY.on?seaDepth(p.x,p.z):0;SW.k+=(want-SW.k)*Math.min(1,dt*6);if(SW.k<.002)SW.k=0;
   if(SW.ride&&(SW.k<.35||closetOpen))seaHopOff(true);
   // riding is faster, swimming without a ride a bit slower than walking (the walking step already moved you; this adds or takes a little)
-  if(SW.k>.3&&player.speed>.3){const extra=(SW.ride?SW.ride.K.ride-1:-.18*SW.k)*player.speed*dt;p.x+=Math.sin(player.face)*extra;p.z+=Math.cos(player.face)*extra;collide(p);}
+  if(SW.k>.3&&player.speed>.3&&!barnRide){const extra=(SW.ride?SW.ride.K.ride-1:-.18*SW.k)*player.speed*dt;p.x+=Math.sin(player.face)*extra;p.z+=Math.cos(player.face)*extra;collide(p);}
   if(seaSwimming()&&player.speed>.3){SEA.swum+=player.speed*dt;}
   const mv=Math.min(1,player.speed/5);SW.ph+=dt*(2.2+mv*4.2);
   // splashes when you land in the water, and little ones from your arms while you swim
@@ -136,17 +177,23 @@ function seaStep(dt){const p=player.pos,t=performance.now()/1000;
   if(SW.k>.6&&!SW.ride&&mv>.25&&(SW.splashT-=dt)<0){SW.splashT=.55;burst(new THREE.Vector3(p.x+Math.sin(player.face)*.6,WATER_Y+.05,p.z+Math.cos(player.face)*.6),'#ffffff',6,1.2,.16);}
   // your body: on a sea ride you sit on its back, otherwise you swim
   if(SW.ride){const c=SW.ride,A=av;A.g.position.y=c.g.position.y+c.m.seat*c.g.scale.y-(.46+A.legX)+(c.kind==='dolphin'?0:Math.max(0,p.y));}// the dolphin leaps with you, on the others you hop
-  else if(SW.k>0){SW.sink=swimPose(av,SW.k,mv,SW.ph);av.g.position.y=p.y-SW.sink+Math.sin(t*2.2)*.03*SW.k;}
+  else if(SW.k>0&&!barnRide){SW.sink=swimPose(av,SW.k,mv,SW.ph);av.g.position.y=p.y-SW.sink+Math.sin(t*2.2)*.03*SW.k;}
   // the animals
-  if(!seaShown)return;
   SW.withNow={};for(const c of SEAS)seaAnimal(c,dt,t);
   for(const k in SW.withNow)SEA.with[k]=(SEA.with[k]||0)+dt;// once per kind, even with 3 dolphins
   if(started)seaButtons();
   // first swim
   if(seaSwimming()&&!SEA.swamOnce){SEA.swamOnce=1;persist();toast('🏊 You\'re swimming! Swim close to the dolphins 🐬');}}
 onTick.push(seaStep);
+// the sea animals on the minimap, so you can find them in the canal (same heading-up view as drawMini in 26-map.js)
+onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=cv.getContext('2d'),S=cv.width,h=S/2,k=S/54,p=player.pos,
+  fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.09)}px serif`;x.textAlign='center';x.textBaseline='middle';
+  const seen={};for(const c of SEAS){if(c.fixed||SW.ride===c)continue;const key=c.kind==='dolphin'?'d'+Math.round(c.pos.x/6)+','+Math.round(c.pos.z/6):c.kind;if(seen[key])continue;seen[key]=1;
+    const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.K.e,sx,sy);}
+  x.restore();});
 
 function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
+  const vis=seaNearYou(c)||SW.ride===c;if(c.fixed){SEAL.rock.visible=vis;if(!vis)return;}else c.g.visible=vis;
   if(c.fixed){// Pip the seal: looks around, claps when she's happy
     const s=c.m;s.head.rotation.y=Math.sin(c.t*.7)*.5;s.head.rotation.x=-.2+Math.sin(c.t*1.3)*.08-(c.happy>0?.4:0);
     s.flip.forEach((f,i)=>{f.rotation.y=c.happy>0?(i?-1:1)*(.3+Math.sin(c.t*18)*.5):Math.sin(c.t*1.5+i)*.12;});
@@ -158,24 +205,21 @@ function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
     const air=c.kind==='dolphin'?Math.max(0,P.y):0;c.y=air+(c.kind==='dolphin'?-.15:c.kind==='whale'?-.5:-.05);
     c.pitch=c.kind==='dolphin'&&air>.05?Math.max(-.6,Math.min(.6,player.vy*.09)):0;
     seaMoveAnim(c,dt,Math.min(1,player.speed/5));seaPlace(c);return;}
-  // swim with you when you're swimming close by, otherwise go round the bay
-  if(seaSwimming()&&!SW.ride&&dP<K.withR)c.mode='with';else if(c.mode!=='roam'&&(dP>K.withR+6||!seaSwimming()||SW.ride))c.mode='roam';
-  let tx,tz,spd;
-  if(c.mode==='with'){const f=player.face,[sx,sz]=c.slot;tx=P.x+Math.cos(f)*sx+Math.sin(f)*sz;tz=P.z-Math.sin(f)*sx+Math.cos(f)*sz;
-    // stay in the bay
-    const bd=Math.hypot(tx-BAY.x,tz-BAY.z),lim=BAY.r+(c.kind==='whale'?2:0);if(bd>lim){tx=BAY.x+(tx-BAY.x)/bd*lim;tz=BAY.z+(tz-BAY.z)/bd*lim;}
-    spd=Math.min(9,.6+Math.hypot(tx-c.pos.x,tz-c.pos.z)*2.2);
-    if(dP<K.near&&seaSwimming()){SW.withNow[c.kind]=1;
-      if(!SW.hello[c.kind]){SW.hello[c.kind]=1;toast(c.kind==='dolphin'?'🐬 The dolphins are swimming with you!':c.kind==='whale'?'🐋 Big Blue is swimming with you!':'🐢 Shelly is swimming with you!');c.happy=1.5;}}}
-  else{c.a+=dt*c.path.spd/((c.path.rx+c.path.rz)/2);[tx,tz]=seaPathAt(c,c.a);spd=c.path.spd+Math.hypot(tx-c.pos.x,tz-c.pos.z)*1.2;}
+  // they never follow you (only pets you adopt do): each one keeps swimming its own way, and you swim up next to it.
+  // Swimming close beside one counts for the 🌊 Ocean challenges, and it's happy to see you.
+  if(dP<K.near&&seaSwimming()){SW.withNow[c.kind]=1;
+    if(!SW.hello[c.kind]){SW.hello[c.kind]=1;toast(c.kind==='dolphin'?'🐬 You\'re swimming next to the dolphins!':c.kind==='whale'?'🐋 You\'re swimming next to Big Blue!':'🐢 You\'re swimming next to Shelly!');c.happy=1.5;}}
+  c.a+=dt*seaPathRate(c);const [tx,tz]=seaPathAt(c,c.a);
+  if(!vis){c.pos.set(tx,0,tz);return;}// far away: just move it along
+  const spd=c.path.spd+Math.hypot(tx-c.pos.x,tz-c.pos.z)*1.2;
   const dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);let moving=0;
   if(d>.15){const st=Math.min(d,spd*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;moving=st/dt;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*(c.kind==='whale'?1.2:3)));}
-  else if(c.mode==='with')c.face=angDamp(c.face,player.face,Math.min(1,dt*2));
+  
   // dolphins leap, the whale spouts
   c.y=c.kind==='dolphin'?-.18+Math.sin(c.t*2.6)*.06:c.kind==='whale'?-.55+Math.sin(c.t*.5)*.1:-.05+Math.sin(c.t*1.8)*.03;c.pitch=0;
   if(c.kind==='dolphin'){if(c.leap>0){c.leap+=dt/1.15;const q=Math.min(1,c.leap);c.y+=Math.sin(q*Math.PI)*1.7;c.pitch=Math.cos(q*Math.PI)*.75;
       if(q>=1){c.leap=0;seaSplash(c,14);}}
-    else if((c.leapT-=dt)<0){c.leapT=(c.mode==='with'?4:5)+Math.random()*4;if(moving>1.5||c.happy>0){c.leap=.001;seaSplash(c,10);}}}
+    else if((c.leapT-=dt)<0){c.leapT=4+Math.random()*4;if(moving>1.5||c.happy>0){c.leap=.001;seaSplash(c,10);}}}
   if(c.kind==='whale'){if((c.spout-=dt)<0){c.spout=7+Math.random()*4;seaSpout(c);}
     if(c.happy>0){c.tailUp=Math.min(1,(c.tailUp||0)+dt*2);}else c.tailUp=Math.max(0,(c.tailUp||0)-dt);}
   seaMoveAnim(c,dt,Math.min(1,moving/4));seaPlace(c);}
@@ -225,7 +269,7 @@ $('#seaRide').onclick=()=>{if(SW.ride){seaHopOff();return;}const c=seaNear;if(!c
   seaHopOn(c);};
 function seaHopOn(c){SW.ride=c;c.mode='ride';player.pos.x=c.pos.x;player.pos.z=c.pos.z;player.face=c.face;av.rideW=c.kind==='whale'?.6:c.kind==='turtle'?.35:.12;av.play('ride');
   sfx('tada');friendBubbleSea(c,rnd(c.K.say));toast(`Ride ${c.nm} around the bay! Tap Jump to ${c.kind==='dolphin'?'leap 🐬':'hop'}`);did('searide',c.kind);seaBtnKey='';}
-function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam';av.rideW=0;if(av.emote&&av.emote.id==='ride')av.emote=null;
+function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam';seaPathFrom(c);av.rideW=0;if(av.emote&&av.emote.id==='ride')av.emote=null;
   // you slide off beside it
   const s=c.kind==='whale'?2.6:1.2;player.pos.x+=Math.cos(player.face)*s;player.pos.z-=Math.sin(player.face)*s;collide(player.pos);if(!quiet)sfx('pop');seaBtnKey='';}
 
@@ -238,7 +282,7 @@ for(const f of FRIENDS)if(f.home===BAY)f.home=Z.beach;
 // for challenges.js (🌊 Ocean tab) and the tests
 function seaState(){return {swum:Math.floor(SEA.swum),dolphin:Math.floor(SEA.with.dolphin||0),whale:Math.floor(SEA.with.whale||0),turtle:Math.floor(SEA.with.turtle||0),spouts:SEA.spouts||0};}
 function seaRides(){return SEA_RIDES.map(r=>({k:r.k,kind:r.kind,e:SEA_KIND[r.kind].e,nm:r.nm,n:r.n,ids:r.ids,own:seaOwns(r)}));}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{seaState,seaRides,sea:()=>SW,SEAS,BAY,seaDepth,seaFeed,seaHopOn,seaHopOff,seaNear:()=>seaNear});});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{seaState,seaRides,sea:()=>SW,SEAS,BAY,CANAL,inCanal,canalSpot,seaDepth,seaFeed,seaHopOn,seaHopOff,seaNear:()=>seaNear});});
 
 /* ---------- 👭 friends online see you swimming, and on your sea ride ---------- */
 SHOW.push({k:'sea',

@@ -29,7 +29,7 @@ In the 3D world you can also:
 - Pick your look: a glam fashion-doll girl (the default) or a cute cartoon, on the welcome screen or in the closet's Face tab.
 - Adopt a pet. Walk up to a kitty, puppy, squirrel, or bunny and tap Adopt, and it follows you everywhere.
 - Visit the Star Model Agency. Sit at the glam mirror in the dressing room for makeup, salon hair (updo, beach waves, side braid, high pony, glossy blow-dry), a manicure, and a pedicure; then enter the model contest: 3 themed rounds, a runway walk with a pose mini-game, 3 judges, 3 rival models, and coin prizes.
-- Swim in 🐬 Dolphin Bay: walk off the Beach into the sea and swim with dolphins, Big Blue the whale and Shelly the sea turtle, feed them and Pip the seal, and earn rides on them with the 🌊 Ocean challenges.
+- Swim in the 🌊 canal all the way round the island (and 🐬 Dolphin Bay past the Beach): walk off the shore and swim with dolphins, Big Blue the whale and Shelly the sea turtle, feed them and Pip the seal, and earn rides on them with the 🌊 Ocean challenges.
 
 ### Working on the 3D code
 New to the code? Start with **[docs/EDITING.md](docs/EDITING.md)**: a plain-English map of where everything is and how to make easy changes (prices, coins, challenges, outfits, townspeople, holidays, the secret Daddy powers).

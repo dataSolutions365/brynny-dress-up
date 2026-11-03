@@ -25,7 +25,7 @@ function stepPushables(p,dt){
     for(const b of PUSH){if(b===o||b.z!==z)continue;const bq=b.m.position,bx=q.x-bq.x,bz=q.z-bq.z,bd=Math.hypot(bx,bz),mm=o.r+b.r;
       if(bd<mm&&bd>1e-4){const ux=bx/bd,uz=bz/bd,push=(mm-bd)/2;q.x+=ux*push;q.z+=uz*push;bq.x-=ux*push;bq.z-=uz*push;
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
-// past the island's edge you may only be out swimming in 🐬 Dolphin Bay (seaKeep in 26f-ocean.js)
+// past the island's edge you may only be out swimming in the 🌊 canal (seaKeep in 26f-ocean.js)
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
   const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!(p===player.pos&&seaKeep(p,lim))){p.x*=lim/d;p.z*=lim/d;}}
 // "tried to walk but didn't move": a bug like this throws no error, so watch for it and report it once per visit
@@ -72,7 +72,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
       setTimeout(()=>{STARS.forEach(s=>{s.got=false;s.m.visible=true;});SAVE.stars=[];persist();updateStars();toast('The stars are back! Find them again ⭐');},9000);}
     else toast(`⭐ ${n} of ${STARS.length}!`);questEvent('star');}}
   // zones
-  let z=null;for(const zz of ZONES){if(Math.hypot(p.x-zz.x,p.z-zz.z)<zz.r+(zz.d?1:1.4)){z=zz;break;}}z=z||PARK;
+  let z=null;for(const zz of ZONES){if(Math.hypot(p.x-zz.x,p.z-zz.z)<zz.r+(zz.d?1:1.4)){z=zz;break;}}z=z||(seaDepth(p.x,p.z)>.5?CANAL_ZONE:PARK);
   if(z!==curZone){curZone=z;$('#place').textContent=z.name;if(started)questEvent('zone',z.id);if(started){if(z!==PARK)banner(z.name);setTrack(z.music);if(z.id==='parlor'&&!closetOpen)setTimeout(()=>toast(myPet()?'Step on the glowing paw pad to start pet care 🐾':'Adopt a pet first, then bring them here! 🐾'),1600);if(z.id==='bakery'&&!closetOpen)setTimeout(()=>toast('Step on the glowing cupcake pad to design a cake 🎂'),1600);if(z.id==='garage'&&!closetOpen)setTimeout(()=>toast('Step on the glowing wrench pad to fix up your car 🔧'),1600);if(z.id==='beach'&&!closetOpen)setTimeout(()=>toast('Step on the glowing bucket pad to build a sandcastle 🏰'),1600);if(z.id==='agency'&&!closetOpen)setTimeout(()=>toast('Step on 🏆 for the model contest, or 💄 to sit at the glam mirror!'),1600);}}
   const padD=Math.hypot(p.x,p.z);if(padD<Z.studio.pad.r&&player.onGround){if(!onPad&&started){onPad=true;openCloset();}}else if(padD>1.6)onPad=false;
   {const pz=Z.parlor,[lx,lz]=pz.toLocal(p.x,p.z),d=Math.hypot(lx-pz.ppad.lx,lz-pz.ppad.lz);if(d<pz.ppad.r&&player.onGround&&!closetOpen){if(!onPPad&&started){onPPad=true;tryParlor();}}else if(d>1.3)onPPad=false;}

@@ -32,12 +32,15 @@
   materials through `safM` to save memory on phones; the saddle size for each ride is in `SADDLE`);
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
   `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned and the rider sits on the saddle.
-- 🐬 Dolphin Bay (the sea right past the Beach, the 'bay' zone): `3d/src/26f-ocean.js`. You wade in off the sand and swim (only in the bay,
-  and not on a bike, skateboard or barn ride: `collide()` asks `seaKeep()`). Swimming keeps you at ground height 0 and just sinks and poses
-  the body after `Avatar.update` (`swimPose()`, also used for friends online through the 'sea' entry in `SHOW`). Three dolphins, Big Blue the
-  whale and Shelly the sea turtle swim along beside you; Pip the seal sits on her rock. 🐟 Feed sends `did('seafeed', kind)`.
+- 🌊 The canal and 🐬 Dolphin Bay: `3d/src/26f-ocean.js`. The coast is a ring of water all the way round the island (`CANAL.inR` to
+  `CANAL.outR`) with a grassy far bank (instanced palms and bushes); the bit past the Beach is the 'bay' zone, the rest shows as 🌊 Canal.
+  You wade in off any shore and swim (not on a bike, skateboard or barn ride: `collide()` asks `seaKeep()`). Swimming keeps you at ground
+  height 0 and just sinks and poses the body after `Avatar.update` (`swimPose()`, also used for friends online through the 'sea' entry in `SHOW`).
+  For other files that use the water (the safari hippo, animals drinking): `seaDepth(x,z)`, `inCanal(x,z)`, `canalSpot(ang,t)`, `CANAL`, `WATER_Y`.
+  Three dolphins and Big Blue the whale swim round the whole canal, Shelly the sea turtle near the Beach, Pip the seal sits on her rock; they never
+  follow you (only adopted pets do): you swim up next to them, and that counts for the challenges. A barn ride with `swim:1` in FARM may go in the water. They show on the minimap. 🐟 Feed sends `did('seafeed', kind)`.
   🐢 Shelly, 🐬 Splash and 🐋 Big Blue are rides you earn in the 🌊 Ocean tab of `3d/challenges.js` (ids in `SEA_RIDES`), and only work in the water.
-  `3d/tests/ocean.mjs` (run on every PR) checks you swim, the animals come to you, feeding counts, the rides stay locked until earned and you sit on their back.
+  `3d/tests/ocean.mjs` (run on every PR) checks you swim all round, the animals keep their own way instead of following you, feeding counts, the rides stay locked until earned and you sit on their back.
 - 📍 The Places tab of ⭐ Star Challenges (`placesHTML()` in `3d/challenges.js`) is a legend of every place in town with the challenges
   you do there, grouped by each challenge's `go` place (no `go` puts it under "Anywhere in town"). Give a new challenge a `go` and it shows up
   under that place by itself. `3d/tests/challenge-places.mjs` (run on every PR) checks every challenge is listed once.
