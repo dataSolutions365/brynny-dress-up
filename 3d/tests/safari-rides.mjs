@@ -1,4 +1,4 @@
-// Safari rides test: the safari rides (okapi, zebra, rhino, gorilla, hippo, elephant, crowned crane, lion, giraffe) only come once you finish ALL of their
+// Safari rides test: the safari rides (okapi, zebra, rhino, gorilla, hippo, cheetah, tiger, elephant, crowned crane, lion, giraffe) only come once you finish ALL of their
 // super hard 🦁 Safari challenges, they can't be bought, and you sit up on them properly when you ride.
 // The hippo swims in the water round the city, and the zoo's hippo lives in the water behind the zoo.
 // Run it with:  node 3d/tests/safari-rides.mjs   SHOTS=folder saves pictures.
@@ -54,7 +54,7 @@ try {
   let s = await get();
   if (s.st.streak !== 4 || s.st.best !== 4) fail(`The streak should be 4 today, it is ${s.st.streak} (best ${s.st.best}).`);
   if (s.st.kinds !== 2) fail(`Wins from the model and cake contests should count as 2 kinds of contest, it is ${s.st.kinds}.`);
-  const SAF = ['kivu', 'punda', 'kifaru', 'zuri', 'kiboko', 'tembo', 'neema', 'jabari', 'twiga'];
+  const SAF = ['kivu', 'punda', 'kifaru', 'zuri', 'kiboko', 'duma', 'tembo', 'raja', 'neema', 'jabari', 'twiga'];
   for (const k of SAF) if (s.own[k]) fail(`${k} should be locked at the start.`);
   // they can't be bought
   const shop = await page.evaluate(SAF => SAF.map(k => window.__game.SHOP.find(x => x.k === 'mount:' + k)).map(x => x && !!x.prize && !x.stars), SAF);
@@ -66,13 +66,13 @@ try {
   await page.evaluate(() => document.querySelector('#chalTabs [data-tab="safari"]').click());
   await page.waitForTimeout(300);
   let txt = await page.evaluate(() => document.querySelector('#chalList').innerText);
-  for (const n of ['Kivu', 'Punda', 'Kifaru', 'Zuri', 'Kiboko', 'Tembo', 'Neema', 'Jabari', 'Twiga', 'Feed all 8 kinds', 'Swim next to the hippo', 'Win the cake contest 5 times', 'Win all 3 contests', 'Beat Kai 1-on-1 at basketball 5 times', 'Play 14 days in a row', '4 / 5'])
+  for (const n of ['Kivu', 'Punda', 'Kifaru', 'Zuri', 'Kiboko', 'Duma', 'Raja', 'Tembo', 'Neema', 'Jabari', 'Twiga', 'Feed all 10 kinds', 'Swim next to the hippo', 'Win the cake contest 5 times', 'Win all 3 contests', 'Beat Kai 1-on-1 at basketball 5 times', 'Play 14 days in a row', '4 / 5'])
     if (!txt.includes(n)) fail(`The Safari tab should show "${n}".`);
   if (SHOTS) await shot('safari-tab');
   await page.evaluate(() => document.querySelector('#chalDone').click());
 
   // Kivu: feed 6 kinds of zoo animals, win 5 times, play 5 days in a row. Two of three isn't enough.
-  for (const k of ['zebra', 'giraffe', 'rhino', 'okapi', 'elephant', 'lion', 'gorilla', 'hippo']) await did('zoofeed', k);
+  for (const k of ['zebra', 'giraffe', 'rhino', 'okapi', 'elephant', 'lion', 'gorilla', 'hippo', 'cheetah', 'tiger']) await did('zoofeed', k);
   await did('petct', 0);// 5th win, and the 3rd kind of contest
   await page.waitForTimeout(4000);
   s = await get();
@@ -95,7 +95,7 @@ try {
 
   // the zoo has a lion now, and you can meet it
   const zooHas = await page.evaluate(() => window.__game.zoo().map(a => a.k));
-  for (const k of ['lion', 'gorilla', 'hippo']) if (!zooHas.includes(k)) fail(`The Safari Zoo should have a ${k}.`);
+  for (const k of ['lion', 'gorilla', 'hippo', 'cheetah', 'tiger']) if (!zooHas.includes(k)) fail(`The Safari Zoo should have a ${k}.`);
 
   // every safari ride can be ridden: you sit on its back (not inside it, not floating), and it walks
   for (const k of SAF) {

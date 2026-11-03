@@ -1259,7 +1259,7 @@ const ZOO_SHORE={gapA:.32,edge:-(R+.9-Z.zoo.d)};
  {const bg=new THREE.Group();const [x,w]=z.toWorld(-2.2,z.r-.9);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
   for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);
   const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#5a8a3a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Safari Zoo',W/2,70);
-    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants 🦁 Lion 🦍 Gorilla 🦛 Hippo',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants 🦁 Lion 🦍 Gorilla 🦛 Hippo 🐆 🐅',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
   for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
   obs.push({x,z:w,r:.4});}
  // the animals keep away from these (trees, rocks, water, feeder)
@@ -6613,7 +6613,8 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
 const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
   punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
   neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31},
-  zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47}};
+  zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47},
+  duma:{r:.25,sx:.92,sy:1.02,y:.02,z:.04,col:'#7a2f2f',seatY:.24},raja:{r:.36,sx:.92,sy:.97,y:.02,z:.04,col:'#2f3f7a',seatY:.33}};
 function safariGear(k,g,body,o){
   const leather=phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4}),dkL=phys('#3e2112',{roughness:.6}),brass=phys('#d4a64a',{metalness:.8,roughness:.3});
   const blanket=(col,trim,r,len,y,z,sx,sy,arc)=>{const bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
@@ -6881,6 +6882,80 @@ ZOO_BUILD.hippo=function(g,body,o){const r=.5,len=.86,hip=.36,by=.68,m=HIPM();
     jaw.rotation.x=op*.95;head.rotation.x=-.25+.12-op*.55;};
   Object.assign(o,{neck,head,tail,nTilt:.25,gz:.3,size:1.4,h:by+r+.55,rad:.9,dustR:[r,r,len*.8]});};
 
+// ---- src/24c9e-big-cats.js ----
+/* ===== 🐆 Big cats: a cheetah and a tiger for the Safari Zoo, and to ride once you earn them =====
+   Real-looking (true colors and markings): the cheetah is slim and long-legged with solid black spots, black "tear marks"
+   from its eyes to its mouth and a ringed tail tip; the tiger is big and heavy, orange with black stripes, a white belly,
+   white cheeks and white spots on the backs of its ears. They live at the Safari Zoo (ZOOA in 24d-barn.js) and the rides
+   (Duma and Raja) are in 24i-earned-rides.js. Each cat's coat is one small shared texture (safM, 24c9c-safari-more.js). */
+// cheetah coat: golden tan with small round black spots
+function cheetahTex(){return canvasTex(256,256,(x,w,h)=>{x.fillStyle='#d9a856';x.fillRect(0,0,w,h);
+  for(let i=0;i<600;i++){x.fillStyle=Math.random()<.5?'rgba(240,200,120,.35)':'rgba(170,120,50,.25)';x.fillRect(Math.random()*w,Math.random()*h,2,4);}
+  x.fillStyle='#1c1612';for(let i=0;i<150;i++){const X=Math.random()*w,Y=Math.random()*h,r=3+Math.random()*3.5;x.beginPath();x.ellipse(X,Y,r,r*(.8+Math.random()*.3),Math.random()*3,0,Math.PI*2);x.fill();}});}
+// tiger coat: orange with wavy black stripes that run down the sides (not under the belly), as rings round the body
+function tigerTex(){return canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e0782a';x.fillRect(0,0,w,h);
+  for(let i=0;i<700;i++){x.fillStyle=Math.random()<.5?'rgba(255,170,90,.3)':'rgba(170,80,20,.25)';x.fillRect(Math.random()*w,Math.random()*h,2,5);}
+  x.fillStyle='#16110e';const n=13;for(let i=0;i<n;i++){const Y=(i+.5)/n*h,th=4+((i*7)%5)*1.2,x0=w*(.08+((i*3)%4)*.03),x1=w*(.92-((i*5)%4)*.03);
+    x.beginPath();x.moveTo(x0,Y);for(let X=x0;X<=x1;X+=6)x.lineTo(X,Y+Math.sin(X*.05+i)*5-th*(1-Math.abs(X/w-.5)*1.6));
+    for(let X=x1;X>=x0;X-=6)x.lineTo(X,Y+Math.sin(X*.05+i)*5+th*(1-Math.abs(X/w-.5)*1.6));x.fill();}});}
+
+// one cat body. k: 'cheetah' or 'tiger'
+function bigCat(a,k,g,body,o){const ch=k==='cheetah',T=k==='tiger';
+  const r=ch?.26:.36,len=ch?.76:.84,hip=ch?.57:.54,by=ch?.72:.74;
+  const M0=safM(k,()=>{const tx=ch?cheetahTex():tigerTex(),txB=tx.clone();txB.wrapS=txB.wrapT=THREE.RepeatWrapping;txB.needsUpdate=true;
+    return {coat:phys('#ffffff',{map:txB,roughness:.85,sheen:.5,sheenColor:new THREE.Color('#ffe8c0'),sheenRoughness:.6}),
+      head:phys(ch?'#d9a856':'#e0782a',{roughness:.85,sheen:.5,sheenColor:new THREE.Color('#ffe8c0')}),
+      light:phys(ch?'#f1e2c2':'#f6efe2',{roughness:.85,sheen:.5,sheenColor:new THREE.Color('#ffffff')}),
+      dark:std('#1a1411',{roughness:.7}),nose:phys(ch?'#2a1d18':'#c27a6c',{roughness:.45,clearcoat:.3})};});
+  const {coat,head:headM,light,dark}=M0;
+  body.position.y=by;
+  const cg=new THREE.CapsuleGeometry(r,len,10,24);cg.rotateX(Math.PI/2);const t=M(bandUV(cg,T?1.1:.65),coat,0,0,0,body);t.scale.set(ch?.88:.9,ch?1:.95,1);// the stripes go round the body
+  M(bandUV(sph(r*.98,20,14),T?1.1:.65),coat,0,-.02,len*.34,body).scale.set(.92,ch?1.12:1.06,1);// chest
+  M(bandUV(sph(r*.92,18,12),T?1.1:.65),coat,0,ch?.02:.02,-len*.38,body).scale.set(.95,1,1.1);// haunches
+  M(sph(r*.75,16,10),light,0,-r*.55,len*.02,body).scale.set(.85,.42,1.75);// pale belly
+  if(ch)M(sph(r*.6,14,10),light,0,-r*.62,len*.38,body).scale.set(.8,.5,1);// cheetahs have a deep, narrow chest and a tucked waist
+  // legs (long and thin on the cheetah, thick and strong on the tiger) with big soft paws
+  const lr=ch?.072:.13;
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.55,hip,sz*len*.44);g.add(lg);a.legs.push({g:lg,ph});
+    M(sph(lr*1.35,14,10),coat,0,0,0,lg).scale.set(.85,1.25,1.1);
+    M(cyl(lr*1.15,lr*.82,hip*.5,14),coat,0,-hip*.25,sz>0?.01:-.03,lg);M(sph(lr*.82,10,8),coat,0,-hip*.5,sz>0?.015:-.05,lg);
+    M(cyl(lr*.8,lr*.75,hip*.42,12),coat,0,-hip*.72,sz>0?.02:-.04,lg);
+    const pw=M(sph(lr*1.05,14,10),headM,0,-hip+lr*.5,.04,lg);pw.scale.set(1,.55,1.3);
+    if(T)for(const tx of [-.05,-.017,.017,.05])M(sph(.032,8,6),headM,tx,-hip+lr*.45,.13-Math.abs(tx)*.6,lg,false,false).scale.set(1,.8,1.1);}
+  // neck and head
+  const neck=new THREE.Group();neck.position.set(0,by+r*.3,len/2+r*.45);neck.rotation.x=ch?.7:.6;g.add(neck);
+  M(bandUV(sph(ch?.17:.25,16,12),2),coat,0,.06,0,neck).scale.set(.9,1.25,1);
+  const head=new THREE.Group();head.position.set(0,ch?.2:.24,.08);head.rotation.x=-(ch?.7:.6)+.08;neck.add(head);const H=ch?.13:.22;
+  M(sph(H,22,16),headM,0,0,0,head).scale.set(ch?.95:1,ch?.9:.92,ch?1.05:1.12);// round head (the cheetah's is small)
+  M(sph(H*.5,14,10),headM,0,H*.08,H*.95,head).scale.set(.75,.62,1.3);// nose bridge
+  for(const sx of [-1,1]){M(sph(H*.28,14,10),light,sx*H*.17,-H*.24,H*1.25,head).scale.set(.95,.8,1);// white whisker pads
+    for(let i=0;i<3;i++)M(sph(H*.024,6,4),dark,sx*H*(.15+i*.08),-H*(.2+i*.05),H*(1.52-i*.06),head,false,false);
+    if(T){M(sph(H*.36,14,10),light,sx*H*.58,-H*.22,H*.45,head).scale.set(.6,.75,1);// white cheek ruffs
+      for(let i=0;i<3;i++){const s=M(box(H*.05,H*.36,H*.12),dark,sx*H*(.82+i*.02),H*(.05-i*.12),H*(.2+i*.12),head,false,false);s.rotation.set(0,sx*.6,sx*.5);}// stripes on the cheeks
+      for(let i=0;i<3;i++){const s=M(box(H*.4-i*H*.08,H*.05,H*.08),dark,sx*H*.18,H*(.72-i*.12),H*(.55-i*.1),head,false,false);s.rotation.set(-.4,sx*.35,sx*(.25+i*.1));}}// stripes on the forehead
+    else{// the cheetah's black "tear marks" from the inner eye down to the corner of the mouth
+      const tm=new THREE.Group();tm.position.set(sx*H*.3,H*.05,H*.9);head.add(tm);
+      taperTube([fV(0,H*.18,0),fV(sx*H*.04,-H*.1,H*.2),fV(sx*H*.08,-H*.38,H*.3)],q=>H*.045,dark,tm,10,6);}
+    // small round ears: dark backs, and white spots on the back of the tiger's
+    const e=new THREE.Group();e.position.set(sx*H*.6,H*.72,-H*.1);e.rotation.z=-sx*.3;head.add(e);
+    M(sph(H*.26,12,10),T?dark:headM,0,0,-.004,e).scale.set(1,1,.42);M(sph(H*.2,12,10),light,0,-H*.02,H*.045,e,false,false).scale.set(1,1,.3);
+    if(T)M(sph(H*.1,8,6),light,0,0,-H*.12,e,false,false).scale.set(1,1,.3);else M(sph(H*.14,8,6),dark,0,H*.04,-H*.11,e,false,false).scale.set(1,1,.3);}
+  M(sph(H*.3,14,10),light,0,-H*.5,H*1,head).scale.set(1,.6,1);// chin
+  M(sph(H*.15,12,10),M0.nose,0,H*.02,H*1.5,head,false,false).scale.set(1.4,.8,.75);// nose
+  M(sph(H*.1,8,6),dark,0,-H*.44,H*1.28,head,false,false).scale.set(1.8,.25,.6);// mouth line
+  if(T)M(sph(H*.3,12,8),light,0,H*.32,H*.62,head,false,false).scale.set(1.2,.5,.6);// white above the eyes
+  fEyes(a,head,H,.36,.22,.9,.32,.16,ch?'#b8862a':'#d8a22a');
+  for(const e of a.eyes)M(sph(H*.15,12,8),dark,0,0,-H*.035,e,false,false).scale.set(1.2,.8,.4);
+  // a long tail (the cheetah's ends in black and white rings and a white tip)
+  const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.85));g.add(tail);
+  const tl=ch?.85:.8,pts=[fV(0,0,0),fV(0,-.18,-.25),fV(0,-.3,-.5),fV(0,-.2,-tl)];
+  taperTube(pts,q=>(ch?.045:.06)-.015*q,coat,tail,18,8);
+  if(ch){for(let i=0;i<3;i++){const q=.72+i*.08,p=new THREE.CatmullRomCurve3(pts).getPoint(q);const rg=M(new THREE.TorusGeometry(.036,.016,6,14),dark,p.x,p.y,p.z,tail,false,false);rg.rotation.x=.4;}
+    M(sph(.035,8,6),light,0,-.2,-tl,tail);}
+  else M(sph(.06,8,6),dark,0,-.2,-tl,tail);
+  Object.assign(o,{neck,head,tail,nTilt:ch?.7:.6,gz:.7,size:ch?1:1.2,h:by+r+.45,rad:ch?.55:.7,dustR:[r,r,len*.8]});}
+ZOO_BUILD.cheetah=function(g,body,o){bigCat(this,'cheetah',g,body,o);};
+ZOO_BUILD.tiger=function(g,body,o){bigCat(this,'tiger',g,body,o);};
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -7063,7 +7138,11 @@ const ZOOA=[
   {k:'gorilla',e:'🦍',n:'Gorilla',food:[['🍌','Banana'],['🌿','Leaves']],say:['*chest pat pat* 🦍','*happy rumbly grunt*','*sits and munches*'],
     facts:[['🥗','Diet','Mostly a herbivore. Leaves, stems, bamboo shoots and fruit, plus the odd ant or termite. A big male eats about 18 kg (40 lb) a day!'],['🌍','Habitat','Rainforests and mountain forests of central Africa.'],['⏳','Lifespan','About 35 to 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','The biggest ape in the world! Grown-up males get a patch of silver hair on their backs, so they are called silverbacks. Every gorilla has its own nose print, like a fingerprint.']]},
   {k:'hippo',e:'🦛',n:'Hippo',swim:.85,food:[['🍉','Watermelon'],['🌾','Grass']],say:['*big hippo yawn* 🦛','*blub blub* 💦','*happy grunty honk*'],
-    facts:[['🥗','Diet','Herbivore. At night it walks out of the water to eat grass, about 40 kg (90 lb) a night!'],['🌍','Habitat','Rivers, lakes and swamps of Africa, south of the Sahara.'],['⏳','Lifespan','About 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','Hippos spend all day in the water to stay cool, and they can hold their breath for 5 minutes. They can\'t really swim: they walk and bounce along the bottom! Their name means "river horse".']]}
+    facts:[['🥗','Diet','Herbivore. At night it walks out of the water to eat grass, about 40 kg (90 lb) a night!'],['🌍','Habitat','Rivers, lakes and swamps of Africa, south of the Sahara.'],['⏳','Lifespan','About 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','Hippos spend all day in the water to stay cool, and they can hold their breath for 5 minutes. They can\'t really swim: they walk and bounce along the bottom! Their name means "river horse".']]},
+  {k:'cheetah',e:'🐆',n:'Cheetah',food:[['🍖','Meat'],['🥩','Steak']],say:['*chirp chirp*','*fast tail flick*','*soft purr*'],
+    facts:[['🥗','Diet','Carnivore. Gazelles, impalas and hares, which it catches with a super fast sprint.'],['🌍','Habitat','Open grasslands and savannas of Africa, and a few in Iran.'],['⏳','Lifespan','About 10 to 12 years in the wild, and up to 17 in zoos.'],['✨','Fun fact','The fastest land animal in the world: up to 110 km/h (70 mph)! It can\'t roar, but it chirps like a bird. The black "tear marks" under its eyes stop the sun from dazzling it.']]},
+  {k:'tiger',e:'🐅',n:'Tiger',food:[['🍖','Meat'],['🐟','Fish']],say:['*deep rumbly growl*','*friendly chuff chuff*','*big stretch*'],
+    facts:[['🥗','Diet','Carnivore. Deer, wild pigs and buffalo. A tiger can eat 40 kg (88 lb) in one meal!'],['🌍','Habitat','Forests, grasslands and mangrove swamps of Asia, from India to Russia.'],['⏳','Lifespan','About 10 to 15 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','The biggest cat in the world! No two tigers have the same stripes, and the stripes are on its skin too. Unlike most cats, tigers love to swim.']]}
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -7670,7 +7749,7 @@ const HIPPO_WATER={x:9,near:-(R+3.2-ZZ.d),far:-(R+12-ZZ.d)};
 function zooOkH(lx,lz,r){return (Math.abs(lx)<HIPPO_WATER.x&&lz<ZOO_SHORE.edge+.5&&lz>HIPPO_WATER.far)||zooShoreOk(lx,lz,r);}
 function zooSpotH(r){const W=HIPPO_WATER;if(Math.random()<.8)return [(Math.random()*2-1)*(W.x-1),W.near-1-Math.random()*(W.near-W.far-1.5)];
   const lz=ZOO_SHORE.edge-.2;return [(Math.random()*2-1)*2.5,lz];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1],['hippo',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk2;a.spot=zooSpot2;a.mates=ZA;
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1],['hippo',1],['cheetah',1],['tiger',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk2;a.spot=zooSpot2;a.mates=ZA;
   if(a.F.swim){a.ok=zooOkH;a.spot=zooSpotH;}
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=a.spot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
@@ -9206,6 +9285,9 @@ function earnedRideList(){return [
   // the big zoo animals: ride the gorilla, and a hippo who swims with you (in the zoo's hippo pool and out in 🐬 Dolphin Bay)
   {k:'zuri',e:'🦍',n:'Gorilla',nm:'Zuri',model:'gorilla',gear:1,safari:1,scale:1.25,earn:{by:'chal',ids:['saf_feedG','saf_meet8','saf_win12'],goal:3},ride:1.62,boost:1.8,about:'A mighty silverback gorilla who gives you a ride on his back as he knuckle-walks! Only for explorers who finish all 3 of his 🦁 Safari challenges.',food:[['🍌','Banana'],['🌿','Leaves'],['🎋','Bamboo shoots']],say:['*chest pat pat* 🦍','*happy rumbly grunt*','Hold on tight!']},
   {k:'kiboko',e:'🦛',n:'Hippo',nm:'Kiboko',model:'hippo',gear:1,safari:1,swim:.85,earn:{by:'chal',ids:['saf_feedH','saf_hipswim','saf_sea300'],goal:3},ride:1.11,boost:1.6,about:'A huge, happy hippo who swims with you on her back! Ride her right into the water and swim all the way round the city! Only for swimmers who finish all 3 of her 🦁 Safari challenges.',food:[['🍉','Watermelon'],['🌾','Grass'],['🥬','Lettuce']],say:['*big hippo yawn* 🦛','*blub blub* 💦','Splash time!']},
+  // the big cats: the fastest ride in town, and the biggest cat in the world
+  {k:'duma',e:'🐆',n:'Cheetah',nm:'Duma',model:'cheetah',gear:1,safari:1,scale:1.35,earn:{by:'chal',ids:['saf_feedC','saf_kai3','saf_days8'],goal:3},ride:1.34,boost:2.45,about:'The fastest animal on land! Hold on tight, Duma sprints faster than any other ride. Only for speedy explorers who finish all 3 of her 🦁 Safari challenges.',food:[['🍖','Meat'],['🥩','Steak'],['🍗','Drumstick']],say:['*chirp chirp*','Ready, set, ZOOM! 💨','*soft purr*']},
+  {k:'raja',e:'🐅',n:'Tiger',nm:'Raja',model:'tiger',gear:1,safari:1,scale:1.1,earn:{by:'chal',ids:['saf_feedT','saf_win25','saf_stars120'],goal:3},ride:1.2,boost:2.1,about:'A huge Bengal tiger with bold black stripes. The biggest cat in the world, and he lets you ride on his back! Only for champions who finish all 3 of his 🦁 Safari challenges.',food:[['🍖','Meat'],['🐟','Fish'],['🥩','Steak']],say:['*friendly chuff chuff*','RAWRR! 🐅','*big stretch*']},
   {k:'phoenix',e:'🔥',n:'Phoenix',nm:'Blaze',earn:{by:'wins',goal:10},fly:1,wingsRun:1,ride:1.12,about:'A legendary fire bird with glowing golden feathers. Only for super champions who win 10 contests or games!',food:[['🌶️','Hot pepper'],['🍒','Cherries'],['🌻','Sunflower seeds']],say:['*sparkly whoosh* 🔥','Skreee! ✨','Let\'s light up the sky!']},
 ];}
 
