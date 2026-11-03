@@ -31,5 +31,7 @@ jobs:
         run: node 3d/tests/bike.mjs
       - name: The safari rides only come from finishing their Safari challenges, and you sit right on them
         run: node 3d/tests/safari-rides.mjs
+      - name: The Jump Park trampolines bounce, flip, slam dunk and splash into the foam pit
+        run: node 3d/tests/jump-park.mjs
       - name: The 2D and 3D closets match
         run: node 3d/tests/closets-match.mjs
