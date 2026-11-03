@@ -132,9 +132,9 @@ try {
 
   // --- roller skates off the kicker ---
   await setup({ kind: 'skates', at: [5.3, 8.6], face: Math.PI });
-  s = await until(s => s.on && s.kind === 'skates', 5);
+  await want(Math.PI); // you start just outside the park, so roll in
+  s = await until(s => s.on && s.kind === 'skates', 8);
   check(s && s.kind === 'skates', 'on roller skates the skate park takes over too');
-  await want(Math.PI);
   s = await until(s => s.air && s.lz < 2.9, 12);
   check(!!s, 'the kicker throws you into the air on skates');
   await page.evaluate(() => window.__game.skTrick('spin'));
