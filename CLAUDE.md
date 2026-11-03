@@ -50,8 +50,10 @@
   follow you (only adopted pets do): you swim up next to them, and that counts for the challenges. A barn ride with `swim:1` in FARM may go in the water. They show on the minimap. 🐟 Feed sends `did('seafeed', kind)`.
   🐢 Shelly, 🐬 Splash, 🐋 Big Blue and 🦭 Pip are rides you earn in the 🌊 Ocean tab of `3d/challenges.js` (ids in `SEA_RIDES`), and only work in the water
   (Pip slides off her rock when you ride her and goes back when you hop off). 🐠 Ray the manta ray and 🦦 Ollie the sea otter are for swimming with and feeding.
-  🦈 Now and then a great white chases you while you swim (`sharkStep`): it's harmless (reach the shore to escape, `did('shark','escape')`, or he just bumps you
-  and swims off). It looks like a real great white on purpose, not a cartoon; keep it that way.
+  🦈 Ghost the great white swims round the canal by himself (a SEAS animal, `SHARK.c`); swim near him and now and then he chases you (`sharkStep`): it's
+  harmless (reach the shore to escape, `did('shark','escape')`, or he just bumps you and swims on). He's a ride too, with the hardest Ocean challenges
+  (grp 'ghost': escape 10 times, 5 in a row, ride all 4 other sea rides, swim 5000 steps); once he's yours he stops chasing you.
+  He looks like a real great white on purpose, not a cartoon; keep it that way.
   `3d/tests/ocean.mjs` (run on every PR) checks you swim all round, the animals keep their own way instead of following you, feeding counts, the rides stay locked until earned and you sit on their back.
 - 📍 The Places tab of ⭐ Star Challenges (`placesHTML()` in `3d/challenges.js`) is a legend of every place in town with the challenges
   you do there, grouped by each challenge's `go` place (no `go` puts it under "Anywhere in town"). Give a new challenge a `go` and it shows up
