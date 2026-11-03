@@ -130,7 +130,7 @@ mapCv.addEventListener('wheel',e=>{e.preventDefault();const [fx,fy]=mapPt(e);map
 $('#mapIn').onclick=()=>mapZoom(mv.zi+1);$('#mapOut').onclick=()=>mapZoom(mv.zi-1);
 mapCv.addEventListener('click',e=>{if(mdrag>mapCv.width*.02)return;// that was a drag, not a tap
   const [sx0,sy0]=mapPt(e),sx=sx0-mv.ox,sy=sy0-mv.oy;
-  if(daddyTeleport(sx,sy))return;// DADDY POWERS (27-daddy-powers.js): remove this line with that file
+  if(window.__daddy?.teleport(sx,sy))return;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   // a tap on a name tag picks that place; otherwise the closest place within reach of the tap
   const S=mapCv.width,k=mapK(),lay=mapLayout();let best=null,bd=1e9;
   for(const it of lay){const b=it.lb;if(sx>=b.x0-4&&sx<=b.x1+4&&sy>=b.y0-4&&sy<=b.y1+4){best=it.z;bd=0;break;}}

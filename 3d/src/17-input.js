@@ -38,7 +38,7 @@ canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.d
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 $('#jump').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
 function jump(){if(closetOpen)return;if(flyJump())return;// on a flying ride: take off (24h-flying.js)
-  if(daddyJump())return;// DADDY POWERS (27-daddy-powers.js): remove this line with that file
+  if(window.__daddy?.jump())return;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   if(jpJump())return;// bouncing on a trampoline: bounce higher next time (26e-jump-park.js)
   if(skateParkJump())return;// on wheels at the skate park: an ollie, or hop off a rail (24k-skate-park.js)
   if(player.onGround){player.vy=6.2;player.onGround=false;sfx('jump');}}
