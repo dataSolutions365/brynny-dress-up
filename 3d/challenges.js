@@ -124,11 +124,17 @@ const LIST = [
   { id: 'sea_feedT', tab: 'ocean', grp: 'shelly', e: '🪼', t: 'Feed Shelly 3 times', r: 2, goal: 3, go: 'bay', ev: { k: 'seafeed', a: a => a === 'turtle' } },
   { id: 'sea_dolph', tab: 'ocean', grp: 'splash', e: '🐬', t: 'Swim with the dolphins for 45 seconds', r: 2, goal: 45, go: 'bay', poll: () => sea().dolphin },
   { id: 'sea_feedD', tab: 'ocean', grp: 'splash', e: '🐟', t: 'Feed the dolphins 5 times', r: 2, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'dolphin' } },
-  { id: 'sea_feedAll', tab: 'ocean', grp: 'splash', e: '🦭', t: 'Feed all 4 sea animals: dolphin, turtle, whale and Pip the seal', r: 3, goal: 4, u: true, go: 'bay', ev: { k: 'seafeed' } },
+  { id: 'sea_feedAll', tab: 'ocean', grp: 'splash', e: '🦭', t: 'Feed 4 different sea animals', r: 3, goal: 4, u: true, go: 'bay', ev: { k: 'seafeed' } },
   { id: 'sea_whale', tab: 'ocean', grp: 'bigblue', e: '🐋', t: 'Swim next to Big Blue the whale for 60 seconds', r: 3, goal: 60, go: 'bay', poll: () => sea().whale },
   { id: 'sea_spout', tab: 'ocean', grp: 'bigblue', e: '💦', t: 'See Big Blue spout 10 times', r: 2, goal: 10, go: 'bay', poll: () => sea().spouts },
   { id: 'sea_swim1k', tab: 'ocean', grp: 'bigblue', e: '🌊', t: 'Swim 1000 steps in the sea', r: 3, goal: 1000, go: 'bay', poll: () => sea().swum },
   { id: 'sea_feedW', tab: 'ocean', grp: 'bigblue', e: '🦐', t: 'Feed Big Blue 5 times', r: 3, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'whale' } },
+  { id: 'sea_pip', tab: 'ocean', grp: 'pip', e: '🦭', t: 'Swim next to Pip the seal for 20 seconds', r: 2, goal: 20, go: 'bay', poll: () => sea().seal },
+  { id: 'sea_feedP', tab: 'ocean', grp: 'pip', e: '🐟', t: 'Feed Pip 5 times', r: 2, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'seal' } },
+  { id: 'sea_meet', tab: 'ocean', grp: 'pip', e: '🌊', t: 'Swim next to 5 different sea animals', r: 3, goal: 5, go: 'bay', poll: () => sea().kinds },
+  { id: 'sea_manta', tab: 'ocean', grp: 'friends', e: '🐠', t: 'Swim next to Ray the manta ray for 30 seconds', r: 2, goal: 30, go: 'bay', poll: () => sea().manta },
+  { id: 'sea_otter', tab: 'ocean', grp: 'friends', e: '🦦', t: 'Feed Ollie the sea otter 3 times', r: 2, goal: 3, go: 'bay', ev: { k: 'seafeed', a: a => a === 'otter' } },
+  { id: 'sea_shark', tab: 'ocean', grp: 'shark', e: '🦈', t: 'Get away from the great white 3 times', r: 3, goal: 3, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 const DAILY = [
@@ -345,7 +351,14 @@ function oceanHTML(list, here) {
     h += `<div class="csaf sea${r.own ? ' own' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}</strong><span>${r.own ? 'Yours! Swim up to them in the bay and tap Ride' : `${n} of ${mine.length} challenges done`}</span></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
     h += mine.map(ch => chRow(ch, here)).join('');
   }
-  return h + '<div class="cnote">🦭 Pip the seal lives on her rock in the bay. You can\'t ride her, but she loves fish!</div>';
+  // the other sea friends (no ride, just challenges)
+  for (const [k, e, nm, sub] of [['friends', '🦦', 'More sea friends', 'Ray the manta ray and Ollie the sea otter'], ['shark', '🦈', 'The great white', 'Sometimes he chases you when you swim. Get to the shore!']]) {
+    const mine = list.filter(c => c.grp === k); if (!mine.length) continue;
+    const n = mine.filter(isDone).length, fin = n === mine.length;
+    h += `<div class="csaf sea${fin ? ' own' : ''}"><b>${e}</b><div><strong>${nm}</strong><span>${fin ? 'All done!' : sub}</span></div>${fin ? '<span class="own">✅ Done</span>' : ''}</div>`;
+    h += mine.map(ch => chRow(ch, here)).join('');
+  }
+  return h;
 }
 // 📍 the Places tab: a legend of every place in town with the challenges you do there (like the 🦁 Safari tab does for animals).
 // The place you're standing in comes first, then places with challenges left, in map order. Challenges you can do anywhere go last.

@@ -10257,10 +10257,12 @@ Object.assign(window.__game,{JP,jumpPark:()=>({on:JPS.on,trick:JPS.trick&&JPS.tr
      your body into the water and poses you (crawl stroke when you move, treading water when you stop) after Avatar.update.
      Not on a bike, a skateboard or a barn ride: hop off first.
    - Sea animals: 🐬 three dolphins (one is Splash) and 🐋 Big Blue the humpback whale swim all the way round the canal, 🐢 Shelly the
-     sea turtle paddles near the Beach, and 🦭 Pip the seal sits on her rock in the bay. They never follow you (only adopted pets do): swim
+     sea turtle paddles near the Beach, 🦭 Pip the seal sits on her rock in the bay, 🐠 Ray the manta ray glides round far out and
+     🦦 Ollie the sea otter floats on his back off the Beach. They never follow you (only adopted pets do): swim
      up next to one and swim along beside it. They show on the minimap. Tap 🐟 Feed when you're close.
    - 🌊 Ocean challenges (the Ocean tab in challenges.js, ids in SEA_RIDES[].ids): finish all of an animal's challenges and you can
-     ride it in the bay (🐢 Shelly, 🐬 Splash, 🐋 Big Blue). Pip the seal is just for feeding.
+     ride it (🐢 Shelly, 🐬 Splash, 🐋 Big Blue, 🦭 Pip: she slides off her rock for you and swims home after).
+   - 🦈 Now and then a great white chases you while you swim (sharkStep below). Harmless: reach the shore to get away, or he bumps you and leaves.
    - Friends online see you swimming, and on your sea ride, through the 'sea' entry in SHOW (26c-friends-see.js).
    Everything is low-poly with a few shared materials and no textures, and each animal hides when it's far from you (iPhone memory). */
 const BAY=Z.bay,WATER_Y=-.35,CANAL={inR:R+1.6,outR:R+17};
@@ -10322,7 +10324,10 @@ function swimPose(A,k,mv,ph){if(!A||!A.legs||k<.01)return 0;
 const SEA_M={dol:std('#5f7f9c',{roughness:.35}),belly:std('#eef3f6',{roughness:.45}),eye:std('#1d2228',{roughness:.2}),
   whale:std('#3d5568',{roughness:.5}),wbelly:std('#e3e9ec',{roughness:.6}),bump:std('#33495a',{roughness:.7}),
   shell:std('#6f7f3c',{roughness:.6}),plate:std('#55652c',{roughness:.6}),tskin:std('#a3b872',{roughness:.7}),under:std('#e6d79a',{roughness:.7}),
-  seal:std('#8d939b',{roughness:.5}),sealL:std('#c7ccd2',{roughness:.5}),rock:std('#8a8278',{roughness:.95,flatShading:true})};
+  seal:std('#8d939b',{roughness:.5}),sealL:std('#c7ccd2',{roughness:.5}),rock:std('#8a8278',{roughness:.95,flatShading:true}),
+  manta:std('#2c3640',{roughness:.55,side:THREE.DoubleSide}),mantaB:std('#e9edf0',{roughness:.6}),
+  otter:std('#6b4a33',{roughness:.85}),otterL:std('#c4a684',{roughness:.85}),nose:std('#2a1d17',{roughness:.4}),shellP:std('#f2b5b0',{roughness:.5}),
+  shark:std('#ffffff',{roughness:.45,vertexColors:true}),sharkF:std('#6c7a85',{roughness:.45,side:THREE.DoubleSide}),gill:std('#4c5862',{roughness:.6})};
 const sM=(geo,mat,x,y,z,p)=>M(geo,mat,x,y,z,p,false,false);
 // each model faces +z with its middle at the water line (y 0 = sea level); seat = how high your seat is on its back
 function seaDolphin(){const g=new THREE.Group();
@@ -10355,29 +10360,60 @@ function seaTurtle(){const g=new THREE.Group();
   const fl=[];for(const [sx,z,len] of [[-1,.42,2.6],[1,.42,2.6],[-1,-.5,1.3],[1,-.5,1.3]]){const p=new THREE.Group();p.position.set(sx*.55,-.08,z);g.add(p);
     const f=sM(sph(.16,10,6),SEA_M.tskin,sx*.16*len*.6,0,0,p);f.scale.set(len,.22,1);fl.push({p,sx,front:z>0});}
   return {g,flip:fl,head,seat:.34,len:1.8};}
-function seaSeal(){const g=new THREE.Group();
+function seaSeal(swim){const g=new THREE.Group();
   sM(sph(.32,14,10),SEA_M.seal,0,0,0,g).scale.set(1,.85,2);
   sM(sph(.28,12,8),SEA_M.sealL,0,-.08,.15,g).scale.set(.9,.6,1.6);
-  const head=new THREE.Group();head.position.set(0,.32,.55);g.add(head);sM(sph(.22,14,10),SEA_M.seal,0,0,0,head);
+  const head=new THREE.Group();head.position.set(0,swim?.12:.32,swim?.66:.55);g.add(head);sM(sph(.22,14,10),SEA_M.seal,0,0,0,head);
   sM(sph(.11,10,8),SEA_M.sealL,0,-.06,.18,head).scale.set(1.2,.8,1);sM(sph(.035,8,6),SEA_M.eye,0,-.02,.28,head);
   for(const sx of [-1,1])sM(sph(.05,8,6),SEA_M.eye,sx*.1,.06,.17,head);
-  const fl=[];for(const sx of [-1,1]){const p=new THREE.Group();p.position.set(sx*.28,-.12,.3);g.add(p);const f=sM(sph(.1,8,6),SEA_M.seal,sx*.12,0,0,p);f.scale.set(2,.3,1);fl.push(p);}
+  const fl=[];for(const sx of [-1,1]){const p=new THREE.Group();p.position.set(sx*.28,-.12,.3);g.add(p);const f=sM(sph(.1,8,6),SEA_M.seal,sx*.12,0,0,p);f.scale.set(2,.3,1);fl.push({p,sx,front:true});}
   sM(sph(.14,8,6),SEA_M.seal,0,-.05,-.72,g).scale.set(2,.3,1.1);
-  return {g,head,flip:fl};}
-const SEA_BUILD={dolphin:seaDolphin,whale:seaWhale,turtle:seaTurtle};
+  return {g,head,flip:fl,seat:.27,len:1.3};}
+// 🐠 Ray the manta ray: a wide flat diamond that flaps its wings slowly (and sometimes leaps right out of the water)
+function seaManta(){const g=new THREE.Group();
+  sM(sph(.45,14,8),SEA_M.manta,0,0,0,g).scale.set(1,.32,1.7);sM(sph(.42,14,8),SEA_M.mantaB,0,-.05,0,g).scale.set(.95,.22,1.6);
+  const sh=new THREE.Shape();sh.moveTo(0,.8);sh.quadraticCurveTo(1.1,.55,2.1,-.2);sh.quadraticCurveTo(1,-.25,0,-.7);sh.lineTo(0,.8);
+  const wg=new THREE.ExtrudeGeometry(sh,{depth:.05,bevelEnabled:false,curveSegments:6});wg.translate(0,0,-.025);
+  const wing=[];for(const sx of [-1,1]){const p=new THREE.Group();p.position.set(sx*.3,0,0);g.add(p);const w=sM(wg,SEA_M.manta,0,0,0,p);w.rotation.x=Math.PI/2;w.scale.x=sx;wing.push({p,sx});
+    const c=sM(cyl(.04,.07,.42,6),SEA_M.manta,sx*.26,-.02,.8,g);c.rotation.x=Math.PI/2;c.rotation.z=sx*.25;
+    sM(sph(.04,8,6),SEA_M.eye,sx*.33,.04,.62,g);}
+  const tail=new THREE.Group();tail.name='tail';tail.position.z=-.75;g.add(tail);const t=sM(cyl(.035,.01,1.4,5),SEA_M.manta,0,0,-.7,tail);t.rotation.x=Math.PI/2;
+  return {g,wing,tail,len:1.6};}
+// 🦦 Ollie the sea otter: floats on his back with a shell on his tummy
+function seaOtter(){const g=new THREE.Group(),b=new THREE.Group();b.name='body';g.add(b);
+  sM(sph(.25,16,10),SEA_M.otter,0,0,0,b).scale.set(1,.7,2);sM(sph(.22,14,8),SEA_M.otterL,0,.07,.18,b).scale.set(.85,.6,1.3);// tummy up, pale chest
+  // his head is lifted, looking up and forward, with a pale face, a dark nose, little round ears and whiskers
+  const head=new THREE.Group();head.position.set(0,.17,.55);head.rotation.x=-.5;b.add(head);sM(sph(.17,16,12),SEA_M.otterL,0,0,0,head).scale.set(1.05,.95,1);
+  sM(sph(.17,16,12),SEA_M.otter,0,-.03,-.04,head).scale.set(1.08,.95,.95);
+  sM(sph(.085,12,8),SEA_M.otterL,0,-.02,.13,head).scale.set(1.25,.85,1);sM(sph(.032,8,6),SEA_M.nose,0,.02,.21,head).scale.set(1.3,.8,1);
+  for(const sx of [-1,1]){sM(sph(.026,8,6),SEA_M.eye,sx*.075,.07,.13,head);sM(sph(.045,8,6),SEA_M.otter,sx*.13,.1,-.02,head).scale.set(1,1,.5);
+    for(const k of [-1,1]){const w=sM(cyl(.004,.004,.16,3),SEA_M.otterL,sx*.09,-.02+k*.015,.15,head);w.rotation.z=Math.PI/2+sx*k*.12;w.rotation.y=-sx*.3;}}
+  const paw=[];for(const sx of [-1,1]){const p=new THREE.Group();p.position.set(sx*.13,.16,.36);b.add(p);sM(sph(.05,8,6),SEA_M.otter,0,.04,0,p).scale.set(1,1.5,1);paw.push({p,sx});
+    const ft=sM(sph(.07,8,6),SEA_M.nose,sx*.1,.1,-.45,b);ft.scale.set(.9,.5,1.6);ft.rotation.x=-.8;}// webbed back feet poking up
+  const shell=sM(new THREE.ConeGeometry(.08,.04,10),SEA_M.shellP,0,.21,.26,b);shell.rotation.x=-.3;
+  sM(sph(.09,8,6),SEA_M.otter,0,-.02,-.62,b).scale.set(1,.45,2.4);
+  return {g,body:b,head,paw,len:1.4};}
+const SEA_BUILD={dolphin:seaDolphin,whale:seaWhale,turtle:seaTurtle,seal:()=>{const m=seaSeal(true);m.g.scale.setScalar(SEAL_RIDE_S);m.seat*=SEAL_RIDE_S;return m;}};
+const SEAL_RIDE_S=1.4;// Pip is a bit bigger in the water than she looks on her rock, so you fit on her back
 
 // who lives in the canal (near = how close counts as swimming next to it). Paths are in seaAdd() below.
 const SEA_KIND={
   dolphin:{e:'🐬',food:[['🐟','fish'],['🦑','squid']],reach:3.6,near:5,spd:3.8,ride:2.3,say:['*click click* 🐬','Eee-eee! 💙','*happy splash*']},
   whale:{e:'🐋',food:[['🦐','krill'],['🐟','little fish']],reach:7,near:8,spd:2,ride:1.6,say:['*whooOOOoo* 🐋','*big happy spout* 💦','*gentle rumble*']},
   turtle:{e:'🐢',food:[['🪼','jellyfish'],['🥬','sea grass']],reach:3,near:4,spd:1.2,ride:1.35,say:['*slow happy blink*','*paddle paddle* 🐢','*munch* 🌿']},
-  seal:{e:'🦭',food:[['🐟','fish']],reach:3.6,say:['Ork ork! 👏','*flipper clap* 👏','*happy wiggle*']}};
+  seal:{e:'🦭',food:[['🐟','fish']],reach:3.6,near:4,spd:2.6,ride:1.9,say:['Ork ork! 👏','*flipper clap* 👏','*happy wiggle*']},
+  manta:{e:'🐠',food:[['🦐','plankton']],reach:4,near:5.5,spd:2.6,say:['*glide glide*','*graceful flap* 🌊','*happy wiggle*']},
+  otter:{e:'🦦',food:[['🦀','crab'],['🐚','clam']],reach:3,near:4,spd:.7,say:['*squeak squeak* 🦦','*crack crack* 🐚','*happy roll*']}};
+// how each one floats: [height, bob, bob speed], how high it leaps, and where it sits when you ride it
+for(const [k,b,l,ry,w] of [['dolphin',[-.18,.06,2.6],1.7,-.15,.12],['whale',[-.55,.1,.5],0,-.5,.6],['turtle',[-.05,.03,1.8],0,-.05,.35],
+  ['seal',[-.05,.03,2],0,-.05,.3],['manta',[.06,.03,1.2],1.3],['otter',[.02,.04,1.6],0]])Object.assign(SEA_KIND[k],{bob:b,leap:l,rideY:ry,rideW:w});
 // the rides you earn with 🌊 Ocean challenges (challenges.js has the same ids, grp = k)
 const SEA_RIDES=[
   {k:'shelly',kind:'turtle',nm:'Shelly',n:'Sea turtle',ids:['sea_swim','sea_turtle','sea_feedT']},
   {k:'splash',kind:'dolphin',nm:'Splash',n:'Dolphin',ids:['sea_dolph','sea_feedD','sea_feedAll']},
-  {k:'bigblue',kind:'whale',nm:'Big Blue',n:'Humpback whale',ids:['sea_whale','sea_spout','sea_swim1k','sea_feedW']}];
-SAVE.sea||={swum:0,with:{},spouts:0,own:{}};const SEA=SAVE.sea;SEA.with||={};SEA.own||={};
+  {k:'bigblue',kind:'whale',nm:'Big Blue',n:'Humpback whale',ids:['sea_whale','sea_spout','sea_swim1k','sea_feedW']},
+  {k:'pip',kind:'seal',nm:'Pip',n:'Seal',ids:['sea_pip','sea_feedP','sea_meet']}];
+SAVE.sea||={swum:0,with:{},spouts:0,own:{}};const SEA=SAVE.sea;SEA.with||={};SEA.own||={};SEA.shark||={esc:0,tag:0};
 
 const SEAS=[];
 function seaAdd(kind,nm,m,o={}){const c={kind,nm,K:SEA_KIND[kind],m,g:m.g,pos:new THREE.Vector3(),face:0,y:0,pitch:0,mode:'roam',t:Math.random()*9,a:o.a||0,
@@ -10400,12 +10436,19 @@ const seaPathRate=c=>{const P=c.path,r=(CANAL.inR+CANAL.outR)/2;return P.spd/(r*
 seaAdd('whale','Big Blue',seaWhale(),{path:{dir:-1,t:.55,ph:0,spd:1.9},a:-deg(200),slot:[4.4,0]});
 // Shelly paddles back and forth near the Beach
 seaAdd('turtle','Shelly',seaTurtle(),{path:{ang0:deg(180),span:.3,t:.4,ph:1,spd:1.3},a:.4,slot:[1.5,-.6]});
+// 🐠 Ray the manta glides round the canal far out, 🦦 Ollie the otter floats about just off the Beach
+seaAdd('manta','Ray',seaManta(),{path:{dir:1,t:.75,ph:2,spd:2.6},a:deg(40)});
+seaAdd('otter','Ollie',seaOtter(),{path:{ang0:deg(194),span:.12,t:.22,ph:0,spd:.7},a:1});
 // 🦭 Pip on her rock near the shore
 const SEAL={rock:null,c:null};{const [x,z]=canalSpot(deg(172),.42);const rk=new THREE.Group();rk.position.set(x,WATER_Y,z);scene.add(rk);
   const r=M(new THREE.DodecahedronGeometry(1.2,0),SEA_M.rock,0,-.15,0,rk,false,true);r.scale.set(1.45,.62,1.15);
   M(new THREE.DodecahedronGeometry(.6,0),SEA_M.rock,.9,-.2,-.6,rk,false,true).scale.set(1,.6,1);obs.push({x,z,r:1.6});SEAL.rock=rk;
   const s=seaSeal();s.g.position.set(-.1,.72,.1);s.g.rotation.y=Math.atan2(-x,-z)+.4;rk.add(s.g);
-  SEAL.c={kind:'seal',nm:'Pip',K:SEA_KIND.seal,m:s,g:s.g,pos:new THREE.Vector3(x,0,z),happy:0,t:0,fixed:true};SEAS.push(SEAL.c);}
+  SEAL.c={kind:'seal',nm:'Pip',K:SEA_KIND.seal,m:s,g:s.g,pos:new THREE.Vector3(x,0,z),face:0,y:0,pitch:0,happy:0,t:0,fixed:true};SEAS.push(SEAL.c);}
+// riding Pip: she slides off her rock into the water, and when you hop off she swims home to it
+function sealLeave(){const c=SEAL.c,s=c.m;c.fixed=false;scene.attach(s.g);s.g.rotation.order='YXZ';s.g.rotation.set(0,0,0);s.g.scale.setScalar(SEAL_RIDE_S);s.head.position.set(0,.12,.66);s.head.rotation.set(0,0,0);SEAL.rock.visible=true;}
+function sealHome(){const c=SEAL.c,s=c.m;c.fixed=true;SEAL.rock.add(s.g);s.g.scale.setScalar(1);s.g.position.set(-.1,.72,.1);s.g.rotation.set(0,Math.atan2(-SEAL.rock.position.x,-SEAL.rock.position.z)+.4,0);
+  s.head.position.set(0,.32,.55);c.pos.set(SEAL.rock.position.x,0,SEAL.rock.position.z);}
 
 /* ---------- you in the water ---------- */
 const SW={withNow:{},k:0,ph:0,ride:null,splashT:0,hello:{},wasAir:false,sink:0,warn:0};
@@ -10439,47 +10482,121 @@ onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=
   fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.09)}px serif`;x.textAlign='center';x.textBaseline='middle';
   const seen={};for(const c of SEAS){if(c.fixed||SW.ride===c)continue;const key=c.kind==='dolphin'?'d'+Math.round(c.pos.x/6)+','+Math.round(c.pos.z/6):c.kind;if(seen[key])continue;seen[key]=1;
     const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.K.e,sx,sy);}
+  if(SHARK.mode==='chase'){const dx=SHARK.pos.x-p.x,dz=SHARK.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText('🦈',sx,sy);}
   x.restore();});
 
 function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
   const vis=seaNearYou(c)||SW.ride===c;if(c.fixed){SEAL.rock.visible=vis;if(!vis)return;}else c.g.visible=vis;
   if(c.fixed){// Pip the seal: looks around, claps when she's happy
+    if(seaSwimming()&&Math.hypot(player.pos.x-c.pos.x,player.pos.z-c.pos.z)<c.K.near)seaWith(c);
     const s=c.m;s.head.rotation.y=Math.sin(c.t*.7)*.5;s.head.rotation.x=-.2+Math.sin(c.t*1.3)*.08-(c.happy>0?.4:0);
-    s.flip.forEach((f,i)=>{f.rotation.y=c.happy>0?(i?-1:1)*(.3+Math.sin(c.t*18)*.5):Math.sin(c.t*1.5+i)*.12;});
+    s.flip.forEach((f,i)=>{f.p.rotation.z=0;f.p.rotation.y=c.happy>0?(i?-1:1)*(.3+Math.sin(c.t*18)*.5):Math.sin(c.t*1.5+i)*.12;});
     s.g.position.y=.72+(c.happy>0?Math.abs(Math.sin(c.t*9))*.15:0);return;}
   const P=player.pos,K=c.K,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);
   // ridden: right under you
   if(SW.ride===c){c.mode='ride';const back=c.kind==='whale'?-1.4:c.kind==='dolphin'?.35:0;
     c.face=player.face;c.pos.set(P.x+Math.sin(c.face)*back,0,P.z+Math.cos(c.face)*back);
-    const air=c.kind==='dolphin'?Math.max(0,P.y):0;c.y=air+(c.kind==='dolphin'?-.15:c.kind==='whale'?-.5:-.05);
+    const air=c.kind==='dolphin'?Math.max(0,P.y):0;c.y=air+K.rideY;
     c.pitch=c.kind==='dolphin'&&air>.05?Math.max(-.6,Math.min(.6,player.vy*.09)):0;
     seaMoveAnim(c,dt,Math.min(1,player.speed/5));seaPlace(c);return;}
   // they never follow you (only pets you adopt do): each one keeps swimming its own way, and you swim up next to it.
   // Swimming close beside one counts for the 🌊 Ocean challenges, and it's happy to see you.
-  if(dP<K.near&&seaSwimming()){SW.withNow[c.kind]=1;
-    if(!SW.hello[c.kind]){SW.hello[c.kind]=1;toast(c.kind==='dolphin'?'🐬 You\'re swimming next to the dolphins!':c.kind==='whale'?'🐋 You\'re swimming next to Big Blue!':'🐢 You\'re swimming next to Shelly!');c.happy=1.5;}}
+  if(dP<K.near&&seaSwimming())seaWith(c);
   c.a+=dt*seaPathRate(c);const [tx,tz]=seaPathAt(c,c.a);
   if(!vis){c.pos.set(tx,0,tz);return;}// far away: just move it along
   const spd=c.path.spd+Math.hypot(tx-c.pos.x,tz-c.pos.z)*1.2;
   const dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);let moving=0;
   if(d>.15){const st=Math.min(d,spd*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;moving=st/dt;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*(c.kind==='whale'?1.2:3)));}
   
-  // dolphins leap, the whale spouts
-  c.y=c.kind==='dolphin'?-.18+Math.sin(c.t*2.6)*.06:c.kind==='whale'?-.55+Math.sin(c.t*.5)*.1:-.05+Math.sin(c.t*1.8)*.03;c.pitch=0;
-  if(c.kind==='dolphin'){if(c.leap>0){c.leap+=dt/1.15;const q=Math.min(1,c.leap);c.y+=Math.sin(q*Math.PI)*1.7;c.pitch=Math.cos(q*Math.PI)*.75;
-      if(q>=1){c.leap=0;seaSplash(c,14);}}
-    else if((c.leapT-=dt)<0){c.leapT=4+Math.random()*4;if(moving>1.5||c.happy>0){c.leap=.001;seaSplash(c,10);}}}
+  // dolphins and the manta leap, the whale spouts
+  c.y=K.bob[0]+Math.sin(c.t*K.bob[2])*K.bob[1];c.pitch=0;
+  if(K.leap){if(c.leap>0){c.leap+=dt/(K.leap>1.5?1.15:1.4);const q=Math.min(1,c.leap);c.y+=Math.sin(q*Math.PI)*K.leap;c.pitch=Math.cos(q*Math.PI)*(c.kind==='manta'?.45:.75);
+      if(q>=1){c.leap=0;seaSplash(c,c.kind==='manta'?22:14);}}
+    else if((c.leapT-=dt)<0){c.leapT=c.kind==='manta'?10+Math.random()*10:4+Math.random()*4;if(moving>1.5||c.happy>0){c.leap=.001;seaSplash(c,10);}}}
   if(c.kind==='whale'){if((c.spout-=dt)<0){c.spout=7+Math.random()*4;seaSpout(c);}
     if(c.happy>0){c.tailUp=Math.min(1,(c.tailUp||0)+dt*2);}else c.tailUp=Math.max(0,(c.tailUp||0)-dt);}
   seaMoveAnim(c,dt,Math.min(1,moving/4));seaPlace(c);}
 function seaMoveAnim(c,dt,mv){const m=c.m;
   if(m.tail)m.tail.rotation.x=Math.sin(c.t*(c.kind==='whale'?1.4:5))*(c.kind==='whale'?.12:.3)*(.3+mv)-(c.tailUp||0)*.9;
   if(m.flip)m.flip.forEach(f=>{const o=c.t*(2+mv*3)+(f.front?0:Math.PI);f.p.rotation.z=f.sx*Math.sin(o)*(f.front?.5:.25);f.p.rotation.y=-f.sx*(.3+Math.cos(o)*.25);});
-  if(m.head&&c.kind==='turtle')m.head.rotation.y=Math.sin(c.t*.8)*.25;}
+  if(m.head&&c.kind==='turtle')m.head.rotation.y=Math.sin(c.t*.8)*.25;
+  if(m.wing)m.wing.forEach(w=>{w.p.rotation.z=w.sx*(Math.sin(c.t*(1.6+mv*1.4))*.32+.05);});
+  if(m.paw){// Ollie taps his shell, looks about and every now and then rolls right over in the water
+    m.paw.forEach((w,i)=>{w.p.rotation.x=-.4+Math.max(0,Math.sin(c.t*(c.happy>0?14:5)+i*.4))*.6;});m.head.rotation.y=Math.sin(c.t*.6)*.4;
+    const r=(c.t%9)/9;m.body.rotation.z=r>.88?(r-.88)/.12*Math.PI*2:0;}}
+// you're swimming right next to a sea animal: it counts for the challenges, and it says hello the first time
+function seaWith(c){SW.withNow[c.kind]=1;
+  if(!SW.hello[c.kind]){SW.hello[c.kind]=1;toast(c.kind==='dolphin'?'🐬 You\'re swimming next to the dolphins!':`${c.K.e} You're swimming next to ${c.nm}!`);c.happy=1.5;}}
 function seaPlace(c){c.g.position.set(c.pos.x,WATER_Y+c.y,c.pos.z);c.g.rotation.y=c.face;c.g.rotation.x=-c.pitch;}
 function seaSplash(c,n){burst(new THREE.Vector3(c.pos.x,WATER_Y+.1,c.pos.z),'#ffffff',n,2,.24);if(Math.hypot(player.pos.x-c.pos.x,player.pos.z-c.pos.z)<15)tone(300+Math.random()*120,.12,'sine',.06,0,140);}
 function seaSpout(c){const b=c.m.blow.clone();c.g.localToWorld(b);burst(b,'#e8f8ff',34,2.6,.35);burst(b,'#ffffff',18,3.4,.25);
   const dP=player.pos.distanceTo(b);if(dP<30){SEA.spouts++;persist();if(dP<18)tone(220,.5,'sawtooth',.03,0,90);}}
+
+
+/* ---------- 🦈 the great white: a surprise now and then while you swim in the canal ----------
+   After a while of swimming (not on a sea ride) a fin shows up behind you and the great white comes after you. It's a chase, not
+   a scary bit: get to the shore (or out-swim him for 25 seconds) and you escape, which counts for the 🌊 Ocean challenges.
+   If he catches up he just bumps you with his nose and swims off. He's built to look like a real great white: grey on top and
+   white underneath, a pointed snout, black eyes, gill slits, a tall fin and a crescent tail. */
+function seaShark(){const g=new THREE.Group();
+  // the body: one smooth shape, grey above and white below with the wavy line real great whites have
+  const pr=[[0,-2.35],[.1,-2.15],[.2,-1.8],[.36,-1.1],[.5,-.3],[.56,.3],[.54,.8],[.46,1.3],[.33,1.75],[.18,2.1],[.05,2.3],[0,2.34]].map(([r,y])=>new THREE.Vector2(r,y));
+  const geo=new THREE.LatheGeometry(pr,18);geo.rotateX(Math.PI/2);geo.scale(.82,1,1);
+  const pos=geo.attributes.position,col=new Float32Array(pos.count*3),top=new THREE.Color('#6c7a85'),bot=new THREE.Color('#f1f1ec');
+  for(let i=0;i<pos.count;i++){const y=pos.getY(i),z=pos.getZ(i),c=y<-.06+Math.sin(z*6)*.05+(z>1.4?.08:0)?bot:top;col.set([c.r,c.g,c.b],i*3);}
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.computeVertexNormals();
+  sM(geo,SEA_M.shark,0,0,0,g);
+  const fin=(pts,depth=.05)=>{const sh=new THREE.Shape();sh.moveTo(...pts[0]);for(let i=1;i<pts.length;i+=2)sh.quadraticCurveTo(...pts[i],...pts[i+1]);
+    const fg=new THREE.ExtrudeGeometry(sh,{depth,bevelEnabled:false,curveSegments:5});fg.translate(0,0,-depth/2);return fg;};
+  // the fins are flat shapes drawn from the side (x = forward along the body, y = up), stood up along the body
+  const df=sM(fin([[.35,0],[.12,.55],[-.25,.95],[-.22,.45],[-.45,.05],[0,-.02],[.35,0]],.06),SEA_M.sharkF,0,.48,.15,g);df.rotation.y=-Math.PI/2;
+  sM(fin([[.1,0],[.05,.12],[-.08,.2],[-.08,.1],[-.15,0],[0,0],[.1,0]],.03),SEA_M.sharkF,0,.22,-1.6,g).rotation.y=-Math.PI/2;
+  // pectoral fins: long and swept back, out to the sides and drooping a little (x = out, y = forward)
+  const pg=fin([[0,.2],[.5,.08],[.95,-.45],[.7,-.35],[.2,-.2],[.05,-.05],[0,.2]],.04);
+  for(const sx of [-1,1]){const pp=new THREE.Group();pp.position.set(sx*.36,-.25,.95);pp.rotation.z=-sx*.38;g.add(pp);
+    const pf=sM(pg,SEA_M.sharkF,0,0,0,pp);pf.rotation.x=Math.PI/2;pf.scale.x=sx;
+    sM(sph(.045,10,8),SEA_M.eye,sx*.25,.08,1.78,g);
+    for(let k=0;k<5;k++){const gs=sM(new THREE.BoxGeometry(.02,.24-k*.012,.03),SEA_M.gill,sx*(.37+k*.016),-.02,1.32-k*.11,g);gs.rotation.z=-sx*.15;}}
+  // the mouth line under the snout (closed)
+  const mouth=sM(new THREE.TorusGeometry(.18,.012,4,12,Math.PI),SEA_M.gill,0,-.2,1.72,g);mouth.rotation.x=Math.PI/2;mouth.scale.set(1.05,.8,1);
+  // the tail swishes side to side (sharks swim like that; whales and dolphins go up and down)
+  const tail=new THREE.Group();tail.name='tail';tail.position.z=-2.2;g.add(tail);
+  sM(fin([[.05,0],[-.25,.4],[-.6,.95],[-.38,.45],[-.22,.03],[-.36,-.35],[-.5,-.72],[-.15,-.3],[.05,0]],.05),SEA_M.sharkF,0,0,0,tail).rotation.y=-Math.PI/2;
+  g.visible=false;return {g,tail};}
+const SHARK={m:null,on:false,mode:'',pos:new THREE.Vector3(),face:0,y:-1.2,t:0,next:40+Math.random()*50,beat:0,leave:0};
+SHARK.m=seaShark();SHARK.m.g.rotation.order='YXZ';scene.add(SHARK.m.g);
+// start a chase (the tests call this with force)
+function sharkStart(force){const p=player.pos;if(SHARK.on||(!force&&(SW.ride||!seaSwimming())))return false;
+  // come from behind you, out in the water
+  let best=null;for(const off of [0,.5,-.5,1,-1,Math.PI]){const a=player.face+Math.PI+off,x=p.x+Math.sin(a)*18,z=p.z+Math.cos(a)*18,d=Math.hypot(x,z);
+    const r=Math.max(CANAL.inR+2,Math.min(CANAL.outR-1.5,d)),sx=x*r/d,sz=z*r/d;if(Math.hypot(sx-p.x,sz-p.z)>9){best=[sx,sz];break;}}
+  if(!best)return false;
+  Object.assign(SHARK,{on:true,mode:'chase',t:0,y:-1.2,beat:0,leave:0});SHARK.pos.set(best[0],0,best[1]);SHARK.face=Math.atan2(p.x-best[0],p.z-best[1]);
+  SHARK.m.g.visible=true;toast('🦈 A great white! Swim for the shore!');banner('🦈 Swim for the shore!');return true;}
+function sharkEnd(how){if(SHARK.mode!=='chase')return;SHARK.mode='leave';SHARK.leave=0;
+  if(how==='escape'){SEA.shark.esc++;persist();sfx('tada');toast('🎉 You got away from the great white!');did('shark','escape');}
+  if(how==='tag'){SEA.shark.tag++;persist();const p=player.pos;burst(new THREE.Vector3(p.x,WATER_Y+.2,p.z),'#ffffff',40,3.2,.35);sfx('splash');
+    // a nose bump that pushes you along a little; then he loses interest
+    p.x+=Math.sin(SHARK.face)*1.6;p.z+=Math.cos(SHARK.face)*1.6;collide(p);toast('🦈 Bump! He just wanted a look. He swims away');did('shark','tag');}}
+function sharkStep(dt){const p=player.pos,S=SHARK,m=S.m;
+  if(!S.on){if(started&&seaSwimming()&&!SW.ride&&!FLY.on&&(S.next-=dt)<0){S.next=120+Math.random()*120;sharkStart();}return;}
+  S.t+=dt;const dx=p.x-S.pos.x,dz=p.z-S.pos.z,d=Math.hypot(dx,dz);let spd;
+  if(S.mode==='chase'){
+    // you're safe on the shore, on a sea ride or when you've out-swum him for 25 seconds
+    if(seaDepth(p.x,p.z)<.4||SW.ride||S.t>25)sharkEnd('escape');
+    else if(d<1.9)sharkEnd('tag');
+    // he gains on you when he's far and is just a little slower than you up close, so if you keep swimming you get away
+    spd=d>9?5.4:3.7;S.face=angDamp(S.face,Math.atan2(dx,dz),Math.min(1,dt*2.2));S.y+=(-.42-S.y)*Math.min(1,dt*.8);
+    // the music: two low notes that speed up as he gets closer
+    if((S.beat-=dt)<0){S.beat=Math.max(.28,Math.min(1.1,d/14));tone(82,.22,'sawtooth',.045);tone(87,.22,'sawtooth',.045,S.beat*.5);}}
+  else{// swims away and dives out of sight
+    S.leave+=dt;spd=4.5;S.face=angDamp(S.face,Math.atan2(-dx,-dz),Math.min(1,dt*1.5));S.y-=dt*.45;
+    if(S.leave>4){S.on=false;S.mode='';m.g.visible=false;return;}}
+  let nx=S.pos.x+Math.sin(S.face)*spd*dt,nz=S.pos.z+Math.cos(S.face)*spd*dt;const r=Math.hypot(nx,nz),lim=Math.max(CANAL.inR+1.2,Math.min(CANAL.outR-1.2,r));
+  S.pos.set(nx*lim/r,0,nz*lim/r);
+  m.g.position.set(S.pos.x,WATER_Y+S.y,S.pos.z);m.g.rotation.y=S.face;m.g.rotation.z=Math.sin(S.t*3)*.04;m.tail.rotation.y=Math.sin(S.t*(4+spd))*.35;
+  if(S.mode==='chase'&&(S.splT=(S.splT||0)-dt)<0){S.splT=.25;burst(new THREE.Vector3(S.pos.x+Math.sin(S.face)*.3,WATER_Y+.05,S.pos.z+Math.cos(S.face)*.3),'#ffffff',4,1,.14);}}
+onTick.push(sharkStep);
 
 /* ---------- 🐟 feed and 🏇 ride buttons ---------- */
 {const st=document.createElement('style');st.textContent=`
@@ -10508,6 +10625,8 @@ function seaFeed(c){if(!c)return;const K=c.K,fd=rnd(K.food);c.happy=c.kind==='wh
   if(c.kind==='dolphin'){c.leap=.001;seaSplash(c,12);tone(1500,.08,'sine',.08);tone(1900,.1,'sine',.07,.09);}
   if(c.kind==='whale'){seaSpout(c);setTimeout(()=>{const b=c.m.tail.getWorldPosition(new THREE.Vector3());burst(b.setY(WATER_Y+.2),'#ffffff',40,3.5,.35);sfx('splash');},900);}
   if(c.kind==='seal'){tone(330,.12,'square',.05);tone(300,.12,'square',.05,.18);}
+  if(c.kind==='manta'){c.leap=.001;seaSplash(c,12);}
+  if(c.kind==='otter'){tone(1200,.08,'sine',.07);tone(1400,.08,'sine',.07,.12);}
   friendBubbleSea(c,rnd(K.say));toast(`${K.e} ${c.nm} loves the ${fd[1]}!`);did('seafeed',c.kind);}
 // a little speech bubble over the animal (like the barn animals)
 function friendBubbleSea(c,txt){const s=sprite(labelTex(txt,{size:44}),1.9,.48);const top=c.fixed?1.9:c.kind==='whale'?2.6:1.5;s.position.set(0,top,0);
@@ -10516,9 +10635,9 @@ $('#seaFeed').onclick=()=>{seaFeed(seaNear);};
 $('#seaRide').onclick=()=>{if(SW.ride){seaHopOff();return;}const c=seaNear;if(!c)return;const r=SEA_RIDES.find(x=>x.kind===c.kind&&x.nm===c.nm);if(!r)return;
   if(!seaOwns(r)){sfx('pop');toast(`Finish all of ${r.nm}'s 🌊 Ocean challenges (in ⭐ challenges) to ride ${c.kind==='whale'?'him':'her'}!`);return;}
   seaHopOn(c);};
-function seaHopOn(c){SW.ride=c;c.mode='ride';player.pos.x=c.pos.x;player.pos.z=c.pos.z;player.face=c.face;av.rideW=c.kind==='whale'?.6:c.kind==='turtle'?.35:.12;av.play('ride');
+function seaHopOn(c){if(c.fixed)sealLeave();SW.ride=c;c.mode='ride';player.pos.x=c.pos.x;player.pos.z=c.pos.z;player.face=c.face;av.rideW=c.K.rideW;av.play('ride');
   sfx('tada');friendBubbleSea(c,rnd(c.K.say));toast(`Ride ${c.nm} around the bay! Tap Jump to ${c.kind==='dolphin'?'leap 🐬':'hop'}`);did('searide',c.kind);seaBtnKey='';}
-function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam';seaPathFrom(c);av.rideW=0;if(av.emote&&av.emote.id==='ride')av.emote=null;
+function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam';if(c.path)seaPathFrom(c);else{sealHome();if(!quiet)toast('🦭 Pip swims home to her rock');}av.rideW=0;if(av.emote&&av.emote.id==='ride')av.emote=null;
   // you slide off beside it
   const s=c.kind==='whale'?2.6:1.2;player.pos.x+=Math.cos(player.face)*s;player.pos.z-=Math.sin(player.face)*s;collide(player.pos);if(!quiet)sfx('pop');seaBtnKey='';}
 
@@ -10529,9 +10648,10 @@ setInterval(()=>{if(!started)return;for(const r of SEA_RIDES)if(!SEA.own[r.k]&&s
 // a townsperson who'd live out in the bay lives on the Beach instead
 for(const f of FRIENDS)if(f.home===BAY)f.home=Z.beach;
 // for challenges.js (🌊 Ocean tab) and the tests
-function seaState(){return {swum:Math.floor(SEA.swum),dolphin:Math.floor(SEA.with.dolphin||0),whale:Math.floor(SEA.with.whale||0),turtle:Math.floor(SEA.with.turtle||0),spouts:SEA.spouts||0};}
+function seaState(){const w=k=>Math.floor(SEA.with[k]||0);return {swum:Math.floor(SEA.swum),dolphin:w('dolphin'),whale:w('whale'),turtle:w('turtle'),seal:w('seal'),manta:w('manta'),otter:w('otter'),
+  kinds:Object.keys(SEA.with).filter(k=>SEA.with[k]>=1).length,spouts:SEA.spouts||0,sharkEsc:SEA.shark.esc,sharkTag:SEA.shark.tag};}
 function seaRides(){return SEA_RIDES.map(r=>({k:r.k,kind:r.kind,e:SEA_KIND[r.kind].e,nm:r.nm,n:r.n,ids:r.ids,own:seaOwns(r)}));}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{seaState,seaRides,sea:()=>SW,SEAS,BAY,CANAL,inCanal,canalSpot,seaDepth,seaFeed,seaHopOn,seaHopOff,seaNear:()=>seaNear});});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{seaState,sharkStart,shark:()=>SHARK,seaRides,sea:()=>SW,SEAS,BAY,CANAL,inCanal,canalSpot,seaDepth,seaFeed,seaHopOn,seaHopOff,seaNear:()=>seaNear});});
 
 /* ---------- 👭 friends online see you swimming, and on your sea ride ---------- */
 SHOW.push({k:'sea',
@@ -10542,11 +10662,11 @@ SHOW.push({k:'sea',
     h.k+=(seaDepth(P.x,P.z)-h.k)*Math.min(1,dt*6);
     const v=Math.hypot(P.x-h.lx,P.z-h.lz)/Math.max(dt,1e-3);h.lx=P.x;h.lz=P.z;h.mv+=(Math.min(1,v/5)-h.mv)*Math.min(1,dt*5);h.ph+=dt*(2.2+h.mv*4.2);
     if(h.m){const m=h.m,fc=f.cur??f.face,k=m.kind,back=k==='whale'?-1.4:k==='dolphin'?.35:0,air=k==='dolphin'?Math.max(0,P.y):0;
-      const y=WATER_Y+air+(k==='dolphin'?-.15:k==='whale'?-.5:-.05);
+      const y=WATER_Y+air+SEA_KIND[k].rideY;
       m.g.position.set(P.x+Math.sin(fc)*back,y,P.z+Math.cos(fc)*back);m.g.rotation.y=fc;
       if(m.tail)m.tail.rotation.x=Math.sin(h.ph*(k==='whale'?.4:1.4))*(k==='whale'?.12:.3);
       if(m.flip)m.flip.forEach(fl=>{const o=h.ph+(fl.front?0:Math.PI);fl.p.rotation.z=fl.sx*Math.sin(o)*(fl.front?.5:.25);});
-      A.rideW=k==='whale'?.6:k==='turtle'?.35:.12;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
+      A.rideW=SEA_KIND[k].rideW;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
     else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph);}},
   off(f,h){if(h&&h.m){scene.remove(h.m.g);freeObj(h.m.g);}if(f.a){f.a.rideW=0;}}});
 // ---- src/27-daddy-powers.js ----
