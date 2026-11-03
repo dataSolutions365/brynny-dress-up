@@ -104,6 +104,8 @@ try {
   { const airs = L1.filter(l => l.air && l.y > 1.8); const turned = airs.length ? Math.abs(airs[airs.length - 1].face - airs[0].face) : 0;
     check(turned > 2.2, `you turn around in the air above the coping (${(turned * 180 / Math.PI).toFixed(0)}°)`); }
   check(L1.every(l => Math.abs(l.lx) < 4.2), 'you never fly out over the back of the half-pipe');
+  if (!L1.every(l => Math.abs(l.lx) < 4.2)) { const i = L1.findIndex(l => Math.abs(l.lx) >= 4.2); // show how it happened
+    console.log('   ' + L1.slice(Math.max(0, i - 40), i + 5).map(l => `${l.lx.toFixed(2)},${l.y.toFixed(2)},${l.air ? 'A' : 'g'},${l.S.toFixed(1)}`).join(' ')); }
   s = await until(s => s.air && s.y > 1.9, 30);
   await page.evaluate(() => window.__game.skTrick('kickflip'));
   s = await until(s => /Kickflip/.test(s.txt), 15);
