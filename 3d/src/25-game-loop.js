@@ -114,6 +114,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   if(ct.on)contestCam(dt);
   if(bakeryOpen)bakeryCam(dt);
   if(garageOpen)garageCam(dt);
+  restCam(dt);
   sandCam(dt);
   cakeContestCam(dt);
   petContestCam(dt);

@@ -98,7 +98,7 @@ something made in one file can be used in another.
 **Places** (the buildings themselves): `03-place-sparkle-studio`, `04-place-birthday`, `05-place-halloween`,
 `06-place-christmas`, `07-place-beach`, `08-place-runway`, `09-place-spring-garden`, `10-place-pet-parlor`,
 `11-place-bakery`, `11b-place-garage`, `12-place-model-agency`, `12b-place-barber-and-store`, `12b-place-barn`,
-`12c-place-sports`, `12d-place-zoo`, `12e-place-jump-park`, `12f-place-skate-park`.
+`12c-place-sports`, `12d-place-zoo`, `12e-place-jump-park`, `12f-place-skate-park`, `12g-place-restaurant`.
 
 **What you do in each place** (the activities):
 
@@ -111,6 +111,7 @@ something made in one file can be used in another.
 | Model agency, glam mirror, model contest | `24-model-agency.js` |
 | Nail painting, makeup studio | `24b-nail-painting.js`, `24c-makeup-studio.js` |
 | Barber and clothing store, garage | `24d-barber-and-store.js`, `24d-garage.js` |
+| 🍝 Rosie's Restaurant: eating (Rosie brings your food) and the 🛵 delivery rush | `24l-restaurant.js` (the menu is `FOOD_MAIN`, `FOOD_DRINK`, `FOOD_SWEET` in `12g-place-restaurant.js`) |
 | Happy Barn animals and barn rides | `24d-barn.js` |
 | Zoo and safari animals / rides | `24c9-zoo-okapi-elephant.js`, `24c9b-safari-rides.js`, `24c9c-safari-more.js` |
 | Basketball and batting, matches vs friends | `24e-sports.js`, `24e2-sports-friends.js` |
