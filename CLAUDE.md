@@ -30,6 +30,9 @@
   They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`);
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
   `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned and the rider sits on the saddle.
+- 🤸 Jump Park (behind Christmas Village): the building is `3d/src/12e-place-jump-park.js`, the bouncing, flips, slam dunks and
+  foam pit are `3d/src/26e-jump-park.js` (25-game-loop.js asks `jpLand()` on every landing; the Jump button calls `jpJump()`).
+  `3d/tests/jump-park.mjs` (run on every PR) checks you bounce, go higher and flip when tapping Jump, dunk, and sink into the pit.
 - 🛹 Skate Park: `3d/src/12f-place-skate-park.js` builds it and has `SKZ` (where every ramp, box and rail is, in the park's own
   directions) and `skateLH()` (how high the riding surface is anywhere in it; `groundAt` uses it, so walking works on the ramps).
   `3d/src/24k-skate-park.js` takes over moving you while you're on wheels (skateboard, roller skates or bike) inside the park:

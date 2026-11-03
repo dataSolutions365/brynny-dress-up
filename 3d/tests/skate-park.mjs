@@ -130,7 +130,7 @@ try {
 
   // --- roller skates off the kicker ---
   await setup({ kind: 'skates', at: [5.3, 8.6], face: Math.PI });
-  s = await until(s => s.on, 5);
+  s = await until(s => s.on && s.kind === 'skates', 5);
   check(s && s.kind === 'skates', 'on roller skates the skate park takes over too');
   await want(Math.PI);
   s = await until(s => s.air && s.lz < 2.9, 12);
@@ -142,7 +142,7 @@ try {
 
   // --- bike: tilts with you, backflip all the way round ---
   await setup({ kind: 'bike', at: [3.5, -6.5], face: -Math.PI / 2 });
-  s = await until(s => s.on && !s.air, 5);
+  s = await until(s => s.on && s.kind === 'bike' && !s.air, 5);
   check(s && s.kind === 'bike', 'on the bike the skate park takes over');
   await want(-Math.PI / 2);
   s = await until(s => !s.air && s.y > .6 && s.lx < -2, 15);
