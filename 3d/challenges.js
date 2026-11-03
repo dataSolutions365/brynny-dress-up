@@ -165,7 +165,12 @@ const LIST = [
   { id: 'sea_meet', tab: 'ocean', grp: 'pip', e: '🌊', t: 'Swim next to 5 different sea animals', r: 3, goal: 5, go: 'bay', poll: () => sea().kinds },
   { id: 'sea_manta', tab: 'ocean', grp: 'friends', e: '🐠', t: 'Swim next to Ray the manta ray for 30 seconds', r: 2, goal: 30, go: 'bay', poll: () => sea().manta },
   { id: 'sea_otter', tab: 'ocean', grp: 'friends', e: '🦦', t: 'Feed Ollie the sea otter 3 times', r: 2, goal: 3, go: 'bay', ev: { k: 'seafeed', a: a => a === 'otter' } },
-  { id: 'sea_shark', tab: 'ocean', grp: 'shark', e: '🦈', t: 'Get away from the great white 3 times', r: 3, goal: 3, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
+  // 🦈 Ghost the great white: really hard on purpose (you need all four other sea rides first)
+  { id: 'sea_shark', tab: 'ocean', grp: 'ghost', e: '🦈', t: 'Get away from the great white 3 times', r: 3, goal: 3, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
+  { id: 'sea_shark10', tab: 'ocean', grp: 'ghost', e: '🏊', t: 'Get away from Ghost the great white 10 times', r: 3, goal: 10, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
+  { id: 'sea_sharkrow', tab: 'ocean', grp: 'ghost', e: '🔥', t: 'Get away from Ghost 5 times in a row without being bumped', r: 3, goal: 5, go: 'bay', poll: () => sea().sharkRow },
+  { id: 'sea_rides4', tab: 'ocean', grp: 'ghost', e: '🏆', t: 'Ride all 4 sea rides: Shelly, Splash, Big Blue and Pip', r: 3, goal: 4, go: 'bay', poll: () => sea().rode },
+  { id: 'sea_swim5k', tab: 'ocean', grp: 'ghost', e: '🌊', t: 'Swim 5000 steps in the sea', r: 3, goal: 5000, go: 'bay', poll: () => sea().swum },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 const DAILY = [
@@ -382,11 +387,11 @@ function oceanHTML(list, here) {
   for (const r of rides) {
     const mine = list.filter(c => c.grp === r.k); if (!mine.length) continue;
     const n = mine.filter(isDone).length;
-    h += `<div class="csaf sea${r.own ? ' own' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}</strong><span>${r.own ? 'Yours! Swim up to them in the bay and tap Ride' : `${n} of ${mine.length} challenges done`}</span></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += `<div class="csaf sea${r.own ? ' own' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}</strong><span>${r.own ? 'Yours! Swim up to them and tap Ride' : `${n} of ${mine.length} challenges done`}</span></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
     h += mine.map(ch => chRow(ch, here)).join('');
   }
   // the other sea friends (no ride, just challenges)
-  for (const [k, e, nm, sub] of [['friends', '🦦', 'More sea friends', 'Ray the manta ray and Ollie the sea otter'], ['shark', '🦈', 'The great white', 'Sometimes he chases you when you swim. Get to the shore!']]) {
+  for (const [k, e, nm, sub] of [['friends', '🦦', 'More sea friends', 'Ray the manta ray and Ollie the sea otter']]) {
     const mine = list.filter(c => c.grp === k); if (!mine.length) continue;
     const n = mine.filter(isDone).length, fin = n === mine.length;
     h += `<div class="csaf sea${fin ? ' own' : ''}"><b>${e}</b><div><strong>${nm}</strong><span>${fin ? 'All done!' : sub}</span></div>${fin ? '<span class="own">✅ Done</span>' : ''}</div>`;

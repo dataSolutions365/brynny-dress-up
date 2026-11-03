@@ -10926,7 +10926,8 @@ Object.assign(window.__game,{JP,jumpPark:()=>({on:JPS.on,trick:JPS.trick&&JPS.tr
      up next to one and swim along beside it. They show on the minimap. Tap 🐟 Feed when you're close.
    - 🌊 Ocean challenges (the Ocean tab in challenges.js, ids in SEA_RIDES[].ids): finish all of an animal's challenges and you can
      ride it (🐢 Shelly, 🐬 Splash, 🐋 Big Blue, 🦭 Pip: she slides off her rock for you and swims home after).
-   - 🦈 Now and then a great white chases you while you swim (sharkStep below). Harmless: reach the shore to get away, or he bumps you and leaves.
+   - 🦈 Ghost the great white swims round the canal by himself. Swim close to him and now and then he chases you (sharkStep below). Harmless:
+     reach the shore to get away, or he bumps you and swims on. Finish his really hard 🌊 Ocean challenges and you can ride him.
    - Friends online see you swimming, and on your sea ride, through the 'sea' entry in SHOW (26c-friends-see.js).
    Everything is low-poly with a few shared materials and no textures, and each animal hides when it's far from you (iPhone memory). */
 const BAY=Z.bay,WATER_Y=-.35,CANAL={inR:R+1.6,outR:R+17};
@@ -11067,17 +11068,21 @@ const SEA_KIND={
   turtle:{e:'🐢',food:[['🪼','jellyfish'],['🥬','sea grass']],reach:3,near:4,spd:1.2,ride:1.35,say:['*slow happy blink*','*paddle paddle* 🐢','*munch* 🌿']},
   seal:{e:'🦭',food:[['🐟','fish']],reach:3.6,near:4,spd:2.6,ride:1.9,say:['Ork ork! 👏','*flipper clap* 👏','*happy wiggle*']},
   manta:{e:'🐠',food:[['🦐','plankton']],reach:4,near:5.5,spd:2.6,say:['*glide glide*','*graceful flap* 🌊','*happy wiggle*']},
-  otter:{e:'🦦',food:[['🦀','crab'],['🐚','clam']],reach:3,near:4,spd:.7,say:['*squeak squeak* 🦦','*crack crack* 🐚','*happy roll*']}};
+  otter:{e:'🦦',food:[['🦀','crab'],['🐚','clam']],reach:3,near:4,spd:.7,say:['*squeak squeak* 🦦','*crack crack* 🐚','*happy roll*']},
+  shark:{e:'🦈',food:[['🐟','big fish']],reach:4,near:6,spd:2.8,ride:2.6,back:-.75,say:['*swish swish*','*glides past slowly*','*a calm, steady look*']}};
 // how each one floats: [height, bob, bob speed], how high it leaps, and where it sits when you ride it
 for(const [k,b,l,ry,w] of [['dolphin',[-.18,.06,2.6],1.7,-.15,.12],['whale',[-.55,.1,.5],0,-.5,.6],['turtle',[-.05,.03,1.8],0,-.05,.35],
-  ['seal',[-.05,.03,2],0,-.05,.3],['manta',[.06,.03,1.2],1.3],['otter',[.02,.04,1.6],0]])Object.assign(SEA_KIND[k],{bob:b,leap:l,rideY:ry,rideW:w});
+  ['seal',[-.05,.03,2],0,-.05,.3],['manta',[.06,.03,1.2],1.3],['otter',[.02,.04,1.6],0],['shark',[-.42,.04,.8],0,-.12,.45]])Object.assign(SEA_KIND[k],{bob:b,leap:l,rideY:ry,rideW:w});
+// how far the animal sits behind you when you ride it (you sit on the front of the whale's back, and in front of the shark's fin)
+for(const k in SEA_KIND)SEA_KIND[k].back??=k==='whale'?-1.4:k==='dolphin'?.35:0;
 // the rides you earn with 🌊 Ocean challenges (challenges.js has the same ids, grp = k)
 const SEA_RIDES=[
   {k:'shelly',kind:'turtle',nm:'Shelly',n:'Sea turtle',ids:['sea_swim','sea_turtle','sea_feedT']},
   {k:'splash',kind:'dolphin',nm:'Splash',n:'Dolphin',ids:['sea_dolph','sea_feedD','sea_feedAll']},
   {k:'bigblue',kind:'whale',nm:'Big Blue',n:'Humpback whale',ids:['sea_whale','sea_spout','sea_swim1k','sea_feedW']},
-  {k:'pip',kind:'seal',nm:'Pip',n:'Seal',ids:['sea_pip','sea_feedP','sea_meet']}];
-SAVE.sea||={swum:0,with:{},spouts:0,own:{}};const SEA=SAVE.sea;SEA.with||={};SEA.own||={};SEA.shark||={esc:0,tag:0};
+  {k:'pip',kind:'seal',nm:'Pip',n:'Seal',ids:['sea_pip','sea_feedP','sea_meet']},
+  {k:'ghost',kind:'shark',nm:'Ghost',n:'Great white shark',ids:['sea_shark','sea_shark10','sea_sharkrow','sea_rides4','sea_swim5k']}];
+SAVE.sea||={swum:0,with:{},spouts:0,own:{}};const SEA=SAVE.sea;SEA.with||={};SEA.own||={};SEA.shark||={esc:0,tag:0};SEA.shark.row??=0;SEA.shark.best??=0;
 
 const SEAS=[];
 function seaAdd(kind,nm,m,o={}){const c={kind,nm,K:SEA_KIND[kind],m,g:m.g,pos:new THREE.Vector3(),face:0,y:0,pitch:0,mode:'roam',t:Math.random()*9,a:o.a||0,
@@ -11146,7 +11151,6 @@ onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=
   fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.09)}px serif`;x.textAlign='center';x.textBaseline='middle';
   const seen={};for(const c of SEAS){if(c.fixed||SW.ride===c)continue;const key=c.kind==='dolphin'?'d'+Math.round(c.pos.x/6)+','+Math.round(c.pos.z/6):c.kind;if(seen[key])continue;seen[key]=1;
     const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.K.e,sx,sy);}
-  if(SHARK.mode==='chase'){const dx=SHARK.pos.x-p.x,dz=SHARK.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText('🦈',sx,sy);}
   x.restore();});
 
 function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
@@ -11157,8 +11161,9 @@ function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
     s.flip.forEach((f,i)=>{f.p.rotation.z=0;f.p.rotation.y=c.happy>0?(i?-1:1)*(.3+Math.sin(c.t*18)*.5):Math.sin(c.t*1.5+i)*.12;});
     s.g.position.y=.72+(c.happy>0?Math.abs(Math.sin(c.t*9))*.15:0);return;}
   const P=player.pos,K=c.K,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);
+  if(c===SHARK.c&&SHARK.mode&&SW.ride!==c)return;// chasing you: sharkStep moves him
   // ridden: right under you
-  if(SW.ride===c){c.mode='ride';const back=c.kind==='whale'?-1.4:c.kind==='dolphin'?.35:0;
+  if(SW.ride===c){c.mode='ride';const back=K.back;
     c.face=player.face;c.pos.set(P.x+Math.sin(c.face)*back,0,P.z+Math.cos(c.face)*back);
     const air=c.kind==='dolphin'?Math.max(0,P.y):0;c.y=air+K.rideY;
     c.pitch=c.kind==='dolphin'&&air>.05?Math.max(-.6,Math.min(.6,player.vy*.09)):0;
@@ -11181,7 +11186,8 @@ function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
     if(c.happy>0){c.tailUp=Math.min(1,(c.tailUp||0)+dt*2);}else c.tailUp=Math.max(0,(c.tailUp||0)-dt);}
   seaMoveAnim(c,dt,Math.min(1,moving/4));seaPlace(c);}
 function seaMoveAnim(c,dt,mv){const m=c.m;
-  if(m.tail)m.tail.rotation.x=Math.sin(c.t*(c.kind==='whale'?1.4:5))*(c.kind==='whale'?.12:.3)*(.3+mv)-(c.tailUp||0)*.9;
+  if(m.tail){if(c.kind==='shark')m.tail.rotation.y=Math.sin(c.t*(3+mv*3))*(.2+mv*.2);
+    else m.tail.rotation.x=Math.sin(c.t*(c.kind==='whale'?1.4:5))*(c.kind==='whale'?.12:.3)*(.3+mv)-(c.tailUp||0)*.9;}
   if(m.flip)m.flip.forEach(f=>{const o=c.t*(2+mv*3)+(f.front?0:Math.PI);f.p.rotation.z=f.sx*Math.sin(o)*(f.front?.5:.25);f.p.rotation.y=-f.sx*(.3+Math.cos(o)*.25);});
   if(m.head&&c.kind==='turtle')m.head.rotation.y=Math.sin(c.t*.8)*.25;
   if(m.wing)m.wing.forEach(w=>{w.p.rotation.z=w.sx*(Math.sin(c.t*(1.6+mv*1.4))*.32+.05);});
@@ -11226,40 +11232,41 @@ function seaShark(){const g=new THREE.Group();
   // the tail swishes side to side (sharks swim like that; whales and dolphins go up and down)
   const tail=new THREE.Group();tail.name='tail';tail.position.z=-2.2;g.add(tail);
   sM(fin([[.05,0],[-.25,.4],[-.6,.95],[-.38,.45],[-.22,.03],[-.36,-.35],[-.5,-.72],[-.15,-.3],[.05,0]],.05),SEA_M.sharkF,0,0,0,tail).rotation.y=-Math.PI/2;
-  g.visible=false;return {g,tail};}
-const SHARK={m:null,on:false,mode:'',pos:new THREE.Vector3(),face:0,y:-1.2,t:0,next:40+Math.random()*50,beat:0,leave:0};
-SHARK.m=seaShark();SHARK.m.g.rotation.order='YXZ';scene.add(SHARK.m.g);
-// start a chase (the tests call this with force)
-function sharkStart(force){const p=player.pos;if(SHARK.on||(!force&&(SW.ride||!seaSwimming())))return false;
-  // come from behind you, out in the water
-  let best=null;for(const off of [0,.5,-.5,1,-1,Math.PI]){const a=player.face+Math.PI+off,x=p.x+Math.sin(a)*18,z=p.z+Math.cos(a)*18,d=Math.hypot(x,z);
-    const r=Math.max(CANAL.inR+2,Math.min(CANAL.outR-1.5,d)),sx=x*r/d,sz=z*r/d;if(Math.hypot(sx-p.x,sz-p.z)>9){best=[sx,sz];break;}}
-  if(!best)return false;
-  Object.assign(SHARK,{on:true,mode:'chase',t:0,y:-1.2,beat:0,leave:0});SHARK.pos.set(best[0],0,best[1]);SHARK.face=Math.atan2(p.x-best[0],p.z-best[1]);
-  SHARK.m.g.visible=true;toast('🦈 A great white! Swim for the shore!');banner('🦈 Swim for the shore!');return true;}
-function sharkEnd(how){if(SHARK.mode!=='chase')return;SHARK.mode='leave';SHARK.leave=0;
-  if(how==='escape'){SEA.shark.esc++;persist();sfx('tada');toast('🎉 You got away from the great white!');did('shark','escape');}
-  if(how==='tag'){SEA.shark.tag++;persist();const p=player.pos;burst(new THREE.Vector3(p.x,WATER_Y+.2,p.z),'#ffffff',40,3.2,.35);sfx('splash');
+  return {g,tail,seat:.52,len:4.7};}
+// 🦈 Ghost cruises round the canal by himself (far out in the middle), like the other sea animals. When you swim near him he may
+// come after you (not more than once every couple of minutes); after the chase he carries on round the canal.
+const SHARK={c:null,mode:'',t:0,next:20,beat:0,leave:0,splT:0};
+SHARK.c=seaAdd('shark','Ghost',seaShark(),{path:{dir:1,t:.5,ph:3,spd:2.8},a:deg(300)});SEA_BUILD.shark=seaShark;
+// start a chase. The tests call it with force: then he comes from behind you, wherever he was.
+function sharkStart(force){const p=player.pos,c=SHARK.c;if(SHARK.mode||SW.ride===c||(!force&&(SW.ride||!seaSwimming()||seaOwns(SEA_RIDES.find(r=>r.k==='ghost')))))return false;// once he's yours he's friendly
+  if(force){let best=null;for(const off of [0,.5,-.5,1,-1,Math.PI]){const a=player.face+Math.PI+off,x=p.x+Math.sin(a)*18,z=p.z+Math.cos(a)*18,d=Math.hypot(x,z);
+      const r=Math.max(CANAL.inR+2,Math.min(CANAL.outR-1.5,d)),sx=x*r/d,sz=z*r/d;if(Math.hypot(sx-p.x,sz-p.z)>9){best=[sx,sz];break;}}
+    if(!best)return false;c.pos.set(best[0],0,best[1]);c.face=Math.atan2(p.x-best[0],p.z-best[1]);}
+  Object.assign(SHARK,{mode:'chase',t:0,beat:0,leave:0});c.g.visible=true;toast('🦈 Ghost the great white is coming! Swim for the shore!');banner('🦈 Swim for the shore!');return true;}
+function sharkEnd(how){if(SHARK.mode!=='chase')return;SHARK.mode='leave';SHARK.leave=0;SHARK.next=90+Math.random()*60;const S=SEA.shark;
+  if(how==='escape'){S.esc++;S.row++;S.best=Math.max(S.best,S.row);persist();sfx('tada');toast(`🎉 You got away from Ghost!${S.row>1?` ${S.row} in a row!`:''}`);did('shark','escape');}
+  if(how==='tag'){S.tag++;S.row=0;persist();const p=player.pos,c=SHARK.c;burst(new THREE.Vector3(p.x,WATER_Y+.2,p.z),'#ffffff',40,3.2,.35);sfx('splash');
     // a nose bump that pushes you along a little; then he loses interest
-    p.x+=Math.sin(SHARK.face)*1.6;p.z+=Math.cos(SHARK.face)*1.6;collide(p);toast('🦈 Bump! He just wanted a look. He swims away');did('shark','tag');}}
-function sharkStep(dt){const p=player.pos,S=SHARK,m=S.m;
-  if(!S.on){if(started&&seaSwimming()&&!SW.ride&&!FLY.on&&(S.next-=dt)<0){S.next=120+Math.random()*120;sharkStart();}return;}
-  S.t+=dt;const dx=p.x-S.pos.x,dz=p.z-S.pos.z,d=Math.hypot(dx,dz);let spd;
+    p.x+=Math.sin(c.face)*1.6;p.z+=Math.cos(c.face)*1.6;collide(p);toast('🦈 Bump! He just wanted a look. He swims on');did('shark','tag');}}
+function sharkStep(dt){const p=player.pos,S=SHARK,c=S.c;
+  if(SW.ride===c){S.mode='';return;}
+  if(!S.mode){if(started&&seaSwimming()&&!SW.ride&&!FLY.on){S.next-=dt;
+      if(S.next<0&&Math.hypot(p.x-c.pos.x,p.z-c.pos.z)<24)sharkStart();}return;}
+  S.t+=dt;c.t+=dt;const dx=p.x-c.pos.x,dz=p.z-c.pos.z,d=Math.hypot(dx,dz);let spd;
   if(S.mode==='chase'){
     // you're safe on the shore, on a sea ride or when you've out-swum him for 25 seconds
     if(seaDepth(p.x,p.z)<.4||SW.ride||S.t>25)sharkEnd('escape');
     else if(d<1.9)sharkEnd('tag');
     // he gains on you when he's far and is just a little slower than you up close, so if you keep swimming you get away
-    spd=d>9?5.4:3.7;S.face=angDamp(S.face,Math.atan2(dx,dz),Math.min(1,dt*2.2));S.y+=(-.42-S.y)*Math.min(1,dt*.8);
+    spd=d>9?5.4:3.7;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*2.2));
     // the music: two low notes that speed up as he gets closer
     if((S.beat-=dt)<0){S.beat=Math.max(.28,Math.min(1.1,d/14));tone(82,.22,'sawtooth',.045);tone(87,.22,'sawtooth',.045,S.beat*.5);}}
-  else{// swims away and dives out of sight
-    S.leave+=dt;spd=4.5;S.face=angDamp(S.face,Math.atan2(-dx,-dz),Math.min(1,dt*1.5));S.y-=dt*.45;
-    if(S.leave>4){S.on=false;S.mode='';m.g.visible=false;return;}}
-  let nx=S.pos.x+Math.sin(S.face)*spd*dt,nz=S.pos.z+Math.cos(S.face)*spd*dt;const r=Math.hypot(nx,nz),lim=Math.max(CANAL.inR+1.2,Math.min(CANAL.outR-1.2,r));
-  S.pos.set(nx*lim/r,0,nz*lim/r);
-  m.g.position.set(S.pos.x,WATER_Y+S.y,S.pos.z);m.g.rotation.y=S.face;m.g.rotation.z=Math.sin(S.t*3)*.04;m.tail.rotation.y=Math.sin(S.t*(4+spd))*.35;
-  if(S.mode==='chase'&&(S.splT=(S.splT||0)-dt)<0){S.splT=.25;burst(new THREE.Vector3(S.pos.x+Math.sin(S.face)*.3,WATER_Y+.05,S.pos.z+Math.cos(S.face)*.3),'#ffffff',4,1,.14);}}
+  else{// swims away from you for a bit, then carries on round the canal
+    S.leave+=dt;spd=4.5;c.face=angDamp(c.face,Math.atan2(-dx,-dz),Math.min(1,dt*1.5));
+    if(S.leave>4){S.mode='';seaPathFrom(c);return;}}
+  let nx=c.pos.x+Math.sin(c.face)*spd*dt,nz=c.pos.z+Math.cos(c.face)*spd*dt;const r=Math.hypot(nx,nz),lim=Math.max(CANAL.inR+1.2,Math.min(CANAL.outR-1.2,r));
+  c.pos.set(nx*lim/r,0,nz*lim/r);c.y=c.K.bob[0];c.pitch=0;seaMoveAnim(c,dt,1);seaPlace(c);c.g.rotation.z=Math.sin(S.t*3)*.04;
+  if(S.mode==='chase'&&(S.splT-=dt)<0){S.splT=.25;burst(new THREE.Vector3(c.pos.x+Math.sin(c.face)*.3,WATER_Y+.05,c.pos.z+Math.cos(c.face)*.3),'#ffffff',4,1,.14);}}
 onTick.push(sharkStep);
 
 /* ---------- 🐟 feed and 🏇 ride buttons ---------- */
@@ -11275,7 +11282,7 @@ body.dressing #seaFeed,body.dressing #seaRide,body.talking #seaFeed,body.talking
   document.body.insertAdjacentHTML('beforeend','<button class="hud" id="seaFeed"></button><button class="hud" id="seaRide"></button>');}
 let seaNear=null,seaBtnKey='';
 function seaButtons(){const P=player.pos;let best=null,bd=1e9;
-  if(SW.k>.3&&!closetOpen)for(const c of SEAS){if(SW.ride===c)continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z)-c.K.reach;if(d<0&&d<bd){bd=d;best=c;}}
+  if(SW.k>.3&&!closetOpen)for(const c of SEAS){if(SW.ride===c||(c===SHARK.c&&SHARK.mode))continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z)-c.K.reach;if(d<0&&d<bd){bd=d;best=c;}}
   seaNear=best;const rideC=best&&!SW.ride?SEA_RIDES.find(r=>r.kind===best.kind&&r.nm===best.nm):null;
   const key=(best?best.nm:'')+'|'+(SW.ride?SW.ride.nm:'')+'|'+(rideC?(seaOwns(rideC)?1:0):'');if(key===seaBtnKey)return;seaBtnKey=key;
   const f=$('#seaFeed'),r=$('#seaRide');
@@ -11291,16 +11298,17 @@ function seaFeed(c){if(!c)return;const K=c.K,fd=rnd(K.food);c.happy=c.kind==='wh
   if(c.kind==='seal'){tone(330,.12,'square',.05);tone(300,.12,'square',.05,.18);}
   if(c.kind==='manta'){c.leap=.001;seaSplash(c,12);}
   if(c.kind==='otter'){tone(1200,.08,'sine',.07);tone(1400,.08,'sine',.07,.12);}
+  if(c.kind==='shark'){SHARK.next=Math.max(SHARK.next,40);}// a fed shark leaves you alone for a while
   friendBubbleSea(c,rnd(K.say));toast(`${K.e} ${c.nm} loves the ${fd[1]}!`);did('seafeed',c.kind);}
 // a little speech bubble over the animal (like the barn animals)
 function friendBubbleSea(c,txt){const s=sprite(labelTex(txt,{size:44}),1.9,.48);const top=c.fixed?1.9:c.kind==='whale'?2.6:1.5;s.position.set(0,top,0);
   if(c.fixed)SEAL.rock.add(s);else c.g.add(s);s.scale.multiplyScalar(1/c.g.scale.x);setTimeout(()=>{s.parent&&s.parent.remove(s);s.material.dispose();if(s.material.map)s.material.map.dispose();},2200);}
 $('#seaFeed').onclick=()=>{seaFeed(seaNear);};
 $('#seaRide').onclick=()=>{if(SW.ride){seaHopOff();return;}const c=seaNear;if(!c)return;const r=SEA_RIDES.find(x=>x.kind===c.kind&&x.nm===c.nm);if(!r)return;
-  if(!seaOwns(r)){sfx('pop');toast(`Finish all of ${r.nm}'s 🌊 Ocean challenges (in ⭐ challenges) to ride ${c.kind==='whale'?'him':'her'}!`);return;}
+  if(!seaOwns(r)){sfx('pop');toast(`Finish all of ${r.nm}'s 🌊 Ocean challenges (in ⭐ challenges) to ride ${c.kind==='whale'||c.kind==='shark'?'him':'her'}!`);return;}
   seaHopOn(c);};
 function seaHopOn(c){if(c.fixed)sealLeave();SW.ride=c;c.mode='ride';player.pos.x=c.pos.x;player.pos.z=c.pos.z;player.face=c.face;av.rideW=c.K.rideW;av.play('ride');
-  sfx('tada');friendBubbleSea(c,rnd(c.K.say));toast(`Ride ${c.nm} around the bay! Tap Jump to ${c.kind==='dolphin'?'leap 🐬':'hop'}`);did('searide',c.kind);seaBtnKey='';}
+  sfx('tada');friendBubbleSea(c,rnd(c.K.say));toast(`Ride ${c.nm} around the canal! Tap Jump to ${c.kind==='dolphin'?'leap 🐬':'hop'}`);did('searide',c.kind);(SEA.rode||={})[c.kind]=1;persist();seaBtnKey='';}
 function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam';if(c.path)seaPathFrom(c);else{sealHome();if(!quiet)toast('🦭 Pip swims home to her rock');}av.rideW=0;if(av.emote&&av.emote.id==='ride')av.emote=null;
   // you slide off beside it
   const s=c.kind==='whale'?2.6:1.2;player.pos.x+=Math.cos(player.face)*s;player.pos.z-=Math.sin(player.face)*s;collide(player.pos);if(!quiet)sfx('pop');seaBtnKey='';}
@@ -11308,12 +11316,13 @@ function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam
 /* ---------- earning the sea rides ---------- */
 const seaOwns=r=>!!(SAVE.chal&&SAVE.chal.done&&r.ids.every(id=>SAVE.chal.done[id]));
 setInterval(()=>{if(!started)return;for(const r of SEA_RIDES)if(!SEA.own[r.k]&&seaOwns(r)){SEA.own[r.k]=1;persist();
-  banner(`🎉 You can ride ${r.nm}!`);sfx('tada');did('prize',r.k);setTimeout(()=>toast(`Swim up to ${r.nm} in 🐬 Dolphin Bay and tap Ride`),1900);seaBtnKey='';break;}},1500);
+  banner(`🎉 You can ride ${r.nm}!`);sfx('tada');did('prize',r.k);setTimeout(()=>toast(`Swim up to ${r.nm} ${r.k==='ghost'?'in the canal':'in 🐬 Dolphin Bay'} and tap Ride`),1900);seaBtnKey='';break;}},1500);
 // a townsperson who'd live out in the bay lives on the Beach instead
 for(const f of FRIENDS)if(f.home===BAY)f.home=Z.beach;
 // for challenges.js (🌊 Ocean tab) and the tests
 function seaState(){const w=k=>Math.floor(SEA.with[k]||0);return {swum:Math.floor(SEA.swum),dolphin:w('dolphin'),whale:w('whale'),turtle:w('turtle'),seal:w('seal'),manta:w('manta'),otter:w('otter'),
-  kinds:Object.keys(SEA.with).filter(k=>SEA.with[k]>=1).length,spouts:SEA.spouts||0,sharkEsc:SEA.shark.esc,sharkTag:SEA.shark.tag};}
+  kinds:Object.keys(SEA.with).filter(k=>SEA.with[k]>=1).length,spouts:SEA.spouts||0,sharkEsc:SEA.shark.esc,sharkTag:SEA.shark.tag,sharkRow:SEA.shark.best,
+  rode:Object.keys(SEA.rode||{}).length};}
 function seaRides(){return SEA_RIDES.map(r=>({k:r.k,kind:r.kind,e:SEA_KIND[r.kind].e,nm:r.nm,n:r.n,ids:r.ids,own:seaOwns(r)}));}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{seaState,sharkStart,shark:()=>SHARK,seaRides,sea:()=>SW,SEAS,BAY,CANAL,inCanal,canalSpot,seaDepth,seaFeed,seaHopOn,seaHopOff,seaNear:()=>seaNear});});
 
@@ -11325,10 +11334,10 @@ SHOW.push({k:'sea',
   step(f,d,dt,h){const A=f.a;if(!A)return;const P=f.pos;
     h.k+=(seaDepth(P.x,P.z)-h.k)*Math.min(1,dt*6);
     const v=Math.hypot(P.x-h.lx,P.z-h.lz)/Math.max(dt,1e-3);h.lx=P.x;h.lz=P.z;h.mv+=(Math.min(1,v/5)-h.mv)*Math.min(1,dt*5);h.ph+=dt*(2.2+h.mv*4.2);
-    if(h.m){const m=h.m,fc=f.cur??f.face,k=m.kind,back=k==='whale'?-1.4:k==='dolphin'?.35:0,air=k==='dolphin'?Math.max(0,P.y):0;
+    if(h.m){const m=h.m,fc=f.cur??f.face,k=m.kind,back=SEA_KIND[k].back,air=k==='dolphin'?Math.max(0,P.y):0;
       const y=WATER_Y+air+SEA_KIND[k].rideY;
       m.g.position.set(P.x+Math.sin(fc)*back,y,P.z+Math.cos(fc)*back);m.g.rotation.y=fc;
-      if(m.tail)m.tail.rotation.x=Math.sin(h.ph*(k==='whale'?.4:1.4))*(k==='whale'?.12:.3);
+      if(m.tail){if(k==='shark')m.tail.rotation.y=Math.sin(h.ph*1.2)*.3;else m.tail.rotation.x=Math.sin(h.ph*(k==='whale'?.4:1.4))*(k==='whale'?.12:.3);}
       if(m.flip)m.flip.forEach(fl=>{const o=h.ph+(fl.front?0:Math.PI);fl.p.rotation.z=fl.sx*Math.sin(o)*(fl.front?.5:.25);});
       A.rideW=SEA_KIND[k].rideW;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
     else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph);}},
