@@ -144,7 +144,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
     burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);break;}}
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
-  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win');if(!won)return;
+  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win')||(k==='roundup'&&a===0);if(!won)return;
   ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;if(ER.kn[k]!=null)ER.kn[k]++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
