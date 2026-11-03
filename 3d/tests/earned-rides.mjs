@@ -1,4 +1,4 @@
-// Earned rides test: rides you can't buy come from a streak of days played and from wins, show on the ⭐🏆 Rides tab,
+// Earned rides test: rides (and modern outfits) you can't buy come from a streak of days played and from wins, show on the ⭐🏆 Rewards tab,
 // and can be ridden (the flying ones get 🪽 FLY). Run it with:  node 3d/tests/earned-rides.mjs   SHOTS=folder saves pictures.
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -65,17 +65,21 @@ try {
   if (s.st.wins !== 3) fail(`Wins should be 3 after one 1st place, it is ${s.st.wins}.`);
   if (!s.own.goldlion) fail('Goldie the lion should come after 3 wins.');
   if (s.own.comet || s.own.phoenix) fail('Comet and Blaze should still be locked.');
+  // the modern outfits come the same way: 2 days in a row, 1 and 2 wins yes; 4 days and 5 wins not yet
+  const own = await page.evaluate(() => Object.fromEntries(['cableknit', 'parachute', 'barreljeans', 'utilityvest', 'denimmaxi', 'shearling', 'chunkykicks'].map(id => [id, !!window.__game.SAVE.owned['look:' + id]])));
+  for (const id of ['cableknit', 'parachute', 'barreljeans']) if (!own[id]) fail(`The ${id} outfit should be earned by now.`);
+  for (const id of ['utilityvest', 'denimmaxi', 'shearling', 'chunkykicks']) if (own[id]) fail(`The ${id} outfit should still be locked.`);
   // they can't be bought in the shop
   const bought = await page.evaluate(() => { const G = window.__game; try { G.buy && G.buy('mount:phoenix'); } catch (e) {} return !!G.SAVE.owned['mount:phoenix']; });
   if (bought) fail('The phoenix could be bought.');
-  // the 🏇 Rides tab in the challenges shows all of them
+  // the 🏇 Rewards tab in the challenges shows all of them
   await page.evaluate(() => document.querySelector('#stars').click());
   await page.waitForTimeout(500);
   await page.evaluate(() => document.querySelector('#chalTabs [data-tab="rides"]').click());
   await page.waitForTimeout(300);
   const txt = await page.evaluate(() => document.querySelector('#chalList').innerText);
-  for (const n of ['Bamboo', 'Goldie', 'Comet', 'Blaze', 'Nova']) if (!txt.includes(n)) fail(`The Rides tab should list ${n}.`);
-  if (!txt.includes('3 / 10')) fail('The Rides tab should show 3 / 10 wins toward the phoenix.');
+  for (const n of ['Bamboo', 'Goldie', 'Comet', 'Blaze', 'Nova', 'Cable-knit sweater', 'Chunky sneakers']) if (!txt.includes(n)) fail(`The Rewards tab should list ${n}.`);
+  if (!txt.includes('3 / 10')) fail('The Rewards tab should show 3 / 10 wins toward the phoenix.');
   if (SHOTS) { await page.evaluate(() => { const r = window.__game.renderer; r.render = r.__draw; }); await page.waitForTimeout(1500); await page.screenshot({ path: join(SHOTS, 'rides-tab.png') }); await page.evaluate(() => { const r = window.__game.renderer; r.render = () => {}; }); }
   await page.evaluate(() => document.querySelector('#chalDone').click());
   // every earned ride can be ridden, and the flying ones fly
@@ -91,5 +95,5 @@ try {
     console.log(`${k}: riding ${r.ride}, jump says ${r.jump.trim()}`);
   }
   if (errors.length) fail('Errors: ' + errors.join(' | '));
-  if (!process.exitCode) console.log('✅ Earned rides come from wins and days in a row, show on the Rides tab, and can be ridden.');
+  if (!process.exitCode) console.log('✅ Earned rides come from wins and days in a row, show on the Rewards tab, and can be ridden.');
 } finally { await browser.close(); server.close(); }

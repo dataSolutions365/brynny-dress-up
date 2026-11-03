@@ -1318,6 +1318,32 @@ EXTRAS.push(
   {id:'hoops',name:'Hoop earrings',c:'#e0b04a',vb:'95 90 110 50',d:c=>({head:sym(`<circle cx="110" cy="118" r="9" fill="none" stroke="${c}" stroke-width="2.5"/>`)})}
  );
 }
+// 🏆 modern fashion you earn in the 3D world (wins and days in a row; 3d/src/14d-fashion2-earned.js). Here they're free to try.
+{const cream='#f4ebdc';
+ TOPS.push(
+  {id:'cableknit',name:'Cable-knit sweater',c:'#f2e6d0',d:c=>{const dk=shade(c,-.14);return sleeve(c,1,30)+GT(c,282,166)+`<rect x="111" y="270" width="78" height="12" rx="5" fill="${dk}"/><path d="M128 158 Q150 172 172 158" fill="none" stroke="${dk}" stroke-width="7"/>`+
+    [124,150,176].map(x=>{let o='';for(let y=182;y<264;y+=14)o+=`<path d="M${x-6} ${y} Q${x} ${y+7} ${x+6} ${y+14} M${x+6} ${y} Q${x} ${y+7} ${x-6} ${y+14}" stroke="${dk}" stroke-width="3" fill="none"/>`;return o;}).join('')+
+    sym(`<line x1="90" y1="306" x2="89" y2="318" stroke="${dk}" stroke-width="30"/>`);}},
+  {id:'utilityvest',name:'Utility vest',guy:1,c:'#5d6b3a',d:c=>{const dk=shade(c,-.18);return sleeve('#ececec',0,26)+GT('#ececec',280,166)+
+    sym(`<path d="M110 156 Q124 160 137 172 L139 284 L105 284 Q105 222 102 180 Q102 161 110 156 Z" fill="${c}"/><rect x="110" y="194" width="22" height="20" rx="2" fill="${dk}"/><rect x="109" y="238" width="25" height="24" rx="2" fill="${dk}"/><path d="M110 200 L132 200 M109 244 L134 244" stroke="${shade(c,-.35)}" stroke-width="1.5"/>`)+
+    `<path d="M124 156 Q150 168 176 156" fill="none" stroke="${c}" stroke-width="6"/>`;}},
+  {id:'shearling',name:'Shearling jacket',c:'#8a5a3b',d:c=>{const dk=shade(c,-.35);return sleeve(c,1,32)+GT(c,290,166)+sym(`<line x1="90" y1="304" x2="89" y2="318" stroke="${cream}" stroke-width="34"/>`)+
+    `<rect x="103" y="280" width="94" height="13" rx="6" fill="${cream}"/><path d="M150 178 L150 290" stroke="${dk}" stroke-width="2"/>`+
+    sym(`<path d="M110 152 Q130 158 147 180 L136 216 Q118 198 103 172 Q103 156 110 152 Z" fill="${cream}"/>`);}}
+ );
+ BOTTOMS.push(
+  {id:'parachute',name:'Parachute pants',c:'#2d2d3a',d:c=>{const dk=shade(c,-.18);return `<path d="${BAGGY}" fill="${c}"/>`+
+    sym(`<path d="M114 300 Q122 380 114 450 Q122 500 118 538" stroke="${shade(c,.3)}" stroke-width="3" fill="none" opacity=".6"/><rect x="101" y="538" width="47" height="16" rx="6" fill="${dk}"/><line x1="110" y1="552" x2="110" y2="566" stroke="#fff" stroke-width="1.5"/><rect x="106" y="563" width="8" height="6" rx="2" fill="#1a1a1a"/>`)+
+    `<rect x="113" y="254" width="74" height="11" rx="5" fill="${dk}"/><path d="M146 265 L144 284 M154 265 L156 284" stroke="#fff" stroke-width="2"/>`;}},
+  {id:'barreljeans',name:'Barrel jeans',c:'#5b7fb8',d:c=>{const dk=shade(c,-.2),P='M114 256 L186 256 Q200 282 200 302 Q214 420 190 556 L156 556 L151 430 L150 322 L149 430 L144 556 L110 556 Q86 420 100 302 Q100 282 114 256 Z';
+    return `<path d="${P}" fill="${c}"/><path d="M150 264 L150 322" stroke="${dk}" stroke-width="2"/>`+sym(`<path d="M118 300 Q102 420 122 550" stroke="${shade(c,.15)}" stroke-width="3" opacity=".6" fill="none"/>`)+belt('#3a2a1e');}},
+  {id:'denimmaxi',name:'Denim maxi skirt',c:'#5b7fb8',d:c=>{const dk=shade(c,-.18);return `<path d="M116 256 L184 256 Q194 380 204 540 L96 540 Q106 380 116 256 Z" fill="${c}"/><path d="M150 262 L150 540" stroke="${dk}" stroke-width="2.5"/>`+
+    sym(`<path d="M122 262 Q113 400 104 534" stroke="#e8c070" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>`)+`<rect x="114" y="252" width="72" height="12" rx="3" fill="${dk}"/><rect x="96" y="533" width="108" height="7" fill="${dk}"/>`;}}
+ );
+ SHOES.push(
+  {id:'chunkykicks',name:'Chunky sneakers',c:'#ffffff',d:c=>sym(`<path d="M117 540 L147 540 Q153 550 153 560 L111 560 Q111 548 117 540 Z" fill="${c}" stroke="${shade(c,-.2)}" stroke-width="1.2"/><rect x="108" y="558" width="48" height="12" rx="5" fill="#f4f4f4" stroke="#d9d9e3" stroke-width="1.2"/><rect x="106" y="568" width="51" height="11" rx="5" fill="#8fb8ff"/><path d="M118 553 Q134 545 150 551" stroke="${shade(c,-.3)}" stroke-width="3" fill="none"/>`+laces(545,2,c==='#ffffff'?'#8fb8ff':'#fff'))}
+ );
+}
 }
 /* ---------- holiday and other things from the 3D world, drawn for the 2D studio (same ids as 3D) ----------
    In the 3D world the holiday ones are bought in the shop during their holiday; here they are always in the closet.
@@ -1365,6 +1391,8 @@ const GUY_OK={hair:['crop','buzz','quiff','sidepart','curltop','spiky','flow','m
 // 🛍️ guys can wear the clothing store's new fashion too
 GUY_OK.tops.push('bomber','rugby','windbreaker','shacket','trackjacket','stripetee');GUY_OK.bottoms.push('trackpants','cords','jorts');GUY_OK.shoes.push('chelsea','retrokicks','boatshoes');
  GUY_OK.hats.push('flatcap','trucker');GUY_OK.extras.push('crossbody','neckerchief');
+// 🏆 the modern fashion you earn in the 3D world
+GUY_OK.tops.push('cableknit','utilityvest','shearling');GUY_OK.bottoms.push('parachute','barreljeans');GUY_OK.shoes.push('chunkykicks');
 // what you can pick: guys see the guy list, girls see everything except the guy cuts
 const listFor=(L,tab)=>{const all=tab==='hair'?HAIR:CATS[tab];if(!isGuy(L))return all.filter(x=>!x.guy);const ok=GUY_OK[tab];return ok?ok.map(id=>find(all,id)).filter(Boolean):all;};
 const NO_MAKEUP={shadow:null,lips:null,blush:null,lashes:'natural',paint:null};

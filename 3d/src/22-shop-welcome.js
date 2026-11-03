@@ -12,7 +12,7 @@ function earn(n,why){n=Math.round(n);if(!(n>0))return;SAVE.coins=(SAVE.coins||0)
 // other parts of the game (or future ones) can hand out coins with: dispatchEvent(new CustomEvent('brynny:earn',{detail:{n:5,why:'Baked a cake'}}))
 addEventListener('brynny:earn',e=>{const d=e.detail||{};earn(+d.n||0,d.why);});
 // a few things cost ⭐ stars instead of 🪙 coins (s.stars), spent like the barn's rare animals (starsLeft() in 24d-barn.js)
-const priceTxt=s=>s.stars?`⭐ ${s.stars}`:`${s.p} 🪙`;
+const priceTxt=s=>s.earn?earnTag(s.earn):s.stars?`⭐ ${s.stars}`:`${s.p} 🪙`;
 function lockBtn(k,ico,name){if(!locked(k))return '';const s=shopItem(k);return `<button class="item lock" data-lock="${k}"><b>${ico}</b><span>${name}</span><em>🔒 ${priceTxt(s)}</em></button>`;}
 
 // stars and quests pay out when they happen
@@ -69,7 +69,7 @@ const ST=seasonTab();if(ST)SHINT.season=`${ST[1]} ${ST[2]} things! They only com
     h=`<button class="gift" data-gift="1"${giftReady()?'':' disabled'}>${giftReady()?'🎁 Open your daily gift! +20 🪙':'🎁 Come back tomorrow for another gift!'}</button><h3>Ways to earn coins</h3><div class="earn">`+
       [['🏆','Finish a star challenge','+5 per ⭐'],['⭐','Find a star','+5'],['🌟','Find every star','+50'],['🍖','Feed your pet','+2'],['🛁','Give your pet a bath','+10'],['💅','Paint all 4 paws','+5'],['📸','Pose on the runway','+3'],['🐾','Adopt your first pet','+10'],['🎂','Design a cake at the bakery','+8'],['🕯️','Blow out cake candles','+5']]
       .concat(quests?[['🎉',"Help a townsperson",'+20']]:[]).map(([e,t,n])=>`<div><b>${e}</b><span>${t}</span><em>${n} 🪙</em></div>`).join('')+`</div>`;}
-  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.earn?`🏆 ${s.earn.by==='wins'?`Win ${s.earn.goal}`:`${s.earn.goal} days`}`:s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
+  else h=`<div class="grid">${SHOP.filter(s=>stab==='season'?s.hol===window.__season.now().id:s.tab===stab&&!s.hol).map(s=>{const m=owns(s.k);return `<button class="item${m?' on':''}" data-buy="${s.k}">${s.fk?fThumb(FK[s.fk]):`<b>${s.e}</b>`}<span>${s.n}</span>${s.c?`<i class="dots">${s.c.slice(0,6).map(c=>`<u style="background:${c}"></u>`).join('')}</i>`:''}<em class="${m?'got':''}">${m?'✅ Yours':s.earn?earnTag(s.earn):s.prize?`🏆 ⭐ ${s.prize}`:s.stars?`⭐ ${s.stars}`:`🪙 ${s.p}`}</em></button>`;}).join('')}</div><p class="drawhint" style="margin-top:10px">${SHINT[stab]}</p>`;
   $('#scontent').innerHTML=h;}
 $('#stabs').onclick=e=>{const b=e.target.closest('[data-stab]');if(!b)return;stab=b.dataset.stab;sfx('pop');renderShop();$('#scontent').scrollTop=0;};
 $('#scontent').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gift)return openGift();if(b.dataset.buy)askBuy(b.dataset.buy);};

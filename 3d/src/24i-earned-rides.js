@@ -1,4 +1,5 @@
-/* ================= 🏆 RIDES YOU EARN: special rides you can't buy with stars or coins =================
+/* ================= 🏆 RIDES (AND OUTFITS) YOU EARN: special things you can't buy with stars or coins =================
+   (the modern outfits you earn the same way are listed in 14d-fashion2-earned.js; they're given out here too)
    - 🐼 Bamboo the giant panda: play 3 days in a row.        🦁 Goldie the champion lion: win 3 contests or games.
    - 🦌 Comet the flying reindeer: play 7 days in a row.     🔥 Blaze the phoenix: win 10 contests or games.
    - A "win" is 1st place in the 👑 model contest, the 🎂 cake contest or the 🐾 pet contest, or beating Kai 1-on-1 at basketball.
@@ -106,7 +107,11 @@ function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.las
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
   const nx=EARNED.find(f=>f.earn.by==='days'&&!BS.own[f.k]&&D.n<f.earn.goal);
   if(D.n>1)setTimeout(()=>toast(`🔥 ${D.n} days in a row!${nx?` ${nx.earn.goal-D.n} more for ${nx.e} ${nx.nm}`:''}`),5000);}
-function erCheck(){if(!started)return;erPlayedToday();
+// the modern outfits from 14d-fashion2-earned.js: they unlock in your closet (all of them, so they're there if you switch girl/guy)
+function erLooks(){for(const L of EARN_LOOKS){const k='look:'+L.id;if(owns(k)||erHave(L)<L.earn.goal)continue;
+  SAVE.owned[k]=true;persist();const mine=L.who==='both'||(L.who==='guy')===isGuy(SAVE.look);
+  if(mine){banner(`🏆 You earned ${L.e} ${L.n}!`);toast(`Find it in your closet's ${TAB_NAME[L.tab]} 👗`);sfx('tada');did('prize',L.id);return true;}}return false;}
+function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
   for(const f of EARNED)if(!BS.own[f.k]&&erHave(f)>=f.earn.goal){getMount(f.k,true);sfx('tada');
     burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);break;}}
 setInterval(erCheck,1500);
@@ -117,4 +122,8 @@ addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
 function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const goal=f.earn?f.earn.goal:f.prize,have=f.earn?erHave(f):starsEarned();
   return {k:f.k,e:f.e,n:f.n,nm:f.nm,by:f.earn?f.earn.by:'stars',goal,have:Math.min(goal,have),own:!!BS.own[f.k],fly:!!f.fly,what:f.earn?erWhat(f):`Earn ${f.prize} ⭐ stars`};});}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0})});});
+function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
+  have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
+// the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
+function earnTag(e){return `🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0})});});
