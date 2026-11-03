@@ -25,16 +25,18 @@
   `bikeRide()` puts the rider's hips on the saddle, hands on the grips and feet on the pedals every frame (it runs after
   `Avatar.update`, so it wins over the walking pose). Friends online use the same two functions. `3d/tests/bike.mjs`
   (run on every PR) checks the feet stay on the pedals, the hands on the grips, coasting, and a foot down when stopped.
-- 🦁 Safari rides (okapi, zebra, rhino, gorilla, hippo, elephant, crowned crane, lion, giraffe) are earned rides in `3d/src/24i-earned-rides.js` with
+- 🦁 Safari rides (okapi, zebra, rhino, gorilla, hippo, alligator, cheetah, tiger, elephant, crowned crane, lion, giraffe) are earned rides in `3d/src/24i-earned-rides.js` with
   `earn:{by:'chal',ids:[...]}`: they come once every challenge id listed is done in the 🦁 Safari tab of `3d/challenges.js`.
   They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`,
   the zebra, giraffe, rhino, flying crowned crane and the zoo's gorilla in `3d/src/24c9c-safari-more.js`, which share textures and
   materials through `safM` to save memory on phones; the saddle size for each ride is in `SADDLE`);
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
-  🦛 The hippo model is `3d/src/24c9d-hippo.js`. Animals with `swim` (the zoo hippo and Kiboko the hippo ride) sink into the canal
-  round the city through `swimSink()` in `3d/src/26f2-hippo-swim.js` (rideStep, the zoo and friends online all call it), and Kiboko is the
-  only barn ride `seaKeep()` lets into the water. The back of the Safari Zoo's fence is open (`ZOO_SHORE` in `3d/src/12d-place-zoo.js`):
-  the animals walk out to drink at the water, and the zoo hippo lives in the water there (`HIPPO_WATER` in `3d/src/24d-barn.js`).
+  🐆🐅 The cheetah and tiger (zoo animals and the Duma and Raja rides) are one builder, `bigCat()` in `3d/src/24c9e-big-cats.js`.
+  🐊 The alligator (zoo and the Bayou ride) is `3d/src/24c9f-alligator.js`.
+  🦛 The hippo model is `3d/src/24c9d-hippo.js`. Animals with `swim` (the zoo hippo and alligator, and the Kiboko and Bayou rides) sink into the canal
+  round the city through `swimSink()` in `3d/src/26f2-hippo-swim.js` (rideStep, the zoo and friends online all call it), and Kiboko and Bayou are the
+  only barn rides `seaKeep()` lets into the water. The back of the Safari Zoo's fence is open (`ZOO_SHORE` in `3d/src/12d-place-zoo.js`):
+  the animals walk out to drink at the water, and the zoo hippo and alligator live in the water there (`HIPPO_WATER` in `3d/src/24d-barn.js`).
   `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned, the rider sits on the saddle, and Kiboko swims.
 - 🌊 The canal and 🐬 Dolphin Bay: `3d/src/26f-ocean.js`. The coast is a ring of water all the way round the island (`CANAL.inR` to
   `CANAL.outR`) with a grassy far bank (instanced palms and bushes); the bit past the Beach is the 'bay' zone, the rest shows as 🌊 Canal.
@@ -43,7 +45,10 @@
   For other files that use the water (the safari hippo, animals drinking): `seaDepth(x,z)`, `inCanal(x,z)`, `canalSpot(ang,t)`, `CANAL`, `WATER_Y`.
   Three dolphins and Big Blue the whale swim round the whole canal, Shelly the sea turtle near the Beach, Pip the seal sits on her rock; they never
   follow you (only adopted pets do): you swim up next to them, and that counts for the challenges. A barn ride with `swim:1` in FARM may go in the water. They show on the minimap. 🐟 Feed sends `did('seafeed', kind)`.
-  🐢 Shelly, 🐬 Splash and 🐋 Big Blue are rides you earn in the 🌊 Ocean tab of `3d/challenges.js` (ids in `SEA_RIDES`), and only work in the water.
+  🐢 Shelly, 🐬 Splash, 🐋 Big Blue and 🦭 Pip are rides you earn in the 🌊 Ocean tab of `3d/challenges.js` (ids in `SEA_RIDES`), and only work in the water
+  (Pip slides off her rock when you ride her and goes back when you hop off). 🐠 Ray the manta ray and 🦦 Ollie the sea otter are for swimming with and feeding.
+  🦈 Now and then a great white chases you while you swim (`sharkStep`): it's harmless (reach the shore to escape, `did('shark','escape')`, or he just bumps you
+  and swims off). It looks like a real great white on purpose, not a cartoon; keep it that way.
   `3d/tests/ocean.mjs` (run on every PR) checks you swim all round, the animals keep their own way instead of following you, feeding counts, the rides stay locked until earned and you sit on their back.
 - 📍 The Places tab of ⭐ Star Challenges (`placesHTML()` in `3d/challenges.js`) is a legend of every place in town with the challenges
   you do there, grouped by each challenge's `go` place (no `go` puts it under "Anywhere in town"). Give a new challenge a `go` and it shows up

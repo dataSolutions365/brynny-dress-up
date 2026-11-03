@@ -1,4 +1,4 @@
-// Safari rides test: the safari rides (okapi, zebra, rhino, gorilla, hippo, elephant, crowned crane, lion, giraffe) only come once you finish ALL of their
+// Safari rides test: the safari rides (okapi, zebra, rhino, gorilla, hippo, alligator, cheetah, tiger, elephant, crowned crane, lion, giraffe) only come once you finish ALL of their
 // super hard 🦁 Safari challenges, they can't be bought, and you sit up on them properly when you ride.
 // The hippo swims in the water round the city, and the zoo's hippo lives in the water behind the zoo.
 // Run it with:  node 3d/tests/safari-rides.mjs   SHOTS=folder saves pictures.
@@ -54,7 +54,7 @@ try {
   let s = await get();
   if (s.st.streak !== 4 || s.st.best !== 4) fail(`The streak should be 4 today, it is ${s.st.streak} (best ${s.st.best}).`);
   if (s.st.kinds !== 2) fail(`Wins from the model and cake contests should count as 2 kinds of contest, it is ${s.st.kinds}.`);
-  const SAF = ['kivu', 'punda', 'kifaru', 'zuri', 'kiboko', 'tembo', 'neema', 'jabari', 'twiga'];
+  const SAF = ['kivu', 'punda', 'kifaru', 'zuri', 'kiboko', 'bayou', 'duma', 'tembo', 'raja', 'neema', 'jabari', 'twiga'];
   for (const k of SAF) if (s.own[k]) fail(`${k} should be locked at the start.`);
   // they can't be bought
   const shop = await page.evaluate(SAF => SAF.map(k => window.__game.SHOP.find(x => x.k === 'mount:' + k)).map(x => x && !!x.prize && !x.stars), SAF);
@@ -66,13 +66,13 @@ try {
   await page.evaluate(() => document.querySelector('#chalTabs [data-tab="safari"]').click());
   await page.waitForTimeout(300);
   let txt = await page.evaluate(() => document.querySelector('#chalList').innerText);
-  for (const n of ['Kivu', 'Punda', 'Kifaru', 'Zuri', 'Kiboko', 'Tembo', 'Neema', 'Jabari', 'Twiga', 'Feed all 8 kinds', 'Swim next to the hippo', 'Win the cake contest 5 times', 'Win all 3 contests', 'Beat Kai 1-on-1 at basketball 5 times', 'Play 14 days in a row', '4 / 5'])
+  for (const n of ['Kivu', 'Punda', 'Kifaru', 'Zuri', 'Kiboko', 'Bayou', 'Duma', 'Raja', 'Tembo', 'Neema', 'Jabari', 'Twiga', 'Feed all 11 kinds', 'Swim next to the hippo', 'Win the cake contest 5 times', 'Win all 3 contests', 'Beat Kai 1-on-1 at basketball 5 times', 'Play 14 days in a row', '4 / 5'])
     if (!txt.includes(n)) fail(`The Safari tab should show "${n}".`);
   if (SHOTS) await shot('safari-tab');
   await page.evaluate(() => document.querySelector('#chalDone').click());
 
   // Kivu: feed 6 kinds of zoo animals, win 5 times, play 5 days in a row. Two of three isn't enough.
-  for (const k of ['zebra', 'giraffe', 'rhino', 'okapi', 'elephant', 'lion', 'gorilla', 'hippo']) await did('zoofeed', k);
+  for (const k of ['zebra', 'giraffe', 'rhino', 'okapi', 'elephant', 'lion', 'gorilla', 'hippo', 'cheetah', 'tiger', 'gator']) await did('zoofeed', k);
   await did('petct', 0);// 5th win, and the 3rd kind of contest
   await page.waitForTimeout(4000);
   s = await get();
@@ -95,7 +95,7 @@ try {
 
   // the zoo has a lion now, and you can meet it
   const zooHas = await page.evaluate(() => window.__game.zoo().map(a => a.k));
-  for (const k of ['lion', 'gorilla', 'hippo']) if (!zooHas.includes(k)) fail(`The Safari Zoo should have a ${k}.`);
+  for (const k of ['lion', 'gorilla', 'hippo', 'cheetah', 'tiger', 'gator']) if (!zooHas.includes(k)) fail(`The Safari Zoo should have a ${k}.`);
 
   // every safari ride can be ridden: you sit on its back (not inside it, not floating), and it walks
   for (const k of SAF) {
@@ -131,27 +131,36 @@ try {
       await writeFile(join(SHOTS, `pic-${k}.png`), Buffer.from(pic.split(',')[1], 'base64'));
     }
   }
-  // 🦛 the hippo swims: ride Kiboko into the water round the city, and she sinks so just her back sticks out, with you on top
+  // 🦛🐊 the hippo and the alligator swim: ride them into the water round the city, and they sink so just their back sticks out, with you on top
   {
-    await page.evaluate(() => { const G = window.__game; if (G.ride()) G.stopRide(true); G.getMount('kiboko'); G.player.pos.set(6, 0, 12); G.callSteed('kiboko'); });
+  for (const [SK, deep] of [['kiboko', -.9], ['bayou', -.6]]) {
+    await page.evaluate(SK => { const G = window.__game; if (G.ride()) G.stopRide(true); G.getMount(SK); G.player.pos.set(6, 0, 12); G.callSteed(SK); }, SK);
     await page.waitForTimeout(1500);
     // walk her off the sand into the water behind the zoo
     const shore = await page.evaluate(() => { const G = window.__game, Z = G.Z.zoo, [x, z] = Z.toWorld(0, G.ZOO_SHORE.edge + 1); return { x, z, face: Math.atan2(-Z.x, -Z.z) + Math.PI }; });
     await page.evaluate(s => { const G = window.__game; G.player.pos.set(s.x, 0, s.z); G.player.face = s.face; G.cam.yaw = s.face + Math.PI; if ('cy' in G.cam) G.cam.cy = G.cam.yaw; }, shore);
-    await page.keyboard.down('ArrowUp'); await page.waitForTimeout(2200); await page.keyboard.up('ArrowUp');
+    // keep walking until it's in deep water (a zoo animal on the sand can be in the way for a moment, so give it up to 8 s)
+    await page.keyboard.down('ArrowUp');
+    for (let t = 0; t < 40; t++) { await page.waitForTimeout(200); if (t >= 10 && await page.evaluate(() => { const p = window.__game.player.pos; return window.__game.waterAt(p.x, p.z).k > .97; })) break; }
+    await page.keyboard.up('ArrowUp');
     await page.waitForTimeout(2500);
     const r = await page.evaluate(() => { const G = window.__game, a = G.ride(), av = G.av(), p = G.player.pos; const hp = new G.THREE.Vector3(); av.hips.getWorldPosition(hp); return { k: a && a.k, y: a && a.g.position.y, ay: hp.y, d: Math.hypot(p.x, p.z), k2: G.waterAt(p.x, p.z).k }; });
-    console.log(`kiboko in the water: ${r.d.toFixed(1)} m from the middle of town, depth ${r.k2.toFixed(2)}, hippo at ${r.y && r.y.toFixed(2)} m, rider's hips at ${r.ay.toFixed(2)} m (water at -0.35 m)`);
-    if (r.k !== 'kiboko') fail('Kiboko should still be ridden in the water.');
-    else if (!(r.k2 > .9)) fail(`Kiboko should be able to walk out into deep water (depth ${r.k2.toFixed(2)}).`);
-    else if (!(r.y < -.9)) fail(`Kiboko should sink into the water to swim, she is at ${r.y.toFixed(2)} m.`);
-    else if (!(r.ay > -.25)) fail(`The rider should sit up above the water on Kiboko (hips at ${r.ay.toFixed(2)} m).`);
-    if (SHOTS) await shot('swim-kiboko');
+    console.log(`${SK} in the water: ${r.d.toFixed(1)} m from the middle of town, depth ${r.k2.toFixed(2)}, animal at ${r.y && r.y.toFixed(2)} m, rider's hips at ${r.ay.toFixed(2)} m (water at -0.35 m)`);
+    if (r.k !== SK) fail(`${SK} should still be ridden in the water.`);
+    else if (!(r.k2 > .9)) fail(`${SK} should be able to walk out into deep water (depth ${r.k2.toFixed(2)}).`);
+    else if (!(r.y < deep)) fail(`${SK} should sink into the water to swim, she is at ${r.y.toFixed(2)} m.`);
+    else if (!(r.ay > -.25)) fail(`The rider should sit up above the water on ${SK} (hips at ${r.ay.toFixed(2)} m).`);
+    if (SHOTS) await shot('swim-' + SK);
+  }
     await page.evaluate(() => window.__game.stopRide(true));
     // the zoo's hippo lives in the water behind the zoo, and swimming next to it counts for its challenge
+    // she spends most of her time in the water but now and then comes up on the sand, so for the test put her in the water and keep her there
+    await page.evaluate(() => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'), W = G.HIPPO_WATER;
+      a.lx = 0; a.lz = (W.near + W.far) / 2; a.tgt = null; a.next = null; a.wait = 1e9; const [x, z] = a.Z.toWorld(a.lx, a.lz); a.pos.set(x, a.pos.y, z); });
+    await page.waitForTimeout(1500);
     const zh = await page.evaluate(() => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'); return { y: a.g.position.y, x: a.pos.x, z: a.pos.z, lz: a.lz }; });
     console.log(`zoo hippo: local z ${zh.lz.toFixed(1)} (shore at ${(await page.evaluate(() => window.__game.ZOO_SHORE.edge)).toFixed(1)}), height ${zh.y.toFixed(2)} m`);
-    await page.evaluate(h => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'); G.player.pos.set(a.pos.x + 1.6, 0, a.pos.z); }, zh);
+    await page.evaluate(h => { const G = window.__game, a = G.zoo().find(a => a.k === 'hippo'); G.player.pos.set(a.pos.x + 1.6, 0, a.pos.z); G.player.speed = 0; }, zh);
     await page.waitForTimeout(3000);
     const hw = await page.evaluate(() => window.__game.hipWith());
     if (!(hw > .5)) fail(`Swimming next to the zoo's hippo should count for its challenge (${hw.toFixed(1)} s).`);

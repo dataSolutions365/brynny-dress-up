@@ -96,7 +96,7 @@ const LIST = [
   { id: 'partyCheer', tab: 'explore', e: '🎂', t: 'Cheer at the Birthday Party', r: 1, go: 'birthday', ev: { k: 'act', a: a => a === 'cheer', z: 'birthday' } },
   { id: 'gardenBow', tab: 'explore', e: '🌷', t: 'Curtsy in the Spring Garden', r: 1, go: 'spring', ev: { k: 'act', a: a => a === 'bow', z: 'spring' } },
   // 🦁 Safari: super hard challenges. Finish all of one animal's challenges (grp) and you can ride it (3d/src/24i-earned-rides.js)
-  { id: 'saf_feed5', tab: 'safari', grp: 'kivu', e: '🍃', t: 'Feed all 8 kinds of animals at the Safari Zoo', r: 3, goal: 8, u: true, go: 'zoo', ev: { k: 'zoofeed' } },
+  { id: 'saf_feed5', tab: 'safari', grp: 'kivu', e: '🍃', t: 'Feed all 11 kinds of animals at the Safari Zoo', r: 3, goal: 11, u: true, go: 'zoo', ev: { k: 'zoofeed' } },
   { id: 'saf_win5', tab: 'safari', grp: 'kivu', e: '🏆', t: 'Win 5 contests or games', r: 3, goal: 5, go: 'agency', poll: () => es().wins },
   { id: 'saf_days5', tab: 'safari', grp: 'kivu', e: '🔥', t: 'Play 5 days in a row', r: 3, goal: 5, poll: () => es().best },
   { id: 'saf_stars24', tab: 'safari', grp: 'punda', e: '⭐', t: 'Find all 24 hidden stars', r: 3, goal: 24, poll: () => C.found || 0 },
@@ -106,11 +106,20 @@ const LIST = [
   { id: 'saf_best3', tab: 'safari', grp: 'kifaru', e: '💖', t: 'Make 3 best friends in town (5 hearts each)', r: 3, goal: 3, poll: () => G.FRIENDS.filter(f => G.townSave(f).h >= 5).length },
   { id: 'saf_win20', tab: 'safari', grp: 'kifaru', e: '🏆', t: 'Win 20 contests or games', r: 3, goal: 20, poll: () => es().wins },
   { id: 'saf_feedG', tab: 'safari', grp: 'zuri', e: '🍌', t: 'Feed the gorilla at the Safari Zoo 10 times', r: 3, goal: 10, go: 'zoo', ev: { k: 'zoofeed', a: a => a === 'gorilla' } },
-  { id: 'saf_meet8', tab: 'safari', grp: 'zuri', e: '🔎', t: 'Meet all 8 kinds of animals at the Safari Zoo', r: 3, goal: 8, go: 'zoo', poll: () => Object.keys(G.SAVE.zoo || {}).length },
+  { id: 'saf_meet8', tab: 'safari', grp: 'zuri', e: '🔎', t: 'Meet all 11 kinds of animals at the Safari Zoo', r: 3, goal: 11, go: 'zoo', poll: () => Object.keys(G.SAVE.zoo || {}).length },
   { id: 'saf_win12', tab: 'safari', grp: 'zuri', e: '🏆', t: 'Win 12 contests or games', r: 3, goal: 12, poll: () => es().wins },
   { id: 'saf_feedH', tab: 'safari', grp: 'kiboko', e: '🍉', t: 'Feed the hippo at the Safari Zoo 10 times', r: 3, goal: 10, go: 'zoo', ev: { k: 'zoofeed', a: a => a === 'hippo' } },
   { id: 'saf_hipswim', tab: 'safari', grp: 'kiboko', e: '🏊', t: 'Swim next to the hippo for 30 seconds (it lives in the water behind the zoo)', r: 3, goal: 30, go: 'zoo', poll: () => Math.floor(G.hipWith ? G.hipWith() : 0) },
   { id: 'saf_sea300', tab: 'safari', grp: 'kiboko', e: '🌊', t: 'Swim 300 steps in the water', r: 3, goal: 300, poll: () => Math.floor(sea().swum || 0) },
+  { id: 'saf_feedC', tab: 'safari', grp: 'duma', e: '🍖', t: 'Feed the cheetah at the Safari Zoo 10 times', r: 3, goal: 10, go: 'zoo', ev: { k: 'zoofeed', a: a => a === 'cheetah' } },
+  { id: 'saf_kai3', tab: 'safari', grp: 'duma', e: '🏀', t: 'Beat Kai 1-on-1 at basketball 3 times', r: 3, goal: 3, go: 'court', poll: () => es().kai },
+  { id: 'saf_days8', tab: 'safari', grp: 'duma', e: '🔥', t: 'Play 8 days in a row', r: 3, goal: 8, poll: () => es().best },
+  { id: 'saf_feedT', tab: 'safari', grp: 'raja', e: '🐟', t: 'Feed the tiger at the Safari Zoo 10 times', r: 3, goal: 10, go: 'zoo', ev: { k: 'zoofeed', a: a => a === 'tiger' } },
+  { id: 'saf_win25', tab: 'safari', grp: 'raja', e: '🏆', t: 'Win 25 contests or games', r: 3, goal: 25, poll: () => es().wins },
+  { id: 'saf_stars120', tab: 'safari', grp: 'raja', e: '🌟', t: 'Earn 120 ⭐', r: 3, goal: 120, poll: () => C.stars || 0 },
+  { id: 'saf_feedA', tab: 'safari', grp: 'bayou', e: '🐟', t: 'Feed the alligator 10 times (it lives in the water behind the zoo)', r: 3, goal: 10, go: 'zoo', ev: { k: 'zoofeed', a: a => a === 'gator' } },
+  { id: 'saf_sea600', tab: 'safari', grp: 'bayou', e: '🌊', t: 'Swim 600 steps in the water', r: 3, goal: 600, poll: () => Math.floor(sea().swum || 0) },
+  { id: 'saf_win18', tab: 'safari', grp: 'bayou', e: '🏆', t: 'Win 18 contests or games', r: 3, goal: 18, poll: () => es().wins },
   { id: 'saf_triple', tab: 'safari', grp: 'tembo', e: '👑', t: 'Win all 3 contests: the model, cake and pet contest', r: 3, goal: 3, go: 'agency', poll: () => es().kinds },
   { id: 'saf_win15', tab: 'safari', grp: 'tembo', e: '🏆', t: 'Win 15 contests or games', r: 3, goal: 15, poll: () => es().wins },
   { id: 'saf_days10', tab: 'safari', grp: 'tembo', e: '🔥', t: 'Play 10 days in a row', r: 3, goal: 10, poll: () => es().best },
@@ -130,11 +139,17 @@ const LIST = [
   { id: 'sea_feedT', tab: 'ocean', grp: 'shelly', e: '🪼', t: 'Feed Shelly 3 times', r: 2, goal: 3, go: 'bay', ev: { k: 'seafeed', a: a => a === 'turtle' } },
   { id: 'sea_dolph', tab: 'ocean', grp: 'splash', e: '🐬', t: 'Swim with the dolphins for 45 seconds', r: 2, goal: 45, go: 'bay', poll: () => sea().dolphin },
   { id: 'sea_feedD', tab: 'ocean', grp: 'splash', e: '🐟', t: 'Feed the dolphins 5 times', r: 2, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'dolphin' } },
-  { id: 'sea_feedAll', tab: 'ocean', grp: 'splash', e: '🦭', t: 'Feed all 4 sea animals: dolphin, turtle, whale and Pip the seal', r: 3, goal: 4, u: true, go: 'bay', ev: { k: 'seafeed' } },
+  { id: 'sea_feedAll', tab: 'ocean', grp: 'splash', e: '🦭', t: 'Feed 4 different sea animals', r: 3, goal: 4, u: true, go: 'bay', ev: { k: 'seafeed' } },
   { id: 'sea_whale', tab: 'ocean', grp: 'bigblue', e: '🐋', t: 'Swim next to Big Blue the whale for 60 seconds', r: 3, goal: 60, go: 'bay', poll: () => sea().whale },
   { id: 'sea_spout', tab: 'ocean', grp: 'bigblue', e: '💦', t: 'See Big Blue spout 10 times', r: 2, goal: 10, go: 'bay', poll: () => sea().spouts },
   { id: 'sea_swim1k', tab: 'ocean', grp: 'bigblue', e: '🌊', t: 'Swim 1000 steps in the sea', r: 3, goal: 1000, go: 'bay', poll: () => sea().swum },
   { id: 'sea_feedW', tab: 'ocean', grp: 'bigblue', e: '🦐', t: 'Feed Big Blue 5 times', r: 3, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'whale' } },
+  { id: 'sea_pip', tab: 'ocean', grp: 'pip', e: '🦭', t: 'Swim next to Pip the seal for 20 seconds', r: 2, goal: 20, go: 'bay', poll: () => sea().seal },
+  { id: 'sea_feedP', tab: 'ocean', grp: 'pip', e: '🐟', t: 'Feed Pip 5 times', r: 2, goal: 5, go: 'bay', ev: { k: 'seafeed', a: a => a === 'seal' } },
+  { id: 'sea_meet', tab: 'ocean', grp: 'pip', e: '🌊', t: 'Swim next to 5 different sea animals', r: 3, goal: 5, go: 'bay', poll: () => sea().kinds },
+  { id: 'sea_manta', tab: 'ocean', grp: 'friends', e: '🐠', t: 'Swim next to Ray the manta ray for 30 seconds', r: 2, goal: 30, go: 'bay', poll: () => sea().manta },
+  { id: 'sea_otter', tab: 'ocean', grp: 'friends', e: '🦦', t: 'Feed Ollie the sea otter 3 times', r: 2, goal: 3, go: 'bay', ev: { k: 'seafeed', a: a => a === 'otter' } },
+  { id: 'sea_shark', tab: 'ocean', grp: 'shark', e: '🦈', t: 'Get away from the great white 3 times', r: 3, goal: 3, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 const DAILY = [
@@ -333,7 +348,7 @@ function chRow(ch, here) {
 function safariHTML(list, here) {
   const rides = G.earnedRides ? G.earnedRides() : [];
   let h = '<div class="cnote">🦁 Super hard challenges! Finish every challenge for an animal and you can ride it anywhere in town.</div>';
-  for (const k of ['kivu', 'punda', 'kifaru', 'zuri', 'kiboko', 'tembo', 'neema', 'jabari', 'twiga']) {
+  for (const k of ['kivu', 'punda', 'kifaru', 'zuri', 'kiboko', 'bayou', 'duma', 'tembo', 'raja', 'neema', 'jabari', 'twiga']) {
     const r = rides.find(x => x.k === k), mine = list.filter(c => c.grp === k); if (!mine.length) continue;
     const n = mine.filter(isDone).length;
     h += `<div class="csaf${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '🦁'}</b><div><strong>${r ? `${r.nm} the ${r.n.toLowerCase()}${r.fly ? ' 🪽' : ''}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
@@ -351,7 +366,14 @@ function oceanHTML(list, here) {
     h += `<div class="csaf sea${r.own ? ' own' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}</strong><span>${r.own ? 'Yours! Swim up to them in the bay and tap Ride' : `${n} of ${mine.length} challenges done`}</span></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
     h += mine.map(ch => chRow(ch, here)).join('');
   }
-  return h + '<div class="cnote">🦭 Pip the seal lives on her rock in the bay. You can\'t ride her, but she loves fish!</div>';
+  // the other sea friends (no ride, just challenges)
+  for (const [k, e, nm, sub] of [['friends', '🦦', 'More sea friends', 'Ray the manta ray and Ollie the sea otter'], ['shark', '🦈', 'The great white', 'Sometimes he chases you when you swim. Get to the shore!']]) {
+    const mine = list.filter(c => c.grp === k); if (!mine.length) continue;
+    const n = mine.filter(isDone).length, fin = n === mine.length;
+    h += `<div class="csaf sea${fin ? ' own' : ''}"><b>${e}</b><div><strong>${nm}</strong><span>${fin ? 'All done!' : sub}</span></div>${fin ? '<span class="own">✅ Done</span>' : ''}</div>`;
+    h += mine.map(ch => chRow(ch, here)).join('');
+  }
+  return h;
 }
 // 📍 the Places tab: a legend of every place in town with the challenges you do there (like the 🦁 Safari tab does for animals).
 // The place you're standing in comes first, then places with challenges left, in map order. Challenges you can do anywhere go last.

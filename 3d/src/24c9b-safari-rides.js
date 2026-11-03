@@ -76,7 +76,9 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
 const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
   punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
   neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31},
-  zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47}};
+  zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47},
+  duma:{r:.25,sx:.92,sy:1.02,y:.02,z:.04,col:'#7a2f2f',seatY:.24},raja:{r:.36,sx:.92,sy:.97,y:.02,z:.04,col:'#2f3f7a',seatY:.33},
+  bayou:{r:.24,sx:1.45,sy:.82,y:.02,z:-.05,col:'#7a5a2f',seatY:.2}};
 function safariGear(k,g,body,o){
   const leather=phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4}),dkL=phys('#3e2112',{roughness:.6}),brass=phys('#d4a64a',{metalness:.8,roughness:.3});
   const blanket=(col,trim,r,len,y,z,sx,sy,arc)=>{const bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);

@@ -88,7 +88,7 @@ try {
   // the sea animals never follow you (only adopted pets do): they keep swimming their own way, and swimming next to one counts
   const near = async (nm, gap) => { await page.evaluate(([nm, gap]) => { const G = window.__game, c = G.SEAS.find(c => c.nm === nm), a = Math.atan2(c.pos.x, c.pos.z);
     G.player.pos.set(c.pos.x - Math.sin(a) * gap, 0, c.pos.z - Math.cos(a) * gap); }, [nm, gap]); };// beside it, toward the island
-  for (const [nm, gap] of [['Splash', 2], ['Big Blue', 4.5], ['Shelly', 1.5]]) {
+  for (const [nm, gap] of [['Splash', 2], ['Big Blue', 4.5], ['Shelly', 1.5], ['Ray', 2.5], ['Ollie', 1.2]]) {
     await near(nm, gap); await page.waitForTimeout(150);
     const a0 = await page.evaluate(nm => { const G = window.__game, c = G.SEAS.find(c => c.nm === nm); return { x: c.pos.x, z: c.pos.z }; }, nm);
     await page.waitForTimeout(3000);
@@ -99,7 +99,14 @@ try {
     if (r.you < r.went * .6) fail(`${nm} should not follow you (it is ${r.you.toFixed(1)} from you after swimming ${r.went.toFixed(1)}).`);
   }
   s = await st();
-  if (!(s.s.dolphin >= 1 && s.s.whale >= 1 && s.s.turtle >= 1)) fail(`Swimming next to them should count: ${JSON.stringify(s.s)}`);
+  if (!(s.s.dolphin >= 1 && s.s.whale >= 1 && s.s.turtle >= 1 && s.s.manta >= 1 && s.s.otter >= 1)) fail(`Swimming next to them should count: ${JSON.stringify(s.s)}`);
+  if (s.s.kinds < 5) fail(`Five different sea animals should count for "Swim next to 5 different sea animals" (${s.s.kinds}).`);
+  if (SHOTS) for (const [nm, gap, turn] of [['Ray', 3, .9], ['Ollie', 2, .6]]) { await near(nm, gap); await page.evaluate(t => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + t; G.cam.pitch = .45; }, turn); await shot('swimming-next-to-' + nm.toLowerCase()); }
+  // feed Ollie the otter
+  await page.evaluate(() => { const G = window.__game, d = G.SEAS.find(c => c.nm === 'Ollie'); G.player.pos.set(d.pos.x + .8, 0, d.pos.z); });
+  await page.waitForTimeout(150);
+  await page.evaluate(() => document.querySelector('#seaFeed').click()); await page.waitForTimeout(200);
+  if (await page.evaluate(() => window.__chal.progress(window.__chal.list.find(c => c.id === 'sea_otter'))) !== 1) fail('Feeding Ollie should count for "Feed Ollie the sea otter 3 times".');
   if (SHOTS) { await near('Splash', 2.5); await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + .5; G.cam.pitch = .45; }); await shot('swimming-next-to-dolphins'); }
 
   // feed a dolphin with the 🐟 button; Splash's ride is locked
@@ -119,21 +126,23 @@ try {
   await page.evaluate(() => document.querySelector('#stars').click()); await page.waitForTimeout(500);
   await page.evaluate(() => document.querySelector('#chalTabs [data-tab="ocean"]').click()); await page.waitForTimeout(300);
   const txt = await page.evaluate(() => document.querySelector('#chalList').innerText);
-  for (const n of ['Shelly', 'Splash', 'Big Blue', 'Feed the dolphins 5 times', '1 / 5', 'Pip the seal']) if (!txt.includes(n)) fail(`The Ocean tab should show "${n}".`);
+  for (const n of ['Shelly', 'Splash', 'Big Blue', 'Feed the dolphins 5 times', '1 / 5', 'Pip the seal', 'Feed Pip 5 times', 'More sea friends', 'The great white', 'Get away from the great white 3 times']) if (!txt.includes(n)) fail(`The Ocean tab should show "${n}".`);
   if (SHOTS) await shot('ocean-tab');
   await page.evaluate(() => document.querySelector('#chalDone').click());
 
   // finish Splash's challenges (and Shelly's): now you can ride them, sitting right on their back
   for (let i = 0; i < 4; i++) await did('seafeed', 'dolphin');
-  for (const k of ['turtle', 'whale', 'seal']) await did('seafeed', k);
+  for (const k of ['turtle', 'whale']) await did('seafeed', k);
   await page.evaluate(() => { window.__game.SAVE.sea.with.dolphin = 50; });
   await page.waitForTimeout(3500);
   const own = await page.evaluate(() => Object.fromEntries(window.__game.seaRides().map(r => [r.k, r.own])));
   if (!own.splash) fail('Splash should be yours once her 3 challenges are done.');
   if (own.bigblue) fail('Big Blue should still be locked.');
-  for (const nm of ['Splash', 'Shelly', 'Big Blue']) {
+  if (own.pip) fail('Pip should still be locked.');
+  for (const nm of ['Splash', 'Shelly', 'Big Blue', 'Pip']) {
     if (nm === 'Shelly') await page.evaluate(() => { const D = window.__game.SAVE.chal.done; D.sea_swim = D.sea_turtle = D.sea_feedT = true; });
     if (nm === 'Big Blue') await page.evaluate(() => { const D = window.__game.SAVE.chal.done; D.sea_whale = D.sea_spout = D.sea_swim1k = D.sea_feedW = true; });
+    if (nm === 'Pip') await page.evaluate(() => { const D = window.__game.SAVE.chal.done; D.sea_pip = D.sea_feedP = D.sea_meet = true; });
     await page.evaluate(nm => { const G = window.__game; if (G.sea().ride) G.seaHopOff(true); const d = G.SEAS.find(c => c.nm === nm); G.player.pos.set(d.pos.x + .8, 0, d.pos.z); }, nm);
     await page.waitForTimeout(150);
     await page.evaluate(() => document.querySelector('#seaRide').click());
@@ -154,6 +163,30 @@ try {
     console.log(`${nm} went ${Math.hypot(p1.x - p0.x, p1.z - p0.z).toFixed(1)} in 1 s`);
     if (Math.hypot(p1.x - p0.x, p1.z - p0.z) < 1) fail(`${nm} did not swim.`);
   }
+  // hop off Pip and she swims home to her rock
+  await page.evaluate(() => window.__game.seaHopOff()); await page.waitForTimeout(300);
+  if (!(await page.evaluate(() => { const c = window.__game.SEAS.find(c => c.nm === 'Pip'); return c.fixed && c.g.parent && c.g.parent.parent === window.__game.scene; })))
+    fail('After you hop off, Pip should be back on her rock.');
+
+  // 🦈 the great white: he comes from behind and chases you. Stay still and he just bumps you and swims off; reach the shore and you get away.
+  const sh = () => page.evaluate(() => { const G = window.__game, S = G.shark(), p = G.player.pos; return { on: S.on, mode: S.mode, d: Math.hypot(S.pos.x - p.x, S.pos.z - p.z), seen: S.m.g.visible, s: G.seaState() }; });
+  await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [-ux * (R + 9), -uz * (R + 9)]);
+  await page.waitForTimeout(800);
+  if (!(await page.evaluate(() => window.__game.sharkStart(true)))) fail('The great white should be able to show up in the canal.');
+  let k = await sh();
+  console.log(`great white: ${k.mode}, ${k.d.toFixed(1)} away`);
+  if (k.mode !== 'chase' || !k.seen || k.d < 9) fail(`The great white should start a chase from a way off (${JSON.stringify(k)}).`);
+  if (SHOTS) { await page.waitForTimeout(1500); await page.evaluate(() => { const G = window.__game, S = G.shark(); G.cam.yaw = Math.atan2(G.player.pos.x - S.pos.x, G.player.pos.z - S.pos.z); G.cam.pitch = .35; }); await shot('great-white-chase'); }
+  for (let i = 0; i < 20 && (await sh()).mode === 'chase'; i++) await page.waitForTimeout(500);
+  k = await sh();
+  if (k.s.sharkTag !== 1) fail(`Staying still, the great white should catch up and bump you (bumps: ${k.s.sharkTag}, ${k.mode}).`);
+  await page.waitForTimeout(5000); k = await sh();
+  if (k.on) fail('After the bump the great white should swim off and go away.');
+  await page.evaluate(() => window.__game.sharkStart(true)); await page.waitForTimeout(500);
+  await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [ux * (R - 3), uz * (R - 3)]);
+  await page.waitForTimeout(800); k = await sh();
+  if (k.s.sharkEsc !== 1 || k.mode === 'chase') fail(`Getting to the shore should count as getting away (${JSON.stringify(k)}).`);
+  if (await page.evaluate(() => window.__chal.progress(window.__chal.list.find(c => c.id === 'sea_shark'))) !== 1) fail('Getting away should count for "Get away from the great white 3 times".');
   // back on the sand you hop off by yourself and stand up
   await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [ux * (R - 3), uz * (R - 3)]);
   await page.waitForTimeout(1500); s = await st();
@@ -166,6 +199,7 @@ try {
   await page.waitForTimeout(1000);
   if (!(await page.evaluate(() => window.__game.bike().on))) fail('Could not get on the bike for the test.');
   await page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [B.x + 6, B.z]);// (not straight out past the dock, you can ride along that)
+  await face(Math.atan2(ux, uz));
   await page.keyboard.down('ArrowUp'); await page.waitForTimeout(300); await page.keyboard.up('ArrowUp');// moving is what keeps you in bounds
   await page.waitForTimeout(400); s = await st();
   if (s.d > R + 1) fail(`On a bike you should stay on the shore (at ${s.d.toFixed(1)}).`);
