@@ -40,6 +40,10 @@ const ZOOA=[
     facts:[['🥗','Diet','Herbivore. Leaves and twigs from tall trees, especially acacia. Up to 34 kg (75 lb) a day!'],['🌍','Habitat','Savannas and open woodlands of Africa.'],['⏳','Lifespan','About 25 years in the wild, and a bit longer in zoos.'],['✨','Fun fact','The tallest animal on Earth, up to 5.5 m (18 ft). Its tongue is about 50 cm (20 in) long!']]},
   {k:'rhino',e:'🦏',n:'White rhino',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
     facts:[['🥗','Diet','Herbivore. A grazer that eats short grass all day long.'],['🌍','Habitat','Grasslands and savannas of southern Africa.'],['⏳','Lifespan','About 40 to 50 years.'],['✨','Fun fact','Its horns are made of keratin, the same stuff as your fingernails. Adults can weigh over 2,000 kg!']]},
+  {k:'okapi',e:'🦓',n:'Okapi',food:[['🍃','Leaves'],['🍌','Banana']],say:['*soft huff*','*long tongue lick* 👅','Shh, I\'m shy! 🌿'],
+    facts:[['🥗','Diet','Herbivore. Leaves, buds, fruit and even mushrooms, which it pulls off with its long tongue.'],['🌍','Habitat','Only in the thick rainforests of the Democratic Republic of the Congo, in central Africa.'],['⏳','Lifespan','About 20 to 30 years.'],['✨','Fun fact','It has zebra stripes, but its closest relative is the giraffe! Its tongue is so long it can lick its own ears.']]},
+  {k:'elephant',e:'🐘',n:'African elephant',food:[['🌾','Hay'],['🍉','Watermelon']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖'],
+    facts:[['🥗','Diet','Herbivore. Grass, leaves, bark and fruit. Up to 150 kg (330 lb) of food a day!'],['🌍','Habitat','Savannas and forests of Africa.'],['⏳','Lifespan','About 60 to 70 years.'],['✨','Fun fact','The biggest animal on land, up to 6,000 kg (13,000 lb). Its trunk has about 40,000 muscles!']]},
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -434,6 +438,7 @@ class FarmAnimal{
       for(let i=0;i<7;i++){const a=(i/6-.5)*.9,f=new THREE.Group();f.rotation.y=a;tail.add(f);const fe=M(new THREE.CapsuleGeometry(.07,.42,4,10),white,0,0,-.24,f);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.25);}
       tail.rotation.x=-.15;
       Object.assign(o,{neck,head,tail,nTilt:.25,size:1.15,h:by+.85,rad:.7,dustR:[r,r,len*.8]});}
+    if(ZOO_BUILD[k])ZOO_BUILD[k].call(this,g,body,o);// the okapi and the elephants (24c9-zoo-okapi-elephant.js)
     return o;}
   setTag(n){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();this.tag=null;}if(!n)return;
     this.tag=sprite(labelTex('💖 '+n,{size:58,fg:'#d6453d',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);this.tag.position.y=this.h+.15;this.g.add(this.tag);}
@@ -443,8 +448,9 @@ class FarmAnimal{
   update(dt,sp){this.t+=dt;const t=this.t,run=Math.min(1.4,sp/(1.2*this.size+.3));this.phase+=dt*(4+run*5)/Math.max(.6,Math.sqrt(this.size));
     const sw=Math.sin(this.phase)*.55*Math.min(1,run);for(const l of this.legs)l.g.rotation.x=Math.sin(this.phase+l.ph)*.55*Math.min(1,run);
     this.body.position.y=(this.by0??(this.by0=this.body.position.y))+Math.abs(Math.sin(this.phase))*.03*this.size*Math.min(1,run)+Math.sin(t*2)*.005;
-    if(this.neck){const want=this.nTilt+(this.biped?.5:.95)*this.graze;this.neck.rotation.x+=(want+Math.sin(t*1.3)*.04-this.neck.rotation.x)*Math.min(1,dt*4);}
+    if(this.neck){const want=this.nTilt+(this.gz??(this.biped?.5:.95))*this.graze;this.neck.rotation.x+=(want+Math.sin(t*1.3)*.04-this.neck.rotation.x)*Math.min(1,dt*4);}
     if(this.biped&&this.neck&&run>.05)this.neck.position.z=(this.nz0??(this.nz0=this.neck.position.z))+Math.sin(this.phase*2)*.02;
+    if(this.tick)this.tick(t,dt,run);
     if(this.tail)this.tail.rotation.y=Math.sin(t*(this.happy>0?9:2.2))*(this.happy>0?.5:.18);
     if(this.F.wingsRun)this.flying=run>.3;// winged rides flap hard while you gallop
     if(this.wings)for(const w of this.wings){if(w.fold){const op=this.wingOpen||0;w.w.rotation.y=w.sx*w.fold*(1-op);w.w.scale.x=.5+.5*op;}w.w.rotation.z=w.fly?w.sx*(-.2+Math.sin(t*(this.flying?14:6))*(this.flying?.6:.25)):w.sx*(this.happy>0||this.y>.02?.5+Math.sin(t*22)*.5:.05);}
@@ -623,7 +629,7 @@ function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=zooSpot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}

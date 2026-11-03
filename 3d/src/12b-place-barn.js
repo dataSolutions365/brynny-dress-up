@@ -2,9 +2,9 @@
 // local layout: +z points back toward the Birthday Party (the gate), the red barn stands at the back
 // a round fence with a gate that faces the plaza, and a sign over the gate (used by the barn and the zoo)
 function ringFence(z,FR,gateA,railM,gateM,label,fg){const g=z.g,wood=std('#b07a4a',{roughness:.85});
-  const postG=cyl(.07,.08,1.05,8),railG=box(.06,.09,1),capG=sph(.085,8,6);
-  for(let i=0;i<40;i++){const a=i/40*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA)continue;const x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(postG,railM,x,.52,w,g);M(capG,railM,x,1.05,w,g,false,false);z.ob(x,w,.32);}
-  for(let i=0;i<40;i++){const a=(i+.5)/40*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA+.05)continue;const L=2*FR*Math.sin(Math.PI/40)+.04;
+  const postG=cyl(.07,.08,1.05,8),railG=box(.06,.09,1),capG=sph(.085,8,6),N=Math.max(40,Math.round(FR*7.2));// a bigger fence gets more posts
+  for(let i=0;i<N;i++){const a=i/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA)continue;const x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(postG,railM,x,.52,w,g);M(capG,railM,x,1.05,w,g,false,false);z.ob(x,w,.32);}
+  for(let i=0;i<N;i++){const a=(i+.5)/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA+.05)continue;const L=2*FR*Math.sin(Math.PI/N)+.04;
     for(const y of [.45,.85]){const r=M(railG,railM,Math.sin(a)*FR,y,Math.cos(a)*FR,g);r.scale.z=L;r.rotation.y=a+Math.PI/2;}}
   // gate posts with little lanterns
   for(const s of [-1,1]){const a=s*gateA,x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(cyl(.1,.11,1.6,10),gateM,x,.8,w,g);M(sph(.13,12,10),glow('#fff1c4',1.4),x,1.72,w,g,false,false);z.ob(x,w,.3);}

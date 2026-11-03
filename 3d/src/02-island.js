@@ -37,7 +37,7 @@ const ZONES=[
   {id:'batting',name:'⚾ Batting Cage',ang:210,d:57,r:7.5,music:'stadium-cheer'},
   // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
   {id:'barn',name:'🐴 Happy Barn',ang:0,d:56.5,r:6,music:'spring-birds',nopath:true},
-  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:56.5,r:6,music:'city-park',nopath:true},
+  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:58.5,r:8.5,music:'city-park',nopath:true},
   {id:'garage',name:'🔧 Car Garage',ang:150,d:57,r:7,music:'fireworks'},
   // behind the Spring Garden and the Runway, with a short path from the place in front (p0)
   {id:'barber',name:'💈 Barber Shop',ang:300,d:56.1,r:5.6,music:'city-park',p0:43.2},
