@@ -20,7 +20,7 @@ for(let i=0;i<10;i++){const g=new THREE.Group();const cm=std('#ffffff',{roughnes
 const deg=d=>d*Math.PI/180;
 // Layout: an inner ring of places at d=34, an outer ring at d=57 in the gaps between them, and spots right behind
 // some inner places (d = 34 + 8.5 + their r + an 8 step gap) that get a short path from the place in front (nopath).
-// Free spots behind an inner place: 120 (behind Christmas Village). 240 and 300 (d about 56) are kept for the clothing store and barber shop.
+// Spots behind an inner place: 120 (behind Christmas Village) is the Jump Park. 240 and 300 (d about 56) are kept for the clothing store and barber shop.
 const ZONES=[
   {id:'studio',name:'✨ Sparkle Studio',ang:0,d:0,r:6.5,music:'sparkle-room'},
   {id:'birthday',name:'🎂 Birthday Party',ang:0,d:34,r:8.5,music:'bday-ukulele'},
@@ -42,6 +42,8 @@ const ZONES=[
   // behind the Spring Garden and the Runway, with a short path from the place in front (p0)
   {id:'barber',name:'💈 Barber Shop',ang:300,d:56.1,r:5.6,music:'city-park',p0:43.2},
   {id:'store',name:'👔 Clothing Store',ang:240,d:56.5,r:6,music:'fashion-walk',p0:43.2},
+  // the trampoline park behind Christmas Village (12e-place-jump-park.js), with a short path from there
+  {id:'jump',name:'🤸 Jump Park',ang:120,d:57,r:7,music:'stadium-cheer',p0:43.2},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
