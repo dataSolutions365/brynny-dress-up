@@ -13,6 +13,8 @@
      Tap it to lift it over your head, and tap again to throw it. Things go back where they were when the game reloads.
    - ❄️ Freeze breath (button on the left, or F): blows icy breath at the closest person in front of you (family playing
      online, or a townsperson). They're stuck in a block of ice for 10 seconds: on their own phone they can't walk or jump.
+   - 🤖 Giant robot (button on the left, or R): turn into a robot taller than the trees and ride in the glass dome on top.
+     Walk with the joystick; it strides right over trees and roofs. Tap 🤖 again to climb out.
    - ⚡ Lightning landing (button on the left while flying, or Z): the quick way down. Lightning flashes and you shoot
      straight down to the ground like a bolt, landing with a thunder boom and a scorch mark. It doesn't hit anybody.
    The suit swaps your look while it's on (your own outfit waits in SAVE.daddyLook), so friends online see it too, and they
@@ -33,7 +35,7 @@ for(const id of ['#wname','#setName'])$(id).addEventListener('input',e=>{const o
 /* ---------- super jump, and take off ---------- */
 function daddyJump(){if(daddyFrozen())return true;// frozen in ice: no jumping
   if(!daddyOn()||barnRide)return false;
-  if(DAD.fly)return true;// up in the air already: holding JUMP climbs (in daddyFlyStep)
+  if(DAD.fly||DAD.robot)return true;// up in the air already: holding JUMP climbs (in daddyFlyStep)
   if(player.onGround){player.vy=17;player.onGround=false;sfx('jump');burst(player.pos.clone().add(new THREE.Vector3(0,.1,0)),'#ffffff',18,1.6);return true;}
   daddyTakeOff();return true;}// a second tap in the air: fly
 function daddyTakeOff(){flyGrid();Object.assign(DAD,{fly:true,vx:0,vz:0,vy:Math.max(0,player.vy*.3)});player.vy=0;player.onGround=false;
@@ -45,7 +47,7 @@ function daddyLand(snap){if(!DAD.fly)return;const p=player.pos;DAD.fly=false;DAD
   else{player.vy=0;burst(new THREE.Vector3(p.x,p.y+.05,p.z),'#ffffff',14,1.3);}}
 
 /* ---------- flying, every frame (from the game loop, instead of walking) ---------- */
-function daddyFlyStep(dt,ix,iy,mag){if(!DAD.fly)return false;
+function daddyFlyStep(dt,ix,iy,mag){if(DAD.robot)return robotStep(dt,ix,iy,mag);if(!DAD.fly)return false;
   if(!daddyOn()||barnRide||closetOpen){daddyLand(true);return false;}
   const p=player.pos;
   if(DAD.dive){// ⚡ lightning landing: straight down, fast, then a strike where you land
@@ -159,6 +161,8 @@ function heroOff(h){if(!h)return;for(const m of h.bits){m.parent&&m.parent.remov
 // the cape flows out behind you when you run, jump or fly
 const heroCape=(h,t,sp,air,fly)=>{h.cape.rotation.x=fly?1.3+Math.sin(t*9)*.08:.08+Math.min(sp,8)*.07+Math.sin(t*3)*.04+(air?.45:0);};
 // flying like a superhero: one fist forward, the other arm along your side, legs together
+// standing in the robot's dome: arms down, legs straight
+function heroStandPose(a){a.arms.forEach((A,i)=>{A.sh.rotation.set(0,0,i?.12:-.12);A.el.rotation.x=-.2;});a.legs.forEach(l=>{l.hp.rotation.set(0,0,0);l.kn.rotation.x=0;});}
 function heroFlyPose(a){const [L,Rt]=a.arms;Rt.sh.rotation.set(-2.95,0,-.08);Rt.el.rotation.x=0;L.sh.rotation.set(.25,0,-.12);L.el.rotation.x=-.15;
   a.legs[0].hp.rotation.set(.08,0,.03);a.legs[1].hp.rotation.set(.2,0,-.03);a.legs[0].kn.rotation.x=.05;a.legs[1].kn.rotation.x=.45;}
 // ⚡ lightning strikes at (x,y,z): a jagged bolt from the sky, sparks, and thunder (flash: a white flash on your own screen)
@@ -182,7 +186,7 @@ function suitUp(){const p=player.pos;DAD.suitN=Date.now();if(SK.on)stopSkate(tru
   heroZap(p.x,p.y,p.z,true);
   setTimeout(()=>{if(!SAVE.daddySuit){SAVE.daddyLook=SAVE.look;SAVE.look=heroLook(SAVE.look);}SAVE.daddySuit=1;persist();rebuildPlayer();doAction('cheer');toast('⚡ SUPER DADDY! ⚡');},180);}
 // back in your own clothes (quiet: no sparkles, e.g. when the closet opens)
-function suitOff(quiet){if(!SAVE.daddySuit)return;const p=player.pos;if(DAD.held)daddyThrow();daddyLand(true);
+function suitOff(quiet){if(!SAVE.daddySuit)return;const p=player.pos;if(DAD.held)daddyThrow();daddyLand(true);robotOff();
   if(SAVE.daddyLook)SAVE.look=SAVE.daddyLook;delete SAVE.daddyLook;SAVE.daddySuit=0;persist();rebuildPlayer();
   if(!quiet){burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ff8fc8',30,2.5);sfx('pop');toast('Suit off. Just regular Daddy now 😎');}}
 suitBtn.onclick=()=>{if(!daddyKey()||closetOpen)return;if(SAVE.daddySuit)suitOff();else suitUp();};
@@ -190,7 +194,7 @@ onTick.push(dt=>{if(SAVE.daddySuit&&(closetOpen||!daddyKey()))suitOff(true);// b
   const key=daddyKey()&&started,on=daddyOn()&&started;suitBtn.style.display=key?'grid':'none';
   if(on&&(!DAD.gear||DAD.gear.a!==av)){heroOff(DAD.gear);DAD.gear=heroGear(av);}
   else if(!on&&DAD.gear){heroOff(DAD.gear);DAD.gear=null;}
-  if(DAD.gear){heroCape(DAD.gear,performance.now()/1000,player.speed,!player.onGround,DAD.fly);if(DAD.fly)heroFlyPose(av);}});
+  if(DAD.gear){heroCape(DAD.gear,performance.now()/1000,player.speed,!player.onGround,DAD.fly);if(DAD.fly)heroFlyPose(av);if(DAD.robot)heroStandPose(av);}});
 /* ---------- ❄️ freeze breath and ⚡ lightning strike (buttons on the left while suited up) ---------- */
 // Both reach friends online through the 'hero' entry below: it carries a little note {to, n, t} for the latest freeze
 // and {x, z, n, t} for the latest strike, and every phone in the room plays it once.
@@ -234,14 +238,67 @@ function strikeFx(x,z,flash){const g=groundAt(x,z);
   let t=0;const fn=dt=>{t+=dt;ring.scale.setScalar(1+t*9);ring.material.opacity=Math.max(0,.9-t*1.8);mark.material.opacity=Math.max(0,.7*(1-t/6));
     if(t>6){for(const m of [mark,ring]){scene.remove(m);m.geometry.dispose();m.material.dispose();}onTick.splice(onTick.indexOf(fn),1);}};onTick.push(fn);}
 // the two buttons
-const mkPower=(id,txt,bottom,bg,fn)=>{const b=document.createElement('button');b.className='hud';b.id=id;b.textContent=txt;
-  b.style.cssText=`left:calc(env(safe-area-inset-left) + 22px);bottom:calc(env(safe-area-inset-bottom) + ${bottom}px);width:64px;height:64px;border-radius:50%;display:none;place-items:center;font-size:28px;background:${bg};border:3px solid rgba(255,255,255,.85);box-shadow:0 6px 18px rgba(59,35,87,.3);pointer-events:auto;touch-action:none`;
+const mkPower=(id,txt,bottom,bg,fn,left=22)=>{const b=document.createElement('button');b.className='hud';b.id=id;b.textContent=txt;
+  b.style.cssText=`left:calc(env(safe-area-inset-left) + ${left}px);bottom:calc(env(safe-area-inset-bottom) + ${bottom}px);width:64px;height:64px;border-radius:50%;display:none;place-items:center;font-size:28px;background:${bg};border:3px solid rgba(255,255,255,.85);box-shadow:0 6px 18px rgba(59,35,87,.3);pointer-events:auto;touch-action:none`;
   document.body.appendChild(b);b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(daddyOn()&&!closetOpen)fn();});return b;};
-const freezeBtn=mkPower('dadFreeze','❄️',310,'radial-gradient(circle at 35% 30%,#e8fbff,#7fd3ff)',daddyFreeze);
-const strikeBtn=mkPower('dadStrike','⚡',230,'radial-gradient(circle at 35% 30%,#fff3b0,#ffc83d)',daddyStrike);
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||!daddyOn()||closetOpen)return;if(e.code==='KeyF')daddyFreeze();if(e.code==='KeyZ')daddyStrike();});
+const freezeBtn=mkPower('dadFreeze','❄️',230,'radial-gradient(circle at 35% 30%,#e8fbff,#7fd3ff)',daddyFreeze);
+const strikeBtn=mkPower('dadStrike','⚡',230,'radial-gradient(circle at 35% 30%,#fff3b0,#ffc83d)',daddyStrike,170);
+/* ---------- 🤖 giant robot: taller than the trees, for striding across the island ---------- */
+// An original robot (green and gold, with Daddy's star badge on its chest). You ride in the glass dome on top,
+// so the camera rides up there with you. It steps right over trees, fences and roofs. Tap 🤖 again to climb out.
+const ROBOT_SEAT=9.75,ROBOT_SPEED=11,ROBOT_STRIDE=2.6;
+function makeRobot(){const R0=new THREE.Group(),body=new THREE.Group();R0.add(body);
+  const green=std('#17a06b',{roughness:.35,metalness:.55}),dark=std('#0f5c43',{roughness:.5,metalness:.4}),gold=std(HERO.gold,{roughness:.25,metalness:.75}),
+    purple=std(HERO.cape,{roughness:.4,metalness:.3}),eye=new THREE.MeshBasicMaterial({color:'#7ff7ff'}),
+    glass=new THREE.MeshPhysicalMaterial({color:'#cdf6ff',transparent:true,opacity:.28,roughness:.05,clearcoat:1,depthWrite:false,side:THREE.DoubleSide});
+  const B=(w,h,d,m,x,y,z,parent)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;parent.add(o);return o;};
+  const legs=[],arms=[];
+  for(const sx of [-1,1]){const hip=new THREE.Group();hip.position.set(sx*1.15,5.6,0);body.add(hip);
+    B(1.15,2.6,1.15,green,0,-1.3,0,hip);B(1.3,.5,1.3,gold,0,-2.6,0,hip);
+    const knee=new THREE.Group();knee.position.y=-2.6;hip.add(knee);B(.95,2.4,.95,dark,0,-1.25,0,knee);
+    B(1.3,.6,2.1,purple,0,-2.7,.3,knee);B(1.32,.18,2.12,gold,0,-2.36,.3,knee);legs.push({hip,knee});}
+  B(3.2,1.1,1.9,dark,0,5.9,0,body);
+  B(4.2,3.4,2.5,green,0,8.1,0,body);B(4.3,.35,2.6,gold,0,6.55,0,body);B(4.3,.35,2.6,gold,0,9.7,0,body);
+  const badge=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.5),daddyBadge());badge.position.set(0,7.9,1.26);body.add(badge);
+  for(const sx of [-1,1])B(.42,.22,.05,eye,sx*.9,9.2,1.27,body);
+  // ride-in dome, a gold ring around it, and an antenna
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(1.25,28,18,0,Math.PI*2,0,Math.PI*.55),glass);dome.position.y=9.85;body.add(dome);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.25,.12,10,32),gold);ring.rotation.x=Math.PI/2;ring.position.y=9.88;body.add(ring);
+  B(.08,1.2,.08,gold,.7,11.4,-.3,body);const tip=new THREE.Mesh(sph(.16,12,10),new THREE.MeshBasicMaterial({color:'#ff3b6b'}));tip.position.set(.7,12.05,-.3);body.add(tip);
+  for(const sx of [-1,1]){const sh=new THREE.Group();sh.position.set(sx*2.55,9.1,0);body.add(sh);
+    const ball=new THREE.Mesh(sph(.85,18,14),gold);ball.castShadow=true;sh.add(ball);
+    B(.85,2.5,.85,green,sx*.15,-1.4,0,sh);const el=new THREE.Group();el.position.set(sx*.15,-2.7,0);sh.add(el);
+    B(.75,2.2,.75,dark,0,-1.1,0,el);B(1,1,1,purple,0,-2.6,0,el);arms.push({sh,el});}
+  return {g:R0,body,legs,arms,ph:0,stepN:0,tip,grow:0};}
+// walking: legs and arms swing with the distance walked; a thump and a puff of dust on each step
+function robotPose(r,dist,dt,me){r.ph+=dist/ROBOT_STRIDE*Math.PI;const s=Math.sin(r.ph),moving=dist>.002;
+  r.amp=(r.amp||0)+((moving?1:0)-(r.amp||0))*Math.min(1,dt*6);const a=r.amp;
+  r.legs[0].hip.rotation.x=s*.45*a;r.legs[1].hip.rotation.x=-s*.45*a;r.legs[0].knee.rotation.x=Math.max(0,-s)*.7*a;r.legs[1].knee.rotation.x=Math.max(0,s)*.7*a;
+  r.arms[0].sh.rotation.x=-s*.35*a;r.arms[1].sh.rotation.x=s*.35*a;r.arms[0].el.rotation.x=-.3*a;r.arms[1].el.rotation.x=-.3*a;
+  r.body.position.y=Math.abs(Math.cos(r.ph))*.18*a;r.tip.material.color.setHSL(.95,1,.5+.2*Math.sin(performance.now()/150));
+  const n=Math.floor((r.ph+Math.PI/2)/Math.PI);if(moving&&n!==r.stepN){r.stepN=n;const side=n%2?1:-1,f=r.g.rotation.y,x=r.g.position.x+Math.cos(f)*side*1.15,z=r.g.position.z-Math.sin(f)*side*1.15;
+    burst(new THREE.Vector3(x,groundAt(x,z)+.1,z),'#d9c9a8',12,2,.35);const d=Math.hypot(camera.position.x-x,camera.position.z-z);tone(55,.25,'sine',Math.max(.02,(me?.16:.12)-d*.003),0,35);}
+  if(r.grow<1){r.grow=Math.min(1,r.grow+dt*1.6);const k=1-Math.pow(1-r.grow,3);r.g.scale.setScalar(Math.max(.01,k));}}
+function robotOn(){if(DAD.robot||!daddyOn())return;daddyLand(true);if(DAD.held)daddyThrow();
+  const r=makeRobot(),p=player.pos;r.g.position.set(p.x,groundAt(p.x,p.z),p.z);r.g.rotation.y=player.face;r.g.scale.setScalar(.01);scene.add(r.g);
+  DAD.robot=r;DAD.camDist=cam.dist;cam.dist=Math.max(cam.dist,12);DAD.rbt=Date.now();
+  burst(p.clone().add(new THREE.Vector3(0,1,0)),'#7ff7ff',60,4);[220,330,440,660].forEach((f,i)=>tone(f,.18,'square',.05,i*.12));toast('🤖 ROBO-DADDY, ACTIVATE!');}
+function robotOff(){const r=DAD.robot;if(!r)return;DAD.robot=null;scene.remove(r.g);r.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+  const p=player.pos;collide(p);p.y=groundAt(p.x,p.z);player.vy=0;player.onGround=true;cam.dist=DAD.camDist||cam.dist;
+  burst(p.clone().add(new THREE.Vector3(0,1,0)),'#7ff7ff',50,3);[660,440,330,220].forEach((f,i)=>tone(f,.15,'square',.04,i*.1));}
+// every frame in the robot (from daddyFlyStep, instead of walking)
+function robotStep(dt,ix,iy,mag){const r=DAD.robot,p=player.pos;if(!daddyOn()||closetOpen||barnRide){robotOff();return false;}
+  const ox=p.x,oz=p.z;
+  if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1,mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n,sp=ROBOT_SPEED*mag*(r.grow<1?0:1);
+    p.x+=mx*sp*dt;p.z+=mz*sp*dt;player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*5));}
+  const rr=Math.hypot(p.x,p.z),lim=R-1.5;if(rr>lim){p.x*=lim/rr;p.z*=lim/rr;}
+  const g=groundAt(p.x,p.z);r.g.position.set(p.x,g,p.z);r.g.rotation.y=player.face;p.y=g+ROBOT_SEAT*r.g.scale.y+r.body.position.y;
+  robotPose(r,Math.hypot(p.x-ox,p.z-oz),dt,true);
+  player.speed=0;player.vy=0;player.onGround=false;return true;}
+const robotBtn=mkPower('dadRobot','🤖',230,'radial-gradient(circle at 35% 30%,#d9fff0,#3ccf95)',()=>DAD.robot?robotOff():robotOn(),96);// (a row: ❄️ 🤖 ⚡, with ✋ below)
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||!daddyOn()||closetOpen)return;if(e.code==='KeyF')daddyFreeze();if(e.code==='KeyZ')daddyStrike();if(e.code==='KeyR')DAD.robot?robotOff():robotOn();});
 let frozenToastT=0;
-onTick.push(dt=>{const on=daddyOn()&&started&&!closetOpen;freezeBtn.style.display=on?'grid':'none';strikeBtn.style.display=on&&DAD.fly&&!DAD.dive?'grid':'none';
+onTick.push(dt=>{const on=daddyOn()&&started&&!closetOpen;freezeBtn.style.display=robotBtn.style.display=on?'grid':'none';robotBtn.textContent=DAD.robot?'🚪':'🤖';strikeBtn.style.display=on&&DAD.fly&&!DAD.dive?'grid':'none';
   const now=performance.now();
   for(const [k,c] of [...DAD.ice]){if(now>c.until){iceGone(k);if(k==='me')toast('💧 You thawed out!');continue;}
     if(k==='me'&&c.g!==av.g){c.box.parent&&c.box.parent.remove(c.box);av.g.add(c.box);c.g=av.g;}// your model was rebuilt: move the ice over
@@ -255,12 +312,17 @@ function heroNotes(f,d){const P=f.pos,fresh=n=>n&&Math.abs(Date.now()-(+n.t||0))
   if(fresh(d.s)&&d.s.n!==f.heroS){f.heroS=d.s.n;strikeFx(+d.s.x||0,+d.s.z||0,false);}}
 // friends online see the suit, and the lightning when you put it on
 SHOW.push({k:'hero',
-  mine(){return daddyOn()?{z:DAD.suitN||0,f:DAD.frz||null,s:DAD.stk||null}:null;},
+  mine(){return daddyOn()?{z:DAD.suitN||0,f:DAD.frz||null,s:DAD.stk||null,r:DAD.robot?DAD.rbt:0}:null;},
   // (any change here takes the suit off and puts it on again on friends' phones, so the lightning only plays for a new suit-up)
   on(f,d){const P=f.pos;if(d.z!==f.heroZ){if(f.heroZ!==undefined||Math.abs(Date.now()-(+d.z||0))<6000)heroZap(P.x,P.y,P.z,false);f.heroZ=d.z;}
-    heroNotes(f,d);return {gear:heroGear(f.a),a:f.a};},
-  step(f,d,dt,h){if(!h)return;if(h.a!==f.a){heroOff(h.gear);h.gear=heroGear(f.a);h.a=f.a;}const fly=!!f.air&&f.pos.y-groundAt(f.pos.x,f.pos.z)>2.5,r=f.a.g.rotation;// way up in the air: flying like a superhero
+    heroNotes(f,d);const h={gear:heroGear(f.a),a:f.a};
+    if(d.r){h.robot=makeRobot();if(Math.abs(Date.now()-(+d.r||0))>3000)h.robot.grow=1;h.robot.g.position.set(f.pos.x,groundAt(f.pos.x,f.pos.z),f.pos.z);h.robot.g.rotation.y=f.cur??f.face;scene.add(h.robot.g);h.rp=f.pos.clone();}
+    return h;},
+  step(f,d,dt,h){if(!h)return;if(h.a!==f.a){heroOff(h.gear);h.gear=heroGear(f.a);h.a=f.a;}
+    if(h.robot){const r=h.robot,P=f.pos;r.g.position.set(P.x,groundAt(P.x,P.z),P.z);r.g.rotation.y=f.cur??f.face;robotPose(r,Math.hypot(P.x-h.rp.x,P.z-h.rp.z),dt,false);h.rp.copy(P);
+      heroCape(h.gear,performance.now()/1000,0,false,false);heroStandPose(f.a);return;}// riding in the robot, not flying
+    const fly=!!f.air&&f.pos.y-groundAt(f.pos.x,f.pos.z)>2.5,r=f.a.g.rotation;// way up in the air: flying like a superhero
     h.tilt=(h.tilt||0)+((fly?Math.min(1,(f.sp||0)/10)*1.1:0)-(h.tilt||0))*Math.min(1,dt*4);r.order='YXZ';r.x=h.tilt;
     heroCape(h.gear,performance.now()/1000,f.sp||0,!!f.air,fly);if(fly)heroFlyPose(f.a);},
-  off(f,h){if(!h)return;heroOff(h.gear);if(h.a)h.a.g.rotation.x=0;}});
+  off(f,h){if(!h)return;heroOff(h.gear);if(h.robot){scene.remove(h.robot.g);h.robot.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(h.a)h.a.g.rotation.x=0;}});
 Object.assign(window.__game,{daddy:()=>DAD,daddyOn});
