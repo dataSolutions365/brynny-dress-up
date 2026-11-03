@@ -1031,10 +1031,11 @@ function floorPad(z,lx,lz,color,emoji,label,y=0){const g=z.g,m=glow(color,1.4);m
 /* ===== Happy Barn (the building, fence and paddock; the animals live in 24d-barn.js) ===== */
 // local layout: +z points back toward the Birthday Party (the gate), the red barn stands at the back
 // a round fence with a gate that faces the plaza, and a sign over the gate (used by the barn and the zoo)
-function ringFence(z,FR,gateA,railM,gateM,label,fg){const g=z.g,wood=std('#b07a4a',{roughness:.85});
+// backA: an open gap that wide at the back too (the zoo's way down to the water)
+function ringFence(z,FR,gateA,railM,gateM,label,fg,backA=0){const back=a=>backA&&Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)))<backA;const g=z.g,wood=std('#b07a4a',{roughness:.85});
   const postG=cyl(.07,.08,1.05,8),railG=box(.06,.09,1),capG=sph(.085,8,6),N=Math.max(40,Math.round(FR*7.2));// a bigger fence gets more posts
-  for(let i=0;i<N;i++){const a=i/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA)continue;const x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(postG,railM,x,.52,w,g);M(capG,railM,x,1.05,w,g,false,false);z.ob(x,w,.32);}
-  for(let i=0;i<N;i++){const a=(i+.5)/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA+.05)continue;const L=2*FR*Math.sin(Math.PI/N)+.04;
+  for(let i=0;i<N;i++){const a=i/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA||back(a))continue;const x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(postG,railM,x,.52,w,g);M(capG,railM,x,1.05,w,g,false,false);z.ob(x,w,.32);}
+  for(let i=0;i<N;i++){const a=(i+.5)/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA+.05||back(a)||back(a+.05)||back(a-.05))continue;const L=2*FR*Math.sin(Math.PI/N)+.04;
     for(const y of [.45,.85]){const r=M(railG,railM,Math.sin(a)*FR,y,Math.cos(a)*FR,g);r.scale.z=L;r.rotation.y=a+Math.PI/2;}}
   // gate posts with little lanterns
   for(const s of [-1,1]){const a=s*gateA,x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(cyl(.1,.11,1.6,10),gateM,x,.8,w,g);M(sph(.13,12,10),glow('#fff1c4',1.4),x,1.72,w,g,false,false);z.ob(x,w,.3);}
@@ -1219,8 +1220,12 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  z.pad=spPad(z,-2.9,5.2,'#4fd16a','⚾','⚾ Batting practice!','#2f8f3a');
  signpost(z);}
 // ---- src/12d-place-zoo.js ----
-/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi, elephants, lion and gorilla live in 24d-barn.js) ===== */
-// local layout: +z points back toward Halloween Hollow (the gate)
+/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi, elephants, lion, gorilla and hippo live in 24d-barn.js) =====
+   The back of the fence is open down to the water round the city: the animals walk down to the shore to drink, and the hippo
+   lives in the water there (26f2-hippo-swim.js). ZOO_SHORE says where. */
+// local layout: +z points back toward Halloween Hollow (the gate), -z out to the water
+// the way out the back to the shore: how wide the gap in the fence is (radians), and where the water's edge is (local z)
+const ZOO_SHORE={gapA:.32,edge:-(R+.9-Z.zoo.d)};
 {const z=Z.zoo,g=z.g;
  const grassT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e3c77a';x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(170,140,60,.4)':c<.7?'rgba(255,240,170,.55)':'rgba(140,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(-Math.PI/2+(Math.random()-.5)*.6);x.fillRect(0,0,5+Math.random()*8,1.3);x.restore();}},4);
  patch(z.r,std('#ffffff',{map:grassT,roughness:1}),z.x,z.z);
@@ -1229,7 +1234,13 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
   const p=M(new THREE.PlaneGeometry(2.2,2.4+z.gap),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
  const wood=std('#9a6a43',{roughness:.85}),bark=std('#7a5236',{roughness:.9}),leafM=phys('#6fa83a',{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')});
  z.fence=z.r-.45;const S=z.fence/5.55;// S: the zoo grew bigger for the elephants, so everything inside spreads out with it
- ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a');
+ ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a',ZOO_SHORE.gapA);
+ // a sandy trail out the back gap, down to the water where the animals drink
+ {const pm=std('#e8d3a0',{roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;const L=-ZOO_SHORE.edge-z.fence+1.4,zc=-z.fence-L/2+.9;
+  const p=M(new THREE.PlaneGeometry(3,L),pm,0,.014,zc,g,false,true);p.rotation.x=-Math.PI/2;
+  const sg=new THREE.Group();sg.position.set(2.1,0,-z.fence-.6);sg.rotation.y=Math.PI;g.add(sg);M(cyl(.05,.05,1.4,8),wood,0,.7,0,sg);
+  const t=canvasTex(256,96,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#2f6a8a';c.font='700 34px Fredoka, sans-serif';c.textAlign='center';c.fillText('🦛 To the water',W/2,60);});
+  M(box(1.1,.42,.05),wood,0,1.35,0,sg);M(new THREE.PlaneGeometry(1,.36),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.35,.03,sg,false,false);z.ob(2.1,-z.fence-.6,.15);}
  // flat-topped acacia trees, the giraffes' favorite snack
  const acacia=(lx,lz,s)=>{const tg=new THREE.Group();tg.position.set(lx,0,lz);tg.scale.setScalar(s);g.add(tg);
    M(cyl(.12,.2,2.6,10),bark,0,1.3,0,tg);for(const [a,l] of [[.6,1.1],[-.7,1],[2.4,.9]]){const b=M(cyl(.05,.08,l,8),bark,Math.sin(a)*.35,2.5,Math.cos(a)*.35,tg);b.rotation.set(Math.cos(a)*.7,0,-Math.sin(a)*.7);}
@@ -1248,7 +1259,7 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  {const bg=new THREE.Group();const [x,w]=z.toWorld(-2.2,z.r-.9);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
   for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);
   const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#5a8a3a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Safari Zoo',W/2,70);
-    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants, 🦁 a lion, 🦍 a gorilla, an okapi!',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants 🦁 Lion 🦍 Gorilla 🦛 Hippo',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
   for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
   obs.push({x,z:w,r:.4});}
  // the animals keep away from these (trees, rocks, water, feeder)
@@ -6601,7 +6612,8 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
 // where the saddle sits on each ride: r = body radius under it, sx/sy = body shape, y/z = where on the body, col = blanket color, seatY = saddle height
 const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
   punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
-  neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31}};
+  neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31},
+  zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47}};
 function safariGear(k,g,body,o){
   const leather=phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4}),dkL=phys('#3e2112',{roughness:.6}),brass=phys('#d4a64a',{metalness:.8,roughness:.3});
   const blanket=(col,trim,r,len,y,z,sx,sy,arc)=>{const bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
@@ -6811,6 +6823,64 @@ ZOO_BUILD.gorilla=function(g,body,o){const by=.85;
   fEyes(this,head,H,.3,.18,.95,.2,.12,'#3a2010');
   M(sph(H*.25,8,6),dk,0,-H*.55,H*.98,head,false,false).scale.set(1.6,.15,.6);// mouth
   Object.assign(o,{neck,head,tail:null,nTilt:.2,gz:.5,size:1.1,h:by+.75,rad:.6,dustR:[.36,.36,.3]});};
+// ---- src/24c9d-hippo.js ----
+/* ===== 🦛 Hippos, and swimming with them =====
+   - ZOO_BUILD.hippo: a real-looking common hippo (a huge barrel body on short legs, a giant square muzzle, eyes, ears and nostrils
+     on top of the head so they stay above the water). Now and then it opens its mouth in a big hippo yawn.
+     It lives in the hippo pool at the Safari Zoo (12d-place-zoo.js, ZOOA in 24d-barn.js), and Kiboko is the one you ride (24i-earned-rides.js).
+   - Swimming with hippos (in the hippo pool and in 🐬 Dolphin Bay) is in 26f2-hippo-swim.js.
+   One shared set of materials for every hippo, and no textures (iPhone memory). */
+const HIPM=()=>safM('hippo',()=>({skin:phys('#7f6d70',{roughness:.45,clearcoat:.35,clearcoatRoughness:.5}),// wet, shiny gray-purple skin
+  pink:phys('#c98e88',{roughness:.5,clearcoat:.3}),mouth:std('#b5545e',{roughness:.6}),tusk:std('#efe6d2',{roughness:.4}),
+  dk:std('#2a2022',{roughness:.5}),nail:std('#4e4446',{roughness:.6}),
+  rip:new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.45,depthWrite:false,side:THREE.DoubleSide})}));
+
+ZOO_BUILD.hippo=function(g,body,o){const r=.5,len=.86,hip=.36,by=.68,m=HIPM();
+  body.position.y=by;
+  // the barrel: wide and deep, with a round belly that hangs low and a big rump
+  const t=M(new THREE.CapsuleGeometry(r,len,12,24),m.skin,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(1.12,.92,1);
+  M(sph(r*.92,18,12),m.skin,0,-r*.18,0,body).scale.set(1.15,.85,1.25);// belly
+  M(sph(r*.95,18,12),m.skin,0,.04,-len*.42,body).scale.set(1.05,.95,.95);// rump
+  M(sph(r*.85,18,12),m.skin,0,.06,len*.4,body).scale.set(1.1,.98,.9);// shoulders
+  M(sph(r*.7,14,10),m.pink,0,-r*.5,len*.05,body,false,false).scale.set(1.15,.55,1.5);// pinker underneath
+  // four short, thick legs with four toes each
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.68,hip,sz*len*.44);g.add(lg);this.legs.push({g:lg,ph});
+    M(sph(.19,14,10),m.skin,0,.12,0,lg).scale.set(.95,1.3,1.05);M(cyl(.19,.17,hip-.06,14),m.skin,0,-(hip-.06)/2,0,lg);
+    M(cyl(.17,.19,.07,16),m.skin,0,-hip+.035,0,lg);
+    for(const a of [-.75,-.25,.25,.75])M(sph(.045,8,6),m.nail,Math.sin(a)*.16,-hip+.035,Math.cos(a)*.15,lg,false,false).scale.set(1,.7,.7);}
+  // a short, thick neck and a huge head
+  const neck=new THREE.Group();neck.position.set(0,by+.1,len/2+r*.6);neck.rotation.x=.12;g.add(neck);
+  M(sph(.42,18,12),m.skin,0,0,0,neck).scale.set(1.05,.95,1);
+  const head=new THREE.Group();head.position.set(0,.08,.32);head.rotation.x=-.12+.06;neck.add(head);const H=.34;
+  M(sph(H,20,14),m.skin,0,H*.1,0,head).scale.set(1.15,.95,1.25);// skull
+  // the giant muzzle: two big round whisker pads side by side, wider than the head
+  const up=new THREE.Group();up.position.set(0,0,0);head.add(up);
+  M(sph(H*.75,18,12),m.skin,0,-H*.05,H*.9,up).scale.set(1.3,.85,1);
+  for(const sx of [-1,1]){M(sph(H*.6,16,12),m.skin,sx*H*.5,-H*.15,H*1.25,up).scale.set(1,.9,1);
+    // nostrils on bumps on top, and the eyes on top bumps too (so they stay above the water)
+    M(sph(H*.17,10,8),m.skin,sx*H*.32,H*.32,H*1.55,up).scale.set(1,.6,1.1);M(sph(H*.07,8,6),m.dk,sx*H*.32,H*.4,H*1.6,up,false,false).scale.set(1.2,.4,1.6);
+    M(sph(H*.28,12,10),m.skin,sx*H*.48,H*.72,H*.3,head).scale.set(1,.9,1);// the eyes sit up on bumps
+    M(sph(H*.17,10,8),m.pink,sx*H*.56,H*.8,H*.46,head,false,false).scale.set(1,.75,.6);// pink rims round the eyes
+    const e=M(sph(H*.16,10,8),m.skin,sx*H*.5,H*1.02,-H*.18,head);e.scale.set(.75,1.3,.5);e.rotation.z=-sx*.35;// little round ears
+    M(sph(H*.1,8,6),m.pink,sx*H*.52,H*1.04,-H*.12,head,false,false).scale.set(.6,1.1,.3);}
+  fEyes(this,head,H,.56,.82,.52,.55,.15,'#2a1a10');
+  M(sph(H*.55,14,10),m.mouth,0,-H*.55,H*1.2,up,false,false).scale.set(1.5,.25,1.1);// inside of the top of the mouth (seen when it yawns)
+  // the lower jaw hinges at the back, so it can open wide
+  const jaw=new THREE.Group();jaw.position.set(0,-H*.42,H*.25);head.add(jaw);
+  M(sph(H*.7,16,12),m.skin,0,-H*.08,H*.85,jaw).scale.set(1.45,.55,1.2);
+  M(sph(H*.55,14,10),m.pink,0,-H*.18,H*.95,jaw,false,false).scale.set(1.5,.4,1.1);
+  M(sph(H*.5,14,10),m.mouth,0,H*.02,H*.9,jaw,false,false).scale.set(1.4,.2,1.1);// tongue and inside of the bottom jaw
+  for(const sx of [-1,1]){const tk=M(new THREE.ConeGeometry(H*.08,H*.42,8),m.tusk,sx*H*.62,H*.12,H*1.35,jaw,false,false);tk.rotation.x=-.25;}// big bottom tusks
+  // a short, flat tail with a little tuft
+  const tail=new THREE.Group();tail.position.set(0,by+r*.25,-(len/2+r*.95));g.add(tail);
+  taperTube([fV(0,0,0),fV(0,-.1,-.08),fV(0,-.22,-.08)],q=>.05-.02*q,m.skin,tail,8,8);M(sph(.04,8,6),m.dk,0,-.25,-.08,tail).scale.set(1.4,1.2,.6);
+  // a big hippo yawn every now and then
+  this.yawn=0;this.yawnT=6+Math.random()*8;
+  this.tick=(tt,dt,run)=>{this.yawnT-=dt;if(this.yawnT<0&&!run&&!this.ridden){this.yawn=2.6;this.yawnT=10+Math.random()*14;}
+    const op=this.yawn>0?Math.sin(Math.min(1,(2.6-this.yawn)/2.6)*Math.PI):0;this.yawn=Math.max(0,this.yawn-dt);
+    jaw.rotation.x=op*.95;head.rotation.x=-.25+.12-op*.55;};
+  Object.assign(o,{neck,head,tail,nTilt:.25,gz:.3,size:1.4,h:by+r+.55,rad:.9,dustR:[r,r,len*.8]});};
+
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -6992,6 +7062,8 @@ const ZOOA=[
     facts:[['🥗','Diet','Carnivore. Zebras, antelopes, buffalo and other big animals. A male can eat about 40 kg (90 lb) in one meal!'],['🌍','Habitat','Savannas and grasslands of Africa, plus one forest in India.'],['⏳','Lifespan','About 10 to 14 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','Lions sleep up to 20 hours a day! A lion\'s roar can be heard 8 km (5 miles) away.']]},
   {k:'gorilla',e:'🦍',n:'Gorilla',food:[['🍌','Banana'],['🌿','Leaves']],say:['*chest pat pat* 🦍','*happy rumbly grunt*','*sits and munches*'],
     facts:[['🥗','Diet','Mostly a herbivore. Leaves, stems, bamboo shoots and fruit, plus the odd ant or termite. A big male eats about 18 kg (40 lb) a day!'],['🌍','Habitat','Rainforests and mountain forests of central Africa.'],['⏳','Lifespan','About 35 to 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','The biggest ape in the world! Grown-up males get a patch of silver hair on their backs, so they are called silverbacks. Every gorilla has its own nose print, like a fingerprint.']]},
+  {k:'hippo',e:'🦛',n:'Hippo',swim:.85,food:[['🍉','Watermelon'],['🌾','Grass']],say:['*big hippo yawn* 🦛','*blub blub* 💦','*happy grunty honk*'],
+    facts:[['🥗','Diet','Herbivore. At night it walks out of the water to eat grass, about 40 kg (90 lb) a night!'],['🌍','Habitat','Rivers, lakes and swamps of Africa, south of the Sahara.'],['⏳','Lifespan','About 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','Hippos spend all day in the water to stay cool, and they can hold their breath for 5 minutes. They can\'t really swim: they walk and bounce along the bottom! Their name means "river horse".']]}
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -7430,7 +7502,7 @@ function stepFarm(a,dt){if(a.ridden)return;let sp=0;
   else if(zooOpen&&a===zooSel){// stop and look at you while you pet and feed it
     const [px,pz]=a.Z.toLocal(player.pos.x,player.pos.z);a.face=angDamp(a.face,Math.atan2(px-a.lx,pz-a.lz),Math.min(1,dt*4));a.tgt=null;}
   else{a.wait-=dt;
-    if(!a.tgt&&a.wait<=0){if(Math.random()<.45){a.graze=0;a.tgt=a.spot(a.rad);}else{a.wait=2+Math.random()*4;a.grazing=Math.random()<.6;}}
+    if(!a.tgt&&a.wait<=0){if(Math.random()<.45){a.graze=0;a.tgt=a.spot(a.rad,a);}else{a.wait=2+Math.random()*4;a.grazing=Math.random()<.6;}}
     if(a.tgt){const dx=a.tgt[0]-a.lx,dz=a.tgt[1]-a.lz,d=Math.hypot(dx,dz);
       if(d<.15){a.tgt=null;a.wait=1.5+Math.random()*4;a.grazing=Math.random()<.6;}
       else{sp=(.55+.25*Math.random()*0)*Math.max(.7,Math.sqrt(a.size));const st=Math.min(d,sp*dt),nx=a.lx+dx/d*st,nz=a.lz+dz/d*st;
@@ -7462,7 +7534,8 @@ function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||
   if(flyRide(a,dt))return;// up in the air on a flying ride (24h-flying.js)
   a.pos.set(p.x,p.y,p.z);a.g.position.copy(a.pos);a.g.rotation.y=player.face;a.update(dt,player.speed*.55);
   // sit on the saddle: the avatar's 'ride' pose puts the hips at chair height, so lift everything up to the animal's back
-  av.g.position.y=p.y+a.F.ride-.42;}
+  av.g.position.y=p.y+a.F.ride-.42;
+  if(a.F.swim)swimSink(a,av,p,dt,true);}// 🦛 swims in deep water, with you on its back (26f2-hippo-swim.js)
 // how much faster than walking: bigger animals go faster, unless the ride says (boost)
 const rideBoost=()=>barnRide?barnRide.F.boost||1+Math.min(.9,barnRide.size*.5):1;
 
@@ -7581,8 +7654,25 @@ function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
-  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=zooSpot(a.rad);placeFarm(a);}
+// 🚰 out the back gap of the fence and down the trail to the shore, where the animals drink (it fans out wider by the water)
+function zooShoreOk(lx,lz,r){const f=ZZ.fence,e=ZOO_SHORE.edge;if(lz>-f+1.6+r||lz<e)return false;return Math.abs(lx)<1.3-r*.5+Math.max(0,(-f-lz))*.55;}
+function zooOk2(lx,lz,r){return zooOk(lx,lz,r)||zooShoreOk(lx,lz,r);}
+// now and then an animal walks down to the water for a drink (it stops at the edge and puts its head down)
+// (going in or out, it walks to the gap in the fence first)
+function zooSpot2(r,a){const f=ZZ.fence,out=a&&a.lz<-f+.3;
+  if(a&&a.next){const n=a.next;a.next=null;return n;}
+  if(out){a.next=zooSpot(r);return [0,-f+.6+r];}
+  if(Math.random()<.2){const lz=ZOO_SHORE.edge+r*.6+.15,w=1.3+(-f-lz)*.55-r-.3,s=[(Math.random()*2-1)*Math.max(0,w),lz];
+    if(a){a.next=s;return [0,-f+.6+r];}return s;}
+  return zooSpot(r);}
+// 🦛 the hippo lives in the water just off the zoo's shore, and sometimes comes up onto the sand
+const HIPPO_WATER={x:9,near:-(R+3.2-ZZ.d),far:-(R+12-ZZ.d)};
+function zooOkH(lx,lz,r){return (Math.abs(lx)<HIPPO_WATER.x&&lz<ZOO_SHORE.edge+.5&&lz>HIPPO_WATER.far)||zooShoreOk(lx,lz,r);}
+function zooSpotH(r){const W=HIPPO_WATER;if(Math.random()<.8)return [(Math.random()*2-1)*(W.x-1),W.near-1-Math.random()*(W.near-W.far-1.5)];
+  const lz=ZOO_SHORE.edge-.2;return [(Math.random()*2-1)*2.5,lz];}
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1],['hippo',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk2;a.spot=zooSpot2;a.mates=ZA;
+  if(a.F.swim){a.ok=zooOkH;a.spot=zooSpotH;}
+  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=a.spot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
   let best=null,bd=1e9;for(const a of ZA){const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
@@ -7599,14 +7689,14 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
-    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&f.model===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
   if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
-function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA)stepFarm(a,dt);zooButton(p);
+function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA){stepFarm(a,dt);if(a.F.swim)swimSink(a,null,a.pos,dt);}zooButton(p);
   if(zooOpen&&zooSel&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>8)closeZoo();}
 
 /* ---------- the animal book: every animal in the game, where to find it and what it costs ---------- */
@@ -9094,6 +9184,8 @@ function flyCamBack(){const a=barnRide;if(!FLY.on||!isFlyer(a))return 0;const p=
    - They show in the shop's 🦖 Rides tab and the ⭐🏆 challenges' 🏇 Rides tab with how close you are, and come to you by themselves.
    - 🦓 Kivu the okapi, 🐘 Tembo the elephant and 🦁 Jabari the lion: finish all of their super hard 🦁 Safari challenges
      (the Safari tab in ⭐🏆 challenges, challenges.js). They're the real-looking zoo animals with a saddle (24c9b-safari-rides.js).
+   - 🦍 Zuri the gorilla and 🦛 Kiboko the hippo are earned the same way. Kiboko swims (swim: 26f2-hippo-swim.js) in the water
+     round the city, the only barn ride that may go in it.
    - Once earned they work like the shop rides (24g-mounts.js): they live at the 🐴 Happy Barn and Comet and Blaze can fly (24h-flying.js).
    The FARM entries and the models below are function declarations so 24d-barn.js can use them before this file runs
    (it adds the entries to FARM and builds the models from FarmAnimal.build). Friends online see them through the 'ride' entry. */
@@ -9102,15 +9194,18 @@ function earnedRideList(){return [
   {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',earn:{by:'wins',goal:3},ride:1.13,about:'A golden lion with a royal crown, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
   {k:'comet',e:'🦌',n:'Flying reindeer',nm:'Comet',earn:{by:'days',goal:7},fly:1,ride:1.15,about:'A magic reindeer with a glowing red nose who flies without wings! Only for players who play 7 days in a row.',food:[['🥕','Carrot'],['🍪','Cookie'],['🍎','Apple']],say:['*jingle jingle* 🔔','Up to the stars! ✨','*nose glows bright* ❤️']},
   // 🦁 safari rides: real-looking animals from the Safari Zoo, for players who finish every one of their super hard 🦁 Safari challenges
-  // (challenges.js, ids in earn.ids). model = the zoo animal to build, gear = a saddle, seat = sit this far forward, wide = legs spread, boost = speed.
+  // (challenges.js, ids in earn.ids). model = the zoo animal to build (zoo = which Safari Zoo animal it is, when that's different), gear = a saddle, seat = sit this far forward, wide = legs spread, boost = speed.
   {k:'kivu',e:'🌿',n:'Okapi',nm:'Kivu',model:'okapi',gear:1,safari:1,scale:1.2,earn:{by:'chal',ids:['saf_feed5','saf_win5','saf_days5'],goal:3},ride:1.57,boost:1.75,about:'A shy forest okapi with zebra-striped legs and a velvet coat. Only for safari explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🍃','Leaves'],['🍌','Banana'],['🍄','Mushroom']],say:['*soft huff*','*long tongue lick* 👅','To the rainforest! 🌿']},
   {k:'tembo',e:'🐘',n:'African elephant',nm:'Tembo',model:'elephant',gear:1,safari:1,seat:.66,wide:.55,earn:{by:'chal',ids:['saf_triple','saf_win15','saf_days10'],goal:3},ride:2.2,boost:1.55,about:'A giant African elephant. You sit up on his neck, way up high! Only for champions who finish all 3 of his 🦁 Safari challenges.',food:[['🌾','Hay'],['🍉','Watermelon'],['🍌','Bananas']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖']},
   {k:'jabari',e:'🦁',n:'Lion',nm:'Jabari',model:'lion',gear:1,safari:1,scale:1.15,earn:{by:'chal',ids:['saf_kai5','saf_win30','saf_stars100','saf_days14'],goal:4},ride:1.38,boost:2.05,about:'The king of the savanna: a real lion with a thick dark mane, and the fastest ride in town. Only for legends who finish all 4 of his 🦁 Safari challenges!',food:[['🍖','Meat'],['🍗','Drumstick'],['🥩','Steak']],say:['ROOOAR! 🦁','*proud mane shake*','*deep rumbly purr*']},
   // more safari rides (models in 24c9c-safari-more.js): a zebra, a rhino and a giraffe to ride, and a crowned crane that flies
-  {k:'punda',e:'🦓',n:'Zebra',nm:'Punda',model:'zebraR',gear:1,safari:1,earn:{by:'chal',ids:['saf_stars24','saf_win8','saf_days7'],goal:3},ride:1.26,boost:1.9,about:'A real plains zebra with bold black and white stripes. Only for explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🌾','Hay'],['🥕','Carrot'],['🍏','Apple']],say:['*happy whinny bark*','*stripe shake*','Gallop time! 🦓']},
-  {k:'kifaru',e:'🦏',n:'White rhino',nm:'Kifaru',model:'rhinoR',gear:1,safari:1,earn:{by:'chal',ids:['saf_car3','saf_best3','saf_win20'],goal:3},ride:1.34,boost:1.65,about:'A huge, gentle white rhino with a big horn and wrinkly skin. Only for players who finish all 3 of his 🦁 Safari challenges!',food:[['🌾','Hay'],['🍎','Apple'],['🥬','Lettuce']],say:['*big happy huff*','Hrrumph! 🦏','*stomp stomp*']},
+  {k:'punda',e:'🦓',n:'Zebra',nm:'Punda',model:'zebraR',zoo:'zebra',gear:1,safari:1,earn:{by:'chal',ids:['saf_stars24','saf_win8','saf_days7'],goal:3},ride:1.26,boost:1.9,about:'A real plains zebra with bold black and white stripes. Only for explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🌾','Hay'],['🥕','Carrot'],['🍏','Apple']],say:['*happy whinny bark*','*stripe shake*','Gallop time! 🦓']},
+  {k:'kifaru',e:'🦏',n:'White rhino',nm:'Kifaru',model:'rhinoR',zoo:'rhino',gear:1,safari:1,earn:{by:'chal',ids:['saf_car3','saf_best3','saf_win20'],goal:3},ride:1.34,boost:1.65,about:'A huge, gentle white rhino with a big horn and wrinkly skin. Only for players who finish all 3 of his 🦁 Safari challenges!',food:[['🌾','Hay'],['🍎','Apple'],['🥬','Lettuce']],say:['*big happy huff*','Hrrumph! 🦏','*stomp stomp*']},
   {k:'neema',e:'🕊️',n:'Crowned crane',nm:'Neema',model:'craneR',gear:1,safari:1,fly:1,scale:1.35,earn:{by:'chal',ids:['saf_model5','saf_cake5','saf_pet5'],goal:3},ride:1.86,boost:1.8,about:'A giant grey crowned crane with a golden crown of feathers. Tap 🪽 Fly to soar over the island! Only for champions who finish all 3 of her 🦁 Safari challenges.',food:[['🌾','Seeds'],['🐛','Bugs'],['🐟','Little fish']],say:['*honk-ka-wonk!*','*crown fluff*','Up we go! ☁️']},
-  {k:'twiga',e:'🦒',n:'Giraffe',nm:'Twiga',model:'giraffeR',gear:1,safari:1,earn:{by:'chal',ids:['saf_kai10','saf_stars150','saf_days21'],goal:3},ride:1.8,boost:1.95,about:'The tallest animal in the world! Ride way up high on a real giraffe. Only for true legends who finish all 3 of her 🦁 Safari challenges.',food:[['🌿','Acacia leaves'],['🥬','Lettuce'],['🍎','Apple']],say:['*long tongue lick* 👅','Hello down there!','*gentle hum*']},
+  {k:'twiga',e:'🦒',n:'Giraffe',nm:'Twiga',model:'giraffeR',zoo:'giraffe',gear:1,safari:1,earn:{by:'chal',ids:['saf_kai10','saf_stars150','saf_days21'],goal:3},ride:1.8,boost:1.95,about:'The tallest animal in the world! Ride way up high on a real giraffe. Only for true legends who finish all 3 of her 🦁 Safari challenges.',food:[['🌿','Acacia leaves'],['🥬','Lettuce'],['🍎','Apple']],say:['*long tongue lick* 👅','Hello down there!','*gentle hum*']},
+  // the big zoo animals: ride the gorilla, and a hippo who swims with you (in the zoo's hippo pool and out in 🐬 Dolphin Bay)
+  {k:'zuri',e:'🦍',n:'Gorilla',nm:'Zuri',model:'gorilla',gear:1,safari:1,scale:1.25,earn:{by:'chal',ids:['saf_feedG','saf_meet8','saf_win12'],goal:3},ride:1.62,boost:1.8,about:'A mighty silverback gorilla who gives you a ride on his back as he knuckle-walks! Only for explorers who finish all 3 of his 🦁 Safari challenges.',food:[['🍌','Banana'],['🌿','Leaves'],['🎋','Bamboo shoots']],say:['*chest pat pat* 🦍','*happy rumbly grunt*','Hold on tight!']},
+  {k:'kiboko',e:'🦛',n:'Hippo',nm:'Kiboko',model:'hippo',gear:1,safari:1,swim:.85,earn:{by:'chal',ids:['saf_feedH','saf_hipswim','saf_sea300'],goal:3},ride:1.11,boost:1.6,about:'A huge, happy hippo who swims with you on her back! Ride her right into the water and swim all the way round the city! Only for swimmers who finish all 3 of her 🦁 Safari challenges.',food:[['🍉','Watermelon'],['🌾','Grass'],['🥬','Lettuce']],say:['*big hippo yawn* 🦛','*blub blub* 💦','Splash time!']},
   {k:'phoenix',e:'🔥',n:'Phoenix',nm:'Blaze',earn:{by:'wins',goal:10},fly:1,wingsRun:1,ride:1.12,about:'A legendary fire bird with glowing golden feathers. Only for super champions who win 10 contests or games!',food:[['🌶️','Hot pepper'],['🍒','Cherries'],['🌻','Sunflower seeds']],say:['*sparkly whoosh* 🔥','Skreee! ✨','Let\'s light up the sky!']},
 ];}
 
@@ -9885,7 +9980,8 @@ SHOW.push({k:'ride',
     if(!A.emote||A.emote.id!=='ride')A.play('ride');A.rideW=a.F.wide||0;
     if(showFly(f,d,dt,h))return;// 🪽 up in the air on a flying ride (24h-flying.js)
     a.pos.copy(f.pos);a.g.position.copy(a.pos);a.g.rotation.y=f.cur??f.face;a.update(dt,(f.sp||0)*.55);
-    A.g.position.y=f.pos.y+a.F.ride-.42;},
+    A.g.position.y=f.pos.y+a.F.ride-.42;
+    if(a.F.swim)swimSink(a,A,f.pos,dt);},// 🦛 a hippo swimming with your friend on its back
   off(f,h){showFarmOff(h);const A=f.a;if(A&&A.emote&&A.emote.id==='ride')A.emote=null;}});
 
 // 🛹 the skateboard: in your hand while you walk, under your feet while you ride, put away while your hands are busy
@@ -10553,6 +10649,39 @@ SHOW.push({k:'sea',
       A.rideW=k==='whale'?.6:k==='turtle'?.35:.12;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
     else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph);}},
   off(f,h){if(h&&h.m){scene.remove(h.m.g);freeObj(h.m.g);}if(f.a){f.a.rideW=0;}}});
+// ---- src/26f2-hippo-swim.js ----
+/* ===== 🦛 Swimming with hippos in the water round the city =====
+   - The zoo's hippo lives in the water just off the back of the Safari Zoo (HIPPO_WATER in 24d-barn.js), and comes up on the sand now and then.
+   - waterAt(): how deep the water is (0 dry .. 1 deep) and where the top of it is (seaDepth and WATER_Y, 26f-ocean.js).
+   - swimSink(): animals with swim (the hippo; swim = how high up its body the water comes) sink into deep water so only their
+     back, eyes and ears stick out, and you sink with them when you ride. rideStep (24d-barn.js), the zoo (zooStep) and
+     friends online (the 'ride' entry in 26c-friends-see.js) all use it. 🦛 Kiboko is the only barn ride that may go in the water (seaKeep).
+   - The 🦁 Safari challenge "swim next to the hippo" counts seconds in SAVE.hipWith (hippoStep). The hippo model is in 24c9d-hippo.js. */
+const WAT={k:0,y:0};
+function waterAt(x,z){WAT.k=inCanal(x,z)?seaDepth(x,z):0;WAT.y=WAT.k>0?WATER_Y:0;return WAT;}
+
+// a swimming animal sinks into deep water (and the rider A with it). P = where it is on the ground. Run it after its position is set.
+// Returns how far into the water it is (0..1).
+function swimSink(a,A,P,dt,mine){if(!a||!a.F.swim)return 0;const s=a.sw||(a.sw={k:0,splT:0,rip:null}),w=waterAt(P.x,P.z),sc=a.g.scale.y;
+  s.k+=(w.k-s.k)*Math.min(1,dt*3);if(s.k<.002)s.k=0;
+  const sink=s.k*(WATER_Y-a.F.swim*sc);a.g.position.y+=sink;if(A)A.g.position.y+=sink;
+  // ripples round it on top of the water
+  if(s.k>.25){if(!s.rip){s.rip=M(new THREE.RingGeometry(.75,.95,32),HIPM().rip,0,0,0,a.g,false,false);s.rip.rotation.x=-Math.PI/2;}
+    const q=(performance.now()/1400)%1;s.rip.visible=true;s.rip.position.y=(WATER_Y+.02-a.g.position.y)/sc;s.rip.scale.setScalar(1+q*.6);}
+  else if(s.rip)s.rip.visible=false;
+  // splashes as you swim along
+  if(mine&&s.k>.5&&player.speed>.5&&(s.splT-=dt)<0){s.splT=.45;const f=player.face;burst(new THREE.Vector3(P.x+Math.sin(f)*a.rad*1.4,WATER_Y+.08,P.z+Math.cos(f)*a.rad*1.4),'#ffffff',8,1.3,.18);}
+  if(mine&&s.k>.5&&!s.inT){s.inT=1;sfx('splash');burst(new THREE.Vector3(P.x,WATER_Y+.1,P.z),'#ffffff',22,2.4,.3);if(!SAVE.hipSwam){SAVE.hipSwam=1;persist();toast(`🦛 ${a.F.nm||'The hippo'} is swimming! 💦`);}}
+  if(s.k<.1)s.inT=0;
+  return s.k;}
+
+// seconds you swim right next to the zoo's hippo (a 🦁 Safari challenge)
+let hipWithT=0;
+function hippoStep(dt){if(!started||!seaSwimming())return;const h=ZA.find(a=>a.k==='hippo');if(!h)return;
+  if(Math.hypot(player.pos.x-h.pos.x,player.pos.z-h.pos.z)<h.rad+2.6){SAVE.hipWith=(SAVE.hipWith||0)+dt;
+    if((hipWithT+=dt)>5){hipWithT=0;persist();}if(!h.sayHi){h.sayHi=1;h.speak('*blub blub* 💦');toast('🦛 You\'re swimming with the hippo!');}}}
+onTick.push(hippoStep);
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{waterAt,hipWith:()=>SAVE.hipWith||0,HIPPO_WATER,ZOO_SHORE});});
 // ---- src/27-daddy-powers.js ----
 /* ================= 🦸 SECRET DADDY POWERS (temporary, for the family demo) =================
    Type your name as " Daddy" (with a SPACE in front) on the welcome screen or in Settings. The space is trimmed off, so

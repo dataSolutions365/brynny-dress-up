@@ -77,7 +77,8 @@ SHOW.push({k:'ride',
     if(!A.emote||A.emote.id!=='ride')A.play('ride');A.rideW=a.F.wide||0;
     if(showFly(f,d,dt,h))return;// 🪽 up in the air on a flying ride (24h-flying.js)
     a.pos.copy(f.pos);a.g.position.copy(a.pos);a.g.rotation.y=f.cur??f.face;a.update(dt,(f.sp||0)*.55);
-    A.g.position.y=f.pos.y+a.F.ride-.42;},
+    A.g.position.y=f.pos.y+a.F.ride-.42;
+    if(a.F.swim)swimSink(a,A,f.pos,dt);},// 🦛 a hippo swimming with your friend on its back
   off(f,h){showFarmOff(h);const A=f.a;if(A&&A.emote&&A.emote.id==='ride')A.emote=null;}});
 
 // 🛹 the skateboard: in your hand while you walk, under your feet while you ride, put away while your hands are busy
