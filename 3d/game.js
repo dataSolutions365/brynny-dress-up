@@ -11747,7 +11747,7 @@ function heroLook(L){const h=JSON.parse(JSON.stringify(L));
 function heroGear(a){const guy=!!a.guy,h={a,bits:[]},add=(m,parent)=>{parent.add(m);h.bits.push(m);return m;};
   const g=new THREE.PlaneGeometry(.66,1.08,8,12),p=g.attributes.position;
   for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,-Math.abs(x)*x*1.1);p.setX(i,x*(1+(.54-y)*.5));}g.translate(0,-.54,0);g.computeVertexNormals();
-  h.cape=add(new THREE.Group(),a.spine);h.cape.position.set(0,.5,guy?-.135:-.12);const cm=new THREE.Mesh(g,dadCapeMat);cm.rotation.y=Math.PI;cm.castShadow=true;h.cape.add(cm);
+  h.cape=add(new THREE.Group(),a.spine);h.cape.position.set(0,.5,guy?-.135:-.12);const cm=new THREE.Mesh(g,dadCapeMat);cm.rotation.y=Math.PI;cm.castShadow=true;h.cape.add(cm);h.cm=cm;
   // a gold bar across the shoulders that the cape hangs from
   const bar=add(new THREE.Mesh(new THREE.CapsuleGeometry(.018,.2,4,10),dadGoldMat),a.spine);bar.position.set(0,.47,guy?-.1:-.09);bar.rotation.z=Math.PI/2;
   h.badge=add(new THREE.Mesh(new THREE.PlaneGeometry(.17,.17),daddyBadge()),a.spine);h.badge.position.set(0,.27,guy?.13:.118);
@@ -11762,6 +11762,14 @@ function heroGear(a){const guy=!!a.guy,h={a,bits:[]},add=(m,parent)=>{parent.add
   return h;}
 function heroOff(h){if(!h)return;for(const m of h.bits){m.parent&&m.parent.remove(m);m.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
 // the cape flows out behind you when you run, jump or fly
+// on your own phone the camera sits right behind you, so a solid cape would be a big purple wall hiding whoever stands
+// just in front of you (family online, their pet still showing beside it). Seen from behind, your own cape goes see-through;
+// from the front (photos, turning the camera round) it is solid again. Friends always see it solid on their phones.
+const dadCapeSeeMat=std(HERO.cape,{roughness:.5,side:THREE.DoubleSide,transparent:true,opacity:1,depthWrite:false});
+function capeFade(h){if(!h||!h.cm||h.cm.userData.dadM)return;// (👻 ghost mode has its own see-through look)
+  const P=player.pos,dx=camera.position.x-P.x,dz=camera.position.z-P.z,d=Math.hypot(dx,dz)||1,
+    behind=-(dx*Math.sin(player.face)+dz*Math.cos(player.face))/d,o=1-.72*Math.max(0,Math.min(1,behind*1.6));
+  dadCapeSeeMat.opacity=o;h.cm.material=o>.98?dadCapeMat:dadCapeSeeMat;h.cm.castShadow=true;}
 const heroCape=(h,t,sp,air,fly)=>{h.cape.rotation.x=fly?1.3+Math.sin(t*9)*.08:.08+Math.min(sp,8)*.07+Math.sin(t*3)*.04+(air?.45:0);};
 // flying like a superhero: one fist forward, the other arm along your side, legs together
 // standing in the robot's dome: arms down, legs straight
@@ -11797,7 +11805,7 @@ onTick.push(dt=>{if(SAVE.daddySuit&&(closetOpen||!daddyKey()))suitOff(true);// b
   const key=daddyKey()&&started,on=daddyOn()&&started;suitBtn.style.display=key?'grid':'none';
   if(on&&(!DAD.gear||DAD.gear.a!==av)){heroOff(DAD.gear);DAD.gear=heroGear(av);}
   else if(!on&&DAD.gear){heroOff(DAD.gear);DAD.gear=null;}
-  if(DAD.gear){heroCape(DAD.gear,performance.now()/1000,player.speed,!player.onGround,DAD.fly);if(DAD.fly)heroFlyPose(av);if(DAD.robot)heroStandPose(av);}});
+  if(DAD.gear){heroCape(DAD.gear,performance.now()/1000,player.speed,!player.onGround,DAD.fly);capeFade(DAD.gear);if(DAD.fly)heroFlyPose(av);if(DAD.robot)heroStandPose(av);}});
 /* ---------- ❄️ freeze breath and ⚡ lightning strike (buttons on the left while suited up) ---------- */
 // Both reach friends online through the 'hero' entry below: it carries a little note {to, n, t} for the latest freeze
 // and {x, z, n, t} for the latest strike, and every phone in the room plays it once.
