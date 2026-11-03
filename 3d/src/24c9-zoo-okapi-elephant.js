@@ -27,6 +27,7 @@ function eleTex(){if(ELE_TEX)return ELE_TEX;ELE_TEX=canvasTex(512,512,(x,w,h)=>{
 // soft round bumps for the elephant's big body (no lines, so nothing stretches on the round shape)
 let ELE_BUMP=null;const eleBumpTex=()=>ELE_BUMP||(ELE_BUMP=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#808080';x.fillRect(0,0,w,h);
   for(let i=0;i<1400;i++){x.fillStyle=Math.random()<.5?'rgba(40,40,40,.18)':'rgba(220,220,220,.18)';x.beginPath();x.arc(Math.random()*w,Math.random()*h,1+Math.random()*5,0,7);x.fill();}},3));
+const EAR_OPEN=.32;// how far the elephant's ears stand out from its shoulders at rest
 const ZOO_BUILD={
   // 🦓🦒 the okapi: a velvety dark brown forest giraffe with a pale face, big ears and zebra-striped legs
   okapi(g,body,o){const r=.27,len=.6,hip=.92,by=1.02,T=okapiTex();
@@ -92,9 +93,11 @@ const ZOO_BUILD={
     es.bezierCurveTo(.4,-.68,.26,-.86,.12,-.78);es.bezierCurveTo(.02,-.6,.08,-.3,0,-.12);es.lineTo(0,.42);
     const eg=new THREE.ExtrudeGeometry(es,{depth:.025,bevelEnabled:true,bevelThickness:.012,bevelSize:.012,bevelSegments:2,curveSegments:16});eg.translate(0,0,-.012);
     const ig=new THREE.ShapeGeometry(es,16);
-    this.ears=[];for(const sx of [-1,1]){const e=new THREE.Group();e.position.set(sx*H*.62,H*.15,-H*.05);head.add(e);
-      const m=M(eg,earM,0,0,0,e);m.rotation.y=-sx*Math.PI/2;m.scale.set(1.35,1.35,1);
-      const inn=M(ig,earIn,0,0,0,e,false,false);inn.rotation.y=-sx*Math.PI/2;inn.position.x=-sx*.03;inn.scale.set(1.24,1.2,1);
+    // both ears hang from the side of the head and sweep BACK along the shoulders (turning the flat shape by +90° points it backward on
+    // either side), a little open so they sit just outside the body; the pinkish inner side faces the body
+    this.ears=[];for(const sx of [-1,1]){const e=new THREE.Group();e.position.set(sx*H*.85,H*.15,-H*.1);e.rotation.y=-sx*EAR_OPEN;head.add(e);
+      const m=M(eg,earM,0,0,0,e);m.rotation.y=Math.PI/2;m.scale.set(1.35,1.35,1);
+      const inn=M(ig,earIn,0,0,0,e,false,false);inn.rotation.y=Math.PI/2;inn.position.x=-sx*.03;inn.scale.set(1.24,1.2,1);
       this.ears.push({e,sx});}
     fEyes(this,head,H,.52,.18,.66,.85,.075,'#2a1a10');
     for(const sx of [-1,1])M(sph(H*.12,10,8),dark,sx*H*.5,H*.23,H*.66,head,false,false).scale.set(1.4,.5,.6);// wrinkly eyelids
@@ -114,7 +117,7 @@ const ZOO_BUILD={
     taperTube([fV(0,0,0),fV(0,-.25,-.08),fV(0,-.6,-.05),fV(0,-.85,-.02)],q=>.045-.025*q,skin,tail,14,8);
     for(let i=0;i<6;i++)M(cyl(.008,.004,.16,4),std('#2a2420'),Math.sin(i)*.02,-.92,Math.cos(i)*.02-.02,tail,false,false).rotation.z=(i-2.5)*.08;
     this.tick=(tm,dt,run)=>{// ears flap, the trunk swings (and reaches down while eating, curls up when happy)
-      const fl=this.happy>0?.5+Math.sin(tm*9)*.35:.12+Math.sin(tm*1.6)*.12;for(const {e,sx} of this.ears)e.rotation.y=sx*fl;
+      const fl=this.happy>0?.5+Math.sin(tm*9)*.35:.12+Math.sin(tm*1.6)*.12;for(const {e,sx} of this.ears)e.rotation.y=-sx*(EAR_OPEN+fl);// open outward, never into the face or the body
       const curl=this.happy>0?-.32:this.graze>.3?.04:-.05-.04*Math.max(0,Math.sin(tm*.4));
       this.trunk.forEach((p,i)=>{if(!i){p.rotation.x=-.3+this.graze*.3+Math.sin(tm*1.3)*.08;return;}p.rotation.x=curl*(1+i*.15)+Math.sin(tm*1.8-i*.5)*.05;p.rotation.z=Math.sin(tm*1.1-i*.4)*.05*(1+run*2);});};
     Object.assign(o,{neck,head,tail,nTilt:.12,gz:.35,size:2,h:by+r+.45,rad:1.25,dustR:[r,r,len*.8]});},
