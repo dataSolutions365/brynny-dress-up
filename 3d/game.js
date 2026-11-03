@@ -223,7 +223,7 @@ const ZONES=[
   {id:'batting',name:'⚾ Batting Cage',ang:210,d:57,r:7.5,music:'stadium-cheer'},
   // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
   {id:'barn',name:'🐴 Happy Barn',ang:0,d:56.5,r:6,music:'spring-birds',nopath:true},
-  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:56.5,r:6,music:'city-park',nopath:true},
+  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:58.5,r:8.5,music:'city-park',nopath:true},
   {id:'garage',name:'🔧 Car Garage',ang:150,d:57,r:7,music:'fireworks'},
   // behind the Spring Garden and the Runway, with a short path from the place in front (p0)
   {id:'barber',name:'💈 Barber Shop',ang:300,d:56.1,r:5.6,music:'city-park',p0:43.2},
@@ -957,9 +957,9 @@ function floorPad(z,lx,lz,color,emoji,label,y=0){const g=z.g,m=glow(color,1.4);m
 // local layout: +z points back toward the Birthday Party (the gate), the red barn stands at the back
 // a round fence with a gate that faces the plaza, and a sign over the gate (used by the barn and the zoo)
 function ringFence(z,FR,gateA,railM,gateM,label,fg){const g=z.g,wood=std('#b07a4a',{roughness:.85});
-  const postG=cyl(.07,.08,1.05,8),railG=box(.06,.09,1),capG=sph(.085,8,6);
-  for(let i=0;i<40;i++){const a=i/40*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA)continue;const x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(postG,railM,x,.52,w,g);M(capG,railM,x,1.05,w,g,false,false);z.ob(x,w,.32);}
-  for(let i=0;i<40;i++){const a=(i+.5)/40*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA+.05)continue;const L=2*FR*Math.sin(Math.PI/40)+.04;
+  const postG=cyl(.07,.08,1.05,8),railG=box(.06,.09,1),capG=sph(.085,8,6),N=Math.max(40,Math.round(FR*7.2));// a bigger fence gets more posts
+  for(let i=0;i<N;i++){const a=i/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA)continue;const x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(postG,railM,x,.52,w,g);M(capG,railM,x,1.05,w,g,false,false);z.ob(x,w,.32);}
+  for(let i=0;i<N;i++){const a=(i+.5)/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<gateA+.05)continue;const L=2*FR*Math.sin(Math.PI/N)+.04;
     for(const y of [.45,.85]){const r=M(railG,railM,Math.sin(a)*FR,y,Math.cos(a)*FR,g);r.scale.z=L;r.rotation.y=a+Math.PI/2;}}
   // gate posts with little lanterns
   for(const s of [-1,1]){const a=s*gateA,x=Math.sin(a)*FR,w=Math.cos(a)*FR;M(cyl(.1,.11,1.6,10),gateM,x,.8,w,g);M(sph(.13,12,10),glow('#fff1c4',1.4),x,1.72,w,g,false,false);z.ob(x,w,.3);}
@@ -1144,7 +1144,7 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  z.pad=spPad(z,-2.9,5.2,'#4fd16a','⚾','⚾ Batting practice!','#2f8f3a');
  signpost(z);}
 // ---- src/12d-place-zoo.js ----
-/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes and rhinos live in 24d-barn.js) ===== */
+/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi and elephants live in 24d-barn.js) ===== */
 // local layout: +z points back toward Halloween Hollow (the gate)
 {const z=Z.zoo,g=z.g;
  const grassT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e3c77a';x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(170,140,60,.4)':c<.7?'rgba(255,240,170,.55)':'rgba(140,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(-Math.PI/2+(Math.random()-.5)*.6);x.fillRect(0,0,5+Math.random()*8,1.3);x.restore();}},4);
@@ -1153,30 +1153,31 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  {const [px,pz]=z.toWorld(0,z.r+.6+z.gap/2);const pm=std('#ffffff',{map:grassT,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-1;pm.polygonOffsetUnits=-1;
   const p=M(new THREE.PlaneGeometry(2.2,2.4+z.gap),pm,px,.013,pz,scene,false,true);p.rotation.x=-Math.PI/2;p.rotation.z=z.rot;}
  const wood=std('#9a6a43',{roughness:.85}),bark=std('#7a5236',{roughness:.9}),leafM=phys('#6fa83a',{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')});
- z.fence=5.55;ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a');
+ z.fence=z.r-.45;const S=z.fence/5.55;// S: the zoo grew bigger for the elephants, so everything inside spreads out with it
+ ringFence(z,z.fence,.32,std('#c8a06a',{roughness:.85}),std('#5a8a3a',{roughness:.6}),'🦒 Safari Zoo','#5a8a3a');
  // flat-topped acacia trees, the giraffes' favorite snack
  const acacia=(lx,lz,s)=>{const tg=new THREE.Group();tg.position.set(lx,0,lz);tg.scale.setScalar(s);g.add(tg);
    M(cyl(.12,.2,2.6,10),bark,0,1.3,0,tg);for(const [a,l] of [[.6,1.1],[-.7,1],[2.4,.9]]){const b=M(cyl(.05,.08,l,8),bark,Math.sin(a)*.35,2.5,Math.cos(a)*.35,tg);b.rotation.set(Math.cos(a)*.7,0,-Math.sin(a)*.7);}
    for(const [x,y,w,r] of [[0,3,0,1.4],[.8,2.85,.3,.9],[-.8,2.9,-.2,1],[.1,2.95,-.8,.9],[-.2,2.9,.8,.9]]){const c=M(sph(r,16,10),leafM,x,y,w,tg);c.scale.y=.32;}
    z.ob(lx,lz,.3*s);};
- acacia(-2.9,-2.5,1.15);acacia(3.4,-1.4,.9);
+ acacia(-2.9*S,-2.5*S,1.15);acacia(3.4*S,-1.4*S,.9);acacia(-5.2,3.6,1.05);acacia(5.4,-4.6,1.2);
  // big smooth rocks
- const rockM=std('#b9ab9a',{roughness:.95});for(const [x,w,s] of [[1.4,-3.9,.7],[2.1,-3.5,.45],[.9,-3.4,.35]]){const r=M(new THREE.IcosahedronGeometry(s,1),rockM,x,s*.4,w,g);r.scale.y=.7;}z.ob(1.5,-3.7,.9);
+ const rockM=std('#b9ab9a',{roughness:.95});for(const [x,w,s] of [[1.4,-3.9,.7],[2.1,-3.5,.45],[.9,-3.4,.35]]){const r=M(new THREE.IcosahedronGeometry(s,1),rockM,x*S,s*.4,w*S,g);r.scale.y=.7;}z.ob(1.5*S,-3.7*S,.9);
  // watering hole
- {const wm=phys('#5fc6e8',{roughness:.05,clearcoat:1});patch(1.15,wm,...z.toWorld(-2.4,1.6),.03);
-  for(let i=0;i<12;i++){const a=i/12*Math.PI*2;M(sph(.16,8,6),rockM,-2.4+Math.sin(a)*1.3,.04,1.6+Math.cos(a)*1.3,g,false,false).scale.y=.5;}}
+ {const wm=phys('#5fc6e8',{roughness:.05,clearcoat:1});patch(1.7,wm,...z.toWorld(-3.2,2),.03);
+  for(let i=0;i<16;i++){const a=i/16*Math.PI*2;M(sph(.18,8,6),rockM,-3.2+Math.sin(a)*1.85,.04,2+Math.cos(a)*1.85,g,false,false).scale.y=.5;}}
  // hay feeder on a post
- {const fg=new THREE.Group();fg.position.set(3,0,1.6);g.add(fg);M(cyl(.06,.06,1.4,8),wood,0,.7,0,fg);M(box(.8,.35,.5),wood,0,1.4,0,fg);
-  M(box(.7,.25,.4),std('#f2cf63',{roughness:1}),0,1.6,0,fg);z.ob(3,1.6,.45);}
+ {const fg=new THREE.Group();fg.position.set(4.2,0,2.2);g.add(fg);M(cyl(.06,.06,1.4,8),wood,0,.7,0,fg);M(box(.8,.35,.5),wood,0,1.4,0,fg);
+  M(box(.7,.25,.4),std('#f2cf63',{roughness:1}),0,1.6,0,fg);z.ob(4.2,2.2,.45);}
  // info board by the gate
  {const bg=new THREE.Group();const [x,w]=z.toWorld(-2.2,z.r-.9);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
   for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);
   const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#5a8a3a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Safari Zoo',W/2,70);
-    c.font='600 34px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes',W/2,150);c.fillText('🦏 Rhinos',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants and an okapi!',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
   for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
   obs.push({x,z:w,r:.4});}
  // the animals keep away from these (trees, rocks, water, feeder)
- z.avoid=[[-2.9,-2.5,.5],[3.4,-1.4,.45],[1.5,-3.7,1],[-2.4,1.6,1.3],[3,1.6,.5]];}
+ z.avoid=[[-2.9*S,-2.5*S,.5],[3.4*S,-1.4*S,.45],[-5.2,3.6,.5],[5.4,-4.6,.5],[1.5*S,-3.7*S,1],[-3.2,2,1.85],[4.2,2.2,.5]];}
 // ---- src/13-park-and-stars.js ----
 /* ---------- park trees ---------- */
 {const trunkM=std('#7a5236',{roughness:.9});const leafs=['#3f8f3a','#4fa645','#2f7a34','#5cb04a'].map(c=>phys(c,{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')}));
@@ -5747,6 +5748,128 @@ function openMystery(){const th=rnd(MK_THEMES),L=SAVE.look,mk=L.makeup;
   av.dress(L);persist();sfx('tada');tone(660,.12,'triangle',.08);tone(990,.16,'triangle',.08,.12);
   burst(av.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.1,.1)),rnd(th.c),36,1.1,.06);
   toast(`🎁 Surprise! A ${th.n} look!`);gigiSays(rnd(['Ooh, what a surprise! 🎁','I love this one! 😍','Mystery magic! ✨']));did('mystery');renderCloset();}
+// ---- src/24c9-zoo-okapi-elephant.js ----
+/* ===== Safari Zoo: the okapi and the elephants =====
+   These two are built to look like the real animals (true colors and shapes, no cartoon blush).
+   FarmAnimal.build() in 24d-barn.js calls ZOO_BUILD[k] for them; ZOOA there has their facts and food. */
+// a wavy black and white stripe pattern, painted from the top of the canvas (fr0) to (fr1) of its height
+function okStripes(x,w,h,fr0,fr1,n,seed){const y0=h*fr0,y1=h*fr1,st=(y1-y0)/n;x.fillStyle='#f3eee4';x.fillRect(0,y0,w,y1-y0);x.fillStyle='#24150f';
+  for(let i=0;i<n;i++){const Y=y0+i*st;x.beginPath();x.moveTo(0,Y);for(let X=0;X<=w;X+=8)x.lineTo(X,Y+Math.sin(X*.09+i*1.7+seed)*st*.18);
+    for(let X=w;X>=0;X-=8)x.lineTo(X,Y+st*(.5+.12*Math.sin(i*2.3+seed))+Math.sin(X*.07+i+seed)*st*.15);x.fill();}}
+let OKAPI_TEX=null;
+function okapiTex(){if(OKAPI_TEX)return OKAPI_TEX;const brown='#2c1912',white='#f3eee4',dark='#24150f',T=d=>canvasTex(64,512,d);
+  OKAPI_TEX={
+    // the hind thighs and rump: the famous zebra stripes
+    thigh:T((x,w,h)=>{x.fillStyle=brown;x.fillRect(0,0,w,h);okStripes(x,w,h,.08,1,9,1);}),
+    rump:T((x,w,h)=>{x.fillStyle=brown;x.fillRect(0,0,w,h);okStripes(x,w,h,.4,.95,7,2);}),
+    // the front legs: brown at the top, then stripes
+    arm:T((x,w,h)=>{x.fillStyle=brown;x.fillRect(0,0,w,h);okStripes(x,w,h,.45,1,5,3);}),
+    // the lower legs: more stripes, then white "socks" with a dark band at the ankle
+    shinH:T((x,w,h)=>{okStripes(x,w,h,0,.35,4,5);x.fillStyle=white;x.fillRect(0,h*.35,w,h*.65);x.fillStyle=dark;x.fillRect(0,h*.35,w,h*.07);x.fillRect(0,h*.78,w,h*.07);}),
+    shinF:T((x,w,h)=>{x.fillStyle=white;x.fillRect(0,0,w,h);x.fillStyle=dark;x.fillRect(0,h*.1,w,h*.12);x.fillRect(0,h*.78,w,h*.08);
+      x.fillStyle='rgba(36,21,15,.6)';for(let i=0;i<3;i++)x.fillRect(0,h*(.28+i*.06),w,h*.025);}),
+  };return OKAPI_TEX;}
+let ELE_TEX=null;
+// wrinkly gray skin: lots of fine wavy lines, used as both the color and the bumps
+function eleTex(){if(ELE_TEX)return ELE_TEX;ELE_TEX=canvasTex(512,512,(x,w,h)=>{x.fillStyle='#9a928c';x.fillRect(0,0,w,h);
+  for(let i=0;i<900;i++){x.fillStyle=Math.random()<.5?'rgba(80,70,64,.12)':'rgba(190,180,172,.12)';x.beginPath();x.arc(Math.random()*w,Math.random()*h,4+Math.random()*16,0,7);x.fill();}
+  x.lineCap='round';for(let i=0;i<260;i++){const X=Math.random()*w,Y=Math.random()*h,L=20+Math.random()*60;x.strokeStyle=`rgba(60,52,48,${.25+Math.random()*.3})`;x.lineWidth=.8+Math.random()*1.6;
+    x.beginPath();x.moveTo(X,Y);x.quadraticCurveTo(X+L*.5,Y+(Math.random()-.5)*14,X+L,Y+(Math.random()-.5)*8);x.stroke();}},2);return ELE_TEX;}
+// soft round bumps for the elephant's big body (no lines, so nothing stretches on the round shape)
+let ELE_BUMP=null;const eleBumpTex=()=>ELE_BUMP||(ELE_BUMP=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#808080';x.fillRect(0,0,w,h);
+  for(let i=0;i<1400;i++){x.fillStyle=Math.random()<.5?'rgba(40,40,40,.18)':'rgba(220,220,220,.18)';x.beginPath();x.arc(Math.random()*w,Math.random()*h,1+Math.random()*5,0,7);x.fill();}},3));
+const ZOO_BUILD={
+  // 🦓🦒 the okapi: a velvety dark brown forest giraffe with a pale face, big ears and zebra-striped legs
+  okapi(g,body,o){const r=.27,len=.6,hip=.92,by=1.02,T=okapiTex();
+    const coat=phys('#2f1a12',{roughness:.62,sheen:.45,sheenColor:new THREE.Color('#9a5634'),sheenRoughness:.5}),
+      face=phys('#d8cbbb',{roughness:.7,sheen:.4,sheenColor:new THREE.Color('#ffffff')}),
+      brow=phys('#5a3624',{roughness:.65}),nose=fShiny('#1d1310',{roughness:.35}),hoofM=fShiny('#1d1310',{roughness:.4}),
+      tex=t=>phys('#ffffff',{map:t,roughness:.62,sheen:.45,sheenColor:new THREE.Color('#9a5634'),sheenRoughness:.5});
+    body.position.y=by;
+    // the back slopes down toward the rump, like a giraffe's
+    const t=M(new THREE.CapsuleGeometry(r,len,10,24),coat,0,0,0,body);t.rotation.x=Math.PI/2-.1;t.scale.set(.92,1,1);
+    M(sph(r*.92,18,14),coat,0,.04,len*.42,body).scale.set(.85,1.02,1.05);// deep chest and shoulders
+    // the striped rump wraps around the back of the body
+    const rump=M(sph(r*1.04,24,18),tex(T.rump),0,-.05,-len*.55,body);rump.scale.set(.95,.92,.92);
+    // legs: the hind ones have big striped thighs
+    for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.55,hip,sz*len*.48);g.add(lg);this.legs.push({g:lg,ph});
+      if(sz<0){M(cyl(.13,.075,.46,16),tex(T.thigh),0,-.16,0,lg);M(sph(.13,14,10),tex(T.thigh),0,.07,0,lg);}
+      else{M(cyl(.095,.065,.4,14),tex(T.arm),0,-.14,0,lg);M(sph(.095,12,10),coat,0,.06,0,lg);}
+      M(sph(.066,10,8),tex(sz<0?T.shinH:T.shinF),0,-.36,0,lg);
+      M(cyl(.05,.042,.54,12),tex(sz<0?T.shinH:T.shinF),0,-.62,0,lg);
+      M(cyl(.045,.055,.07,12),hoofM,0,-.885,.01,lg);}
+    // the long neck leans forward
+    const neck=new THREE.Group();neck.position.set(0,by+r*.35,len/2+r*.35);neck.rotation.x=.62;g.add(neck);const nl=.6;
+    taperTube([fV(0,-.08,-.04),fV(0,nl*.4,0),fV(0,nl*.8,.01),fV(0,nl,0)],q=>.15-.065*q,coat,neck,24,14);
+    M(sph(.03,8,6),brow,0,nl*.5,-.08,neck).scale.set(.8,6,1);// a short dark mane
+    const head=new THREE.Group();head.position.set(0,nl+.04,0);head.rotation.x=-.62+.42;neck.add(head);const H=.12;
+    // a pale face with a brown forehead and a long dark-tipped muzzle
+    M(sph(H,22,16),face,0,0,0,head).scale.set(.85,.9,1.15);
+    M(sph(H*.85,18,12),brow,0,H*.35,-H*.1,head).scale.set(.9,.6,1);
+    const mz=M(sph(H*.62,18,14),face,0,-H*.3,H*1.1,head);mz.scale.set(.74,.72,1.5);
+    M(sph(H*.36,14,10),nose,0,-H*.34,H*1.95,head).scale.set(1,.85,.7);
+    for(const sx of [-1,1]){M(sph(H*.07,8,6),std('#0d0807'),sx*H*.16,-H*.24,H*2.15,head,false,false);
+      // big upright ears, dark outside and pale inside
+      const eg=new THREE.Group();eg.position.set(sx*H*.55,H*.62,-H*.35);eg.rotation.set(-.25,sx*.35,-sx*.55);head.add(eg);
+      M(sph(H*.5,16,12),brow,0,H*.65,0,eg).scale.set(.62,1.35,.2);M(sph(H*.4,14,10),face,0,H*.62,H*.06,eg).scale.set(.55,1.2,.12);
+      M(cyl(H*.07,H*.09,H*.35,8),brow,sx*H*.18,H*.9,-H*.05,head).rotation.z=-sx*.15;}// little skin-covered ossicones
+    fEyes(this,head,H,.58,.15,.5,.75,.16,'#1a0f0a');
+    const tail=new THREE.Group();tail.position.set(0,by+r*.25,-(len/2+r*.85));g.add(tail);
+    taperTube([fV(0,0,0),fV(0,-.12,-.05),fV(0,-.32,-.04),fV(0,-.45,-.02)],q=>.03-.012*q,coat,tail,12,8);M(sph(.045,10,8),std('#1d1310'),0,-.5,-.02,tail).scale.set(.8,2,.8);
+    Object.assign(o,{neck,head,tail,nTilt:.62,size:1.2,h:by+nl*.8+.3,rad:.55,dustR:[r,r,len*.8]});},
+  // 🐘 the African elephant: huge, wrinkly and gray, with fan-shaped ears, ivory tusks and a trunk that swings and curls
+  elephant(g,body,o){const r=.72,len=.82,hip=1.18,by=1.46,skinT=eleTex();
+    const trunkM=std('#ffffff',{map:skinT,bumpMap:skinT,bumpScale:3,roughness:.95}),skin=std('#958d87',{bumpMap:eleBumpTex(),bumpScale:2.5,roughness:.95}),dark=std('#6f6762',{map:skinT,bumpMap:skinT,bumpScale:3,roughness:.95}),
+      ivory=phys('#efe6d2',{roughness:.35,clearcoat:.6}),nail=std('#d9d0c2',{roughness:.6}),earIn=std('#b49c97',{map:skinT,roughness:.95,side:THREE.DoubleSide}),
+      earM=std('#958d87',{bumpMap:eleBumpTex(),bumpScale:2,roughness:.95,side:THREE.DoubleSide});
+    body.position.y=by;
+    const t=M(fuzz(new THREE.CapsuleGeometry(r,len,12,28),.02,6),skin,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(.9,1.02,1);
+    M(sph(r*.9,22,16),skin,0,-r*.22,0,body).scale.set(.95,.85,1.25);// round belly
+    M(sph(r*.75,20,14),skin,0,r*.32,len*.32,body).scale.set(1,.8,1.1);// high shoulders
+    // four thick pillar legs with wide round feet and toenails
+    for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.52,hip,sz*len*.52);g.add(lg);this.legs.push({g:lg,ph});
+      M(sph(.3,16,12),skin,0,0,0,lg).scale.set(1,1.2,1.1);
+      M(fuzz(cyl(.25,.21,hip-.12,20),.012,14),skin,0,-(hip-.12)/2,0,lg);
+      M(cyl(.22,.25,.14,22),dark,0,-hip+.07,0,lg);
+      for(const a of [-.6,0,.6])M(sph(.06,10,8),nail,Math.sin(a)*.23,-hip+.05,Math.cos(a)*.23,lg,false,false).scale.set(1,.7,.5);}
+    // a short neck and a big head
+    const neck=new THREE.Group();neck.position.set(0,by+r*.22,len/2+r*.55);neck.rotation.x=.12;g.add(neck);
+    const head=new THREE.Group();head.position.set(0,.05,.18);head.rotation.x=-.12;neck.add(head);const H=.46;
+    M(fuzz(sph(H,24,18),.012,10),skin,0,0,0,head).scale.set(.95,1.05,.95);
+    M(sph(H*.55,16,12),skin,0,H*.55,H*.15,head).scale.set(1.3,.7,1);// the domed forehead
+    M(sph(H*.6,16,12),skin,0,-H*.35,H*.55,head).scale.set(.85,.85,.9);// where the trunk starts
+    // huge ears shaped a bit like Africa, which flap to keep cool
+    const es=new THREE.Shape();es.moveTo(0,.42);es.bezierCurveTo(.3,.58,.78,.5,.86,.12);es.bezierCurveTo(.9,-.18,.66,-.3,.5,-.5);
+    es.bezierCurveTo(.4,-.68,.26,-.86,.12,-.78);es.bezierCurveTo(.02,-.6,.08,-.3,0,-.12);es.lineTo(0,.42);
+    const eg=new THREE.ExtrudeGeometry(es,{depth:.025,bevelEnabled:true,bevelThickness:.012,bevelSize:.012,bevelSegments:2,curveSegments:16});eg.translate(0,0,-.012);
+    const ig=new THREE.ShapeGeometry(es,16);
+    this.ears=[];for(const sx of [-1,1]){const e=new THREE.Group();e.position.set(sx*H*.62,H*.15,-H*.05);head.add(e);
+      const m=M(eg,earM,0,0,0,e);m.rotation.y=-sx*Math.PI/2;m.scale.set(1.35,1.35,1);
+      const inn=M(ig,earIn,0,0,0,e,false,false);inn.rotation.y=-sx*Math.PI/2;inn.position.x=-sx*.03;inn.scale.set(1.24,1.2,1);
+      this.ears.push({e,sx});}
+    fEyes(this,head,H,.52,.18,.66,.85,.075,'#2a1a10');
+    for(const sx of [-1,1])M(sph(H*.12,10,8),dark,sx*H*.5,H*.23,H*.66,head,false,false).scale.set(1.4,.5,.6);// wrinkly eyelids
+    // ivory tusks curving forward and up
+    for(const sx of [-1,1]){const tg=new THREE.Group();tg.position.set(sx*H*.32,-H*.52,H*.62);tg.rotation.y=-sx*.15;head.add(tg);
+      taperTube([fV(0,0,0),fV(0,-.18,.1),fV(sx*.04,-.27,.3),fV(sx*.06,-.22,.48)],q=>.07-.055*q,ivory,tg,18,10);}
+    M(sph(H*.3,12,10),skin,0,-H*.62,H*.55,head).scale.set(1,.6,.8);// mouth
+    // the trunk: a chain of short pieces so it can sway and curl
+    this.trunk=[];let par=new THREE.Group();par.position.set(0,-H*.45,H*.92);par.rotation.x=-.3;head.add(par);
+    const N=9,seg=.165;for(let i=0;i<N;i++){const q=i/(N-1),ra=.15-.095*q,rb=.15-.095*Math.min(1,(i+1)/(N-1));
+      const p=new THREE.Group();if(i)p.position.y=-seg;par.add(p);
+      M(fuzz(cyl(ra,rb,seg+.02,16),.006,30),trunkM,0,-seg/2,0,p);M(sph(rb,14,10),trunkM,0,-seg,0,p);
+      for(let w=0;w<2;w++)M(new THREE.TorusGeometry(ra*.99,.005,4,16),trunkM,0,-seg*(.3+w*.4),0,p,false,false).rotation.x=Math.PI/2;
+      this.trunk.push(p);par=p;}
+    M(cyl(.06,.065,.05,14),dark,0,-seg-.02,0,par);// the tip
+    const tail=new THREE.Group();tail.position.set(0,by+r*.35,-(len/2+r*.95));g.add(tail);
+    taperTube([fV(0,0,0),fV(0,-.25,-.08),fV(0,-.6,-.05),fV(0,-.85,-.02)],q=>.045-.025*q,skin,tail,14,8);
+    for(let i=0;i<6;i++)M(cyl(.008,.004,.16,4),std('#2a2420'),Math.sin(i)*.02,-.92,Math.cos(i)*.02-.02,tail,false,false).rotation.z=(i-2.5)*.08;
+    this.tick=(tm,dt,run)=>{// ears flap, the trunk swings (and reaches down while eating, curls up when happy)
+      const fl=this.happy>0?.5+Math.sin(tm*9)*.35:.12+Math.sin(tm*1.6)*.12;for(const {e,sx} of this.ears)e.rotation.y=sx*fl;
+      const curl=this.happy>0?-.32:this.graze>.3?.04:-.05-.04*Math.max(0,Math.sin(tm*.4));
+      this.trunk.forEach((p,i)=>{if(!i){p.rotation.x=-.3+this.graze*.3+Math.sin(tm*1.3)*.08;return;}p.rotation.x=curl*(1+i*.15)+Math.sin(tm*1.8-i*.5)*.05;p.rotation.z=Math.sin(tm*1.1-i*.4)*.05*(1+run*2);});};
+    Object.assign(o,{neck,head,tail,nTilt:.12,gz:.35,size:2,h:by+r+.45,rad:1.25,dustR:[r,r,len*.8]});},
+};
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -5920,6 +6043,10 @@ const ZOOA=[
     facts:[['🥗','Diet','Herbivore. Leaves and twigs from tall trees, especially acacia. Up to 34 kg (75 lb) a day!'],['🌍','Habitat','Savannas and open woodlands of Africa.'],['⏳','Lifespan','About 25 years in the wild, and a bit longer in zoos.'],['✨','Fun fact','The tallest animal on Earth, up to 5.5 m (18 ft). Its tongue is about 50 cm (20 in) long!']]},
   {k:'rhino',e:'🦏',n:'White rhino',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
     facts:[['🥗','Diet','Herbivore. A grazer that eats short grass all day long.'],['🌍','Habitat','Grasslands and savannas of southern Africa.'],['⏳','Lifespan','About 40 to 50 years.'],['✨','Fun fact','Its horns are made of keratin, the same stuff as your fingernails. Adults can weigh over 2,000 kg!']]},
+  {k:'okapi',e:'🦓',n:'Okapi',food:[['🍃','Leaves'],['🍌','Banana']],say:['*soft huff*','*long tongue lick* 👅','Shh, I\'m shy! 🌿'],
+    facts:[['🥗','Diet','Herbivore. Leaves, buds, fruit and even mushrooms, which it pulls off with its long tongue.'],['🌍','Habitat','Only in the thick rainforests of the Democratic Republic of the Congo, in central Africa.'],['⏳','Lifespan','About 20 to 30 years.'],['✨','Fun fact','It has zebra stripes, but its closest relative is the giraffe! Its tongue is so long it can lick its own ears.']]},
+  {k:'elephant',e:'🐘',n:'African elephant',food:[['🌾','Hay'],['🍉','Watermelon']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖'],
+    facts:[['🥗','Diet','Herbivore. Grass, leaves, bark and fruit. Up to 150 kg (330 lb) of food a day!'],['🌍','Habitat','Savannas and forests of Africa.'],['⏳','Lifespan','About 60 to 70 years.'],['✨','Fun fact','The biggest animal on land, up to 6,000 kg (13,000 lb). Its trunk has about 40,000 muscles!']]},
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -6315,6 +6442,7 @@ class FarmAnimal{
       for(let i=0;i<7;i++){const a=(i/6-.5)*.9,f=new THREE.Group();f.rotation.y=a;tail.add(f);const fe=M(new THREE.CapsuleGeometry(.07,.42,4,10),white,0,0,-.24,f);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.25);}
       tail.rotation.x=-.15;
       Object.assign(o,{neck,head,tail,nTilt:.25,size:1.15,h:by+.85,rad:.7,dustR:[r,r,len*.8]});}
+    if(ZOO_BUILD[k])ZOO_BUILD[k].call(this,g,body,o);// the okapi and the elephants (24c9-zoo-okapi-elephant.js)
     return o;}
   setTag(n){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();this.tag=null;}if(!n)return;
     this.tag=sprite(labelTex('💖 '+n,{size:58,fg:'#d6453d',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);this.tag.position.y=this.h+.15;this.g.add(this.tag);}
@@ -6324,8 +6452,9 @@ class FarmAnimal{
   update(dt,sp){this.t+=dt;const t=this.t,run=Math.min(1.4,sp/(1.2*this.size+.3));this.phase+=dt*(4+run*5)/Math.max(.6,Math.sqrt(this.size));
     const sw=Math.sin(this.phase)*.55*Math.min(1,run);for(const l of this.legs)l.g.rotation.x=Math.sin(this.phase+l.ph)*.55*Math.min(1,run);
     this.body.position.y=(this.by0??(this.by0=this.body.position.y))+Math.abs(Math.sin(this.phase))*.03*this.size*Math.min(1,run)+Math.sin(t*2)*.005;
-    if(this.neck){const want=this.nTilt+(this.biped?.5:.95)*this.graze;this.neck.rotation.x+=(want+Math.sin(t*1.3)*.04-this.neck.rotation.x)*Math.min(1,dt*4);}
+    if(this.neck){const want=this.nTilt+(this.gz??(this.biped?.5:.95))*this.graze;this.neck.rotation.x+=(want+Math.sin(t*1.3)*.04-this.neck.rotation.x)*Math.min(1,dt*4);}
     if(this.biped&&this.neck&&run>.05)this.neck.position.z=(this.nz0??(this.nz0=this.neck.position.z))+Math.sin(this.phase*2)*.02;
+    if(this.tick)this.tick(t,dt,run);
     if(this.tail)this.tail.rotation.y=Math.sin(t*(this.happy>0?9:2.2))*(this.happy>0?.5:.18);
     if(this.F.wingsRun)this.flying=run>.3;// winged rides flap hard while you gallop
     if(this.wings)for(const w of this.wings){if(w.fold){const op=this.wingOpen||0;w.w.rotation.y=w.sx*w.fold*(1-op);w.w.scale.x=.5+.5*op;}w.w.rotation.z=w.fly?w.sx*(-.2+Math.sin(t*(this.flying?14:6))*(this.flying?.6:.25)):w.sx*(this.happy>0||this.y>.02?.5+Math.sin(t*22)*.5:.05);}
@@ -6504,7 +6633,7 @@ function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=zooSpot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
