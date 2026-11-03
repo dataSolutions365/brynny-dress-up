@@ -177,7 +177,8 @@ class Avatar{
   setSkin(c){this.skin.color.set(c);}
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
-    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;this.wheels=[];this.rollers=null;this.rollOn=false;
+    for(const m of this.parts){m.parent&&m.parent.remove(m);freeObj(m);}for(const m of this.mats){FREE_Q.add(m);texOf(m,FREE_Q);}// given back a moment later (01c-memory.js)
+    this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;this.wheels=[];this.rollers=null;this.rollOn=false;
     this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
@@ -452,3 +453,5 @@ class Avatar{
     if(this.cape)this.cape.rotation.x=.1+sp*.5+Math.sin(t*3)*.04+(air?.4:0);
   }}
 
+// every new outfit shares shapes it has in common with everything else (01c-memory.js), so 20 people in sneakers keep one sneaker
+{const dressOne=Avatar.prototype.dress;Avatar.prototype.dress=function(look){const r=dressOne.call(this,look);try{shareShapes(this.g);}catch(e){}return r;};}

@@ -627,7 +627,7 @@ function farmPic(k,S=160,yaw=.6){if(!picKit){const sc=new THREE.Scene();sc.add(n
     for(let y=0;y<S;y++)for(let x=0;x<S;x++){const s=((S-1-y)*S+x)*4,t=(y*S+x)*4,al=buf[s+3];if(!al){id.data[t+3]=0;continue;}
       id.data[t]=lin2s(buf[s]*255/al);id.data[t+1]=lin2s(buf[s+1]*255/al);id.data[t+2]=lin2s(buf[s+2]*255/al);id.data[t+3]=al;}
     cx.putImageData(id,0,0);return cv.toDataURL('image/png');}
-  finally{renderer.setRenderTarget(null);rt.dispose();sc.remove(a.g);a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
+  finally{renderer.setRenderTarget(null);rt.dispose();sc.remove(a.g);freeObj(a.g);}}
 function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=FARM.concat(ZOOA).filter(f=>!FTHUMB[f.k]).sort((a,b)=>!!isRide(b)-!!isRide(a));if(!todo.length)return;thumbBusy=true;
   // the rides from the shop are drawn first, and the shop and ride button show them as soon as they're done
   const one=()=>{const f=todo.shift();if(f&&!isRide(f)&&todo.length&&FARM.concat(ZOOA).filter(isRide).every(r=>FTHUMB[r.k])&&!one.told){one.told=1;if(shopOpen&&stab==='rides')renderShop();renderActions();}if(!f){thumbBusy=false;if(barnOpen)renderBarn();if(catOpen)renderCatalog();if(shopOpen&&stab==='rides')renderShop();renderActions();if($('#rides').classList.contains('show'))renderRides();return;}try{FTHUMB[f.k]=farmPic(f.k);}catch(e){}setTimeout(one,30);};setTimeout(one,50);}

@@ -37,6 +37,12 @@
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
   2D studio (snake game's Firebase project), marked `where: 3D world …`.
+- Graphics memory (`3d/src/01c-memory.js`): iPhones drop the whole 3D picture when the game uses too much of it.
+  When you throw a 3D thing away for good (an old avatar, a ball, a picture's model), call `freeObj(thing)` after removing it,
+  or its shapes and pictures stay on the graphics chip forever. Identical shapes are shared automatically by `shareShapes()`
+  at start-up and on every `Avatar.dress`, so never change a shape's numbers (`geometry.translate`, writing to `attributes`)
+  after the game has started, unless it's a plain `BufferGeometry` or `PlaneGeometry` (those are never shared).
+  When the phone gives the graphics back, the game carries on by itself in Light mode.
 
 ## Outfits go in both games
 - Everything you can wear in the 2D studio (`index.html`) must also be wearable in the 3D world, and the other way round,

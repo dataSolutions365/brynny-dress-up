@@ -116,12 +116,14 @@ const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:
   fragmentShader:'uniform vec3 top,mid,bot;varying vec3 vP;void main(){float h=vP.y;vec3 c=mix(mid,top,smoothstep(.0,.7,h));c=mix(bot,c,smoothstep(-.02,.22,h));gl_FragColor=vec4(c,1.);\n#include <colorspace_fragment>\n}'});
 const sky=new THREE.Mesh(new THREE.SphereGeometry(500,32,16),skyMat);sky.renderOrder=-1;scene.add(sky);
 
-/* light from the sky for realistic reflections */
-{const pm=new THREE.PMREMGenerator(renderer);const env=new THREE.Scene();
+/* light from the sky for realistic reflections (made again if the phone drops the graphics, see 01c-memory.js) */
+function makeEnv(){const pm=new THREE.PMREMGenerator(renderer);const env=new THREE.Scene();
  env.add(new THREE.Mesh(new THREE.SphereGeometry(50,32,16),skyMat));
  const gnd=new THREE.Mesh(new THREE.CircleGeometry(48,32),new THREE.MeshBasicMaterial({color:'#b3a88f'}));gnd.rotation.x=-Math.PI/2;gnd.position.y=-2;env.add(gnd);
  const sunBall=new THREE.Mesh(new THREE.SphereGeometry(5,16,8),new THREE.MeshBasicMaterial({color:new THREE.Color(8,7.5,6.5)}));sunBall.position.set(25,35,18);env.add(sunBall);
- scene.environment=pm.fromScene(env,.02).texture;pm.dispose();}
+ const old=makeEnv.rt;makeEnv.rt=pm.fromScene(env,.02);scene.environment=makeEnv.rt.texture;pm.dispose();
+ env.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==skyMat)o.material.dispose();});if(old)try{old.dispose();}catch(e){}}
+makeEnv();
 
 const hemi=new THREE.HemisphereLight('#dff0ff','#7a6a55',.55);scene.add(hemi);
 const sun=new THREE.DirectionalLight('#fff2e2',2.6);
@@ -183,6 +185,73 @@ function setMyName(n){n=String(n||'').trim().slice(0,16);if(!n)return false;cons
   try{localStorage.setItem(NAME_KEY,JSON.stringify({n,at}));}catch(e){}
   const d=read2D();if(d){const c=cur2D(d);if(c&&c.name!==n){c.name=n;c.nameAt=at;c.at=at;try{localStorage.setItem(STORE_2D,JSON.stringify(d));}catch(e){}}}
   return true;}
+// ---- src/01c-memory.js ----
+/* ---------- graphics memory: give back what we stop using, share copies, and wake up after a nap ----------
+   iPhones take the whole 3D picture away ("the 3D world took a little nap") when a page uses too much graphics
+   memory, or sometimes when Safari goes to the background. Three.js keeps every shape and picture it has ever
+   drawn on the graphics chip until someone calls dispose(), so:
+   - freeObj(thing): call it when a 3D thing is thrown away for good (an old avatar, an old outfit, a ball).
+     A moment later, everything it used that nothing left in the world still uses is given back.
+   - shareShapes(thing): meshes with exactly the same shape (there are thousands of the same spheres, boxes and
+     cylinders) share one copy. At start-up this saves about half of all the shape memory.
+   - when the phone gives the graphics back (webglcontextrestored), the sky reflections are made again and the
+     game carries on right where it was. If it was taken away while playing (memory, not the background),
+     the picture switches to Light (no shadows, normal sharpness) so it doesn't happen again. */
+const matsOf=o=>o.material?(Array.isArray(o.material)?o.material:[o.material]):[];
+function texOf(m,out){for(const k in m){const v=m[k];if(v&&v.isTexture&&!v.isRenderTargetTexture)out.add(v);}
+  if(m.uniforms)for(const k in m.uniforms){const v=m.uniforms[k]&&m.uniforms[k].value;if(v&&v.isTexture&&!v.isRenderTargetTexture)out.add(v);}return out;}
+const FREE_Q=new Set();let freeT=0;
+function freeObj(root){if(!root||!root.traverse)return;
+  root.traverse(o=>{if(o.geometry&&o.geometry.isBufferGeometry)FREE_Q.add(o.geometry);for(const m of matsOf(o)){FREE_Q.add(m);texOf(m,FREE_Q);}});
+  if(!freeT)freeT=setTimeout(freeSweep,700);}
+// give back everything waiting in FREE_Q that nothing in the world uses any more. Giving back something that is
+// still used somewhere else (a picture kept for later) is safe too: three.js just sends it again the next time.
+function freeSweep(){freeT=0;if(!FREE_Q.size)return;const used=new Set();
+  scene.traverse(o=>{if(o.geometry)used.add(o.geometry);for(const m of matsOf(o)){used.add(m);texOf(m,used);}});
+  if(scene.environment)used.add(scene.environment);if(scene.background&&scene.background.isTexture)used.add(scene.background);
+  for(const x of FREE_Q)if(!used.has(x)){if(x.isBufferGeometry)unshare(x);try{x.dispose();}catch(e){}}
+  FREE_Q.clear();}
+
+// same shape = same kind, same numbers in every attribute, same index and groups
+const SHARE_TYPES=new Set(['SphereGeometry','IcosahedronGeometry','OctahedronGeometry','DodecahedronGeometry','TetrahedronGeometry','CapsuleGeometry',
+  'BoxGeometry','RoundedBoxGeometry','CylinderGeometry','ConeGeometry','TorusGeometry','TorusKnotGeometry','CircleGeometry','RingGeometry',
+  'LatheGeometry','ShapeGeometry','ExtrudeGeometry','TubeGeometry']);
+const SHARED=new Map(),SHARE_KEY=new WeakMap();// key -> [geometries that other meshes can share]
+function geoKey(G){const a=G.attributes,p=a.position.array;let h=0;for(let i=0;i<p.length;i++)h=(Math.imul(h,31)+Math.round(p[i]*1e4))|0;
+  return G.type+'|'+Object.keys(a).sort().map(n=>n+':'+a[n].count+'x'+a[n].itemSize).join(',')+'|'+(G.index?G.index.count:0)+'|'+G.groups.map(g=>g.start+'-'+g.count+'-'+g.materialIndex).join(',')+'|'+h;}
+function sameArr(a,b){if(a.length!==b.length||a.constructor!==b.constructor)return false;for(let i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true;}
+function sameGeo(A,B){for(const n in A.attributes){const x=A.attributes[n],y=B.attributes[n];if(!y||x.itemSize!==y.itemSize||x.normalized!==y.normalized||!sameArr(x.array,y.array))return false;}
+  return !!A.index===!!B.index&&(!A.index||sameArr(A.index.array,B.index.array));}
+function canShare(o){const G=o.geometry;if(!o.isMesh||o.isInstancedMesh||o.isSkinnedMesh||!G||!SHARE_TYPES.has(G.type)||!G.attributes.position)return false;
+  if(Object.keys(G.morphAttributes).length||o.morphTargetInfluences)return false;
+  for(const n in G.attributes){const at=G.attributes[n];if(at.isInterleavedBufferAttribute||at.usage!==THREE.StaticDrawUsage)return false;}return true;}
+function shareShapes(root=scene){let n=0;
+  root.traverse(o=>{if(!canShare(o))return;const G=o.geometry;if(SHARE_KEY.has(G))return;
+    const k=geoKey(G),list=SHARED.get(k);const same=list&&list.find(x=>sameGeo(x,G));
+    if(same){o.geometry=same;n++;FREE_Q.add(G);if(!freeT)freeT=setTimeout(freeSweep,700);return;}
+    SHARE_KEY.set(G,k);if(list)list.push(G);else SHARED.set(k,[G]);});
+  return n;}
+function unshare(G){const k=SHARE_KEY.get(G);if(!k)return;const list=SHARED.get(k);if(list){const i=list.indexOf(G);if(i>=0)list.splice(i,1);if(!list.length)SHARED.delete(k);}SHARE_KEY.delete(G);}
+
+// a short note about graphics memory for the problem reports (3d/index.html)
+function gpuNote(){try{const m=renderer.info.memory;return `${m.geometries} shapes, ${m.textures} pictures, ${renderer.info.render.calls} draws, sharp ${renderer.getPixelRatio()}${renderer.shadowMap.enabled?'':' no shadows'}`;}catch(e){return '';}}
+
+// the graphics came back after a nap
+let glNap=null;
+canvas.addEventListener('webglcontextlost',()=>{glNap={hidden:document.hidden};});
+canvas.addEventListener('webglcontextrestored',()=>{const n=glNap;glNap=null;
+  if(n&&!n.hidden&&renderer.shadowMap.enabled){// it ran out of memory while playing: go Light now (three.js builds every shader again anyway)
+    renderer.shadowMap.enabled=false;prNow=PR_MIN;renderer.setPixelRatio(prNow);renderer.setSize(innerWidth,innerHeight,false);}
+  try{makeEnv();}catch(e){}
+  renderer.shadowMap.needsUpdate=true;});
+
+// what the player was doing, for the problem reports (3d/index.html), e.g. "playing 1-on-1 | online with 1 friend"
+function gameStatus(){const s=[],add=f=>{try{const v=f();if(v)s.push(v);}catch(e){}};
+  add(()=>!started&&'on the welcome screen');add(()=>closetOpen&&'in the closet');add(()=>glamOpen&&'at the glam mirror');
+  add(()=>SP.mode&&'playing '+({ft:'free throws',shoot:'shootout',v1:'1-on-1',bat:'batting'}[SP.mode]||SP.mode));add(()=>VS.on&&'match with friends');
+  add(()=>{const n=window.__net;return n&&n.live()&&`online with ${n.friends().size} friend${n.friends().size>1?'s':''}`;});
+  add(()=>FLY.on&&'flying');add(()=>barnRide&&'riding');add(()=>gpuNote());
+  return s.join(' | ');}
 // ---- src/02-island.js ----
 /* ---------- island ---------- */
 const R=72;// island radius (was 44.5; grown so places have room to breathe)
@@ -1612,7 +1681,8 @@ class Avatar{
   setSkin(c){this.skin.color.set(c);}
   dress(look){
     this.look=JSON.parse(JSON.stringify(look));
-    for(const m of this.parts){m.parent&&m.parent.remove(m);m.geometry.dispose();}for(const m of this.mats)m.dispose();this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;this.wheels=[];this.rollers=null;this.rollOn=false;
+    for(const m of this.parts){m.parent&&m.parent.remove(m);freeObj(m);}for(const m of this.mats){FREE_Q.add(m);texOf(m,FREE_Q);}// given back a moment later (01c-memory.js)
+    this.parts=[];this.mats=[];this.wings=[];this.cape=null;this.handBall=null;this.wheels=[];this.rollers=null;this.rollOn=false;
     this.skin.color.set(look.skin);{const tn=(look.makeup||{}).tan||0;if(tn)this.skin.color.lerp(TAN_C,tn*.55);}this.iris.color.set(look.eyes);this.legAmp=.55;this.lift=0;
     const mat=(c,k)=>{const m=lookMat(c,k);this.mats.push(m);return m;};
     const P=(geo,m,parent,x,y,z)=>this.part(geo,m,parent,x,y,z);
@@ -1887,6 +1957,8 @@ class Avatar{
     if(this.cape)this.cape.rotation.x=.1+sp*.5+Math.sin(t*3)*.04+(air?.4:0);
   }}
 
+// every new outfit shares shapes it has in common with everything else (01c-memory.js), so 20 people in sneakers keep one sneaker
+{const dressOne=Avatar.prototype.dress;Avatar.prototype.dress=function(look){const r=dressOne.call(this,look);try{shareShapes(this.g);}catch(e){}return r;};}
 // ---- src/14b-outfits-2d.js ----
 /* ================= OUTFITS FROM THE 2D GAME ================= */
 // The 2D dress-up game's outfits, rebuilt as real 3D clothes. Each one is a function (kit,color) that adds its pieces,
@@ -3920,7 +3992,7 @@ function renderCloset(){const L=SAVE.look;if(!glamOpen&&!barberOpen&&!storeOpen&
       if(cur)h+=`<h3>Color</h3>`+sw(myColors(COLORS),cur.c,'item');
       if(ctab==='shoes'&&isRoller(cur))h+=`<h3>🛼 Wheels</h3>`+sw(myColors(COLORS),cur.w||ROLLERS[cur.id].w,'wheels');}}
   $('#ccontent').innerHTML=h;}
-function rebuildPlayer(){scene.remove(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
+function rebuildPlayer(){scene.remove(av.g);freeObj(av.g);av=new Avatar(SAVE.look,SAVE.name||'Brynny',tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);av.g.position.copy(player.pos);av.g.rotation.y=player.face;renderActions();}
 function changed(){if(glamOpen){persist();sfx('pop');glamSeat(true);renderCloset();return;}av.dress(SAVE.look);persist();renderActions();sfx('pop');if(ctab==='makeup'){renderCloset();return;}av.play('hop');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.1,player.pos.z),'#ffd6f0',24,1.6,.1);renderCloset();}
 function setZoom(z){czoom=z;if(z!=='body')player.face=cam.closetYaw;}
 $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;ctab=b.dataset.tab;setZoom(ctab==='makeup'||ctab==='skin'?'face':'body');if(glamOpen){gcam.init=false;if(BVIEW[ctab]!=null)bview=BVIEW[ctab];glamSeat(false);}renderCloset();$('#ccontent').scrollTop=0;};
@@ -5228,7 +5300,7 @@ const wsRender=()=>{const G=isGuy(SAVE.look);document.querySelectorAll('[data-ws
 document.querySelector('.wbody').onclick=e=>{const b=e.target.closest('[data-wb]');if(!b)return;if(switchBody(b.dataset.wb)){rebuildPlayer();sfx('pop');}wsRender();};
 document.querySelector('.wstyle:not(.wbody)').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;SAVE.look.style=b.dataset.ws;persist();wsRender();rebuildPlayer();};
 $('#play').onclick=()=>{const n=$('#wname').value.trim().slice(0,16)||SAVE.name||'Brynny';if(n!==SAVE.name)setMyName(n);renderMe();
-  scene.remove(av.g);av=new Avatar(SAVE.look,n,tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
+  scene.remove(av.g);freeObj(av.g);av=new Avatar(SAVE.look,n,tagColor(SAVE.look),true);scene.add(av.g);loadPaint(av);
   $('#welcome').classList.remove('show');started=true;ac();if(AC&&AC.state==='suspended')AC.resume();
   curTrack='sparkle-room';startMusic();
   banner('✨ Sparkle Studio');setTimeout(()=>toast('Find all 24 stars! ⭐'),2000);};
@@ -6940,7 +7012,7 @@ function farmPic(k,S=160,yaw=.6){if(!picKit){const sc=new THREE.Scene();sc.add(n
     for(let y=0;y<S;y++)for(let x=0;x<S;x++){const s=((S-1-y)*S+x)*4,t=(y*S+x)*4,al=buf[s+3];if(!al){id.data[t+3]=0;continue;}
       id.data[t]=lin2s(buf[s]*255/al);id.data[t+1]=lin2s(buf[s+1]*255/al);id.data[t+2]=lin2s(buf[s+2]*255/al);id.data[t+3]=al;}
     cx.putImageData(id,0,0);return cv.toDataURL('image/png');}
-  finally{renderer.setRenderTarget(null);rt.dispose();sc.remove(a.g);a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
+  finally{renderer.setRenderTarget(null);rt.dispose();sc.remove(a.g);freeObj(a.g);}}
 function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=FARM.concat(ZOOA).filter(f=>!FTHUMB[f.k]).sort((a,b)=>!!isRide(b)-!!isRide(a));if(!todo.length)return;thumbBusy=true;
   // the rides from the shop are drawn first, and the shop and ride button show them as soon as they're done
   const one=()=>{const f=todo.shift();if(f&&!isRide(f)&&todo.length&&FARM.concat(ZOOA).filter(isRide).every(r=>FTHUMB[r.k])&&!one.told){one.told=1;if(shopOpen&&stab==='rides')renderShop();renderActions();}if(!f){thumbBusy=false;if(barnOpen)renderBarn();if(catOpen)renderCatalog();if(shopOpen&&stab==='rides')renderShop();renderActions();if($('#rides').classList.contains('show'))renderRides();return;}try{FTHUMB[f.k]=farmPic(f.k);}catch(e){}setTimeout(one,30);};setTimeout(one,50);}
@@ -7400,7 +7472,7 @@ const spBallTex=canvasTex(256,128,(x)=>{x.fillStyle='#ff7a1f';x.fillRect(0,0,256
 spBallMat.map=spBallTex;
 function spNewBall(){const z=Z.court;const m=M(sph(SP_BR,24,16),spBallMat,0,-5,0,z.g,true,false);
   const b={m,p:new THREE.Vector3(0,-5,0),v:new THREE.Vector3(),st:'hold',by:'me',pts:2,made:false,bounces:0,age:0,rim:0,gone:0,blockAt:-1};SP.balls.push(b);return b;}
-function spDropBall(b){const i=SP.balls.indexOf(b);if(i>=0)SP.balls.splice(i,1);Z.court.g.remove(b.m);if(SP.ball===b)SP.ball=null;}
+function spDropBall(b){const i=SP.balls.indexOf(b);if(i>=0)SP.balls.splice(i,1);Z.court.g.remove(b.m);freeObj(b.m);if(SP.ball===b)SP.ball=null;}
 function spStepBall(b,dt){const C=SPC,n=5,h=dt/n,p=b.p,v=b.v;b.age+=dt;
   if(b.blockAt>=0&&b.age>=b.blockAt){b.blockAt=-1;b.blocked=true;v.set((Math.random()<.5?-1:1)*(2+Math.random()*2),1.5,3+Math.random()*2);tone(140,.12,'square',.12);}
   for(let k=0;k<n;k++){const py=p.y;v.y-=SP_G*h;p.addScaledVector(v,h);
@@ -8744,13 +8816,16 @@ function showWorld(){renderer.setAnimationLoop(tick);
 function compileWait(){const mats=renderer.compile(scene,camera);return new Promise(res=>{const check=()=>{
     try{mats.forEach(m=>{const pr=renderer.properties.get(m).currentProgram;if(!pr||pr.isReady())mats.delete(m);});}catch(e){mats.clear();}
     if(mats.size)setTimeout(check,10);else res();};setTimeout(check,10);});}
-function warmUp(){scene.updateMatrixWorld(true);let c;try{c=compileWait();
+function warmUp(){try{shareShapes(scene);}catch(e){}// thousands of copies of the same shape become one each (01c-memory.js)
+  scene.updateMatrixWorld(true);let c;try{c=compileWait();
     const rt=AG.mirror.getRenderTarget&&AG.mirror.getRenderTarget();if(rt){renderer.setRenderTarget(rt);const c2=compileWait();renderer.setRenderTarget(null);c=Promise.all([c,c2]);}}catch(e){renderer.setRenderTarget(null);c=null;}
   // never wait forever: if building the shaders takes too long, just start (the first frame finishes the job)
   Promise.race([c||Promise.resolve(),new Promise(r=>setTimeout(r,25000))]).catch(()=>{}).then(preUpload).then(showWorld);}
 // The graphics chip only gets a shape or picture the first time it is on screen, so turning the camera used to stutter
 // while thousands of them were sent over. Draw everything once, behind the loading screen, so they are all there already.
-function preUpload(){if(LITE)return;const off=[];try{scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;off.push(o);}});const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;// skip the shadow pass for this one giant frame
+// On a phone, only the things near the start (the first places you see when you look around) are sent now: sending the whole
+// island in one giant frame made iPhones run out of graphics memory a few seconds after opening.
+function preUpload(){if(LITE)return;const off=[],near=isTouch?40:Infinity,v=new THREE.Vector3();try{scene.traverse(o=>{if(o.frustumCulled&&(near===Infinity||o.getWorldPosition(v).distanceTo(player.pos)<near)){o.frustumCulled=false;off.push(o);}});const au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;// skip the shadow pass for this one giant frame
   try{renderer.render(scene,camera);}finally{renderer.shadowMap.autoUpdate=au;renderer.shadowMap.needsUpdate=true;}}catch(e){}off.forEach(o=>o.frustumCulled=true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
@@ -8901,7 +8976,7 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code===
 let miniT=0;
 onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('tada');banner(`🎉 You made it!`);burst(player.pos.clone().add(new THREE.Vector3(0,1.5,0)),'#ff8fc8',40,3);setDest(null);}
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
-window.__game={AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
+window.__game={freeObj,gpuNote,gameStatus,AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
   sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
 Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
 // 🚲 for the bike test (3d/tests/bike.mjs)

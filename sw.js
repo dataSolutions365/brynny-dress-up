@@ -101,7 +101,9 @@ async function internetFirst(req) {
 async function savedFirst(req) {
   const cache = await caches.open(CACHE);
   const saved = await cache.match(req);
-  if (saved) return saved;
+  // a copy saved from a plain <script> (opaque) can't answer a crossorigin request (online play's peerjs asks that way
+  // so Safari reports its errors in full), so fetch that one again
+  if (saved && !(saved.type === 'opaque' && req.mode === 'cors')) return saved;
   const res = await fetch(req);
   if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
   return res;
