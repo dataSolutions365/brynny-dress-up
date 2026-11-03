@@ -566,7 +566,8 @@ applySky(nightK); wasNight = nightK > .5;
 if (HOL && HOL.npc) dressTown(HOL.npc.when === 'always' || wasNight);
 G.onTick.push(dt => {
   if (mode === 'auto' && G.started()) cycleT += dt / CYCLE;
-  const want = nightTarget(); nightK += (want - nightK) * Math.min(1, dt * .8); if (Math.abs(want - nightK) < .001) nightK = want;
+  // DADDY POWERS (src/27-daddy-powers.js): 🎆 fireworks night; window.__daddy does nothing once that file is gone
+  const want = window.__daddy?.night() ?? nightTarget(); nightK += (want - nightK) * Math.min(1, dt * .8); if (Math.abs(want - nightK) < .001) nightK = want;
   applySky(nightK);
   const P = G.player.pos; lantern.position.set(P.x, P.y + 2.6, P.z + .4);
   const av = G.av && G.av();

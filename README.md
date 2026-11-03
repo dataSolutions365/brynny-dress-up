@@ -32,6 +32,8 @@ In the 3D world you can also:
 - Swim in the 🌊 canal all the way round the island (and 🐬 Dolphin Bay past the Beach): walk off the shore and swim with dolphins, Big Blue the whale and Shelly the sea turtle, feed them and Pip the seal, and earn rides on them with the 🌊 Ocean challenges.
 
 ### Working on the 3D code
+New to the code? Start with **[docs/EDITING.md](docs/EDITING.md)**: a plain-English map of where everything is and how to make easy changes (prices, coins, challenges, outfits, townspeople, holidays, the secret Daddy powers).
+
 The 3D game is split into small files in `3d/src/`, one per feature (each place, the avatar, pets, the bakery, the shop, the glam mirror, the map). After changing one, run `node 3d/build.mjs` to rebuild `3d/game.js`, which is what the page loads. Don't edit `3d/game.js` directly.
 
 ## Play it
