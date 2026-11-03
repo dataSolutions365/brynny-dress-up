@@ -8751,15 +8751,17 @@ addEventListener('load',()=>{if(window.__net)window.__net.on(ballFromNet);if(win
    Type your name as " Daddy" (with a SPACE in front) on the welcome screen or in Settings. The space is trimmed off, so
    the name tag just says "Daddy" and nobody can tell. Typed without the space, "Daddy" is a normal name with nothing extra.
    Then a 🦸 Hero button shows up in the icons on the right (only on that player's own phone). Tap it: lightning strikes
-   you and you suit up with a red cape and a hero badge (a gold star with a "D"; made up, not anybody's real superhero logo).
-   Tap it again to take the suit off. While the suit is on:
+   and you change into a whole hero suit: a green bodysuit, gold boots, gloves and belt, an eye mask, a big purple cape and a
+   hero badge (a gold star with a "D"; all made up, not anybody's real superhero). Your skateboard and anything else you
+   were holding go away. Tap it again (or open the closet) and you're back in your own clothes. While the suit is on:
    - Super jump: JUMP goes way up, over the trees.
    - Fly without a ride: tap JUMP again while up in the air. Steer with the joystick (fast!), hold JUMP to go higher and ⬇️
      to go lower (Space / Shift on a keyboard). Hold ⬇️ all the way down to the ground to land.
    - Teleport: open the map and tap anywhere on the island, and you're there in a puff of sparkles.
    - Super strength: walk up to something small that never moves (a pumpkin, a rock, a flower pot) and a ✋ button shows up.
      Tap it to lift it over your head, and tap again to throw it. Things go back where they were when the game reloads.
-   Friends online see the lightning, the cape and the badge (the 'hero' entry in SHOW at the bottom), and see Daddy jump
+   The suit swaps your look while it's on (your own outfit waits in SAVE.daddyLook), so friends online see it too, and they
+   see the lightning, the cape, mask and badge (the 'hero' entry in SHOW at the bottom), and see Daddy jump
    sky-high, fly around and pop up somewhere else (they get your position as usual). They don't see the thing you carry.
 
    TO REMOVE: delete this file, then search 3d/src for "DADDY POWERS" and undo the 3 small hooks it finds
@@ -8769,6 +8771,7 @@ const DAD={fly:false,vx:0,vz:0,vy:0,tilt:0,tip:false,cands:null,near:null,held:n
 const DAD_KEY=/^\s+daddy\s*$/i;// a space (or more) in front of "Daddy"
 const daddyKey=()=>!!SAVE.daddy&&/^daddy$/i.test(SAVE.name||'');// the secret name: the 🦸 button shows
 const daddyOn=()=>daddyKey()&&!!SAVE.daddySuit;// suited up: the powers work
+if(SAVE.daddySuit&&!SAVE.daddyLook)SAVE.daddySuit=0;// suited up in an older version that didn't swap clothes
 // remember whether the name was typed with the secret space in front (before the game trims it off)
 for(const id of ['#wname','#setName'])$(id).addEventListener('input',e=>{const on=DAD_KEY.test(e.target.value);if(!!SAVE.daddy!==on){SAVE.daddy=on?1:0;persist();}});
 
@@ -8862,22 +8865,40 @@ onTick.push(dt=>{const on=daddyOn()&&started;
 /* ---------- the hero suit: a cape and a badge (on you, and on your phone in friends' games) ---------- */
 let dadBadgeMat=null;
 function daddyBadge(){if(dadBadgeMat)return dadBadgeMat;const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');
-  x.beginPath();x.arc(128,128,122,0,Math.PI*2);x.fillStyle='#ffd23f';x.fill();x.beginPath();x.arc(128,128,106,0,Math.PI*2);x.fillStyle='#d81b3b';x.fill();
+  x.beginPath();x.arc(128,128,122,0,Math.PI*2);x.fillStyle='#ffd23f';x.fill();x.beginPath();x.arc(128,128,106,0,Math.PI*2);x.fillStyle='#6a2bd8';x.fill();
   x.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?40:96;x.lineTo(128+Math.cos(a)*r,132+Math.sin(a)*r);}x.closePath();
-  x.fillStyle='#ffd23f';x.fill();x.lineWidth=6;x.strokeStyle='#7a0f22';x.stroke();
-  x.font='900 70px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#d81b3b';x.fillText('D',128,140);
+  x.fillStyle='#ffd23f';x.fill();x.lineWidth=6;x.strokeStyle='#3a1478';x.stroke();
+  x.font='900 70px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#6a2bd8';x.fillText('D',128,140);
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
   return dadBadgeMat=new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.4,metalness:.2,polygonOffset:true,polygonOffsetFactor:-2});}
-const dadCapeMat=std('#d81b3b',{roughness:.55,side:THREE.DoubleSide});
-// put the suit on avatar a; returns what to take off again
-function heroGear(a){const guy=!!a.guy,h={a};
-  const g=new THREE.PlaneGeometry(.54,.98,6,10),p=g.attributes.position;
-  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,-Math.abs(x)*x*1.4);p.setX(i,x*(1+(.49-y)*.55));}g.translate(0,-.49,0);g.computeVertexNormals();
-  h.cape=new THREE.Group();h.cape.position.set(0,.47,guy?-.13:-.115);const cm=new THREE.Mesh(g,dadCapeMat);cm.rotation.y=Math.PI;cm.castShadow=true;h.cape.add(cm);a.spine.add(h.cape);
-  h.badge=new THREE.Mesh(new THREE.PlaneGeometry(.12,.12),daddyBadge());h.badge.position.set(0,.29,guy?.118:.108);a.spine.add(h.badge);return h;}
-function heroOff(h){if(!h)return;for(const m of [h.cape,h.badge]){m.parent&&m.parent.remove(m);m.traverse(o=>o.geometry&&o.geometry.dispose());}}
+const HERO={suit:'#17a06b',gold:'#ffc83d',cape:'#7b35e8',mask:'#1c1533'};
+const dadCapeMat=std(HERO.cape,{roughness:.5,side:THREE.DoubleSide}),dadGoldMat=std(HERO.gold,{roughness:.3,metalness:.6}),dadMaskMat=std(HERO.mask,{roughness:.35,side:THREE.DoubleSide});
+// the hero suit, made from the closet's own pieces: a long-sleeved top and leggings in one color, and boots
+function heroLook(L){const h=JSON.parse(JSON.stringify(L));
+  Object.assign(h,{dress:null,top:{id:'sweater',c:HERO.suit},bottom:{id:'leggings',c:HERO.suit},shoes:{id:'boots',c:HERO.gold},hat:null,extras:{}});return h;}
+// the extra hero bits on avatar a (cape, badge, mask, gloves, belt); returns what to take off again
+function heroGear(a){const guy=!!a.guy,h={a,bits:[]},add=(m,parent)=>{parent.add(m);h.bits.push(m);return m;};
+  const g=new THREE.PlaneGeometry(.66,1.08,8,12),p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,-Math.abs(x)*x*1.1);p.setX(i,x*(1+(.54-y)*.5));}g.translate(0,-.54,0);g.computeVertexNormals();
+  h.cape=add(new THREE.Group(),a.spine);h.cape.position.set(0,.5,guy?-.135:-.12);const cm=new THREE.Mesh(g,dadCapeMat);cm.rotation.y=Math.PI;cm.castShadow=true;h.cape.add(cm);
+  // a gold bar across the shoulders that the cape hangs from
+  const bar=add(new THREE.Mesh(new THREE.CapsuleGeometry(.018,.2,4,10),dadGoldMat),a.spine);bar.position.set(0,.47,guy?-.1:-.09);bar.rotation.z=Math.PI/2;
+  h.badge=add(new THREE.Mesh(new THREE.PlaneGeometry(.17,.17),daddyBadge()),a.spine);h.badge.position.set(0,.27,guy?.13:.118);
+  const belt=add(new THREE.Mesh(new THREE.TorusGeometry(.128,.016,8,32),dadGoldMat),a.hips);belt.rotation.x=Math.PI/2;belt.position.y=.06;belt.scale.set(guy?1.12:1.05,.82,1);
+  for(const A of a.arms){const gl=add(new THREE.Mesh(sph(.046,14,10),dadGoldMat),A.hand);gl.position.set(0,-.03,0);gl.scale.set(1,1.35,.8);
+    add(new THREE.Mesh(cyl(.04,.05,.07,14),dadGoldMat),A.el).position.y=-.2;}
+  // eye mask: a ring around each eye, a bridge between them, and a strap around the head
+  const HS=a.hs||new THREE.Vector3(1,1,1);
+  for(const sx of [-1,1]){const r=add(new THREE.Mesh(new THREE.TorusGeometry(.031,.012,8,24),dadMaskMat),a.head);r.position.set(sx*.046*HS.x,.01,.122*HS.z);r.scale.set(1.3,.95,.6);r.rotation.y=sx*.2;}
+  add(new THREE.Mesh(box(.03,.016,.012),dadMaskMat),a.head).position.set(0,.016,.132*HS.z);
+  const strap=add(new THREE.Mesh(new THREE.CylinderGeometry(.134,.134,.024,32,1,true,Math.PI*.4,Math.PI*1.2),dadMaskMat),a.head);strap.position.y=.012;strap.scale.set(HS.x*1.02,1,HS.z*1.02);
+  return h;}
+function heroOff(h){if(!h)return;for(const m of h.bits){m.parent&&m.parent.remove(m);m.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
 // the cape flows out behind you when you run, jump or fly
-const heroCape=(h,t,sp,air,fly)=>{h.cape.rotation.x=fly?1.25+Math.sin(t*9)*.08:.1+Math.min(sp,8)*.07+Math.sin(t*3)*.04+(air?.45:0);};
+const heroCape=(h,t,sp,air,fly)=>{h.cape.rotation.x=fly?1.3+Math.sin(t*9)*.08:.08+Math.min(sp,8)*.07+Math.sin(t*3)*.04+(air?.45:0);};
+// flying like a superhero: one fist forward, the other arm along your side, legs together
+function heroFlyPose(a){const [L,Rt]=a.arms;Rt.sh.rotation.set(-2.95,0,-.08);Rt.el.rotation.x=0;L.sh.rotation.set(.25,0,-.12);L.el.rotation.x=-.15;
+  a.legs[0].hp.rotation.set(.08,0,.03);a.legs[1].hp.rotation.set(.2,0,-.03);a.legs[0].kn.rotation.x=.05;a.legs[1].kn.rotation.x=.45;}
 // ⚡ lightning strikes at (x,y,z): a jagged bolt from the sky, sparks, and thunder (flash: a white flash on your own screen)
 function heroZap(x,y,z,flash){const pts=[new THREE.Vector3(x+(Math.random()-.5)*6,y+32,z+(Math.random()-.5)*6)];
   for(let i=1;i<=12;i++){const k=i/12,q=pts[0].clone().lerp(new THREE.Vector3(x,y+1.1,z),k);if(i<12){q.x+=(Math.random()-.5)*2*(1-k*.6);q.z+=(Math.random()-.5)*2*(1-k*.6);}pts.push(q);}
@@ -8895,19 +8916,25 @@ function heroZap(x,y,z,flash){const pts=[new THREE.Vector3(x+(Math.random()-.5)*
 const suitBtn=document.createElement('button');suitBtn.className='rb';suitBtn.id='dadSuit';suitBtn.setAttribute('aria-label','Hero');suitBtn.innerHTML='🦸<small>Hero</small>';suitBtn.style.display='none';// beside 📸 (below the row on a sideways phone), so the icons don't get pushed around
 {const st=document.createElement('style');st.textContent='#dadSuit{position:absolute;top:0;right:70px}@media (max-height:520px){#dadSuit{top:62px;right:0}}';document.head.appendChild(st);}
 $('#side').appendChild(suitBtn);
-suitBtn.onclick=()=>{if(!daddyKey()||closetOpen)return;const p=player.pos;
-  if(SAVE.daddySuit){SAVE.daddySuit=0;persist();if(DAD.held)daddyThrow();daddyLand(true);burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ff8fc8',30,2.5);sfx('pop');toast('Suit off. Just regular Daddy now 😎');return;}
-  heroZap(p.x,p.y,p.z,true);setTimeout(()=>{SAVE.daddySuit=1;persist();doAction('cheer');toast('⚡ SUPER DADDY! ⚡');},180);};
-onTick.push(dt=>{const key=daddyKey()&&started,on=daddyOn()&&started;suitBtn.style.display=key?'grid':'none';
+function suitUp(){const p=player.pos;if(SK.on)stopSkate(true);if(BIKE.on)stopBike(true);if(barnRide)stopRide(true);
+  heroZap(p.x,p.y,p.z,true);
+  setTimeout(()=>{if(!SAVE.daddySuit){SAVE.daddyLook=SAVE.look;SAVE.look=heroLook(SAVE.look);}SAVE.daddySuit=1;persist();rebuildPlayer();doAction('cheer');toast('⚡ SUPER DADDY! ⚡');},180);}
+// back in your own clothes (quiet: no sparkles, e.g. when the closet opens)
+function suitOff(quiet){if(!SAVE.daddySuit)return;const p=player.pos;if(DAD.held)daddyThrow();daddyLand(true);
+  if(SAVE.daddyLook)SAVE.look=SAVE.daddyLook;delete SAVE.daddyLook;SAVE.daddySuit=0;persist();rebuildPlayer();
+  if(!quiet){burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ff8fc8',30,2.5);sfx('pop');toast('Suit off. Just regular Daddy now 😎');}}
+suitBtn.onclick=()=>{if(!daddyKey()||closetOpen)return;if(SAVE.daddySuit)suitOff();else suitUp();};
+onTick.push(dt=>{if(SAVE.daddySuit&&(closetOpen||!daddyKey()))suitOff(true);// back in your own clothes to dress up, or for a new name
+  const key=daddyKey()&&started,on=daddyOn()&&started;suitBtn.style.display=key?'grid':'none';
   if(on&&(!DAD.gear||DAD.gear.a!==av)){heroOff(DAD.gear);DAD.gear=heroGear(av);}
   else if(!on&&DAD.gear){heroOff(DAD.gear);DAD.gear=null;}
-  if(DAD.gear)heroCape(DAD.gear,performance.now()/1000,player.speed,!player.onGround,DAD.fly);});
+  if(DAD.gear){heroCape(DAD.gear,performance.now()/1000,player.speed,!player.onGround,DAD.fly);if(DAD.fly)heroFlyPose(av);}});
 // friends online see the suit, and the lightning when you put it on
 SHOW.push({k:'hero',
   mine(){return daddyOn()?{on:1}:null;},
-  on(f,d){const P=f.pos;heroZap(P.x,P.y,P.z,false);return {gear:heroGear(f.a),a:f.a};},
+  on(f,d){const P=f.pos,now=performance.now();if(!(now-(f.heroZ||0)<4000))heroZap(P.x,P.y,P.z,false);f.heroZ=now;return {gear:heroGear(f.a),a:f.a};},
   step(f,d,dt,h){if(!h)return;if(h.a!==f.a){heroOff(h.gear);h.gear=heroGear(f.a);h.a=f.a;}const fly=!!f.air&&f.pos.y-groundAt(f.pos.x,f.pos.z)>2.5,r=f.a.g.rotation;// way up in the air: flying like a superhero
     h.tilt=(h.tilt||0)+((fly?Math.min(1,(f.sp||0)/10)*1.1:0)-(h.tilt||0))*Math.min(1,dt*4);r.order='YXZ';r.x=h.tilt;
-    heroCape(h.gear,performance.now()/1000,f.sp||0,!!f.air,fly);},
+    heroCape(h.gear,performance.now()/1000,f.sp||0,!!f.air,fly);if(fly)heroFlyPose(f.a);},
   off(f,h){if(!h)return;heroOff(h.gear);if(h.a)h.a.g.rotation.x=0;}});
 Object.assign(window.__game,{daddy:()=>DAD,daddyOn});
