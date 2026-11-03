@@ -158,7 +158,7 @@ function spOpenMenu(zid){if(SP.mode||SP.menu)return;SP.menu=true;const S=SAVE.sp
   else c.innerHTML=`<h2>⚾ Batting Cage</h2><p>The machine throws 10 pitches. Tap SWING when the ball gets to the plate!</p>
    <div class="spBig">⚾🏏</div><p>${S.hr?`Most home runs: ${S.hr} · `:''}${S.far?`Longest hit: ${S.far} ft`:'Hit it over the fence for a home run!'}</p>
    <button class="btn" data-m="bat">▶ Play ball!</button> <button class="btn ghost" id="spNo">Not now</button>`;
-  spSuitBtn(c,zid);
+  spSuitBtn(c,zid);if(SP.onMenu)try{SP.onMenu(c,zid);}catch(e){}
   c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{spCloseMenu();spStart(b.dataset.m);});
   $('#spNo').onclick=spCloseMenu;$('#spMenu').classList.add('show');sfx('pop');}
 // "Suit up": put on the sport's outfit in one tap (your old outfit is kept so you can switch back after)
@@ -177,8 +177,9 @@ function spStart(m){const C=SPC;spCloseMenu();SP.mode=m;SP.z=m==='bat'?Z.batting
   closeMap&&closeMap();joy.id=null;joy.x=joy.y=0;$('#joy').style.display='none';
   if(m==='bat'){spBody(true,false);spBatStart();return;}
   spBody(true,m!=='ft');did('play',m);
-  if(m==='ft'){spHud('🎯 Free throws','0 / 0','10 shots');spSetWorld(SP.z,0,C.FT+.25);player.face=spFace(SP.z,0,C.FT+.25,0,C.HZ);spGive();}
-  else if(m==='shoot'){SP.left=60;spHud('🔥 Shootout','0 pts','60s');spSetWorld(SP.z,0,C.FT+.6);player.face=spFace(SP.z,0,C.FT+.6,0,C.HZ);spGive();toast('Hold SHOOT, let go in the green. Get close to the hoop to DUNK!');}
+  const lx=SP.lx||0;// SP.lx: your own spot on the line when friends play at the same time (24e2-sports-friends.js)
+  if(m==='ft'){spHud('🎯 Free throws','0 / 0','10 shots');spSetWorld(SP.z,lx,C.FT+.25);player.face=spFace(SP.z,lx,C.FT+.25,0,C.HZ);spGive();}
+  else if(m==='shoot'){SP.left=60;spHud('🔥 Shootout','0 pts','60s');spSetWorld(SP.z,lx,C.FT+.6);player.face=spFace(SP.z,lx,C.FT+.6,0,C.HZ);spGive();toast('Hold SHOOT, let go in the green. Get close to the hoop to DUNK!');}
   else if(m==='v1'){const c=spCpu();c.a.g.visible=true;spHud('🆚 You vs Kai','0 - 0','first to 11');spCheck('me');toast('You get the ball first! Score 11 to win 🏀');}
   cam.yaw=player.face+Math.PI;cam.cy=cam.yaw;spBoard();setTrack('stadium');}
 // hand the player a ball
@@ -192,7 +193,7 @@ function spCheck(who){const C=SPC,z=SP.z,c=spCpu();for(const b of SP.balls.slice
 function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;SP.hold=null;SP.rel=null;SP.dunk=null;for(const a of [av,SP.cpu&&SP.cpu.a])if(a){a.shot=null;a.handsBack=false;for(const A of a.arms)A.hand.rotation.set(0,0,0);}$('#spMeter').classList.remove('show');spBody(false);
   for(const b of SP.balls.slice())spDropBall(b);if(SP.cpu)SP.cpu.a.g.visible=false;
   if(m==='bat')spBatStop();Z.court.board.draw('0','0');
-  if(!show)return;let h='',coins=0,best=false;
+  if(!show){if(SP.onEnd)try{SP.onEnd(m,true,false);}catch(e){}return;}let h='',coins=0,best=false;
   if(quit){const sc=m==='v1'?`${SP.score} - ${SP.opp}`:m==='bat'?`${SP.bat.hits} hits`:m==='ft'?`${SP.score} / ${SP.shots}`:`${SP.score} pts`;
     h=`<h2>👋 You left the game</h2><div class="spBig">${sc}</div><p>Finish a whole game to earn coins!</p>`;}
   else 
@@ -207,7 +208,8 @@ function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;S
   $('#spCard').innerHTML=h+`<button class="btn" id="spAgain">🔁 Play again</button> <button class="btn ghost" id="spDone">Done</button>`+(spCanUnsuit()?`<br><button class="btn ghost" id="spUnsuit">👗 Back to my outfit</button>`:'');
   if(spCanUnsuit())$('#spUnsuit').onclick=()=>{spUnsuit();spCloseMenu();};
   $('#spAgain').onclick=()=>{spCloseMenu();if(zid==='court')spOpenMenu('court');else spStart('bat');};$('#spDone').onclick=spCloseMenu;
-  SP.menu=true;$('#spMenu').classList.add('show');if(coins>=10||best)sfx('tada');}
+  SP.menu=true;$('#spMenu').classList.add('show');if(coins>=10||best)sfx('tada');
+  if(SP.onEnd)try{SP.onEnd(m,quit,true);}catch(e){}}// a match with friends shows the standings (24e2-sports-friends.js)
 $('#spLeave').onclick=()=>spEnd(true,true);
 
 /* ---------- the big button ---------- */
@@ -304,7 +306,7 @@ function spCpuStep(dt,t){const C=SPC,c=SP.cpu,z=SP.z,l=spLocal(z,player.pos);c.t
 function spCourtStep(dt,t){const C=SPC,z=SP.z,p=player.pos,l=spLocal(z,p);
   // leaving the court ends the game
   if(SP.mode!=='ft'&&curZone!==z){spEnd(true,true);return;}
-  if(SP.mode==='ft'){spSetWorld(z,0,C.FT+.25);if(!SP.hold)player.face=spFace(z,0,C.FT+.25,0,C.HZ);}
+  if(SP.mode==='ft'){const lx=SP.lx||0;spSetWorld(z,lx,C.FT+.25);if(!SP.hold)player.face=spFace(z,lx,C.FT+.25,0,C.HZ);}
   if(SP.hold){SP.hold.t+=dt;const u=(SP.hold.t/1.05)%2,v=u<1?u:2-u;const mk=$('#spMeter b'),gz=$('#spMeter i');mk.style.bottom=(v*100)+'%';
     const ll=spLocal(z,p),dist=Math.hypot(ll.x,ll.z-C.HZ);let w=SP.mode==='ft'?.15:Math.max(.07,.15-.014*Math.max(0,dist-3));
     if(SP.mode==='v1'){const c=SP.cpu;w*=1-.45*Math.max(0,1-Math.hypot(c.p.x-ll.x,c.p.z-ll.z)/1.6);}
@@ -405,7 +407,7 @@ function spLanded(b,hd){const B=SP.bat,P=SPB;const ft=Math.round(hd*12);
 
 /* ---------- cameras ---------- */
 function sportsCam(dt){if(!SP.mode)return;const z=SP.z;let P,T;
-  if(SP.mode==='ft'){P=z.g.localToWorld(new THREE.Vector3(.35,2.35,SPC.FT+3.4));T=z.g.localToWorld(new THREE.Vector3(0,2.1,SPC.HZ));}
+  if(SP.mode==='ft'){const lx=SP.lx||0;P=z.g.localToWorld(new THREE.Vector3(lx*.85+.35,2.35,SPC.FT+3.4));T=z.g.localToWorld(new THREE.Vector3(lx*.3,2.1,SPC.HZ));}
   else if(SP.mode==='bat'){const B=SP.bat,b=B&&B.ball;
     if(b&&b.st==='hit'&&b.t>.15){P=z.g.localToWorld(new THREE.Vector3(.6,2.6,SPB.PLATE+3.2));T=z.g.localToWorld(b.p.clone());}
     else{P=z.g.localToWorld(new THREE.Vector3(.2,2.15,SPB.PLATE+3.5));T=z.g.localToWorld(new THREE.Vector3(-.25,.95,SPB.MACH+1));}}

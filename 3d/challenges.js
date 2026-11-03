@@ -66,6 +66,9 @@ const LIST = [
   { id: 'talk5', tab: 'town', e: '👭', t: 'Talk to 5 different people', r: 2, goal: 5, u: true, ev: { k: 'talk' } },
   { id: 'quest', tab: 'town', e: '🎁', t: 'Help someone with their task', r: 2, poll: () => Math.min(1, SAVE.townDone || 0) },
   { id: 'quest5', tab: 'town', e: '🦸‍♀️', t: 'Help with 5 tasks', r: 3, goal: 5, poll: () => SAVE.townDone || 0 },
+  { id: 'sportVs', tab: 'town', e: '🆚', t: 'Play basketball or baseball against a friend online', r: 1, go: 'court', ev: { k: 'sportvs' } },
+  { id: 'sportVsWin', tab: 'town', e: '🏆', t: 'Beat your friends in a basketball or baseball match', r: 2, go: 'court', ev: { k: 'sportvs', a: p => p === 0 } },
+  { id: 'sportVs5', tab: 'town', e: '🏅', t: 'Play 5 matches against friends', r: 2, goal: 5, go: 'court', ev: { k: 'sportvs' } },
   { id: 'bestie', tab: 'town', e: '💖', t: 'Make a best friend (5 hearts)', r: 3, poll: () => G.FRIENDS.some(f => G.townSave(f).h >= 5) ? 1 : 0 },
   // 🗺️ Explore
   { id: 'map', tab: 'explore', e: '🗺️', t: 'Use the map to walk somewhere', r: 1, ev: { k: 'arrive' } },
@@ -176,7 +179,7 @@ addEventListener('brynny:did', e => {
   for (const ch of allCh()) count(ch, k, a);
   check();
 });
-// prizes from contests (the bakery cake contest gives ⭐ for 1st, 2nd and 3rd place)
+// prizes from contests (the bakery cake contest gives ⭐ for 1st, 2nd and 3rd place, sports matches with friends for 1st and 2nd)
 addEventListener('brynny:prize', e => { const d = e.detail || {}; const n = Math.max(0, Math.min(5, Math.round(+d.n || 0))); if (!n) return; queue.push({ e: d.e || '🏆', t: String(d.t || 'Prize!'), r: n, b: d.b ? String(d.b) : '' }); drain(); });
 function check() { for (const ch of allCh()) if (ch.poll && !isDone(ch) && progress(ch) >= goalOf(ch)) award(ch); }
 setInterval(() => { if (G.started()) check(); }, 700);
