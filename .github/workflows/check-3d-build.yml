@@ -29,6 +29,8 @@ jobs:
         run: node 3d/tests/fly.mjs
       - name: The bike rider sits on the saddle and pedals with the cranks
         run: node 3d/tests/bike.mjs
+      - name: The skate park ramps, grinds and tricks work on a board, skates and a bike
+        run: node 3d/tests/skate-park.mjs
       - name: The safari rides only come from finishing their Safari challenges, and you sit right on them
         run: node 3d/tests/safari-rides.mjs
       - name: The 2D and 3D closets match

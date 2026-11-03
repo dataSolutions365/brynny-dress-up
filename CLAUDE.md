@@ -30,6 +30,12 @@
   They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`);
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
   `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned and the rider sits on the saddle.
+- 🛹 Skate Park: `3d/src/12f-place-skate-park.js` builds it and has `SKZ` (where every ramp, box and rail is, in the park's own
+  directions) and `skateLH()` (how high the riding surface is anywhere in it; `groundAt` uses it, so walking works on the ramps).
+  `3d/src/24k-skate-park.js` takes over moving you while you're on wheels (skateboard, roller skates or bike) inside the park:
+  rolling with gravity on the ramps, air out of the half-pipe, ollies, grinds on `SKZ.rails` and the trick buttons. Change a ramp's
+  numbers in `SKZ` and both the look and the riding follow. Friends see the lean and the tricks through the `park` entry in `SHOW`.
+  `3d/tests/skate-park.mjs` (run on every PR) rides it on all three.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

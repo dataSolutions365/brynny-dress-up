@@ -79,6 +79,10 @@ const LIST = [
   { id: 'find24', tab: 'explore', e: '🌟', t: 'Find all 24 hidden stars', r: 3, goal: 24, poll: () => C.found },
   { id: 'carTire', tab: 'explore', e: '🛞', t: 'Change a flat tire at the Car Garage', r: 1, go: 'garage', ev: { k: 'car', a: j => j === 'tire' } },
   { id: 'carOil', tab: 'explore', e: '🛢️', t: 'Change the oil in your car', r: 1, go: 'garage', ev: { k: 'car', a: j => j === 'oil' } },
+  // 🛹 the Skate Park (3d/src/24k-skate-park.js): ride in on a skateboard, roller skates or a bike
+  { id: 'skTrick', tab: 'explore', e: '🛹', t: 'Do a trick at the Skate Park', r: 1, go: 'skate', ev: { k: 'trick' } },
+  { id: 'skTricks', tab: 'explore', e: '🌀', t: 'Land 10 tricks at the Skate Park', r: 2, goal: 10, go: 'skate', ev: { k: 'trick' } },
+  { id: 'skCombo', tab: 'explore', e: '🔥', t: 'Land a combo at the Skate Park (a trick plus air or a grind)', r: 2, go: 'skate', ev: { k: 'skateCombo' } },
   { id: 'carFixed', tab: 'explore', e: '🏁', t: 'Fix up your whole car: tire, oil and engine', r: 2, go: 'garage', ev: { k: 'carfixed' } },
   { id: 'carSpin', tab: 'explore', e: '🚗', t: 'Paint your car and take it for a spin', r: 1, go: 'garage', ev: { k: 'carspin' } },
   { id: 'sandcastle', tab: 'explore', e: '🏰', t: 'Build a sandcastle at the beach', r: 2, go: 'beach', ev: { k: 'sandcastle' } },

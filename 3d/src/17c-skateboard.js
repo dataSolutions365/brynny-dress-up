@@ -35,7 +35,8 @@ anims.push((t,dt)=>{if(!started||!av)return;
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   const p=player.pos,pushing=Math.hypot(ix,iy)>.08;SK.pushing=pushing&&player.speed>SK.v+.05;
   const turn=((player.face-SK.dir+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
-  if(pushing){SK.v=player.speed;SK.dir=player.face;}
+  if(SKP.on){SK.v=player.speed;SK.dir=player.face;}// at the skate park, 24k-skate-park.js does the rolling
+  else if(pushing){SK.v=player.speed;SK.dir=player.face;}
   else if(SK.v>.15){SK.v*=Math.pow(.45,dt);const old=p.clone();p.x+=Math.sin(SK.dir)*SK.v*dt;p.z+=Math.cos(SK.dir)*SK.v*dt;collide(p);
     if(groundAt(p.x,p.z)-p.y>.45||p.distanceTo(old)<SK.v*dt*.3){p.x=old.x;p.z=old.z;SK.v=0;}player.speed=SK.v;}
   else SK.v=0;

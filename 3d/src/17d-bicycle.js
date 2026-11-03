@@ -167,12 +167,13 @@ anims.push((t,dt)=>{if(!started||!av)return;
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   const p=player.pos,pushing=Math.hypot(ix,iy)>.08;
   const turn=((player.face-BIKE.dir+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
-  if(pushing){BIKE.v=player.speed;BIKE.dir=player.face;}
+  if(SKP.on){BIKE.v=player.speed;BIKE.dir=player.face;}// at the skate park, 24k-skate-park.js does the rolling
+  else if(pushing){BIKE.v=player.speed;BIKE.dir=player.face;}
   else if(BIKE.v>.15){BIKE.v*=Math.pow(.5,dt);const old=p.clone();p.x+=Math.sin(BIKE.dir)*BIKE.v*dt;p.z+=Math.cos(BIKE.dir)*BIKE.v*dt;collide(p);
     if(groundAt(p.x,p.z)-p.y>.45||p.distanceTo(old)<BIKE.v*dt*.3){p.x=old.x;p.z=old.z;BIKE.v=0;}player.speed=BIKE.v;}
   else BIKE.v=0;
   const sp=pushing?player.speed:BIKE.v;
-  bikeStep(BIKE,BK,dt,sp,pushing&&sp>.15,turn/Math.max(dt,.001),player.onGround);
+  bikeStep(BIKE,BK,dt,sp,SKP.on?SKP.push:pushing&&sp>.15,turn/Math.max(dt,.001),player.onGround);
   av.g.position.copy(p);av.g.rotation.z=BIKE.lean;
   BK.g.position.copy(p);BK.g.rotation.set(0,player.face,0);BK.g.rotateZ(BIKE.lean);
   const air=!player.onGround;if(BIKE.air&&!air)tone(220,.05,'triangle',.05);BIKE.air=air;

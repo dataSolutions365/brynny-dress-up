@@ -42,6 +42,8 @@ const ZONES=[
   // behind the Spring Garden and the Runway, with a short path from the place in front (p0)
   {id:'barber',name:'💈 Barber Shop',ang:300,d:56.1,r:5.6,music:'city-park',p0:43.2},
   {id:'store',name:'👔 Clothing Store',ang:240,d:56.5,r:6,music:'fashion-walk',p0:43.2},
+  // in the open grass between the Runway and the Beach path (ramps and tricks: 12f-place-skate-park.js, 24k-skate-park.js)
+  {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
