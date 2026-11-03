@@ -22,7 +22,7 @@ const glam = () => G.glamCheck(SAVE.look);
 // guys get grooming at the glam mirror instead of makeup, nails and braids, so those challenges change for them
 const guy = () => !!SAVE.look && SAVE.look.body === 'guy';
 // wins, days in a row and more, from 3d/src/24i-earned-rides.js (for the 🦁 Safari challenges)
-const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0 };
+const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0, kn: {} };
 const LIST = [
   // ✨ Sparkle Studio
   { id: 'dress', tab: 'studio', e: '👗', t: 'Put on a dress', r: 1, go: 'studio', poll: () => SAVE.look.dress ? 1 : 0 },
@@ -90,16 +90,28 @@ const LIST = [
   { id: 'partyCheer', tab: 'explore', e: '🎂', t: 'Cheer at the Birthday Party', r: 1, go: 'birthday', ev: { k: 'act', a: a => a === 'cheer', z: 'birthday' } },
   { id: 'gardenBow', tab: 'explore', e: '🌷', t: 'Curtsy in the Spring Garden', r: 1, go: 'spring', ev: { k: 'act', a: a => a === 'bow', z: 'spring' } },
   // 🦁 Safari: super hard challenges. Finish all of one animal's challenges (grp) and you can ride it (3d/src/24i-earned-rides.js)
-  { id: 'saf_feed5', tab: 'safari', grp: 'kivu', e: '🍃', t: 'Feed all 6 kinds of animals at the Safari Zoo', r: 3, goal: 6, u: true, go: 'zoo', ev: { k: 'zoofeed' } },
+  { id: 'saf_feed5', tab: 'safari', grp: 'kivu', e: '🍃', t: 'Feed all 7 kinds of animals at the Safari Zoo', r: 3, goal: 7, u: true, go: 'zoo', ev: { k: 'zoofeed' } },
   { id: 'saf_win5', tab: 'safari', grp: 'kivu', e: '🏆', t: 'Win 5 contests or games', r: 3, goal: 5, go: 'agency', poll: () => es().wins },
   { id: 'saf_days5', tab: 'safari', grp: 'kivu', e: '🔥', t: 'Play 5 days in a row', r: 3, goal: 5, poll: () => es().best },
+  { id: 'saf_stars24', tab: 'safari', grp: 'punda', e: '⭐', t: 'Find all 24 hidden stars', r: 3, goal: 24, poll: () => C.found || 0 },
+  { id: 'saf_win8', tab: 'safari', grp: 'punda', e: '🏆', t: 'Win 8 contests or games', r: 3, goal: 8, poll: () => es().wins },
+  { id: 'saf_days7', tab: 'safari', grp: 'punda', e: '🔥', t: 'Play 7 days in a row', r: 3, goal: 7, poll: () => es().best },
+  { id: 'saf_car3', tab: 'safari', grp: 'kifaru', e: '🔧', t: 'Fix up your whole car 3 times: tire, oil and engine', r: 3, goal: 3, go: 'garage', ev: { k: 'carfixed' } },
+  { id: 'saf_best3', tab: 'safari', grp: 'kifaru', e: '💖', t: 'Make 3 best friends in town (5 hearts each)', r: 3, goal: 3, poll: () => G.FRIENDS.filter(f => G.townSave(f).h >= 5).length },
+  { id: 'saf_win20', tab: 'safari', grp: 'kifaru', e: '🏆', t: 'Win 20 contests or games', r: 3, goal: 20, poll: () => es().wins },
   { id: 'saf_triple', tab: 'safari', grp: 'tembo', e: '👑', t: 'Win all 3 contests: the model, cake and pet contest', r: 3, goal: 3, go: 'agency', poll: () => es().kinds },
   { id: 'saf_win15', tab: 'safari', grp: 'tembo', e: '🏆', t: 'Win 15 contests or games', r: 3, goal: 15, poll: () => es().wins },
   { id: 'saf_days10', tab: 'safari', grp: 'tembo', e: '🔥', t: 'Play 10 days in a row', r: 3, goal: 10, poll: () => es().best },
+  { id: 'saf_model5', tab: 'safari', grp: 'neema', e: '👑', t: 'Win the model contest 5 times', r: 3, goal: 5, go: 'agency', poll: () => (es().kn || {}).contest || 0 },
+  { id: 'saf_cake5', tab: 'safari', grp: 'neema', e: '🎂', t: 'Win the cake contest 5 times', r: 3, goal: 5, go: 'bakery', poll: () => (es().kn || {}).cakect || 0 },
+  { id: 'saf_pet5', tab: 'safari', grp: 'neema', e: '🐾', t: 'Win the pet contest 5 times', r: 3, goal: 5, go: 'parlor', poll: () => (es().kn || {}).petct || 0 },
   { id: 'saf_kai5', tab: 'safari', grp: 'jabari', e: '🏀', t: 'Beat Kai 1-on-1 at basketball 5 times', r: 3, goal: 5, go: 'court', poll: () => es().kai },
   { id: 'saf_win30', tab: 'safari', grp: 'jabari', e: '🏆', t: 'Win 30 contests or games', r: 3, goal: 30, poll: () => es().wins },
   { id: 'saf_stars100', tab: 'safari', grp: 'jabari', e: '🌈', t: 'Earn 100 ⭐ and become a Legend', r: 3, goal: 100, poll: () => C.stars || 0 },
   { id: 'saf_days14', tab: 'safari', grp: 'jabari', e: '🔥', t: 'Play 14 days in a row', r: 3, goal: 14, poll: () => es().best },
+  { id: 'saf_kai10', tab: 'safari', grp: 'twiga', e: '🏀', t: 'Beat Kai 1-on-1 at basketball 10 times', r: 3, goal: 10, go: 'court', poll: () => es().kai },
+  { id: 'saf_stars150', tab: 'safari', grp: 'twiga', e: '🌟', t: 'Earn 150 ⭐', r: 3, goal: 150, poll: () => C.stars || 0 },
+  { id: 'saf_days21', tab: 'safari', grp: 'twiga', e: '🔥', t: 'Play 21 days in a row', r: 3, goal: 21, poll: () => es().best },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 const DAILY = [
@@ -292,10 +304,10 @@ function chRow(ch, here) {
 function safariHTML(list, here) {
   const rides = G.earnedRides ? G.earnedRides() : [];
   let h = '<div class="cnote">🦁 Super hard challenges! Finish every challenge for an animal and you can ride it anywhere in town.</div>';
-  for (const k of ['kivu', 'tembo', 'jabari']) {
+  for (const k of ['kivu', 'punda', 'kifaru', 'tembo', 'neema', 'jabari', 'twiga']) {
     const r = rides.find(x => x.k === k), mine = list.filter(c => c.grp === k); if (!mine.length) continue;
     const n = mine.filter(isDone).length;
-    h += `<div class="csaf${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '🦁'}</b><div><strong>${r ? `${r.nm} the ${r.n.toLowerCase()}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += `<div class="csaf${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '🦁'}</b><div><strong>${r ? `${r.nm} the ${r.n.toLowerCase()}${r.fly ? ' 🪽' : ''}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
     h += mine.map(ch => chRow(ch, here)).join('');
   }
   return h;
