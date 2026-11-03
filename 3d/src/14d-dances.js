@@ -73,8 +73,18 @@ const MOVE_ANIMS={
   // cool pose: arms crossed, chin up, standing wide at an angle
   coolpose:{t:2.4,go(k,tgt){tgt.a0x=tgt.a1x=-.6;tgt.a0z=-.15;tgt.a1z=.15;tgt.e0=tgt.e1=-1.55;tgt.a0y=1.1;tgt.a1y=-1.1;tgt.lean=-.06;tgt.sy=.3;tgt.hy=-.25;tgt.hd=.08;
     tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=0;tgt.l0z=-.12;tgt.l1z=.12;tgt.bob=-.01+Math.sin(Math.min(k,.5)*Math.PI*2)*.01;}},
-  // finger guns: point both hands forward and "pew pew"
-  guns:{t:1.6,go(k,tgt){const r=dPos(Math.sin(k*10))*.25;tgt.a0x=tgt.a1x=-1.45+r;tgt.a0z=.15;tgt.a1z=-.15;tgt.e0=tgt.e1=-.15;tgt.sy=.25;tgt.hd=-.1;tgt.hy=-.15;tgt.lean=-.04;}},
+  // finger guns: both hands become finger guns (index out, thumb up, the other fingers curled; see gunHandGeo),
+  // aim, fire "pew pew pew pew" with a kick of the wrist and elbow on each shot, then blow the smoke off one finger
+  guns:{t:2.3,go(k,tgt,a){const e=a.emote,up=dEase(k/.3);if(e&&e.n==null)e.n=0;
+    while(e&&e.n<PEW_AT.length&&k>=PEW_AT[e.n]){pewShot(a,e.n%2);e.n++;}
+    tgt.sy=.25*up;tgt.hd=-.1*up;tgt.hy=-.15*up;tgt.lean=-.04*up;tgt.l0z=-.08;tgt.l1z=.08;
+    for(const side of [0,1]){const kick=pewKick(k,side),A=a.arms[side];
+      tgt['a'+side+'x']=-.08-(1.4+kick*.18)*up;tgt['a'+side+'z']=(side?-.16:.16)*up;tgt['e'+side]=-.15-kick*.3;
+      if(A&&A.gun)A.gun.rotation.x=-kick*.4;}
+    // blow the smoke off the tip of the finger: one hand comes up to the lips, the other drops to the side
+    if(k>1.5){const b=dEase((k-1.5)/.3);tgt.a0x=-1.48+.38*b;tgt.e0=-.15-1.95*b;tgt.a0z=.16+.19*b;tgt.hd=.1*b;tgt.hy=-.15+.15*b;
+      tgt.a1x=-1.48+1.4*b;tgt.a1z=-.16+.24*b;tgt.e1=-.15-.1*b;
+      if(e&&!e.puff&&k>1.8){e.puff=1;pewPuff(a);}}}},
   // bow: one hand on the chest, the other behind the back
   gbow:{t:1.8,go(k,tgt){const b=Math.sin(Math.min(1,k/1.6)*Math.PI);tgt.lean=b*.6;tgt.bob=-b*.04;tgt.a0x=-.9;tgt.a0z=.45;tgt.e0=-1.6;tgt.a1x=.5;tgt.a1z=-.1;tgt.e1=-1.2;
     tgt.l0=tgt.l1=0;tgt.k0=tgt.k1=0;}},
@@ -91,3 +101,38 @@ const GUY_MOVES={pose:'coolpose',kiss:'guns',bow:'gbow',twirl:'spin'};
 function runwayWalk(a,tgt,sp){const s=Math.sin(a.phase),k=Math.min(1,sp);
   if(a.guy){tgt.st=-s*.16*k;tgt.sy=s*.05*k;tgt.a0x*=1.35;tgt.a1x*=1.35;tgt.a0z=-.2;tgt.a1z=.2;tgt.e0=tgt.e1=-.4;tgt.lean=-.05;tgt.l0z=-.04;tgt.l1z=.04;tgt.hd=0;tgt.hy=0;return;}
   tgt.l0z=.08*k;tgt.l1z=-.08*k;tgt.hr=s*.09*k;tgt.hx=s*.025*k;tgt.sy=s*.12*k;tgt.st=-s*.06*k;tgt.a0x*=.6;tgt.a1x*=.6;tgt.a0z=-.16;tgt.a1z=.16;tgt.e0=tgt.e1=-.25;tgt.lean=-.03;tgt.hd=-s*.03;}
+
+/* ---- 👉 hands for hand gestures ----
+   Hand gestures (wave, clap, blow a kiss, pew pew, cheer, flex, cool pose) need empty hands, so whatever you're holding
+   (the skateboard, a purse, a wand, a ball, flowers...) is put away until the move is done and comes back after.
+   Avatar.update does it for everyone, so friends online see it too: they get the same move from online.js.
+   Things you WEAR on a hand (a baseball glove) have userData.worn and stay on. */
+const HANDS_FREE=new Set(['wave','clap','kiss','guns','cheer','flex','coolpose']);
+// the finger-gun hand: the palm and the index finger pointing straight out, the thumb sticking up and the other three
+// fingers curled into the palm. Same size and spot as the normal hand (handGeo) so it fits the same wrist.
+function gunHandGeo(sx){const k='g'+sx;if(LIMB[k])return LIMB[k];const parts=[],X=-sx;
+  const palm=new RoundedBoxGeometry(.048,.052,.0135,4,.0064);{const pp=palm.attributes.position;for(let i=0;i<pp.count;i++){const y=pp.getY(i),t=Math.min(1,Math.max(0,(y+.004)/.03));pp.setX(i,pp.getX(i)*(1-.22*t));pp.setZ(i,pp.getZ(i)*(1+.25*t));}}palm.translate(0,-.027,0);parts.push(palm);
+  const seg=(b,d,L,r0,r1)=>{d=d.clone().normalize();parts.push(limbPart(new THREE.CylinderGeometry(r0,r1,L,12),b.clone().addScaledVector(d,L/2),d.clone().negate()));
+    const j=new THREE.SphereGeometry(r1,12,8);const e=b.clone().addScaledVector(d,L);j.translate(e.x,e.y,e.z);parts.push(j);return e;};
+  const knuckle=(b,r)=>{const g=new THREE.SphereGeometry(r*1.05,12,8);g.translate(b.x,b.y,b.z);parts.push(g);};
+  // the index finger: the "barrel", straight out
+  {const b=new THREE.Vector3(X*.0158,-.049,0);knuckle(b,.0054);seg(b,new THREE.Vector3(0,-1,0),.047,.0054,.0045);}
+  // middle, ring and pinky curl down into the palm
+  [[.0053,.0056],[-.0053,.0053],[-.0155,.0048]].forEach(([fx,r])=>{const b=new THREE.Vector3(X*fx,-.049,0);knuckle(b,r);
+    const m=seg(b,new THREE.Vector3(0,-.45,-1),.019,r,r*.95);const t=seg(m,new THREE.Vector3(0,1,-.35),.016,r*.95,r*.85);});
+  // the thumb sticks up: the "hammer" of the finger gun
+  {const b=new THREE.Vector3(X*.022,-.016,.002);knuckle(b,.0068);seg(b,new THREE.Vector3(X,-.12,.12),.034,.0068,.0055);}
+  const g=mergeGeometries(parts.map(x=>{x=x.index?x.toNonIndexed():x;['uv1','uv2'].forEach(a=>x.deleteAttribute(a));return x;}));g.computeVertexNormals();
+  return LIMB[k]={g,tip:new THREE.Vector3(X*.0158,-.1,0)};}
+// the four shots of pew pew (which hand fires goes back and forth) and how hard each hand is kicking back right now
+const PEW_AT=[.42,.66,.98,1.22];
+function pewKick(k,side){let m=0;PEW_AT.forEach((s,i)=>{if(i%2===side&&k>=s)m=Math.max(m,Math.exp(-(k-s)*16));});return m;}
+// louder for you, softer for a friend further away, silent across town
+function pewVol(a){if(!av||a===av)return 1;const d=a.g.position.distanceTo(av.g.position);return Math.max(0,1-d/14);}
+function pewTip(a,side){const A=a.arms&&a.arms[side];if(!A||!A.gunAim)return null;return A.gunAim.localToWorld(A.gunTip.clone());}
+// one "pew": a quick zappy sound that slides down, and a little flash of sparkles out of the fingertip
+function pewShot(a,side){const v=pewVol(a);
+  if(v>.05){const f=1+(Math.random()-.5)*.12;tone(1700*f,.15,'square',.03*v,0,330*f);tone(2400*f,.11,'sine',.07*v,0,480*f);}
+  if(v>0){const p=pewTip(a,side);if(p)burst(p,'#ffe27a',8,1.3,.05);}}
+// blowing the smoke off the finger
+function pewPuff(a){const v=pewVol(a);if(v>.05)tone(420,.28,'sawtooth',.012*v,0,240);if(v>0){const p=pewTip(a,0);if(p)burst(p,'#e6e6ee',10,.5,.07);}}

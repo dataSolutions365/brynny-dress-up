@@ -51,10 +51,12 @@ Object.assign(OUTFITS2D,{
     const lg=new THREE.Mesh(new THREE.CircleGeometry(.03,20),new THREE.MeshBasicMaterial({map:canvasTex(64,64,(x)=>{x.font='48px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('⭐',32,36);}),transparent:true}));
     lg.position.set(0,.11,.115);lg.rotation.x=-.5;k.head.add(lg);k.av.parts.push(lg);},
   // 🧤 Baseball glove on the left hand
-  glove(k,c){const a=k.arms[1],m=k.mat(c),lace=k.mat('#5a3418');const g=k.P(new RoundedBoxGeometry(.11,.14,.06,3,.025),m,a.hand,0,-.06,.01);
+  glove(k,c){const a=k.arms[1],m=k.mat(c),lace=k.mat('#5a3418'),n0=a.hand.children.length;const g=k.P(new RoundedBoxGeometry(.11,.14,.06,3,.025),m,a.hand,0,-.06,.01);
     for(let i=0;i<4;i++){const f=k.P(new THREE.CapsuleGeometry(.014,.05,4,8),m,a.hand,-.035+i*.023,-.15,.01);f.rotation.z=(i-1.5)*.08;}
     const th=k.P(new THREE.CapsuleGeometry(.016,.05,4,8),m,a.hand,.06,-.06,.02);th.rotation.z=-.6;
-    k.P(box(.08,.004,.064),lace,a.hand,0,-.11,.012);},
+    k.P(box(.08,.004,.064),lace,a.hand,0,-.11,.012);
+    // worn, not held: it stays on during hand gestures (HANDS_FREE in 14d-dances.js)
+    a.hand.children.slice(n0).forEach(c=>c.userData.worn=1);},
 });
 // one tap "suit up" looks for each sport (the closet still lets you change any piece)
 const SPORT_LOOKS={

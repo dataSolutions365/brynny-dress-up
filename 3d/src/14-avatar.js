@@ -166,7 +166,10 @@ class Avatar{
     // arms
     this.arms=[];for(const sx of [-1,1]){const sh=new THREE.Group();sh.position.set(sx*((glam?.155:.165)+(guy?.02:0)),.42,0);spine.add(sh);B(capTop((glam?.038:.042)+(guy?.006:0),glam?.185:.17),sh);if(guy)B(sph(.044,16,12),sh,0,-.02,0).scale.set(1,.9,.95);
       const el=new THREE.Group();el.position.y=glam?-.255:-.24;sh.add(el);B(capTop((glam?.032:.036)+(guy?.005:0),glam?.175:.16),el);const hand=new THREE.Group();hand.position.y=glam?-.245:-.23;el.add(hand);const HG=handGeo(sx);B(HG.g,hand);hand.userData.nails=HG.nails;if(!glam)hand.scale.setScalar(1.12);
-      this.arms.push({sh,el,hand,sx});}
+      // the finger-gun hand for pew pew (14d-dances.js): hidden until it's needed, then it takes the normal hand's place
+      const gun=new THREE.Group();gun.position.copy(hand.position);gun.scale.copy(hand.scale);gun.visible=false;el.add(gun);
+      const gunAim=new THREE.Group();gunAim.rotation.y=sx*Math.PI/2;gun.add(gunAim);const GG=gunHandGeo(sx);B(GG.g,gunAim);
+      this.arms.push({sh,el,hand,sx,gun,gunAim,gunTip:GG.tip});}
     // legs
     this.legs=[];for(const sx of [-1,1]){const hp=new THREE.Group();const X=this.legX;hp.position.set(sx*.075,-.02,0);hips.add(hp);B(capTop((glam?.058:.062)+(guy?.002:0),.3+X),hp);
       const kn=new THREE.Group();kn.position.y=-.38-X;hp.add(kn);B(capTop((glam?.045:.05)+(guy?.004:0),.3+X),kn);const an=new THREE.Group();an.position.y=-.37-X;kn.add(an);const FG=footGeo(sx);B(FG.g,an);an.userData.nails=FG.nails;
@@ -288,6 +291,8 @@ class Avatar{
       const paint=(list,key,fin,toe)=>{const cs=nailCols(N,key),ms={};list.forEach((grp,gi)=>grp.userData.nails.forEach((sp,i)=>{const c=cs[gi*5+i];
         if(c)nailOn(grp,sp,ms[c]||(ms[c]=nm(c,fin)),toe);else if(bare)nailOn(grp,sp,bare,toe);}));};
       paint(arms.map(a=>a.hand),'c',N.f,false);paint(legs.map(l=>l.an),'t',N.tf,true);}
+    // the hand itself and its nails; everything put in a hand after this is something held (see HANDS_FREE in 14d-dances.js)
+    for(const a of arms)for(const c of a.hand.children)c.userData.body=1;this.handMode=-1;
     /* hats */
     {const h=look.hat;if(h){const c=h.c,id=h.id;
       if(id==='tiara'){const m=mat(c,'metal');const t=P(new THREE.TorusGeometry(.115,.008,8,40,Math.PI),m,head,0,.07,.0);t.rotation.x=-1.1;
@@ -384,6 +389,12 @@ class Avatar{
     if(this.paintCv)x.drawImage(this.paintCv,0,0,W,W);
     faceExtras(this,x,at,k,mk);
     this.faceTex.needsUpdate=true;}
+  // hand gestures put away what you're holding, and pew pew swaps in the finger-gun hands (14d-dances.js).
+  // Things are hidden by moving them to a layer the camera doesn't draw, so the skateboard, bike and ball code
+  // can keep switching .visible on and off without the two fighting.
+  handsFor(e){const m=!e?0:e.id==='guns'?2:HANDS_FREE.has(e.id)?1:0;if(m===this.handMode)return;this.handMode=m;
+    for(const A of this.arms){for(const c of A.hand.children){const hide=m===2||(m===1&&!c.userData.body&&!c.userData.worn);c.traverse(o=>o.layers.set(hide?31:0));}
+      if(A.gun){A.gun.visible=m===2;A.gun.rotation.x=0;}}}
   // a guy does his own version of the girly moves (a cool pose instead of a model pose, a bow instead of a curtsy...)
   play(e){if(this.guy&&GUY_MOVES[e])e=GUY_MOVES[e];this.emote={id:e,t:0};}
   update(dt,speed,air){
@@ -432,6 +443,7 @@ class Avatar{
     damp(this.hips.position,'y',this.hip+this.lift+tgt.bob,20);damp(this.spine.rotation,'x',tgt.lean+breathe,6);damp(this.hips.rotation,'y',tgt.sy,8);damp(this.head.rotation,'z',tgt.hd,8);
     damp(this.hips.position,'x',tgt.hx,14);damp(this.hips.rotation,'z',tgt.hr,10);damp(this.spine.rotation,'z',tgt.sz,10);damp(this.head.rotation,'y',tgt.hy,12);damp(L[0].hp.rotation,'z',tgt.l0z,12);damp(L[1].hp.rotation,'z',tgt.l1z,12);damp(A[1].el.rotation,'z',tgt.a1y,12);damp(this.spine.rotation,'y',tgt.st,10);this.tilt=(this.tilt||0)+(tgt.tilt-(this.tilt||0))*Math.min(1,dt*8);
     if(this.wheels)rollerFeet(this,dt,speed);
+    this.handsFor(this.emote);
     this.hips.rotation.x=this.emote&&this.emote.id==='flip'?this.flip:(this.tilt||0);this.spinY=e&&(e.id==='twirl'||e.id==='magic'||MOVE_ANIMS[e.id])?tgt.spin:0;
     // blink
     this.blink-=dt;const bl=this.blink<0?Math.max(.08,Math.abs(this.blink+.07)/.07):1;if(this.blink<-.14)this.blink=2+Math.random()*3.5;this.eyes.forEach(g=>g.scale.y=bl*(g.scale.x||1));
