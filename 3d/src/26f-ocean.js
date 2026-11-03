@@ -255,4 +255,4 @@ SHOW.push({k:'sea',
       if(m.flip)m.flip.forEach(fl=>{const o=h.ph+(fl.front?0:Math.PI);fl.p.rotation.z=fl.sx*Math.sin(o)*(fl.front?.5:.25);});
       A.rideW=k==='whale'?.6:k==='turtle'?.35:.12;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
     else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph);}},
-  off(f,h){if(h&&h.m)scene.remove(h.m.g);if(f.a){f.a.rideW=0;}}});
+  off(f,h){if(h&&h.m){scene.remove(h.m.g);freeObj(h.m.g);}if(f.a){f.a.rideW=0;}}});
