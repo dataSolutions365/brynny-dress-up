@@ -77,6 +77,8 @@
   they're caught: 🪢 Catch puts one on a rope behind you until you reach the barn. A bar at the top lists who's still out.
   Friends online in the room join in through `{t:'roam'}` messages (online.js passes them on); whoever brings the most home wins
   (`did('roundup', 0)`, which also counts as a win for the 🏆 rides). Challenges are in the 🗺️ Explore tab of `3d/challenges.js`.
+  🦁 A Safari Round-up starts at the Safari Zoo the same way, with the safari runaways in `SAFARI_LIST` (hidden copies until it starts,
+  walked back to the zoo). Only one Round-up runs at a time (`RU.grp`).
   Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.

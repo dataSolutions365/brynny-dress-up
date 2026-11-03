@@ -105,8 +105,9 @@ const LIST = [
   { id: 'snowDance', tab: 'explore', e: '🎄', t: 'Dance in Christmas Village', r: 1, go: 'christmas', ev: { k: 'act', a: a => a === 'dance', z: 'christmas' } },
   { id: 'partyCheer', tab: 'explore', e: '🎂', t: 'Cheer at the Birthday Party', r: 1, go: 'birthday', ev: { k: 'act', a: a => a === 'cheer', z: 'birthday' } },
   // 🚨 Round-up (3d/src/26g-town-animals.js): start it at the Happy Barn, the 4 barn animals break out all over town; catch them and walk them home
-  { id: 'roamFeed', tab: 'explore', e: '🌽', t: 'Give a snack to all 4 barn animals in the meadow: Waddles, Billy, Truffle and Woolly', r: 1, goal: 4, u: true, go: 'barn', ev: { k: 'roamfeed' } },
-  { id: 'roundup', tab: 'explore', e: '🚨', t: 'Finish a Round-up: catch all 4 runaway barn animals and bring them back to the Happy Barn', r: 3, go: 'barn', ev: { k: 'roundup' } },
+  { id: 'roamFeed', tab: 'explore', e: '🌽', t: 'Give a snack to all 4 barn animals in the meadow: Waddles, Billy, Truffle and Woolly', r: 1, goal: 4, u: true, go: 'barn', ev: { k: 'roamfeed', a: n => ['Waddles', 'Billy', 'Truffle', 'Woolly'].includes(n) } },
+  { id: 'roundup', tab: 'explore', e: '🚨', t: 'Finish a Round-up: catch all 4 runaways and bring them home', r: 3, go: 'barn', ev: { k: 'roundup' } },
+  { id: 'safariRound', tab: 'explore', e: '🦒', t: 'Finish a Safari Round-up: bring Ziggy, Kito, Twiga and Tembo back to the Safari Zoo', r: 3, go: 'zoo', ev: { k: 'roundgrp', a: g => g === 'zoo' } },
   { id: 'roundCatch', tab: 'explore', e: '🪢', t: 'Bring 10 runaways back to the Happy Barn', r: 2, goal: 10, go: 'barn', ev: { k: 'roamhome' } },
   { id: 'roundWin', tab: 'explore', e: '🏆', t: 'Win a Round-up against friends online (bring the most home)', r: 2, go: 'barn', ev: { k: 'roundup', a: p => p === 0 } },
   { id: 'gardenBow', tab: 'explore', e: '🌷', t: 'Curtsy in the Spring Garden', r: 1, go: 'spring', ev: { k: 'act', a: a => a === 'bow', z: 'spring' } },

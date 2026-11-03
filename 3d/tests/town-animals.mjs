@@ -47,7 +47,7 @@ try {
     await page.screenshot({ path: join(SHOTS, name + '.png'), timeout: 120_000 });
     await page.evaluate(() => { const r = window.__game.renderer; r.render = () => {}; }); };
   const did = (k, a) => page.evaluate(([k, a]) => dispatchEvent(new CustomEvent('brynny:did', { detail: { k, a } })), [k, a]);
-  const st = () => page.evaluate(() => { const G = window.__game, B = G.BZ; return G.ROAM.map(c => ({ nm: c.nm, x: c.pos.x, z: c.pos.z, mode: c.mode, streets: c.streets,
+  const st = () => page.evaluate(() => { const G = window.__game, B = G.BZ; return G.ROAM.filter(c => c.grp === 'barn').map(c => ({ nm: c.nm, x: c.pos.x, z: c.pos.z, mode: c.mode, streets: c.streets,
     ends: c.streets.map(G.roamEnd), barn: Math.hypot(c.pos.x - B.x, c.pos.z - B.z) })); });
   const deg = d => d * Math.PI / 180;
   // the game slows its clock down when frames are slow (test computers draw slowly), so wait for game time, not real time
@@ -78,7 +78,11 @@ try {
   for (let i = 0; i < 8; i++) { await gameWait(1); const P = await me(); for (const c of await st()) closest = Math.min(closest, Math.hypot(c.x - P[0], c.z - P[1])); }
   console.log(`standing near the meadow, the closest a barn animal came was ${closest.toFixed(1)}`);
   // feed them all
-  const goTo = nm => page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm); G.player.pos.set(c.pos.x + 1.2, 0, c.pos.z + .4); G.player.face = Math.atan2(c.pos.x - G.player.pos.x, c.pos.z - G.player.pos.z); G.cam.yaw = G.player.face + Math.PI + .7; G.cam.cy = G.cam.yaw; }, nm);
+  // stand next to one (if another animal is just as close, wait a moment for them to move apart, so the buttons are for this one)
+  const goTo = async nm => { for (let i = 0; i < 12; i++) { const ok = await page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm), p = c.pos;
+      return G.ROAM.every(o => o === c || Math.hypot(o.pos.x - p.x, o.pos.z - p.z) > 3.5); }, nm); if (ok) break; await gameWait(1); }
+    await goTo0(nm); };
+  const goTo0 = nm => page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm); G.player.pos.set(c.pos.x + 1.2, 0, c.pos.z + .4); G.player.face = Math.atan2(c.pos.x - G.player.pos.x, c.pos.z - G.player.pos.z); G.cam.yaw = G.player.face + Math.PI + .7; G.cam.cy = G.cam.yaw; }, nm);
   for (const nm of ['Waddles', 'Billy', 'Truffle', 'Woolly']) { await goTo(nm); await gameWait(.3);
     const b = await btn('#roamBtn'); if (!b.includes(nm)) fail(`Next to ${nm} there should be a Feed button (it says "${b}").`);
     if ((await btn('#roamCatch')).includes('Catch')) fail('Without a Round-up there is nothing to catch.');
@@ -145,8 +149,31 @@ try {
   if (s.on) fail('With all 4 home the Round-up should end.');
   if (!done.roundup || !done.roundWin || !done.roamFeed) fail('Finishing (and winning) the Round-up and feeding them all should finish those challenges.');
   if (coins - coins0 < 40) fail(`Winning the Round-up should give coins (got ${coins - coins0}).`);
-  if (Object.values(s.modes).some(m => m !== 'meadow')) fail('After the Round-up the animals should be back in the meadow.');
+  if (['Waddles', 'Billy', 'Truffle', 'Woolly'].some(n => s.modes[n] !== 'meadow')) fail('After the Round-up the animals should be back in the meadow.');
   if (closest < 6) fail(`Barn animals should never come over to you (one came within ${closest.toFixed(1)}).`);
+
+  // 5. the 🦁 Safari Round-up starts at the Safari Zoo: Ziggy, Kito, Twiga and Tembo break out, and go back to the zoo
+  await gameWait(10);// the barn Round-up's results go away first
+  const Zo = await page.evaluate(() => { const z = window.__game.Z.zoo; return { x: z.x, z: z.z, f: z.fence || z.r }; });
+  await setMe(Zo.x * .85, Zo.z * .85); await gameWait(.4);
+  const zt = await btn('#roamCatch');
+  if (!zt.includes('Safari Round-up')) fail(`Near the Safari Zoo there should be a Start a Safari Round-up button (it says "${zt}").`);
+  await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.5);
+  s = await page.evaluate(() => window.__game.roamState());
+  const zbar = await page.evaluate(() => document.querySelector('#ruBar').innerText);
+  console.log('safari:', s.grp, JSON.stringify(s.modes), '| bar:', zbar.replace(/\n/g, ' · '));
+  if (!s.on || s.grp !== 'zoo') fail('Tapping it should start a Safari Round-up.');
+  const SAF = ['Ziggy', 'Kito', 'Twiga', 'Tembo'];
+  if (!SAF.every(n => s.modes[n] === 'street')) fail('In a Safari Round-up the safari animals should be out on the streets.');
+  if (['Waddles', 'Billy', 'Truffle', 'Woolly'].some(n => s.modes[n] !== 'meadow')) fail('The barn animals should stay in their meadow during a Safari Round-up.');
+  if (!SAF.every(n => zbar.includes(n))) fail('The bar should list the safari runaways.');
+  if (SHOTS) { await goTo('Twiga'); await gameWait(.3); await shot('safari-round-up'); }
+  for (const nm of SAF) { await goTo(nm); await gameWait(.3); await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.2);
+    await setMe(Zo.x * .85, Zo.z * .85); await gameWait(.6); }
+  s = await page.evaluate(() => window.__game.roamState());
+  const done3 = await page.evaluate(() => window.__game.SAVE.chal.done);
+  console.log(`safari round-up: ${s.on ? 'still on' : 'done'}, safariRound ${done3.safariRound ? 'done' : 'not done'}`);
+  if (s.on || !done3.safariRound) fail('Bringing all 4 safari runaways back to the zoo should finish the Safari Round-up.');
 
   if (errors.length) fail('Errors: ' + errors.join(' | '));
   if (!process.exitCode) console.log('✅ The barn animals wander their meadow, a Round-up sends them round town until they are caught and walked home, and the most catches wins.');
