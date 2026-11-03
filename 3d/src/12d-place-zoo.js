@@ -37,7 +37,7 @@ const ZOO_SHORE={gapA:.32,edge:-(R+.9-Z.zoo.d)};
  {const bg=new THREE.Group();const [x,w]=z.toWorld(-2.2,z.r-.9);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
   for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);
   const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#5a8a3a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Safari Zoo',W/2,70);
-    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants 🦁 Lion 🦍 Gorilla 🦛 Hippo 🐆 🐅',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants 🦁 Lion 🦍 Gorilla 🦛 Hippo 🐆 🐅 🐊',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
   for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
   obs.push({x,z:w,r:.4});}
  // the animals keep away from these (trees, rocks, water, feeder)

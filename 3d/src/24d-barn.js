@@ -54,7 +54,9 @@ const ZOOA=[
   {k:'cheetah',e:'🐆',n:'Cheetah',food:[['🍖','Meat'],['🥩','Steak']],say:['*chirp chirp*','*fast tail flick*','*soft purr*'],
     facts:[['🥗','Diet','Carnivore. Gazelles, impalas and hares, which it catches with a super fast sprint.'],['🌍','Habitat','Open grasslands and savannas of Africa, and a few in Iran.'],['⏳','Lifespan','About 10 to 12 years in the wild, and up to 17 in zoos.'],['✨','Fun fact','The fastest land animal in the world: up to 110 km/h (70 mph)! It can\'t roar, but it chirps like a bird. The black "tear marks" under its eyes stop the sun from dazzling it.']]},
   {k:'tiger',e:'🐅',n:'Tiger',food:[['🍖','Meat'],['🐟','Fish']],say:['*deep rumbly growl*','*friendly chuff chuff*','*big stretch*'],
-    facts:[['🥗','Diet','Carnivore. Deer, wild pigs and buffalo. A tiger can eat 40 kg (88 lb) in one meal!'],['🌍','Habitat','Forests, grasslands and mangrove swamps of Asia, from India to Russia.'],['⏳','Lifespan','About 10 to 15 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','The biggest cat in the world! No two tigers have the same stripes, and the stripes are on its skin too. Unlike most cats, tigers love to swim.']]}
+    facts:[['🥗','Diet','Carnivore. Deer, wild pigs and buffalo. A tiger can eat 40 kg (88 lb) in one meal!'],['🌍','Habitat','Forests, grasslands and mangrove swamps of Asia, from India to Russia.'],['⏳','Lifespan','About 10 to 15 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','The biggest cat in the world! No two tigers have the same stripes, and the stripes are on its skin too. Unlike most cats, tigers love to swim.']]},
+  {k:'gator',e:'🐊',n:'Alligator',swim:.36,food:[['🐟','Fish'],['🍗','Chicken']],say:['*low rumbly bellow*','*snap snap!* 🐊','*lazy sunbathing*'],
+    facts:[['🥗','Diet','Carnivore. Fish, turtles, snakes, birds and small animals. It can go months without eating in the winter!'],['🌍','Habitat','Rivers, lakes and swamps of the southeastern United States, like Florida and Louisiana. A cousin lives in China.'],['⏳','Lifespan','About 35 to 50 years in the wild, and up to 70 in zoos.'],['✨','Fun fact','You can tell an alligator from a crocodile by its wide, rounded U-shaped snout. When its mouth is shut you can only see its top teeth! It has about 80 teeth and grows new ones all its life.']]}
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -656,12 +658,12 @@ function zooSpot2(r,a){const f=ZZ.fence,out=a&&a.lz<-f+.3;
   if(Math.random()<.2){const lz=ZOO_SHORE.edge+r*.6+.15,w=1.3+(-f-lz)*.55-r-.3,s=[(Math.random()*2-1)*Math.max(0,w),lz];
     if(a){a.next=s;return [0,-f+.6+r];}return s;}
   return zooSpot(r);}
-// 🦛 the hippo lives in the water just off the zoo's shore, and sometimes comes up onto the sand
+// 🦛🐊 the hippo and the alligator live in the water just off the zoo's shore, and sometimes come up onto the sand
 const HIPPO_WATER={x:9,near:-(R+3.2-ZZ.d),far:-(R+12-ZZ.d)};
 function zooOkH(lx,lz,r){return (Math.abs(lx)<HIPPO_WATER.x&&lz<ZOO_SHORE.edge+.5&&lz>HIPPO_WATER.far)||zooShoreOk(lx,lz,r);}
 function zooSpotH(r){const W=HIPPO_WATER;if(Math.random()<.8)return [(Math.random()*2-1)*(W.x-1),W.near-1-Math.random()*(W.near-W.far-1.5)];
   const lz=ZOO_SHORE.edge-.2;return [(Math.random()*2-1)*2.5,lz];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1],['hippo',1],['cheetah',1],['tiger',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk2;a.spot=zooSpot2;a.mates=ZA;
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1],['hippo',1],['cheetah',1],['tiger',1],['gator',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk2;a.spot=zooSpot2;a.mates=ZA;
   if(a.F.swim){a.ok=zooOkH;a.spot=zooSpotH;}
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=a.spot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
