@@ -14,7 +14,7 @@
    (it adds the entries to FARM and builds the models from FarmAnimal.build). Friends online see them through the 'ride' entry. */
 function earnedRideList(){return [
   {k:'panda',e:'🐼',n:'Giant panda',nm:'Bamboo',earn:{by:'days',goal:3},ride:1.08,about:'A big cuddly panda who only comes to players who play 3 days in a row. Slow, soft and always munching bamboo!',food:[['🎋','Bamboo'],['🍎','Apple'],['🍠','Sweet potato']],say:['*munch munch* 🎋','Hug time! 🐼','*happy roly-poly*']},
-  {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',earn:{by:'wins',goal:3},ride:1.13,about:'A golden lion with a royal crown, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
+  {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',model:'lion',gear:1,scale:1.15,earn:{by:'wins',goal:3},ride:1.38,about:'A real-looking golden lion with a champion\'s gold saddle, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
   {k:'comet',e:'🦌',n:'Flying reindeer',nm:'Comet',earn:{by:'days',goal:7},fly:1,ride:1.15,about:'A magic reindeer with a glowing red nose who flies without wings! Only for players who play 7 days in a row.',food:[['🥕','Carrot'],['🍪','Cookie'],['🍎','Apple']],say:['*jingle jingle* 🔔','Up to the stars! ✨','*nose glows bright* ❤️']},
   // 🦁 safari rides: real-looking animals from the Safari Zoo, for players who finish every one of their super hard 🦁 Safari challenges
   // (challenges.js, ids in earn.ids). model = the zoo animal to build (zoo = which Safari Zoo animal it is, when that's different), gear = a saddle, seat = sit this far forward, wide = legs spread, boost = speed.
@@ -56,29 +56,6 @@ function earnedRideModel(k,{g,body,o,horseLike}){
     fBlush(head,H,.68,-.28,.72);
     const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.9));g.add(tail);M(sph(.1,10,8),wh,0,0,0,tail);
     Object.assign(o,{neck,head,tail,nTilt:.3,size:1.1,h:by+.85,rad:.7,dustR:[r,r,len*.8]});return true;}
-  // 🦁 a golden lion with a big fluffy mane and a little royal crown
-  if(k==='goldlion'){const r=.36,len=.62,leg=.5,by=leg+r*.65,fur=fm('#f2b54a'),light=fm('#ffe4ad'),mane=fm('#c8682a',{roughness:1}),mane2=fm('#e88a35',{roughness:1}),
-      gold=fShiny('#ffd23f',{metalness:.6,roughness:.25}),gem=phys('#ff4d8d',{roughness:.1,clearcoat:1,emissive:'#ff4d8d',emissiveIntensity:.3});
-    body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),fur,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.8,14,10),light,0,-r*.32,len*.1,body).scale.set(.92,.72,1.3);
-    fLegs(this,g,r*.55,len*.45,leg+.05,leg+.05,.1,fur,null);
-    for(const l of this.legs)M(sph(.12,12,10),light,0,-(leg+.05)+.06,.03,l.g).scale.set(1,.6,1.25);
-    const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.45);neck.rotation.x=.5;g.add(neck);
-    M(sph(.26,16,12),fur,0,.05,0,neck);fFluff(neck,mane2,.3,.3,.26,26,.12,.05,-.02);
-    const head=new THREE.Group();head.position.set(0,.24,.06);head.rotation.x=-.5+.1;neck.add(head);const H=.28;
-    M(sph(H,22,16),fur,0,0,0,head).scale.set(1.05,.95,1);
-    fFluff(head,mane,H*1.25,H*1.25,H*.6,48,H*.32,0,-H*.3);
-    for(const sx of [-1,1])M(sph(H*.25,12,10),fur,sx*H*.66,H*.8,-H*.02,head).scale.set(1,1,.5);
-    M(sph(H*.42,14,10),light,0,-H*.3,H*.78,head).scale.set(1.25,.75,.8);
-    M(sph(H*.12,10,8),std('#7a3a22'),0,-H*.1,H*1.06,head,false,false).scale.set(1.3,.8,.7);
-    fEyes(this,head,H,.42,.12,.82,.38,.22,'#8a5a12');fBlush(head,H,.64,-.18,.74);
-    const crown=new THREE.Group();crown.position.set(0,H*1.12,-H*.05);head.add(crown);
-    M(cyl(H*.36,H*.32,H*.2,18),gold,0,0,0,crown);
-    for(let i=0;i<5;i++){const a=i/5*Math.PI*2;M(new THREE.ConeGeometry(H*.08,H*.24,8),gold,Math.sin(a)*H*.34,H*.2,Math.cos(a)*H*.34,crown);}
-    M(sph(H*.075,10,8),gem,0,0,H*.35,crown,false,false);
-    const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.85));g.add(tail);
-    taperTube([fV(0,0,0),fV(0,-.12,-.3),fV(0,-.08,-.6),fV(0,.1,-.8)],q=>.05-.018*q,fur,tail,16,8);M(sph(.1,10,8),mane,0,.13,-.83,tail);
-    this.sparkle=true;
-    Object.assign(o,{neck,head,tail,nTilt:.5,size:1.05,h:by+.9,rad:.65,dustR:[r,r,len*.8]});return true;}
   // 🦌 a reindeer with big antlers, a glowing red nose and a jingle bell (she flies without wings, it's magic)
   if(k==='comet'){const h=horseLike(1,'#a8744a','#f4ede4',{light:'#f3e2cc',hoof:'#4a3324'}),H=h.H,antM=fShiny('#f6e7c8',{roughness:.5});
     for(const sx of [-1,1]){taperTube([fV(sx*H*.3,H*.7,-H*.1),fV(sx*H*.7,H*1.5,-H*.3),fV(sx*H*1,H*2.3,-H*.2),fV(sx*H*1.2,H*2.9,H*.1)],q=>H*(.1-.055*q),antM,h.head,16,8);
