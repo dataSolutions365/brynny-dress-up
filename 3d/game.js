@@ -1144,7 +1144,7 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  z.pad=spPad(z,-2.9,5.2,'#4fd16a','⚾','⚾ Batting practice!','#2f8f3a');
  signpost(z);}
 // ---- src/12d-place-zoo.js ----
-/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi and elephants live in 24d-barn.js) ===== */
+/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi, elephants and lion live in 24d-barn.js) ===== */
 // local layout: +z points back toward Halloween Hollow (the gate)
 {const z=Z.zoo,g=z.g;
  const grassT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e3c77a';x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(170,140,60,.4)':c<.7?'rgba(255,240,170,.55)':'rgba(140,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(-Math.PI/2+(Math.random()-.5)*.6);x.fillRect(0,0,5+Math.random()*8,1.3);x.restore();}},4);
@@ -1173,7 +1173,7 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  {const bg=new THREE.Group();const [x,w]=z.toWorld(-2.2,z.r-.9);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
   for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);
   const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#5a8a3a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Safari Zoo',W/2,70);
-    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants and an okapi!',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants, 🦁 a lion and an okapi!',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
   for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
   obs.push({x,z:w,r:.4});}
  // the animals keep away from these (trees, rocks, water, feeder)
@@ -1711,7 +1711,8 @@ class Avatar{
         if(e.id==='pedi'){tgt.l0=tgt.l1=-1.47;tgt.k0=tgt.k1=.05;tgt.an=1.05;tgt.a0z=-.3;tgt.a1z=.3;tgt.a0x=tgt.a1x=.25;tgt.e0=tgt.e1=-.2;tgt.lean=-.14;}
         if(sp>.15)this.emote=null;}
       // riding a barn animal (24d-barn.js): sit tall, legs around its sides, hands on the reins
-      if(e.id==='ride'){tgt.bob=-(this.hip-(.46+this.legX));tgt.l0=tgt.l1=-.95;tgt.k0=tgt.k1=1.05;tgt.a0x=tgt.a1x=-.75;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.7;tgt.lean=.05+sp*.08;tgt.hd=Math.sin(k*2)*.03;}
+      if(e.id==='ride'){tgt.bob=-(this.hip-(.46+this.legX));tgt.l0=tgt.l1=-.95;tgt.k0=tgt.k1=1.05;tgt.a0x=tgt.a1x=-.75;tgt.a0z=.12;tgt.a1z=-.12;tgt.e0=tgt.e1=-.7;tgt.lean=.05+sp*.08;tgt.hd=Math.sin(k*2)*.03;
+        if(this.rideW){tgt.l0z=-this.rideW;tgt.l1z=this.rideW;}}// a wide animal (the elephant): legs spread out around it
       // the dances you pick from the Dance list (14d-dances.js), and the guy versions of moves
       const DM=MOVE_ANIMS[e.id];if(DM){DM.go(k,tgt,this);if(k>DM.t||sp>.15)this.emote=null;}
       if(e.id==='magic'){tgt.a0z=-2.9;tgt.a1z=2.9;tgt.e0=tgt.e1=0;tgt.a0x=tgt.a1x=0;tgt.spin=Math.min(1,k/1.8)*Math.PI*2;tgt.bob=Math.sin(Math.min(1,k/1.8)*Math.PI)*.25;if(k>1.9)this.emote=null;}}
@@ -5929,6 +5930,105 @@ const ZOO_BUILD={
       this.trunk.forEach((p,i)=>{if(!i){p.rotation.x=-.3+this.graze*.3+Math.sin(tm*1.3)*.08;return;}p.rotation.x=curl*(1+i*.15)+Math.sin(tm*1.8-i*.5)*.05;p.rotation.z=Math.sin(tm*1.1-i*.4)*.05*(1+run*2);});};
     Object.assign(o,{neck,head,tail,nTilt:.12,gz:.35,size:2,h:by+r+.45,rad:1.25,dustR:[r,r,len*.8]});},
 };
+// ---- src/24c9b-safari-rides.js ----
+/* ===== 🦁 Safari rides: a real-looking lion, plus saddles for the safari animals you can earn =====
+   Tembo the elephant, Kivu the okapi and Jabari the lion only come to players who finish their super hard
+   🦁 Safari challenges (the list is in 24i-earned-rides.js, the challenges themselves in challenges.js).
+   The elephant and okapi use the zoo's real-looking models (24c9-zoo-okapi-elephant.js) with a saddle on top;
+   the lion is built here the same way: true colors and shapes, no cartoon blush or crown (that's Goldie). */
+
+// short tawny fur: lots of fine strokes in a few shades, so the coat isn't one flat color
+let LION_FUR=null;
+const lionFurTex=()=>LION_FUR||(LION_FUR=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#bf8a4e';x.fillRect(0,0,w,h);
+  for(let i=0;i<2600;i++){const c=Math.random();x.strokeStyle=c<.4?'rgba(150,100,50,.35)':c<.75?'rgba(232,196,140,.35)':'rgba(120,80,40,.25)';x.lineWidth=1+Math.random();
+    const X=Math.random()*w,Y=Math.random()*h,L=4+Math.random()*7;x.beginPath();x.moveTo(X,Y);x.lineTo(X+(Math.random()-.5)*2,Y+L);x.stroke();}},3));
+// a thick mane: a shaggy solid base (so there are never gaps) covered in hundreds of thin hair strands in one instanced mesh,
+// pointing out and back from an egg shape, darker toward the back. skip(d) leaves out directions (like the face).
+function lionMane(par,cx,cy,cz,rx,ry,rz,n,skip,base,cols,len=[.1,.2],thick=.024){
+  const b=M(fuzz(sph(1,32,24),.07,7),phys(base,{roughness:.95,sheen:.6,sheenColor:new THREE.Color('#e0a060')}),cx,cy,cz,par);b.scale.set(rx*.92,ry*.92,rz*.92);
+  const geo=new THREE.ConeGeometry(1,1,6,1);geo.translate(0,.5,0);// a pointed lock of hair growing out along +y from its root
+  const m=new THREE.InstancedMesh(geo,phys('#ffffff',{roughness:.9,sheen:.6,sheenColor:new THREE.Color('#ffd8a0'),sheenRoughness:.6}),n);m.castShadow=true;m.receiveShadow=true;
+  const d=new THREE.Vector3(),q=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0),s=new THREE.Vector3(),p=new THREE.Vector3(),mx=new THREE.Matrix4(),c=new THREE.Color(),lean=new THREE.Vector3();let i=0,tries=0;
+  while(i<n&&tries++<n*30){d.set(Math.random()*2-1,Math.random()*2-1,Math.random()*2-1);if(d.lengthSq()>1||d.lengthSq()<.05)continue;d.normalize();if(skip(d))continue;
+    p.set(cx+d.x*rx*.9,cy+d.y*ry*.9,cz+d.z*rz*.9);
+    // strands lean back and down a little, like real hair
+    lean.set((Math.random()-.5)*.4,-.5-Math.random()*.3,-.95);const o=d.clone().add(lean).normalize();q.setFromUnitVectors(up,o);
+    const L=len[0]+Math.random()*(len[1]-len[0]),T=thick*(.7+Math.random()*.6);s.set(T,L,T*.75);mx.compose(p,q,s);m.setMatrixAt(i,mx);
+    const back=Math.min(1,Math.max(0,-d.z*.55-d.y*.35+.3));c.set(cols[0]).lerp(new THREE.Color(cols[1]),back).lerp(new THREE.Color(cols[2]),Math.random()*.35);m.setColorAt(i,c);i++;}
+  m.count=i;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;par.add(m);return m;}
+
+ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
+  const coat=phys('#ffffff',{map:lionFurTex(),roughness:.85,sheen:.5,sheenColor:new THREE.Color('#ffe2b0'),sheenRoughness:.6}),
+    light=phys('#dcbb88',{roughness:.85,sheen:.5,sheenColor:new THREE.Color('#ffffff')}),pawM=phys('#c9975a',{roughness:.85,sheen:.4,sheenColor:new THREE.Color('#ffe2b0')}),
+    dark=std('#2b1b12',{roughness:.8}),noseM=phys('#6e4034',{roughness:.45,clearcoat:.3});
+  body.position.y=by;
+  // a long, strong body: deep chest, shoulder blades, big haunches, a pale tucked belly
+  const t=M(new THREE.CapsuleGeometry(r,len,10,24),coat,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(.85,.92,1);
+  M(sph(r*.98,20,14),coat,0,-.05,len*.34,body).scale.set(.9,1.08,1);
+  for(const sx of [-1,1]){M(sph(r*.46,14,10),coat,sx*r*.42,r*.45,len*.3,body).scale.set(.6,.75,1.25);
+    M(sph(r*.8,16,12),coat,sx*r*.32,.02,-len*.38,body).scale.set(.72,1,1.12);}
+  M(sph(r*.7,16,10),light,0,-r*.52,len*.02,body).scale.set(.85,.4,1.7);
+  // legs: thick forearms and big round paws with toes; the back legs have heavy thighs and a hock
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.52,hip,sz*len*(sz>0?.42:.44));g.add(lg);this.legs.push({g:lg,ph});
+    if(sz>0){M(sph(.14,14,10),coat,0,0,0,lg).scale.set(.9,1.1,1.1);M(cyl(.125,.095,.36,16),coat,0,-.17,.01,lg);M(sph(.096,12,10),coat,0,-.36,.015,lg);M(cyl(.094,.088,.3,14),coat,0,-.5,.02,lg);}
+    else{M(sph(.17,16,12),coat,0,.02,.0,lg).scale.set(.8,1.25,1.2);M(cyl(.13,.088,.34,16),coat,0,-.18,-.03,lg);M(sph(.085,12,10),coat,0,-.36,-.055,lg);
+      const sh=M(cyl(.082,.078,.3,14),coat,0,-.5,-.05,lg);sh.rotation.x=.1;}
+    const pw=M(sph(.106,16,12),pawM,0,-.69,.05,lg);pw.scale.set(1,.55,1.3);
+    for(const tx of [-.055,-.019,.019,.055])M(sph(.036,8,6),pawM,tx,-.7,.16-Math.abs(tx)*.6,lg,false,false).scale.set(1,.8,1.1);}
+  // the neck and head: the head is carried about as high as the back, the face sticks out of the mane
+  const neck=new THREE.Group();neck.position.set(0,by+r*.25,len/2+r*.4);neck.rotation.x=.55;g.add(neck);
+  M(sph(.26,18,14),coat,0,.08,0,neck).scale.set(.9,1.2,1);
+  const head=new THREE.Group();head.position.set(0,.24,.12);head.rotation.x=-.55+.08;neck.add(head);const H=.22;
+  M(sph(H,24,18),coat,0,0,0,head).scale.set(.9,.92,1.18);
+  M(sph(H*.5,16,12),coat,0,H*.4,H*.72,head).scale.set(1.45,.45,.75);// brow
+  M(sph(H*.48,16,12),coat,0,H*.06,H*.98,head).scale.set(.74,.66,1.55);// the long nose bridge
+  M(sph(H*.3,12,10),phys('#a46e3c',{roughness:.8}),0,H*.24,H*1.2,head,false,false).scale.set(.8,.45,1.5);// darker fur down the nose
+  for(const sx of [-1,1]){M(sph(H*.29,16,12),light,sx*H*.17,-H*.24,H*1.42,head).scale.set(.95,.8,1);// whisker pads
+    for(let i=0;i<3;i++)M(sph(H*.024,6,4),dark,sx*H*(.15+i*.08),-H*(.2+i*.05),H*(1.69-i*.06),head,false,false);
+    M(sph(H*.2,10,8),light,sx*H*.33,H*.02,H*.98,head,false,false).scale.set(1.1,.6,.6);// pale fur under the eyes
+    const e=new THREE.Group();e.position.set(sx*H*.62,H*.78,-H*.05);e.rotation.z=-sx*.35;head.add(e);// small round ears, dark on the back
+    M(sph(H*.25,12,10),dark,0,0,-.004,e).scale.set(1,1,.42);M(sph(H*.2,12,10),light,0,-H*.02,H*.04,e,false,false).scale.set(1,1,.3);}
+  M(sph(H*.3,14,10),light,0,-H*.5,H*1.15,head).scale.set(1,.6,1);// chin
+  M(sph(H*.17,12,10),noseM,0,H*.0,H*1.7,head,false,false).scale.set(1.4,.8,.75);// nose leather
+  M(sph(H*.03,6,4),dark,0,-H*.16,H*1.7,head,false,false).scale.set(1,3,1);// the line under the nose
+  M(sph(H*.1,8,6),dark,0,-H*.44,H*1.45,head,false,false).scale.set(1.8,.25,.6);// mouth line
+  fEyes(this,head,H,.36,.2,1,.32,.16,'#c88a2a');
+  for(const e of this.eyes)M(sph(H*.15,12,8),dark,0,0,-H*.035,e,false,false).scale.set(1.2,.8,.4);// dark eye lining
+  // the mane: a big shaggy ruff around the face, flowing down over the neck and chest
+  lionMane(head,0,-H*.15,-H*.55,H*1.5,H*1.55,H*1.15,520,d=>d.z>.55,'#7a4622',['#a8692e','#4a2812','#2a160a'],[.1,.2],.03);
+  lionMane(neck,0,.02,-.04,.3,.4,.32,420,d=>d.z>.75&&d.y>-.2,'#5a3018',['#8a5326','#3b2010','#24130a'],[.12,.22],.034);
+  // a long tail with a dark tuft at the end
+  const tail=new THREE.Group();tail.position.set(0,by+r*.4,-(len/2+r*.82));g.add(tail);
+  taperTube([fV(0,0,0),fV(0,-.18,-.16),fV(0,-.45,-.22),fV(0,-.62,-.14),fV(0,-.7,0)],q=>.042-.016*q,coat,tail,24,10);
+  M(sph(.07,12,10),dark,0,-.72,.05,tail).scale.set(.9,1.5,.9);
+  this.tick=(tm,dt,run)=>{body.scale.y=1+Math.sin(tm*1.8)*.012*(1-run*.5);};// breathing
+  Object.assign(o,{neck,head,tail,nTilt:.55,gz:.55,size:1.2,h:by+.85,rad:.65,dustR:[r,r,len*.8]});};
+
+// a saddle for the safari rides (and a decorated blanket for the elephant), so you can tell they're yours and ready to ride
+function safariGear(k,g,body,o){
+  const leather=phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4}),dkL=phys('#3e2112',{roughness:.6}),brass=phys('#d4a64a',{metalness:.8,roughness:.3});
+  const blanket=(col,trim,r,len,y,z,sx,sy,arc)=>{const bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
+    const cm=phys(col,{roughness:.9,sheen:.8,sheenColor:new THREE.Color('#ffffff'),side:THREE.DoubleSide});
+    // a piece of a tube along the body, with the middle of the piece on top
+    const cg=new THREE.CylinderGeometry(r,r,len,40,1,true,Math.PI-arc/2,arc);cg.rotateX(Math.PI/2);M(cg,cm,0,0,0,bg);
+    const tm=phys(trim,{roughness:.4,metalness:.3});for(const s of [-1,1]){const e=M(new THREE.TorusGeometry(r,.012,6,40,arc),tm,0,0,s*len/2,bg,false,false);e.rotation.z=Math.PI/2-arc/2;}
+    for(const s of [-1,1]){const e=M(cyl(.012,.012,len,8),tm,Math.sin(s*arc/2)*r,Math.cos(arc/2)*r,0,bg,false,false);e.rotation.x=Math.PI/2;}
+    return bg;};
+  if(k==='tembo'){// a red and gold blanket on the back, a rope collar where you sit just behind the ears
+    blanket('#b8322a','#e8b84a',.74,1.05,.04,-.05,.92,1.02,2.9);
+    const gem=phys('#2a6fd6',{roughness:.15,clearcoat:1});for(const s of [-1,1])M(sph(.05,10,8),gem,s*.62,-.18,-.05,body,false,false);
+    const col=M(new THREE.TorusGeometry(.5,.035,8,36),phys('#c79a4a',{roughness:.9}),0,.0,.0,o.neck);col.rotation.x=Math.PI/2+.12;col.scale.set(1,1.15,1);
+    return;}
+  // the okapi and the lion: a leather saddle on a blanket, held on with a girth strap
+  const L=k==='jabari'?{r:.36,sx:.88,sy:.95,y:.0,z:.06,col:'#2f4a7a',seatY:.33}:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27};
+  blanket(L.col,'#e8c46a',L.r*1.04,.42,L.y,L.z,L.sx,L.sy,2.3);
+  const sg=new THREE.Group();sg.position.set(0,L.seatY+L.y,L.z);body.add(sg);
+  M(sph(.17,20,12),leather,0,0,0,sg).scale.set(.95,.22,1.25);
+  M(sph(.06,12,8),leather,0,.045,.17,sg).scale.set(1.2,1.1,.8);// pommel
+  M(sph(.1,14,10),leather,0,.04,-.17,sg).scale.set(1.3,.6,.45);// cantle
+  for(const s of [-1,1]){const f=M(sph(.12,14,10),dkL,s*.13,-.07,0,sg);f.scale.set(.25,.7,1.1);f.rotation.z=s*.5;}// flaps
+  const girth=M(new THREE.TorusGeometry(L.r*1.05,.018,6,40),dkL,0,L.y,L.z+.02,body,false,false);girth.scale.set(L.sx,L.sy,1);
+  M(new THREE.TorusGeometry(.03,.007,6,14),brass,0,L.seatY+L.y+.04,L.z+.19,body,false,false);}
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -6106,6 +6206,8 @@ const ZOOA=[
     facts:[['🥗','Diet','Herbivore. Leaves, buds, fruit and even mushrooms, which it pulls off with its long tongue.'],['🌍','Habitat','Only in the thick rainforests of the Democratic Republic of the Congo, in central Africa.'],['⏳','Lifespan','About 20 to 30 years.'],['✨','Fun fact','It has zebra stripes, but its closest relative is the giraffe! Its tongue is so long it can lick its own ears.']]},
   {k:'elephant',e:'🐘',n:'African elephant',food:[['🌾','Hay'],['🍉','Watermelon']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖'],
     facts:[['🥗','Diet','Herbivore. Grass, leaves, bark and fruit. Up to 150 kg (330 lb) of food a day!'],['🌍','Habitat','Savannas and forests of Africa.'],['⏳','Lifespan','About 60 to 70 years.'],['✨','Fun fact','The biggest animal on land, up to 6,000 kg (13,000 lb). Its trunk has about 40,000 muscles!']]},
+  {k:'lion',e:'🦁',n:'Lion',food:[['🍖','Meat'],['🥩','Steak']],say:['ROOOAR! 🦁','*big lazy yawn*','*deep rumbly purr*'],
+    facts:[['🥗','Diet','Carnivore. Zebras, antelopes, buffalo and other big animals. A male can eat about 40 kg (90 lb) in one meal!'],['🌍','Habitat','Savannas and grasslands of Africa, plus one forest in India.'],['⏳','Lifespan','About 10 to 14 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','Lions sleep up to 20 hours a day! A lion\'s roar can be heard 8 km (5 miles) away.']]},
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -6501,7 +6603,9 @@ class FarmAnimal{
       for(let i=0;i<7;i++){const a=(i/6-.5)*.9,f=new THREE.Group();f.rotation.y=a;tail.add(f);const fe=M(new THREE.CapsuleGeometry(.07,.42,4,10),white,0,0,-.24,f);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.25);}
       tail.rotation.x=-.15;
       Object.assign(o,{neck,head,tail,nTilt:.25,size:1.15,h:by+.85,rad:.7,dustR:[r,r,len*.8]});}
-    if(ZOO_BUILD[k])ZOO_BUILD[k].call(this,g,body,o);// the okapi and the elephants (24c9-zoo-okapi-elephant.js)
+    // the okapi and the elephants (24c9-zoo-okapi-elephant.js), and the 🦁 safari rides you earn that use those models (24c9b-safari-rides.js):
+    // model = which animal to build, gear = put a saddle on it, seat = slide the animal back so you sit that far forward (on the elephant's neck)
+    const zk=this.F.model||k;if(ZOO_BUILD[zk]){ZOO_BUILD[zk].call(this,g,body,o);if(this.F.gear)safariGear(k,g,body,o);if(this.F.seat)for(const c of g.children)c.position.z-=this.F.seat;}
     return o;}
   setTag(n){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();this.tag=null;}if(!n)return;
     this.tag=sprite(labelTex('💖 '+n,{size:58,fg:'#d6453d',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);this.tag.position.y=this.h+.15;this.g.add(this.tag);}
@@ -6570,12 +6674,13 @@ function stopRide(force){const a=barnRide;if(!a)return;
   placeFarm(a);renderActions();}
 $('#rideBtn').onclick=()=>{sfx('pop');stopRide();};
 function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started||handsBusy()){stopRide(true);return;}// off during sports, contests and other games
-  if(!av.emote||av.emote.id!=='ride')av.play('ride');
+  if(!av.emote||av.emote.id!=='ride')av.play('ride');av.rideW=a.F.wide||0;
   if(flyRide(a,dt))return;// up in the air on a flying ride (24h-flying.js)
   a.pos.set(p.x,p.y,p.z);a.g.position.copy(a.pos);a.g.rotation.y=player.face;a.update(dt,player.speed*.55);
   // sit on the saddle: the avatar's 'ride' pose puts the hips at chair height, so lift everything up to the animal's back
   av.g.position.y=p.y+a.F.ride-.42;}
-const rideBoost=()=>barnRide?1+Math.min(.9,barnRide.size*.5):1;
+// how much faster than walking: bigger animals go faster, unless the ride says (boost)
+const rideBoost=()=>barnRide?barnRide.F.boost||1+Math.min(.9,barnRide.size*.5):1;
 
 /* ---------- little buddies that follow you around town (the baby dragon flies!) ---------- */
 function palGo(k){if(BS.pal&&BS.pal!==k)palHome();BS.pal=k;const a=farmAnimal(k);a.along=true;a.ob.r=0;a.tgt=null;
@@ -6692,7 +6797,7 @@ function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=zooSpot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
@@ -6710,6 +6815,7 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&f.model===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
   if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
@@ -8000,7 +8106,7 @@ function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
 
 // 🏆 the prize dragon comes once you've earned enough stars (your star rank never goes down, so she stays)
 function askPrize(s){const st=starsEarned();
-  if(s.earn){const f={earn:s.earn},ride=s.k.startsWith('mount:');$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':'Come back and play tomorrow! A day counts as soon as you start playing.'} ${ride?`This ride can't be bought. ${FK[s.k.slice(6)].nm} comes to you by herself!`:`This can't be bought. It shows up in your closet once you earn it!`}</p><button class="btn ghost" data-b="close">OK</button>`;
+  if(s.earn){const f={earn:s.earn},ride=s.k.startsWith('mount:');$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':s.earn.by==='chal'?'Tap ⭐🏆 at the top and look in the 🦁 Safari tab to see each challenge. They are super hard!':'Come back and play tomorrow! A day counts as soon as you start playing.'} ${ride?`This ride can't be bought. ${FK[s.k.slice(6)].nm} comes to you as soon as you earn ${s.earn.by==='chal'?'it':'her'}!`:`This can't be bought. It shows up in your closet once you earn it!`}</p><button class="btn ghost" data-b="close">OK</button>`;
     $('#buy').dataset.k=s.k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">You've earned <b>${st}</b> of ${s.prize} ⭐</p><p>Finish ⭐🏆 challenges to earn more stars. She comes to you by herself!</p><button class="btn ghost" data-b="close">OK</button>`;
   $('#buy').dataset.k=s.k;$('#buy').classList.add('show');}
@@ -8202,6 +8308,8 @@ function flyCamBack(){const a=barnRide;if(!FLY.on||!isFlyer(a))return 0;const p=
    - A "win" is 1st place in the 👑 model contest, the 🎂 cake contest or the 🐾 pet contest, or beating Kai 1-on-1 at basketball.
    - A day counts once you start playing that day. Miss a day and the streak starts again at 1 (rides you already earned stay yours).
    - They show in the shop's 🦖 Rides tab and the ⭐🏆 challenges' 🏇 Rides tab with how close you are, and come to you by themselves.
+   - 🦓 Kivu the okapi, 🐘 Tembo the elephant and 🦁 Jabari the lion: finish all of their super hard 🦁 Safari challenges
+     (the Safari tab in ⭐🏆 challenges, challenges.js). They're the real-looking zoo animals with a saddle (24c9b-safari-rides.js).
    - Once earned they work like the shop rides (24g-mounts.js): they live at the 🐴 Happy Barn and Comet and Blaze can fly (24h-flying.js).
    The FARM entries and the models below are function declarations so 24d-barn.js can use them before this file runs
    (it adds the entries to FARM and builds the models from FarmAnimal.build). Friends online see them through the 'ride' entry. */
@@ -8209,6 +8317,11 @@ function earnedRideList(){return [
   {k:'panda',e:'🐼',n:'Giant panda',nm:'Bamboo',earn:{by:'days',goal:3},ride:1.08,about:'A big cuddly panda who only comes to players who play 3 days in a row. Slow, soft and always munching bamboo!',food:[['🎋','Bamboo'],['🍎','Apple'],['🍠','Sweet potato']],say:['*munch munch* 🎋','Hug time! 🐼','*happy roly-poly*']},
   {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',earn:{by:'wins',goal:3},ride:1.13,about:'A golden lion with a royal crown, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
   {k:'comet',e:'🦌',n:'Flying reindeer',nm:'Comet',earn:{by:'days',goal:7},fly:1,ride:1.15,about:'A magic reindeer with a glowing red nose who flies without wings! Only for players who play 7 days in a row.',food:[['🥕','Carrot'],['🍪','Cookie'],['🍎','Apple']],say:['*jingle jingle* 🔔','Up to the stars! ✨','*nose glows bright* ❤️']},
+  // 🦁 safari rides: real-looking animals from the Safari Zoo, for players who finish every one of their super hard 🦁 Safari challenges
+  // (challenges.js, ids in earn.ids). model = the zoo animal to build, gear = a saddle, seat = sit this far forward, wide = legs spread, boost = speed.
+  {k:'kivu',e:'🦓',n:'Okapi',nm:'Kivu',model:'okapi',gear:1,safari:1,scale:1.2,earn:{by:'chal',ids:['saf_feed5','saf_win5','saf_days5'],goal:3},ride:1.57,boost:1.75,about:'A shy forest okapi with zebra-striped legs and a velvet coat. Only for safari explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🍃','Leaves'],['🍌','Banana'],['🍄','Mushroom']],say:['*soft huff*','*long tongue lick* 👅','To the rainforest! 🌿']},
+  {k:'tembo',e:'🐘',n:'African elephant',nm:'Tembo',model:'elephant',gear:1,safari:1,seat:.66,wide:.55,earn:{by:'chal',ids:['saf_triple','saf_win15','saf_days10'],goal:3},ride:2.2,boost:1.55,about:'A giant African elephant. You sit up on his neck, way up high! Only for champions who finish all 3 of his 🦁 Safari challenges.',food:[['🌾','Hay'],['🍉','Watermelon'],['🍌','Bananas']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖']},
+  {k:'jabari',e:'🦁',n:'Lion',nm:'Jabari',model:'lion',gear:1,safari:1,scale:1.15,earn:{by:'chal',ids:['saf_kai5','saf_win30','saf_stars100','saf_days14'],goal:4},ride:1.38,boost:2.05,about:'The king of the savanna: a real lion with a thick dark mane, and the fastest ride in town. Only for legends who finish all 4 of his 🦁 Safari challenges!',food:[['🍖','Meat'],['🍗','Drumstick'],['🥩','Steak']],say:['ROOOAR! 🦁','*proud mane shake*','*deep rumbly purr*']},
   {k:'phoenix',e:'🔥',n:'Phoenix',nm:'Blaze',earn:{by:'wins',goal:10},fly:1,wingsRun:1,ride:1.12,about:'A legendary fire bird with glowing golden feathers. Only for super champions who win 10 contests or games!',food:[['🌶️','Hot pepper'],['🍒','Cherries'],['🌻','Sunflower seeds']],say:['*sparkly whoosh* 🔥','Skreee! ✨','Let\'s light up the sky!']},
 ];}
 
@@ -8296,9 +8409,12 @@ FLYK.phoenix={hz:1.8,amp:.62,base:.1,glide:.55,spd:13.5,tuckF:.9,tuckB:.9};
 // first time: wins you already had count (the win challenges you finished, and your 1-on-1 wins against Kai)
 if(!SAVE.earn){const d=(SAVE.chal&&SAVE.chal.done)||{};SAVE.earn={wins:(d.win?1:0)+(d.cakeWin?1:0)+(d.petWin?1:0)+((SAVE.sports&&SAVE.sports.v1w)||0),days:{last:null,n:0,best:0}};persist();}
 const ER=SAVE.earn;ER.days||={last:null,n:0,best:0};ER.wins||=0;
+// which contests you've won at least once (for the 🐘 "win all three contests" safari challenge); wins from before count
+if(!ER.kinds){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kinds={contest:d.win?1:0,cakect:d.cakeWin?1:0,petct:d.petWin?1:0};persist();}
 const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:0;
-const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:`Play ${f.earn.goal} days in a row`;
+// 'chal' = the 🦁 Safari challenges: how many of the ride's challenges (earn.ids) you've finished
+const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:f.earn.by==='chal'?f.earn.ids.filter(id=>SAVE.chal&&SAVE.chal.done&&SAVE.chal.done[id]).length:0;
+const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} 🦁 Safari challenges`:`Play ${f.earn.goal} days in a row`;
 // a new day you played: one more day in the streak if you also played yesterday, otherwise start again at 1
 function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.last===k)return;
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
@@ -8314,7 +8430,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
   const won=((k==='contest'||k==='cakect'||k==='petct')&&a===0)||(k==='sport'&&a==='v1win');if(!won)return;
-  ER.wins++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
+  ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
 function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const goal=f.earn?f.earn.goal:f.prize,have=f.earn?erHave(f):starsEarned();
@@ -8322,8 +8438,8 @@ function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const go
 function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
-function earnTag(e){return `🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0})});});
+function earnTag(e){return e.by==='chal'?'🦁 Safari':`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0})});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -8738,7 +8854,7 @@ SHOW.push({k:'ride',
   mine(){const a=barnRide;return a&&BS.own[a.k]?{k:a.k,n:BS.own[a.k].n,fly:FLY.on?1:0}:null;},
   on(f,d){const a=showFarm(d.k,d.n);return a?{a}:null;},
   step(f,d,dt,h){const a=h&&h.a;if(!a)return;const A=f.a;
-    if(!A.emote||A.emote.id!=='ride')A.play('ride');
+    if(!A.emote||A.emote.id!=='ride')A.play('ride');A.rideW=a.F.wide||0;
     if(showFly(f,d,dt,h))return;// 🪽 up in the air on a flying ride (24h-flying.js)
     a.pos.copy(f.pos);a.g.position.copy(a.pos);a.g.rotation.y=f.cur??f.face;a.update(dt,(f.sp||0)*.55);
     A.g.position.y=f.pos.y+a.F.ride-.42;},

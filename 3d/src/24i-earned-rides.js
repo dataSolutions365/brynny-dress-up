@@ -5,6 +5,8 @@
    - A "win" is 1st place in the 👑 model contest, the 🎂 cake contest or the 🐾 pet contest, or beating Kai 1-on-1 at basketball.
    - A day counts once you start playing that day. Miss a day and the streak starts again at 1 (rides you already earned stay yours).
    - They show in the shop's 🦖 Rides tab and the ⭐🏆 challenges' 🏇 Rides tab with how close you are, and come to you by themselves.
+   - 🦓 Kivu the okapi, 🐘 Tembo the elephant and 🦁 Jabari the lion: finish all of their super hard 🦁 Safari challenges
+     (the Safari tab in ⭐🏆 challenges, challenges.js). They're the real-looking zoo animals with a saddle (24c9b-safari-rides.js).
    - Once earned they work like the shop rides (24g-mounts.js): they live at the 🐴 Happy Barn and Comet and Blaze can fly (24h-flying.js).
    The FARM entries and the models below are function declarations so 24d-barn.js can use them before this file runs
    (it adds the entries to FARM and builds the models from FarmAnimal.build). Friends online see them through the 'ride' entry. */
@@ -12,6 +14,11 @@ function earnedRideList(){return [
   {k:'panda',e:'🐼',n:'Giant panda',nm:'Bamboo',earn:{by:'days',goal:3},ride:1.08,about:'A big cuddly panda who only comes to players who play 3 days in a row. Slow, soft and always munching bamboo!',food:[['🎋','Bamboo'],['🍎','Apple'],['🍠','Sweet potato']],say:['*munch munch* 🎋','Hug time! 🐼','*happy roly-poly*']},
   {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',earn:{by:'wins',goal:3},ride:1.13,about:'A golden lion with a royal crown, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
   {k:'comet',e:'🦌',n:'Flying reindeer',nm:'Comet',earn:{by:'days',goal:7},fly:1,ride:1.15,about:'A magic reindeer with a glowing red nose who flies without wings! Only for players who play 7 days in a row.',food:[['🥕','Carrot'],['🍪','Cookie'],['🍎','Apple']],say:['*jingle jingle* 🔔','Up to the stars! ✨','*nose glows bright* ❤️']},
+  // 🦁 safari rides: real-looking animals from the Safari Zoo, for players who finish every one of their super hard 🦁 Safari challenges
+  // (challenges.js, ids in earn.ids). model = the zoo animal to build, gear = a saddle, seat = sit this far forward, wide = legs spread, boost = speed.
+  {k:'kivu',e:'🦓',n:'Okapi',nm:'Kivu',model:'okapi',gear:1,safari:1,scale:1.2,earn:{by:'chal',ids:['saf_feed5','saf_win5','saf_days5'],goal:3},ride:1.57,boost:1.75,about:'A shy forest okapi with zebra-striped legs and a velvet coat. Only for safari explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🍃','Leaves'],['🍌','Banana'],['🍄','Mushroom']],say:['*soft huff*','*long tongue lick* 👅','To the rainforest! 🌿']},
+  {k:'tembo',e:'🐘',n:'African elephant',nm:'Tembo',model:'elephant',gear:1,safari:1,seat:.66,wide:.55,earn:{by:'chal',ids:['saf_triple','saf_win15','saf_days10'],goal:3},ride:2.2,boost:1.55,about:'A giant African elephant. You sit up on his neck, way up high! Only for champions who finish all 3 of his 🦁 Safari challenges.',food:[['🌾','Hay'],['🍉','Watermelon'],['🍌','Bananas']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖']},
+  {k:'jabari',e:'🦁',n:'Lion',nm:'Jabari',model:'lion',gear:1,safari:1,scale:1.15,earn:{by:'chal',ids:['saf_kai5','saf_win30','saf_stars100','saf_days14'],goal:4},ride:1.38,boost:2.05,about:'The king of the savanna: a real lion with a thick dark mane, and the fastest ride in town. Only for legends who finish all 4 of his 🦁 Safari challenges!',food:[['🍖','Meat'],['🍗','Drumstick'],['🥩','Steak']],say:['ROOOAR! 🦁','*proud mane shake*','*deep rumbly purr*']},
   {k:'phoenix',e:'🔥',n:'Phoenix',nm:'Blaze',earn:{by:'wins',goal:10},fly:1,wingsRun:1,ride:1.12,about:'A legendary fire bird with glowing golden feathers. Only for super champions who win 10 contests or games!',food:[['🌶️','Hot pepper'],['🍒','Cherries'],['🌻','Sunflower seeds']],say:['*sparkly whoosh* 🔥','Skreee! ✨','Let\'s light up the sky!']},
 ];}
 
@@ -99,9 +106,12 @@ FLYK.phoenix={hz:1.8,amp:.62,base:.1,glide:.55,spd:13.5,tuckF:.9,tuckB:.9};
 // first time: wins you already had count (the win challenges you finished, and your 1-on-1 wins against Kai)
 if(!SAVE.earn){const d=(SAVE.chal&&SAVE.chal.done)||{};SAVE.earn={wins:(d.win?1:0)+(d.cakeWin?1:0)+(d.petWin?1:0)+((SAVE.sports&&SAVE.sports.v1w)||0),days:{last:null,n:0,best:0}};persist();}
 const ER=SAVE.earn;ER.days||={last:null,n:0,best:0};ER.wins||=0;
+// which contests you've won at least once (for the 🐘 "win all three contests" safari challenge); wins from before count
+if(!ER.kinds){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kinds={contest:d.win?1:0,cakect:d.cakeWin?1:0,petct:d.petWin?1:0};persist();}
 const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:0;
-const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:`Play ${f.earn.goal} days in a row`;
+// 'chal' = the 🦁 Safari challenges: how many of the ride's challenges (earn.ids) you've finished
+const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:f.earn.by==='chal'?f.earn.ids.filter(id=>SAVE.chal&&SAVE.chal.done&&SAVE.chal.done[id]).length:0;
+const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} 🦁 Safari challenges`:`Play ${f.earn.goal} days in a row`;
 // a new day you played: one more day in the streak if you also played yesterday, otherwise start again at 1
 function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.last===k)return;
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
@@ -117,7 +127,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
   const won=((k==='contest'||k==='cakect'||k==='petct')&&a===0)||(k==='sport'&&a==='v1win');if(!won)return;
-  ER.wins++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
+  ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
 function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const goal=f.earn?f.earn.goal:f.prize,have=f.earn?erHave(f):starsEarned();
@@ -125,5 +135,5 @@ function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const go
 function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
-function earnTag(e){return `🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0})});});
+function earnTag(e){return e.by==='chal'?'🦁 Safari':`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0})});});

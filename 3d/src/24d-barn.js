@@ -45,6 +45,8 @@ const ZOOA=[
     facts:[['🥗','Diet','Herbivore. Leaves, buds, fruit and even mushrooms, which it pulls off with its long tongue.'],['🌍','Habitat','Only in the thick rainforests of the Democratic Republic of the Congo, in central Africa.'],['⏳','Lifespan','About 20 to 30 years.'],['✨','Fun fact','It has zebra stripes, but its closest relative is the giraffe! Its tongue is so long it can lick its own ears.']]},
   {k:'elephant',e:'🐘',n:'African elephant',food:[['🌾','Hay'],['🍉','Watermelon']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖'],
     facts:[['🥗','Diet','Herbivore. Grass, leaves, bark and fruit. Up to 150 kg (330 lb) of food a day!'],['🌍','Habitat','Savannas and forests of Africa.'],['⏳','Lifespan','About 60 to 70 years.'],['✨','Fun fact','The biggest animal on land, up to 6,000 kg (13,000 lb). Its trunk has about 40,000 muscles!']]},
+  {k:'lion',e:'🦁',n:'Lion',food:[['🍖','Meat'],['🥩','Steak']],say:['ROOOAR! 🦁','*big lazy yawn*','*deep rumbly purr*'],
+    facts:[['🥗','Diet','Carnivore. Zebras, antelopes, buffalo and other big animals. A male can eat about 40 kg (90 lb) in one meal!'],['🌍','Habitat','Savannas and grasslands of Africa, plus one forest in India.'],['⏳','Lifespan','About 10 to 14 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','Lions sleep up to 20 hours a day! A lion\'s roar can be heard 8 km (5 miles) away.']]},
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -440,7 +442,9 @@ class FarmAnimal{
       for(let i=0;i<7;i++){const a=(i/6-.5)*.9,f=new THREE.Group();f.rotation.y=a;tail.add(f);const fe=M(new THREE.CapsuleGeometry(.07,.42,4,10),white,0,0,-.24,f);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.25);}
       tail.rotation.x=-.15;
       Object.assign(o,{neck,head,tail,nTilt:.25,size:1.15,h:by+.85,rad:.7,dustR:[r,r,len*.8]});}
-    if(ZOO_BUILD[k])ZOO_BUILD[k].call(this,g,body,o);// the okapi and the elephants (24c9-zoo-okapi-elephant.js)
+    // the okapi and the elephants (24c9-zoo-okapi-elephant.js), and the 🦁 safari rides you earn that use those models (24c9b-safari-rides.js):
+    // model = which animal to build, gear = put a saddle on it, seat = slide the animal back so you sit that far forward (on the elephant's neck)
+    const zk=this.F.model||k;if(ZOO_BUILD[zk]){ZOO_BUILD[zk].call(this,g,body,o);if(this.F.gear)safariGear(k,g,body,o);if(this.F.seat)for(const c of g.children)c.position.z-=this.F.seat;}
     return o;}
   setTag(n){if(this.tag){this.g.remove(this.tag);this.tag.material.map.dispose();this.tag.material.dispose();this.tag=null;}if(!n)return;
     this.tag=sprite(labelTex('💖 '+n,{size:58,fg:'#d6453d',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);this.tag.position.y=this.h+.15;this.g.add(this.tag);}
@@ -509,12 +513,13 @@ function stopRide(force){const a=barnRide;if(!a)return;
   placeFarm(a);renderActions();}
 $('#rideBtn').onclick=()=>{sfx('pop');stopRide();};
 function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started||handsBusy()){stopRide(true);return;}// off during sports, contests and other games
-  if(!av.emote||av.emote.id!=='ride')av.play('ride');
+  if(!av.emote||av.emote.id!=='ride')av.play('ride');av.rideW=a.F.wide||0;
   if(flyRide(a,dt))return;// up in the air on a flying ride (24h-flying.js)
   a.pos.set(p.x,p.y,p.z);a.g.position.copy(a.pos);a.g.rotation.y=player.face;a.update(dt,player.speed*.55);
   // sit on the saddle: the avatar's 'ride' pose puts the hips at chair height, so lift everything up to the animal's back
   av.g.position.y=p.y+a.F.ride-.42;}
-const rideBoost=()=>barnRide?1+Math.min(.9,barnRide.size*.5):1;
+// how much faster than walking: bigger animals go faster, unless the ride says (boost)
+const rideBoost=()=>barnRide?barnRide.F.boost||1+Math.min(.9,barnRide.size*.5):1;
 
 /* ---------- little buddies that follow you around town (the baby dragon flies!) ---------- */
 function palGo(k){if(BS.pal&&BS.pal!==k)palHome();BS.pal=k;const a=farmAnimal(k);a.along=true;a.ob.r=0;a.tgt=null;
@@ -631,7 +636,7 @@ function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=zooSpot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
@@ -649,6 +654,7 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&f.model===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
   if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}

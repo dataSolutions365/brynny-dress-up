@@ -21,6 +21,8 @@ C.done ||= {}; C.n ||= {}; C.u ||= {};
 const glam = () => G.glamCheck(SAVE.look);
 // guys get grooming at the glam mirror instead of makeup, nails and braids, so those challenges change for them
 const guy = () => !!SAVE.look && SAVE.look.body === 'guy';
+// wins, days in a row and more, from 3d/src/24i-earned-rides.js (for the 🦁 Safari challenges)
+const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0 };
 const LIST = [
   // ✨ Sparkle Studio
   { id: 'dress', tab: 'studio', e: '👗', t: 'Put on a dress', r: 1, go: 'studio', poll: () => SAVE.look.dress ? 1 : 0 },
@@ -87,6 +89,17 @@ const LIST = [
   { id: 'snowDance', tab: 'explore', e: '🎄', t: 'Dance in Christmas Village', r: 1, go: 'christmas', ev: { k: 'act', a: a => a === 'dance', z: 'christmas' } },
   { id: 'partyCheer', tab: 'explore', e: '🎂', t: 'Cheer at the Birthday Party', r: 1, go: 'birthday', ev: { k: 'act', a: a => a === 'cheer', z: 'birthday' } },
   { id: 'gardenBow', tab: 'explore', e: '🌷', t: 'Curtsy in the Spring Garden', r: 1, go: 'spring', ev: { k: 'act', a: a => a === 'bow', z: 'spring' } },
+  // 🦁 Safari: super hard challenges. Finish all of one animal's challenges (grp) and you can ride it (3d/src/24i-earned-rides.js)
+  { id: 'saf_feed5', tab: 'safari', grp: 'kivu', e: '🍃', t: 'Feed all 6 kinds of animals at the Safari Zoo', r: 3, goal: 6, u: true, go: 'zoo', ev: { k: 'zoofeed' } },
+  { id: 'saf_win5', tab: 'safari', grp: 'kivu', e: '🏆', t: 'Win 5 contests or games', r: 3, goal: 5, go: 'agency', poll: () => es().wins },
+  { id: 'saf_days5', tab: 'safari', grp: 'kivu', e: '🔥', t: 'Play 5 days in a row', r: 3, goal: 5, poll: () => es().best },
+  { id: 'saf_triple', tab: 'safari', grp: 'tembo', e: '👑', t: 'Win all 3 contests: the model, cake and pet contest', r: 3, goal: 3, go: 'agency', poll: () => es().kinds },
+  { id: 'saf_win15', tab: 'safari', grp: 'tembo', e: '🏆', t: 'Win 15 contests or games', r: 3, goal: 15, poll: () => es().wins },
+  { id: 'saf_days10', tab: 'safari', grp: 'tembo', e: '🔥', t: 'Play 10 days in a row', r: 3, goal: 10, poll: () => es().best },
+  { id: 'saf_kai5', tab: 'safari', grp: 'jabari', e: '🏀', t: 'Beat Kai 1-on-1 at basketball 5 times', r: 3, goal: 5, go: 'court', poll: () => es().kai },
+  { id: 'saf_win30', tab: 'safari', grp: 'jabari', e: '🏆', t: 'Win 30 contests or games', r: 3, goal: 30, poll: () => es().wins },
+  { id: 'saf_stars100', tab: 'safari', grp: 'jabari', e: '🌈', t: 'Earn 100 ⭐ and become a Legend', r: 3, goal: 100, poll: () => C.stars || 0 },
+  { id: 'saf_days14', tab: 'safari', grp: 'jabari', e: '🔥', t: 'Play 14 days in a row', r: 3, goal: 14, poll: () => es().best },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 const DAILY = [
@@ -104,7 +117,7 @@ const DAILY = [
   { id: 'd_bath', e: '🛁', t: 'Give your pet a bath', go: 'parlor', ev: { k: 'bath' } },
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
@@ -227,6 +240,9 @@ css.textContent = `
 .cq .lock{flex:0 0 auto;font-size:18px}
 .cstreak{display:flex;gap:6px;margin:2px 0 2px}.cstreak span{flex:1;background:#fff3e0;border-radius:14px;padding:7px 8px;text-align:center;font-weight:700;font-size:14px;color:#a3541c}
 .cstreak span small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
+.csaf{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#ffe9b8,#f6d79a);border-radius:16px;padding:8px 12px;margin-top:6px;color:#5a3a12}
+.csaf>b{font-size:30px;font-weight:400;line-height:1}.csaf div{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.csaf strong{font-size:16px}.csaf span{font-size:12px;font-weight:600;color:#7a5a2a}
+.csaf .own{font-size:13px;font-weight:700;color:#2e9b5a;white-space:nowrap}.csaf .lock{font-size:18px}.csaf.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9)}
 .cbonus{background:linear-gradient(90deg,#efe3ff,#ffe6f2);border-radius:14px;padding:8px 12px;font-weight:600;font-size:14px;text-align:center}
 `;
 document.head.appendChild(css);
@@ -257,16 +273,32 @@ function render() {
   const list = tab === 'today' ? todays() : LIST.filter(c => c.tab === tab), here = zoneId();
   let h = '';
   if (tab === 'today') { const st = G.earnState ? G.earnState() : null; h += `<div class="cnote">${st && st.streak > 1 ? `🔥 Day ${st.streak} in a row! ` : ''}New challenges every day! Finish all 3 for +${DAY_BONUS} bonus ⭐</div>`; }
+  if (tab === 'safari') { $('#chalList').innerHTML = safariHTML(list, here); return; }
   const sorted = list.slice().sort((a, b) => isDone(a) - isDone(b));
   h += sorted.map(ch => {
-    const d = isDone(ch), p = progress(ch), g = goalOf(ch);
-    const go = !d && ch.go && Z[ch.go] ? (ch.go === here ? '<button disabled style="background:#2fb8a5;box-shadow:0 3px 0 #23907f">📍 Here!</button>' : `<button data-go="${ch.go}">📍 Go</button>`) : '';
-    return `<div class="cq${d ? ' done' : ''}"><b>${d ? '✅' : ch.e}</b><div><strong>${ch.t}</strong><i>${g > 1 && !d ? `<u><q style="width:${Math.round(p / g * 100)}%"></q></u>${p} / ${g}` : d ? 'Done!' : ''}<em>${'⭐'.repeat(ch.r)}</em></i></div>${go}</div>`;
+    return chRow(ch, here);
   }).join('');
   if (tab === 'today' && today().bonus) h += '<div class="cbonus">🎉 You did all of today\'s challenges! Come back tomorrow for new ones.</div>';
   const left = LIST.filter(c => c.tab === tab && !isDone(c)).length;
   if (tab !== 'today' && !left) h += '<div class="cbonus">🎉 You finished every challenge here!</div>';
   $('#chalList').innerHTML = h;
+}
+function chRow(ch, here) {
+  const d = isDone(ch), p = progress(ch), g = goalOf(ch);
+  const go = !d && ch.go && Z[ch.go] ? (ch.go === here ? '<button disabled style="background:#2fb8a5;box-shadow:0 3px 0 #23907f">📍 Here!</button>' : `<button data-go="${ch.go}">📍 Go</button>`) : '';
+  return `<div class="cq${d ? ' done' : ''}"><b>${d ? '✅' : ch.e}</b><div><strong>${ch.t}</strong><i>${g > 1 && !d ? `<u><q style="width:${Math.round(p / g * 100)}%"></q></u>${p} / ${g}` : d ? 'Done!' : ''}<em>${'⭐'.repeat(ch.r)}</em></i></div>${go}</div>`;
+}
+// 🦁 the Safari tab: each safari animal with its own super hard challenges. Finish them all to ride it.
+function safariHTML(list, here) {
+  const rides = G.earnedRides ? G.earnedRides() : [];
+  let h = '<div class="cnote">🦁 Super hard challenges! Finish every challenge for an animal and you can ride it anywhere in town.</div>';
+  for (const k of ['kivu', 'tembo', 'jabari']) {
+    const r = rides.find(x => x.k === k), mine = list.filter(c => c.grp === k); if (!mine.length) continue;
+    const n = mine.filter(isDone).length;
+    h += `<div class="csaf${r && r.own ? ' own' : ''}"><b>${r ? r.e : '🦁'}</b><div><strong>${r ? `${r.nm} the ${r.n.toLowerCase()}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += mine.map(ch => chRow(ch, here)).join('');
+  }
+  return h;
 }
 // 🏆 special rides and outfits you can't buy: win contests and play days in a row (the game side is 3d/src/24i-earned-rides.js)
 function ridesHTML() {
@@ -282,7 +314,7 @@ function ridesHTML() {
     const bar = r.own ? `Yours! It's in your closet's ${r.where}` : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
     return `<div class="cq${r.own ? ' done' : ''}"><b>${r.e}</b><div><strong>${r.n}</strong><i>${r.own ? '' : r.what + ' · '}${bar}</i></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
   }).join('') + '</div>';
-  h += '<div class="cnote">🏆 Wins: 1st place in the model, cake or pet contest, or beating Kai 1-on-1 at basketball.<br>🔥 A day counts as soon as you start playing. Miss a day and the streak starts over, but what you earned stays yours.</div>';
+  h += '<div class="cnote">🏆 Wins: 1st place in the model, cake or pet contest, or beating Kai 1-on-1 at basketball.<br>🦁 Safari rides: finish all of their challenges in the 🦁 Safari tab.<br>🔥 A day counts as soon as you start playing. Miss a day and the streak starts over, but what you earned stays yours.</div>';
   return h;
 }
 function openPanel() {

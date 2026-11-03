@@ -25,6 +25,11 @@
   `bikeRide()` puts the rider's hips on the saddle, hands on the grips and feet on the pedals every frame (it runs after
   `Avatar.update`, so it wins over the walking pose). Friends online use the same two functions. `3d/tests/bike.mjs`
   (run on every PR) checks the feet stay on the pedals, the hands on the grips, coasting, and a foot down when stopped.
+- 🦁 Safari rides (Kivu the okapi, Tembo the elephant, Jabari the lion) are earned rides in `3d/src/24i-earned-rides.js` with
+  `earn:{by:'chal',ids:[...]}`: they come once every challenge id listed is done in the 🦁 Safari tab of `3d/challenges.js`.
+  They reuse the zoo's real-looking models through `model:` (the lion and the saddles are in `3d/src/24c9b-safari-rides.js`);
+  `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
+  `3d/tests/safari-rides.mjs` (run on every PR) checks they stay locked until earned and the rider sits on the saddle.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

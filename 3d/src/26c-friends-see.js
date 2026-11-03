@@ -74,7 +74,7 @@ SHOW.push({k:'ride',
   mine(){const a=barnRide;return a&&BS.own[a.k]?{k:a.k,n:BS.own[a.k].n,fly:FLY.on?1:0}:null;},
   on(f,d){const a=showFarm(d.k,d.n);return a?{a}:null;},
   step(f,d,dt,h){const a=h&&h.a;if(!a)return;const A=f.a;
-    if(!A.emote||A.emote.id!=='ride')A.play('ride');
+    if(!A.emote||A.emote.id!=='ride')A.play('ride');A.rideW=a.F.wide||0;
     if(showFly(f,d,dt,h))return;// 🪽 up in the air on a flying ride (24h-flying.js)
     a.pos.copy(f.pos);a.g.position.copy(a.pos);a.g.rotation.y=f.cur??f.face;a.update(dt,(f.sp||0)*.55);
     A.g.position.y=f.pos.y+a.F.ride-.42;},
