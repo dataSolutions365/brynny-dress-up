@@ -28,7 +28,7 @@ function renderTalk(){const f=talkF;if(!f)return;$('#tface').textContent=f.info.
     const X=TALK_EXTRA.map(x=>{const r=x.btn(f);return r&&b(x.id,r[0],r[1],'go');}).filter(Boolean).join('');
     h=b('chat','💬','Chat')+b('nice','💖','Compliment')+b('dance','💃','Dance')+(X||b('wave','👋','Wave'))+
       (ready?b('quest','🎁','I did it!','go'):Q?b('quest','⭐','My task'):b('quest','⭐','Need help?'))+
-      (s.h>=3?(f.follow?b('stay','🛑','Stop walking'):b('follow','🚶‍♀️','Walk with me')):b('bye','👋','Bye'));}
+      b('bye','👋','Bye');}
   $('#topts').innerHTML=h;}
 function openTalk(f){if(closetOpen||!started)return;did('talk',f.name);if(talkF&&talkF!==f)closeTalk();talkF=f;talkMode='main';f.tgt=null;
   const s=townSave(f);let g;
@@ -57,8 +57,6 @@ $('#topts').addEventListener('click',e=>{const b=e.target.closest('button');cons
     else tsay(f,`${(()=>{const a=Q.def.ask;return typeof a==='function'?a(Q.arg):a;})()}\n\n💡 ${questHint(f)}`);}
   else if(t==='yes'){talkMode='main';tsay(f,`Yay! Thank you! 💕\n\n💡 ${questHint(f)}`);}
   else if(t==='no'){s.q=null;persist();talkMode='main';tsay(f,'That\'s okay! Maybe later 😊');}
-  else if(t==='follow'){f.follow=true;tsay(f,'Yay, let\'s go explore together! 🚶‍♀️✨');setTimeout(closeTalk,1300);}
-  else if(t==='stay'){f.follow=false;f.tgt=null;tsay(f,'Okay! I\'ll hang out here. See you later! 👋');}
   else if(t==='bye'){f.play('wave');friendBubble(f,'Bye bye! 👋');closeTalk();}});
 // the "Talk to …" button when you walk up to someone
 function talkBtn(){const P=player.pos;let best=null,bd=2.6;if(!talkF&&started&&!closetOpen)for(const f of FRIENDS){const d=Math.hypot(P.x-f.pos.x,P.z-f.pos.z);if(d<bd){bd=d;best=f;}}

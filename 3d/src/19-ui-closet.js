@@ -38,7 +38,9 @@ function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
   if(dancing)setTimeout(()=>floaties(headPos(),'🎵',4),300);
   if(id==='clap')setTimeout(()=>floaties(headPos(),'✨',4),300);
   if(id==='magic')for(let k=0;k<4;k++)setTimeout(()=>burst(new THREE.Vector3(P.x,P.y+1.4,P.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#c6a6ff']),36,3,.2),k*350);
-  if(dancing||id==='wave')for(const f of FRIENDS)if(f.pos.distanceTo(P)<6){setTimeout(()=>{f.play(id);if(id==='wave')friendBubble(f,`Hi ${SAVE.name||'friend'}! 👋`);},300+Math.random()*500);}
+  // townspeople never copy your moves: only the one closest to you (and only if they're right there) waves back or claps for you
+  if(dancing||id==='wave'){let fc=null,bd=4;for(const f of FRIENDS){const d=f.pos.distanceTo(P);if(d<bd){bd=d;fc=f;}}
+    if(fc&&fc.cool<=0){fc.cool=14;setTimeout(()=>{fc.play(id==='wave'?'wave':'clap');friendBubble(fc,id==='wave'?`Hi ${SAVE.name||'friend'}! 👋`:'Nice moves! 👏');},300+Math.random()*500);}}
   if(myPet()&&myPet().pos.distanceTo(P)<5&&(dancing||id==='cheer'||id==='magic'))myPet().happy=1.5;}
 renderActions();
 function updateStars(){did('stars');}
