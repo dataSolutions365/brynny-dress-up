@@ -16,6 +16,9 @@
   Rides that are barn animals (horse, dinos, and the shop rides in `3d/src/24g-mounts.js`) are already covered by the `ride` entry.
   `3d/tests/online-see.mjs` checks it with two phones in one room:
   `npm i --no-save playwright peer && npx playwright install chromium && node 3d/tests/online-see.mjs` (takes a few minutes).
+- Basketball and batting matches against friends online are in `3d/src/24e2-sports-friends.js` (it hooks into
+  `3d/src/24e-sports.js` through `SP.onMenu`, `SP.onEnd` and `SP.lx`). `3d/tests/sports-friends.mjs` plays a match with two phones
+  (same setup as `online-see.mjs`).
 - Rides with `fly:1` in FARM (`3d/src/24d-barn.js`) can fly: `3d/src/24h-flying.js` does the take-off, flying and landing,
   and friends see it through the `ride` entry. `3d/tests/fly.mjs` (run on every PR) checks one takes off, clears the trees and lands.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
