@@ -19,6 +19,11 @@ function earnedRideList(){return [
   {k:'kivu',e:'🌿',n:'Okapi',nm:'Kivu',model:'okapi',gear:1,safari:1,scale:1.2,earn:{by:'chal',ids:['saf_feed5','saf_win5','saf_days5'],goal:3},ride:1.57,boost:1.75,about:'A shy forest okapi with zebra-striped legs and a velvet coat. Only for safari explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🍃','Leaves'],['🍌','Banana'],['🍄','Mushroom']],say:['*soft huff*','*long tongue lick* 👅','To the rainforest! 🌿']},
   {k:'tembo',e:'🐘',n:'African elephant',nm:'Tembo',model:'elephant',gear:1,safari:1,seat:.66,wide:.55,earn:{by:'chal',ids:['saf_triple','saf_win15','saf_days10'],goal:3},ride:2.2,boost:1.55,about:'A giant African elephant. You sit up on his neck, way up high! Only for champions who finish all 3 of his 🦁 Safari challenges.',food:[['🌾','Hay'],['🍉','Watermelon'],['🍌','Bananas']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖']},
   {k:'jabari',e:'🦁',n:'Lion',nm:'Jabari',model:'lion',gear:1,safari:1,scale:1.15,earn:{by:'chal',ids:['saf_kai5','saf_win30','saf_stars100','saf_days14'],goal:4},ride:1.38,boost:2.05,about:'The king of the savanna: a real lion with a thick dark mane, and the fastest ride in town. Only for legends who finish all 4 of his 🦁 Safari challenges!',food:[['🍖','Meat'],['🍗','Drumstick'],['🥩','Steak']],say:['ROOOAR! 🦁','*proud mane shake*','*deep rumbly purr*']},
+  // more safari rides (models in 24c9c-safari-more.js): a zebra, a rhino and a giraffe to ride, and a crowned crane that flies
+  {k:'punda',e:'🦓',n:'Zebra',nm:'Punda',model:'zebraR',gear:1,safari:1,earn:{by:'chal',ids:['saf_stars24','saf_win8','saf_days7'],goal:3},ride:1.26,boost:1.9,about:'A real plains zebra with bold black and white stripes. Only for explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🌾','Hay'],['🥕','Carrot'],['🍏','Apple']],say:['*happy whinny bark*','*stripe shake*','Gallop time! 🦓']},
+  {k:'kifaru',e:'🦏',n:'White rhino',nm:'Kifaru',model:'rhinoR',gear:1,safari:1,earn:{by:'chal',ids:['saf_car3','saf_best3','saf_win20'],goal:3},ride:1.34,boost:1.65,about:'A huge, gentle white rhino with a big horn and wrinkly skin. Only for players who finish all 3 of his 🦁 Safari challenges!',food:[['🌾','Hay'],['🍎','Apple'],['🥬','Lettuce']],say:['*big happy huff*','Hrrumph! 🦏','*stomp stomp*']},
+  {k:'neema',e:'🕊️',n:'Crowned crane',nm:'Neema',model:'craneR',gear:1,safari:1,fly:1,scale:1.35,earn:{by:'chal',ids:['saf_model5','saf_cake5','saf_pet5'],goal:3},ride:1.86,boost:1.8,about:'A giant grey crowned crane with a golden crown of feathers. Tap 🪽 Fly to soar over the island! Only for champions who finish all 3 of her 🦁 Safari challenges.',food:[['🌾','Seeds'],['🐛','Bugs'],['🐟','Little fish']],say:['*honk-ka-wonk!*','*crown fluff*','Up we go! ☁️']},
+  {k:'twiga',e:'🦒',n:'Giraffe',nm:'Twiga',model:'giraffeR',gear:1,safari:1,earn:{by:'chal',ids:['saf_kai10','saf_stars150','saf_days21'],goal:3},ride:1.8,boost:1.95,about:'The tallest animal in the world! Ride way up high on a real giraffe. Only for true legends who finish all 3 of her 🦁 Safari challenges.',food:[['🌿','Acacia leaves'],['🥬','Lettuce'],['🍎','Apple']],say:['*long tongue lick* 👅','Hello down there!','*gentle hum*']},
   {k:'phoenix',e:'🔥',n:'Phoenix',nm:'Blaze',earn:{by:'wins',goal:10},fly:1,wingsRun:1,ride:1.12,about:'A legendary fire bird with glowing golden feathers. Only for super champions who win 10 contests or games!',food:[['🌶️','Hot pepper'],['🍒','Cherries'],['🌻','Sunflower seeds']],say:['*sparkly whoosh* 🔥','Skreee! ✨','Let\'s light up the sky!']},
 ];}
 
@@ -102,11 +107,14 @@ const EARNED=FARM.filter(f=>f.earn);
 for(const f of EARNED)STEED_ORDER.push(f.k);
 SHINT.rides+=' The 🏆 ones can\'t be bought: win contests and play days in a row to earn them!';
 FLYK.comet={hz:.9,amp:.0,base:0,glide:.9,spd:12.5,tuckF:1.05,tuckB:1.2};
+FLYK.neema={hz:1.25,amp:.55,base:.1,glide:.7,spd:13,tuckF:1.15,tuckB:1.2};
 FLYK.phoenix={hz:1.8,amp:.62,base:.1,glide:.55,spd:13.5,tuckF:.9,tuckB:.9};
 // first time: wins you already had count (the win challenges you finished, and your 1-on-1 wins against Kai)
 if(!SAVE.earn){const d=(SAVE.chal&&SAVE.chal.done)||{};SAVE.earn={wins:(d.win?1:0)+(d.cakeWin?1:0)+(d.petWin?1:0)+((SAVE.sports&&SAVE.sports.v1w)||0),days:{last:null,n:0,best:0}};persist();}
 const ER=SAVE.earn;ER.days||={last:null,n:0,best:0};ER.wins||=0;
 // which contests you've won at least once (for the 🐘 "win all three contests" safari challenge); wins from before count
+// how many times you've won each contest (for the 🕊️ crowned crane's challenges); wins from before count as one each
+if(!ER.kn){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kn={contest:d.win?1:0,cakect:d.cakeWin?1:0,petct:d.petWin?1:0};persist();}
 if(!ER.kinds){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kinds={contest:d.win?1:0,cakect:d.cakeWin?1:0,petct:d.petWin?1:0};persist();}
 const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 // 'chal' = the 🦁 Safari challenges: how many of the ride's challenges (earn.ids) you've finished
@@ -127,7 +135,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
   const won=((k==='contest'||k==='cakect'||k==='petct')&&a===0)||(k==='sport'&&a==='v1win');if(!won)return;
-  ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
+  ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;if(ER.kn[k]!=null)ER.kn[k]++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
 function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const goal=f.earn?f.earn.goal:f.prize,have=f.earn?erHave(f):starsEarned();
@@ -138,4 +146,4 @@ function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.wh
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
 function earnTag(e){return e.by==='chal'?'🦁 Safari':`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0})});});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0,kn:{...ER.kn}})});});

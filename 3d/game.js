@@ -1217,7 +1217,7 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  z.pad=spPad(z,-2.9,5.2,'#4fd16a','⚾','⚾ Batting practice!','#2f8f3a');
  signpost(z);}
 // ---- src/12d-place-zoo.js ----
-/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi, elephants and lion live in 24d-barn.js) ===== */
+/* ===== Safari Zoo (the savanna, fence and trees; the zebras, giraffes, rhinos, okapi, elephants, lion and gorilla live in 24d-barn.js) ===== */
 // local layout: +z points back toward Halloween Hollow (the gate)
 {const z=Z.zoo,g=z.g;
  const grassT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#e3c77a';x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(170,140,60,.4)':c<.7?'rgba(255,240,170,.55)':'rgba(140,170,70,.35)';x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(-Math.PI/2+(Math.random()-.5)*.6);x.fillRect(0,0,5+Math.random()*8,1.3);x.restore();}},4);
@@ -1246,7 +1246,7 @@ function spPad(z,lx,lz,col,emoji,text,fg){const m=glow(col,1.5);m.transparent=tr
  {const bg=new THREE.Group();const [x,w]=z.toWorld(-2.2,z.r-.9);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
   for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);
   const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#fff8ec';c.fillRect(0,0,W,H);c.fillStyle='#5a8a3a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Safari Zoo',W/2,70);
-    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants, 🦁 a lion and an okapi!',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🦓 Zebras  🦒 Giraffes  🦏 Rhinos',W/2,145);c.fillText('🐘 Elephants, 🦁 a lion, 🦍 a gorilla, an okapi!',W/2,200);c.font='500 28px Fredoka, sans-serif';c.fillText('Walk up to an animal to meet it!',W/2,270);});
   for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
   obs.push({x,z:w,r:.4});}
  // the animals keep away from these (trees, rocks, water, feeder)
@@ -6231,6 +6231,10 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
   Object.assign(o,{neck,head,tail,nTilt:.55,gz:.55,size:1.2,h:by+.85,rad:.65,dustR:[r,r,len*.8]});};
 
 // a saddle for the safari rides (and a decorated blanket for the elephant), so you can tell they're yours and ready to ride
+// where the saddle sits on each ride: r = body radius under it, sx/sy = body shape, y/z = where on the body, col = blanket color, seatY = saddle height
+const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
+  punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
+  neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31}};
 function safariGear(k,g,body,o){
   const leather=phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4}),dkL=phys('#3e2112',{roughness:.6}),brass=phys('#d4a64a',{metalness:.8,roughness:.3});
   const blanket=(col,trim,r,len,y,z,sx,sy,arc)=>{const bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
@@ -6245,8 +6249,8 @@ function safariGear(k,g,body,o){
     const gem=phys('#2a6fd6',{roughness:.15,clearcoat:1});for(const s of [-1,1])M(sph(.05,10,8),gem,s*.62,-.18,-.05,body,false,false);
     const col=M(new THREE.TorusGeometry(.5,.035,8,36),phys('#c79a4a',{roughness:.9}),0,.0,.0,o.neck);col.rotation.x=Math.PI/2+.12;col.scale.set(1,1.15,1);
     return;}
-  // the okapi and the lion: a leather saddle on a blanket, held on with a girth strap
-  const L=k==='jabari'?{r:.36,sx:.88,sy:.95,y:.0,z:.06,col:'#2f4a7a',seatY:.33}:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27};
+  // the others: a leather saddle on a blanket, held on with a girth strap (sizes for each animal in SADDLE)
+  const L=SADDLE[k]||SADDLE.kivu;
   blanket(L.col,'#e8c46a',L.r*1.04,.42,L.y,L.z,L.sx,L.sy,2.3);
   const sg=new THREE.Group();sg.position.set(0,L.seatY+L.y,L.z);body.add(sg);
   M(sph(.17,20,12),leather,0,0,0,sg).scale.set(.95,.22,1.25);
@@ -6255,6 +6259,191 @@ function safariGear(k,g,body,o){
   for(const s of [-1,1]){const f=M(sph(.12,14,10),dkL,s*.13,-.07,0,sg);f.scale.set(.25,.7,1.1);f.rotation.z=s*.5;}// flaps
   const girth=M(new THREE.TorusGeometry(L.r*1.05,.018,6,40),dkL,0,L.y,L.z+.02,body,false,false);girth.scale.set(L.sx,L.sy,1);
   M(new THREE.TorusGeometry(.03,.007,6,14),brass,0,L.seatY+L.y+.04,L.z+.19,body,false,false);}
+// ---- src/24c9c-safari-more.js ----
+/* ===== 🦓 More safari animals: a zebra, a giraffe and a rhino to ride, a crowned crane to fly on, and a gorilla at the zoo =====
+   All real-looking (true colors and shapes, no cartoon blush). The rides you earn with 🦁 Safari challenges are listed in
+   24i-earned-rides.js (model = which one of these to build); the gorilla lives at the Safari Zoo (ZOOA in 24d-barn.js).
+   To keep phones light on memory, every animal of a kind shares the same few small textures and materials (SAFM below).
+   Only geometries get thrown away when a picture of an animal is drawn, so sharing materials is safe. */
+const SAFM={};const safM=(k,make)=>SAFM[k]||(SAFM[k]=make());
+// wavy black bands across a 256 x 256 canvas (zebra stripes); vert = bands run up and down instead of across
+function zebraBands(vert){return canvasTex(256,256,(x,w,h)=>{x.fillStyle='#f3f0e8';x.fillRect(0,0,w,h);x.fillStyle='#17161a';
+  const n=11,st=h/n;for(let i=0;i<n;i++){const Y=i*st;x.beginPath();
+    const P=(a,b)=>vert?x.lineTo(b,a):x.lineTo(a,b);vert?x.moveTo(Y,0):x.moveTo(0,Y);
+    for(let X=0;X<=w;X+=8)P(X,Y+Math.sin(X*.045+i*1.3)*st*.16);
+    for(let X=w;X>=0;X-=8)P(X,Y+st*(.48+.1*Math.sin(i*2.1))+Math.sin(X*.05+i*.7)*st*.14);x.fill();}});}
+// a giraffe's coat: brown patches with thin cream lines between them
+function giraffeTex(){return canvasTex(256,256,(x,w,h)=>{x.fillStyle='#efe0bf';x.fillRect(0,0,w,h);const n=5,cs=w/n;
+  for(let i=-1;i<=n;i++)for(let j=-1;j<=n;j++){const cx=(i+.5+(j%2)*.5)*cs,cy=(j+.5)*cs;x.fillStyle=(i*7+j*3)%3?'#a4532a':'#8f4522';x.beginPath();
+    for(let q=0;q<7;q++){const a=q/7*Math.PI*2+i,rr=cs*(.42+.06*Math.sin(q*2.7+i*1.3+j));const px=cx+Math.cos(a)*rr,py=cy+Math.sin(a)*rr;q?x.lineTo(px,py):x.moveTo(px,py);}x.fill();}});}
+// texture coordinates from the position along the body (z), so stripes are flat bands straight across it
+function bandUV(geo,k=1.15){const p=geo.attributes.position,uv=geo.attributes.uv;for(let i=0;i<p.count;i++)uv.setXY(i,.5+Math.atan2(p.getX(i),p.getY(i))/(Math.PI*2),p.getZ(i)*k+.5);uv.needsUpdate=true;return geo;}
+const sfLeg=(lg,mat,top,len,r0,r1,hoofM,hoofR)=>{// one leg, hanging down from its group: upper, knee, lower and a hoof
+  M(sph(r0,12,10),mat,0,0,0,lg);M(cyl(r0,r0*.72,len*.48,12),mat,0,-len*.24,0,lg);M(sph(r0*.68,10,8),mat,0,-len*.5,.005,lg);
+  M(cyl(r1,r1*.9,len*.46,12),mat,0,-len*.73,.01,lg);if(hoofM)M(cyl(hoofR*.85,hoofR,.07,12),hoofM,0,-len+.035,.015,lg);};
+
+// 🦓 Plains zebra: a stocky little horse with bold black and white stripes, a stand-up mane, a black nose and big round ears
+ZOO_BUILD.zebraR=function(g,body,o){const r=.29,len=.62,hip=.8,by=.93;
+  const T=safM('zbT',()=>({body:zebraBands(false),neck:zebraBands(true)}));
+  const coatB=safM('zbCoatB',()=>{const tx=T.body.clone();tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.needsUpdate=true;return phys('#ffffff',{map:tx,roughness:.7,sheen:.4,sheenColor:new THREE.Color('#ffffff')});});
+  const coat=safM('zbCoat',()=>phys('#ffffff',{map:T.body,roughness:.7,sheen:.4,sheenColor:new THREE.Color('#ffffff')})),
+    coatN=safM('zbNeck',()=>phys('#ffffff',{map:T.neck,roughness:.7,sheen:.4,sheenColor:new THREE.Color('#ffffff')})),
+    blk=safM('zbBlk',()=>std('#1a181b',{roughness:.6})),wht=safM('zbWht',()=>std('#f3f0e8',{roughness:.8})),hoof=safM('zbHoof',()=>phys('#2a2422',{roughness:.4,clearcoat:.3}));
+  // a short tube for the middle, with the chest and rump as balls turned on their sides, so every stripe runs up and down
+  // (the round ends of a long tube would show stripes as rings, like a target)
+  // the body's stripes are painted straight down the sides by position along the body (bandUV), so the round chest and rump
+  // get up-and-down stripes too, instead of rings like a target
+  body.position.y=by;
+  const bodyG=new THREE.CapsuleGeometry(r,len*.6,10,22);bodyG.rotateX(Math.PI/2);bodyG.scale(.9,1,1);M(bandUV(bodyG),coatB,0,0,0,body);
+  const chG=sph(r,18,14);chG.scale(.88,1,1.05);chG.translate(0,-.01,len*.4);M(bandUV(chG),coatB,0,0,0,body);
+  const ruG=sph(r*1.02,18,14);ruG.scale(.93,.98,1.05);ruG.translate(0,.01,-len*.4);M(bandUV(ruG),coatB,0,0,0,body);
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.5,hip,sz*len*.44);g.add(lg);this.legs.push({g:lg,ph});
+    sfLeg(lg,coat,hip,hip,sz<0?.085:.075,.045,hoof,.05);}
+  const neck=new THREE.Group();neck.position.set(0,by+r*.3,len/2+r*.4);neck.rotation.x=.72;g.add(neck);const nl=.5;
+  taperTube([fV(0,-.05,0),fV(0,nl*.5,.01),fV(0,nl,0)],q=>.15-.06*q,coatN,neck,16,12);
+  // the short stand-up mane, striped like the neck
+  for(let i=0;i<9;i++){const q=i/8;M(box(.03,.08,.055),i%2?blk:wht,0,q*nl*.95+.02,-.12+q*.035,neck,false,false);}
+  const head=new THREE.Group();head.position.set(0,nl+.03,.0);head.rotation.x=-.72+.35;neck.add(head);const H=.14;
+  M(sph(H,20,14),coat,0,0,0,head).scale.set(.85,.9,1.1);
+  M(sph(H*.72,16,12),coat,0,-H*.32,H*1.1,head).scale.set(.74,.74,1.45);// the long face
+  M(sph(H*.5,14,10),blk,0,-H*.42,H*1.82,head).scale.set(.9,.78,.62);// black nose
+  for(const sx of [-1,1]){M(sph(H*.08,8,6),std('#050505'),sx*H*.17,-H*.35,H*2.1,head,false,false);
+    const e=M(new THREE.ConeGeometry(H*.27,H*.85,12),wht,sx*H*.42,H*.92,-H*.15,head);e.rotation.z=-sx*.28;e.scale.z=.55;
+    M(new THREE.ConeGeometry(H*.12,H*.28,10),blk,sx*H*.53,H*1.3,-H*.15,head,false,false).rotation.z=-sx*.28;}// black ear tips
+  fEyes(this,head,H,.55,.22,.78,.6,.15,'#2a1a10');
+  const tail=new THREE.Group();tail.position.set(0,by+r*.4,-(len/2+r*.85));g.add(tail);
+  taperTube([fV(0,0,0),fV(0,-.12,-.08),fV(0,-.35,-.06)],q=>.03-.01*q,wht,tail,10,8);M(sph(.05,10,8),blk,0,-.44,-.05,tail).scale.set(.8,2,.8);
+  Object.assign(o,{neck,head,tail,nTilt:.72,size:1.05,h:by+nl+.3,rad:.5,dustR:[r,r,len*.8]});};
+
+// 🦒 Giraffe: very long legs (the front ones longer, so the back slopes), a long neck with a short mane, ossicones and patches
+ZOO_BUILD.giraffeR=function(g,body,o){const r=.3,len=.6,hipF=1.32,hipB=1.18,by=1.44;
+  const coat=safM('grCoat',()=>phys('#ffffff',{map:giraffeTex(),roughness:.75,sheen:.3,sheenColor:new THREE.Color('#fff2d6')})),
+    pale=safM('grPale',()=>std('#e6d2a6',{roughness:.8})),dark=safM('grDark',()=>std('#3a2418',{roughness:.7})),
+    hoof=safM('grHoof',()=>phys('#2e2420',{roughness:.4,clearcoat:.3})),mane=safM('grMane',()=>std('#6e3a1e',{roughness:.9}));
+  body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,10,22),coat,0,0,0,body);t.rotation.x=Math.PI/2-.2;t.scale.set(.9,1,1);
+  M(sph(r*1.02,16,12),coat,0,.08,len*.34,body).scale.set(.9,1.05,1);// high shoulders
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const H0=sz>0?hipF:hipB,lg=new THREE.Group();lg.position.set(sx*r*.45,H0,sz*len*.45);g.add(lg);this.legs.push({g:lg,ph});
+    sfLeg(lg,coat,H0,H0,.08,.04,hoof,.048);}
+  const neck=new THREE.Group();neck.position.set(0,by+r*.5,len/2+r*.2);neck.rotation.x=.42;g.add(neck);const nl=1.35;
+  taperTube([fV(0,-.1,-.02),fV(0,nl*.4,.02),fV(0,nl*.8,0),fV(0,nl,-.02)],q=>.15-.07*q,coat,neck,24,12);
+  taperTube([fV(0,0,-.13),fV(0,nl*.5,-.09),fV(0,nl*.95,-.07)],q=>.025,mane,neck,16,6);// short mane along the back of the neck
+  const head=new THREE.Group();head.position.set(0,nl+.04,0);head.rotation.x=-.42+.95;neck.add(head);const H=.15;
+  M(sph(H,20,14),coat,0,0,0,head).scale.set(.8,.85,1.25);
+  M(sph(H*.7,16,12),pale,0,-H*.18,H*1.15,head).scale.set(.8,.8,1.4);// long pale muzzle
+  M(sph(H*.38,12,10),dark,0,-H*.2,H*1.95,head).scale.set(.95,.7,.5);// soft dark nose
+  for(const sx of [-1,1]){const oc=M(cyl(H*.09,H*.12,H*.75,10),pale,sx*H*.28,H*1.05,-H*.3,head);oc.rotation.z=-sx*.15;
+    M(sph(H*.13,10,8),dark,sx*H*.34,H*1.42,-H*.3,head);// the ossicones with dark hairy tips
+    const e=M(sph(H*.3,12,10),pale,sx*H*.82,H*.55,-H*.35,head);e.scale.set(1.5,.42,.6);e.rotation.z=sx*.35;}
+  fEyes(this,head,H,.55,.28,.65,.65,.17,'#1e120a');
+  const tail=new THREE.Group();tail.position.set(0,by+r*.1,-(len/2+r*.8));g.add(tail);
+  taperTube([fV(0,0,0),fV(0,-.3,-.06),fV(0,-.65,-.05)],q=>.022,pale,tail,10,6);M(sph(.06,10,8),dark,0,-.72,-.05,tail).scale.set(.8,2,.8);
+  Object.assign(o,{neck,head,tail,nTilt:.42,size:1.5,h:by+nl+.4,rad:.6,dustR:[r,r,len*.8]});};
+
+// 🦏 White rhino: huge and gray with wrinkly skin, folds at the shoulders and hips, a big front horn and a wide square lip
+ZOO_BUILD.rhinoR=function(g,body,o){const r=.46,len=.78,hip=.6,by=.86;
+  const skin=safM('rhSkin',()=>std('#8f8a84',{bumpMap:eleBumpTex(),bumpScale:2.5,roughness:.95})),
+    fold=safM('rhFold',()=>std('#77726c',{roughness:.95})),horn=safM('rhHorn',()=>phys('#a89a88',{roughness:.6,clearcoat:.2})),nail=safM('rhNail',()=>std('#5e5853',{roughness:.6}));
+  body.position.y=by;const t=M(fuzz(new THREE.CapsuleGeometry(r,len,12,24),.012,8),skin,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(.92,.95,1);
+  M(sph(r*.75,16,12),skin,0,r*.38,len*.25,body).scale.set(1,.7,1.1);// the hump over the shoulders
+  M(sph(r*.85,16,12),skin,0,.02,-len*.42,body).scale.set(.95,1,1);
+  // skin folds around the body behind the shoulders and in front of the hips (an arc over the top and down the sides)
+  for(const z of [len*.12,-len*.28]){const f=M(new THREE.TorusGeometry(r*.99,.022,6,28,Math.PI*1.3),fold,0,0,z,body,false,false);f.rotation.z=Math.PI/2-Math.PI*.65;f.scale.set(.92,.95,1);}
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.55,hip,sz*len*.45);g.add(lg);this.legs.push({g:lg,ph});
+    M(sph(.19,14,10),skin,0,.02,0,lg).scale.set(.9,1.2,1.05);M(cyl(.16,.13,hip-.08,14),skin,0,-(hip-.08)/2,0,lg);M(cyl(.14,.16,.08,16),fold,0,-hip+.04,0,lg);
+    for(const a of [-.6,0,.6])M(sph(.045,8,6),nail,Math.sin(a)*.15,-hip+.04,Math.cos(a)*.15,lg,false,false).scale.set(1,.7,.6);}
+  // the big head is carried low, with the square lip near the grass (they're grazers)
+  const neck=new THREE.Group();neck.position.set(0,by+.02,len/2+r*.55);neck.rotation.x=1.05;g.add(neck);
+  M(sph(.3,16,12),skin,0,.0,0,neck).scale.set(.95,1,1.1);
+  const head=new THREE.Group();head.position.set(0,.2,.02);head.rotation.x=-1.05+.35;neck.add(head);const H=.27;
+  M(sph(H,20,14),skin,0,0,0,head).scale.set(.85,.85,1.45);
+  M(sph(H*.62,14,12),skin,0,-H*.2,H*1.35,head).scale.set(1.35,.75,.75);// wide square lip
+  const h1=new THREE.Group();h1.position.set(0,H*.4,H*1.15);head.add(h1);taperTube([fV(0,0,0),fV(0,H*.55,H*.12),fV(0,H*1.15,-H*.05)],q=>H*(.24-.22*q),horn,h1,14,10);
+  const h2=new THREE.Group();h2.position.set(0,H*.62,H*.62);head.add(h2);taperTube([fV(0,0,0),fV(0,H*.35,-H*.02)],q=>H*(.15-.13*q),horn,h2,8,8);
+  for(const sx of [-1,1]){const e=M(new THREE.ConeGeometry(H*.18,H*.5,10),skin,sx*H*.45,H*.85,-H*.55,head);e.rotation.set(-.3,0,-sx*.25);// tube-shaped ears
+    M(sph(H*.03,6,4),std('#1a1410'),sx*H*.3,-H*.25,H*1.62,head,false,false).scale.set(1,1.8,1);}// nostrils
+  fEyes(this,head,H,.68,.05,.5,1.0,.08,'#2a1a10');// small eyes far back on the sides
+  const tail=new THREE.Group();tail.position.set(0,by+r*.35,-(len/2+r*.95));g.add(tail);
+  taperTube([fV(0,0,0),fV(0,-.15,-.06),fV(0,-.32,-.04)],q=>.03-.01*q,skin,tail,10,8);M(sph(.035,8,6),std('#2a2420'),0,-.36,-.04,tail).scale.set(.8,2,.8);
+  Object.assign(o,{neck,head,tail,nTilt:1.05,gz:.3,size:1.3,h:by+r+.5,rad:.8,dustR:[r,r,len*.8]});};
+
+// 🕊️ Grey crowned crane: a tall gray bird with a golden crown of bristly feathers, a black velvet cap, white cheeks,
+// a red throat pouch, and white, gold and black wings. Big enough to ride, and it flies (24h-flying.js).
+ZOO_BUILD.craneR=function(g,body,o){const r=.3,len=.44,leg=.95,by=leg+r*.5;
+  const gray=safM('crGray',()=>phys('#8f959c',{roughness:.85,sheen:.6,sheenColor:new THREE.Color('#e8eef5')})),pale=safM('crPale',()=>phys('#c9ced3',{roughness:.85,sheen:.6,sheenColor:new THREE.Color('#ffffff')})),
+    white=safM('crWhite',()=>phys('#f6f4ef',{roughness:.85,sheen:.5})),gold=safM('crGold',()=>phys('#c8984a',{roughness:.7,sheen:.6,sheenColor:new THREE.Color('#ffe2a0')})),
+    black=safM('crBlack',()=>std('#16161a',{roughness:.7})),red=safM('crRed',()=>phys('#c8262a',{roughness:.5,clearcoat:.4})),crown=safM('crCrown',()=>phys('#e8c060',{roughness:.6,sheen:.8,sheenColor:new THREE.Color('#fff2c0')})),
+    legM=safM('crLeg',()=>std('#26262a',{roughness:.55}));
+  body.position.y=by;body.rotation.x=-.08;const t=M(new THREE.CapsuleGeometry(r,len,8,20),gray,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(.95,.9,1);
+  M(sph(r*.8,14,10),pale,0,-r*.25,len*.38,body).scale.set(.9,.95,1.1);// pale gray breast
+  // long dark legs with a backward "knee" (really the ankle) and long toes
+  for(const sx of [-1,1]){const lg=new THREE.Group();lg.position.set(sx*r*.4,by-r*.3,0);g.add(lg);
+    M(sph(r*.32,10,8),gray,0,0,0,lg).scale.set(.8,1.2,.9);M(cyl(.035,.03,leg*.45,8),legM,0,-leg*.26,0,lg);M(sph(.035,8,6),legM,0,-leg*.48,-.02,lg);
+    M(cyl(.03,.026,leg*.5,8),legM,0,-leg*.74,-.01,lg);
+    for(const a of [-.5,0,.5]){const toe=M(new THREE.CapsuleGeometry(.016,.14,4,6),legM,Math.sin(a)*.08,-leg+.02,Math.cos(a)*.08,lg);toe.rotation.x=Math.PI/2;toe.rotation.y=a;}
+    this.legs.push({g:lg,ph:sx>0?Math.PI:0});}
+  // the wings fold along the sides when walking and open wide to fly: white coverts, gold and chestnut secondaries, black tips
+  this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.8,r*.4,len*.2);body.add(w);
+    M(new THREE.CapsuleGeometry(.09,.7,6,10),white,sx*.42,0,-.04,w,true,false).rotation.z=Math.PI/2;
+    for(let i=0;i<12;i++){const q=i/11,L=.5+.25*Math.sin(q*Math.PI),f=new THREE.Group();f.position.set(sx*(.1+q*.8),0,-.06);f.rotation.y=sx*(.15-q*.95);w.add(f);
+      const fe=M(new THREE.CapsuleGeometry(.07,L,4,8),i<4?white:i<8?gold:black,0,0,-L/2-.04,f,true,false);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.26);}
+    for(let i=0;i<3;i++){const f=new THREE.Group();f.position.set(sx*.95,0,-.02);f.rotation.y=sx*(i*.2-.1);w.add(f);
+      const L=.5-i*.05,fe=M(new THREE.CapsuleGeometry(.045,L,4,8),black,sx*(L/2),0,0,f,true,false);fe.rotation.z=Math.PI/2;fe.scale.set(1,.26,1);}
+    this.wings.push({w,sx,fly:0,fold:1.3});}
+  // the long S-shaped neck
+  const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.3);neck.rotation.x=.15;g.add(neck);const nl=.62;
+  taperTube([fV(0,-.04,-.02),fV(0,nl*.35,.06),fV(0,nl*.7,-.02),fV(0,nl,.03)],q=>.095-.04*q,gray,neck,20,10);
+  const head=new THREE.Group();head.position.set(0,nl+.03,.03);head.rotation.x=-.15+.1;neck.add(head);const H=.1;
+  M(sph(H,16,12),gray,0,0,0,head).scale.set(.85,.95,1.15);
+  M(sph(H*.62,12,10),black,0,H*.55,H*.35,head).scale.set(1,.5,1.1);// black velvet cap
+  for(const sx of [-1,1])M(sph(H*.45,12,10),white,sx*H*.5,H*.12,H*.1,head,false,false).scale.set(.4,.95,1.2);// white cheeks
+  M(sph(H*.28,10,8),red,0,-H*.85,H*.1,head).scale.set(.7,1.2,.8);// red throat pouch
+  M(sph(H*.13,8,6),red,0,H*.5,H*.85,head,false,false);// little red spot above the beak
+  const bk=M(new THREE.ConeGeometry(H*.25,H*1.2,10),black,0,-H*.1,H*1.55,head);bk.rotation.x=Math.PI/2+.2;bk.scale.set(.75,1,1);// short gray-black beak
+  fEyes(this,head,H,.45,.18,.78,.55,.18,'#9ab8d8');
+  // the golden crown: a puff of stiff straw-colored bristles, all in one instanced mesh
+  {const n=70,geo=new THREE.CylinderGeometry(.08,.3,1,4,1);geo.translate(0,.5,0);const m=new THREE.InstancedMesh(geo,crown,n),q=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0),d=new THREE.Vector3(),mx=new THREE.Matrix4(),s=new THREE.Vector3(),p=new THREE.Vector3();
+    for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,e=Math.random()*1.1;d.set(Math.sin(a)*Math.sin(e),Math.cos(e),Math.cos(a)*Math.sin(e)*.6-.15).normalize();q.setFromUnitVectors(up,d);
+      const L=H*(.9+Math.random()*.6);s.set(H*.05,L,H*.05);p.set(0,H*.75,-H*.1);mx.compose(p,q,s);m.setMatrixAt(i,mx);}
+    m.instanceMatrix.needsUpdate=true;m.castShadow=true;head.add(m);}
+  const tail=new THREE.Group();tail.position.set(0,by-.02,-(len/2+r*.7));g.add(tail);
+  for(let i=0;i<5;i++){const f=new THREE.Group();f.rotation.y=(i/4-.5)*.6;tail.add(f);const fe=M(new THREE.CapsuleGeometry(.06,.28,4,8),i%2?gray:black,0,0,-.16,f);fe.rotation.x=Math.PI/2+.25;fe.scale.set(1,1,.3);}
+  Object.assign(o,{neck,head,tail,nTilt:.15,size:1.1,h:by+nl+.35,rad:.6,biped:true,dustR:[r,r,len*.7]});};
+
+// short coarse black hair with a few gray strands
+const gorillaFur=()=>canvasTex(128,128,(x,w,h)=>{x.fillStyle='#232225';x.fillRect(0,0,w,h);for(let i=0;i<900;i++){const c=Math.random();x.strokeStyle=c<.5?'rgba(10,10,12,.5)':c<.85?'rgba(70,68,74,.45)':'rgba(140,138,146,.35)';
+  const X=Math.random()*w,Y=Math.random()*h;x.beginPath();x.moveTo(X,Y);x.lineTo(X+(Math.random()-.5)*2,Y+3+Math.random()*4);x.stroke();}},3);
+// 🦍 Gorilla (at the Safari Zoo, to feed and meet): a big silverback who walks on his knuckles
+ZOO_BUILD.gorilla=function(g,body,o){const by=.85;
+  const fur=safM('goFur',()=>phys('#ffffff',{map:gorillaFur(),roughness:.95,sheen:.8,sheenColor:new THREE.Color('#7a7a84'),sheenRoughness:.45})),
+    silver=safM('goSilver',()=>phys('#8e8c8e',{roughness:.95,sheen:.7,sheenColor:new THREE.Color('#e0e0e6')})),
+    limb=safM('goLimb',()=>phys('#232225',{roughness:.95,sheen:.8,sheenColor:new THREE.Color('#7a7a84'),sheenRoughness:.45})),// arms and legs: no texture, so there's no seam line down them
+    skin=safM('goSkin',()=>std('#1c1a1b',{roughness:.55})),dk=safM('goDark',()=>std('#0c0b0c',{roughness:.5}));
+  body.position.y=by;
+  // a huge chest and shoulders, sloping down to small hips (he leans forward on his arms)
+  const t=M(fuzz(new THREE.CapsuleGeometry(.36,.32,10,20),.02,9),fur,0,0,0,body);t.rotation.x=Math.PI/2-.6;t.scale.set(1.05,1,1);
+  M(fuzz(sph(.36,18,14),.02,9),fur,0,.2,.2,body).scale.set(1.25,.9,.9);// shoulders
+  M(sph(.3,16,12),silver,0,.1,-.12,body).scale.set(1.1,.8,1.25);// the silver saddle on his back
+  M(sph(.25,14,10),skin,0,.0,.32,body).scale.set(1.05,.9,.4);// bare chest
+  // long arms in front (he walks on his knuckles) and short bent legs behind
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const front=sz>0,H0=front?1.08:.58,lg=new THREE.Group();lg.position.set(sx*(front?.42:.24),H0,front?.28:-.3);g.add(lg);this.legs.push({g:lg,ph});
+    // massive furry upper arms and forearms (soft capsules, thick at the top), leathery knuckles on the ground
+    if(front){M(fuzz(new THREE.CapsuleGeometry(.16,.3,8,14),.02,9),limb,0,-.22,0,lg).scale.set(1,1,.95);
+      M(fuzz(new THREE.CapsuleGeometry(.13,.3,8,14),.02,9),limb,0,-.64,.03,lg).scale.set(1,1,.9);
+      M(sph(.11,12,10),skin,0,-.98,.06,lg).scale.set(1.15,.55,1.25);for(const kx of [-.05,0,.05])M(sph(.035,8,6),skin,kx,-.98,.15,lg,false,false);}
+    else{M(fuzz(new THREE.CapsuleGeometry(.15,.14,8,12),.02,9),limb,0,-.12,0,lg);M(fuzz(new THREE.CapsuleGeometry(.11,.18,8,12),.015,9),limb,0,-.36,.04,lg);
+      M(sph(.11,10,8),skin,0,-.55,.09,lg).scale.set(1,.42,1.7);}}
+  const neck=new THREE.Group();neck.position.set(0,by+.4,.42);neck.rotation.x=.2;g.add(neck);
+  const head=new THREE.Group();head.position.set(0,.06,.04);head.rotation.x=-.2;neck.add(head);const H=.2;
+  M(fuzz(sph(H,18,14),.012,12),fur,0,0,0,head).scale.set(1,1.05,1);
+  M(sph(H*.8,14,10),fur,0,H*.75,-H*.25,head).scale.set(.8,.9,1.1);// the tall crest on top of his head
+  M(sph(H*.75,16,12),skin,0,-H*.05,H*.55,head).scale.set(1.05,1.05,.75);// leathery face
+  M(sph(H*.5,14,10),skin,0,H*.38,H*.78,head).scale.set(1.7,.38,.55);// heavy brow
+  M(sph(H*.45,14,10),skin,0,-H*.32,H*.88,head).scale.set(1.15,.75,.8);// muzzle
+  for(const sx of [-1,1]){M(sph(H*.1,8,6),dk,sx*H*.14,-H*.12,H*1.22,head,false,false).scale.set(1,.7,.6);// wide nostrils
+    M(sph(H*.17,10,8),skin,sx*H*.92,H*.05,-H*.05,head).scale.set(.4,1,.8);}// small ears
+  fEyes(this,head,H,.3,.18,.95,.2,.12,'#3a2010');
+  M(sph(H*.25,8,6),dk,0,-H*.55,H*.98,head,false,false).scale.set(1.6,.15,.6);// mouth
+  Object.assign(o,{neck,head,tail:null,nTilt:.2,gz:.5,size:1.1,h:by+.75,rad:.6,dustR:[.36,.36,.3]});};
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -6434,6 +6623,8 @@ const ZOOA=[
     facts:[['🥗','Diet','Herbivore. Grass, leaves, bark and fruit. Up to 150 kg (330 lb) of food a day!'],['🌍','Habitat','Savannas and forests of Africa.'],['⏳','Lifespan','About 60 to 70 years.'],['✨','Fun fact','The biggest animal on land, up to 6,000 kg (13,000 lb). Its trunk has about 40,000 muscles!']]},
   {k:'lion',e:'🦁',n:'Lion',food:[['🍖','Meat'],['🥩','Steak']],say:['ROOOAR! 🦁','*big lazy yawn*','*deep rumbly purr*'],
     facts:[['🥗','Diet','Carnivore. Zebras, antelopes, buffalo and other big animals. A male can eat about 40 kg (90 lb) in one meal!'],['🌍','Habitat','Savannas and grasslands of Africa, plus one forest in India.'],['⏳','Lifespan','About 10 to 14 years in the wild, and up to 20 in zoos.'],['✨','Fun fact','Lions sleep up to 20 hours a day! A lion\'s roar can be heard 8 km (5 miles) away.']]},
+  {k:'gorilla',e:'🦍',n:'Gorilla',food:[['🍌','Banana'],['🌿','Leaves']],say:['*chest pat pat* 🦍','*happy rumbly grunt*','*sits and munches*'],
+    facts:[['🥗','Diet','Mostly a herbivore. Leaves, stems, bamboo shoots and fruit, plus the odd ant or termite. A big male eats about 18 kg (40 lb) a day!'],['🌍','Habitat','Rainforests and mountain forests of central Africa.'],['⏳','Lifespan','About 35 to 40 years in the wild, and up to 50 in zoos.'],['✨','Fun fact','The biggest ape in the world! Grown-up males get a patch of silver hair on their backs, so they are called silverbacks. Every gorilla has its own nose print, like a fingerprint.']]},
 ];
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
@@ -7023,7 +7214,7 @@ function thumbsSoon(){if(thumbBusy)return;const isRide=f=>f.mount||f.prize,todo=
 const ZZ=Z.zoo,ZA=[];let zooOpen=false,zooSel=null,zooNear=null;
 function zooOk(lx,lz,r){if(Math.hypot(lx,lz)>ZZ.fence-.45-r)return false;for(const [x,z,rr] of ZZ.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function zooSpot(r){for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,d=Math.random()*(ZZ.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(zooOk(lx,lz,r))return [lx,lz];}return [0,0];}
-for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
+for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rhino',1],['rhino',.6],['okapi',1],['elephant',1],['elephant',.55],['lion',1],['gorilla',1]]){const a=new FarmAnimal(k);a.Z=ZZ;a.ok=zooOk;a.spot=zooSpot;a.mates=ZA;
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=zooSpot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
@@ -8548,6 +8739,11 @@ function earnedRideList(){return [
   {k:'kivu',e:'🌿',n:'Okapi',nm:'Kivu',model:'okapi',gear:1,safari:1,scale:1.2,earn:{by:'chal',ids:['saf_feed5','saf_win5','saf_days5'],goal:3},ride:1.57,boost:1.75,about:'A shy forest okapi with zebra-striped legs and a velvet coat. Only for safari explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🍃','Leaves'],['🍌','Banana'],['🍄','Mushroom']],say:['*soft huff*','*long tongue lick* 👅','To the rainforest! 🌿']},
   {k:'tembo',e:'🐘',n:'African elephant',nm:'Tembo',model:'elephant',gear:1,safari:1,seat:.66,wide:.55,earn:{by:'chal',ids:['saf_triple','saf_win15','saf_days10'],goal:3},ride:2.2,boost:1.55,about:'A giant African elephant. You sit up on his neck, way up high! Only for champions who finish all 3 of his 🦁 Safari challenges.',food:[['🌾','Hay'],['🍉','Watermelon'],['🍌','Bananas']],say:['PAWOOO! 🎺','*happy ear flap*','*trunk hug* 💖']},
   {k:'jabari',e:'🦁',n:'Lion',nm:'Jabari',model:'lion',gear:1,safari:1,scale:1.15,earn:{by:'chal',ids:['saf_kai5','saf_win30','saf_stars100','saf_days14'],goal:4},ride:1.38,boost:2.05,about:'The king of the savanna: a real lion with a thick dark mane, and the fastest ride in town. Only for legends who finish all 4 of his 🦁 Safari challenges!',food:[['🍖','Meat'],['🍗','Drumstick'],['🥩','Steak']],say:['ROOOAR! 🦁','*proud mane shake*','*deep rumbly purr*']},
+  // more safari rides (models in 24c9c-safari-more.js): a zebra, a rhino and a giraffe to ride, and a crowned crane that flies
+  {k:'punda',e:'🦓',n:'Zebra',nm:'Punda',model:'zebraR',gear:1,safari:1,earn:{by:'chal',ids:['saf_stars24','saf_win8','saf_days7'],goal:3},ride:1.26,boost:1.9,about:'A real plains zebra with bold black and white stripes. Only for explorers who finish all 3 of her 🦁 Safari challenges!',food:[['🌾','Hay'],['🥕','Carrot'],['🍏','Apple']],say:['*happy whinny bark*','*stripe shake*','Gallop time! 🦓']},
+  {k:'kifaru',e:'🦏',n:'White rhino',nm:'Kifaru',model:'rhinoR',gear:1,safari:1,earn:{by:'chal',ids:['saf_car3','saf_best3','saf_win20'],goal:3},ride:1.34,boost:1.65,about:'A huge, gentle white rhino with a big horn and wrinkly skin. Only for players who finish all 3 of his 🦁 Safari challenges!',food:[['🌾','Hay'],['🍎','Apple'],['🥬','Lettuce']],say:['*big happy huff*','Hrrumph! 🦏','*stomp stomp*']},
+  {k:'neema',e:'🕊️',n:'Crowned crane',nm:'Neema',model:'craneR',gear:1,safari:1,fly:1,scale:1.35,earn:{by:'chal',ids:['saf_model5','saf_cake5','saf_pet5'],goal:3},ride:1.86,boost:1.8,about:'A giant grey crowned crane with a golden crown of feathers. Tap 🪽 Fly to soar over the island! Only for champions who finish all 3 of her 🦁 Safari challenges.',food:[['🌾','Seeds'],['🐛','Bugs'],['🐟','Little fish']],say:['*honk-ka-wonk!*','*crown fluff*','Up we go! ☁️']},
+  {k:'twiga',e:'🦒',n:'Giraffe',nm:'Twiga',model:'giraffeR',gear:1,safari:1,earn:{by:'chal',ids:['saf_kai10','saf_stars150','saf_days21'],goal:3},ride:1.8,boost:1.95,about:'The tallest animal in the world! Ride way up high on a real giraffe. Only for true legends who finish all 3 of her 🦁 Safari challenges.',food:[['🌿','Acacia leaves'],['🥬','Lettuce'],['🍎','Apple']],say:['*long tongue lick* 👅','Hello down there!','*gentle hum*']},
   {k:'phoenix',e:'🔥',n:'Phoenix',nm:'Blaze',earn:{by:'wins',goal:10},fly:1,wingsRun:1,ride:1.12,about:'A legendary fire bird with glowing golden feathers. Only for super champions who win 10 contests or games!',food:[['🌶️','Hot pepper'],['🍒','Cherries'],['🌻','Sunflower seeds']],say:['*sparkly whoosh* 🔥','Skreee! ✨','Let\'s light up the sky!']},
 ];}
 
@@ -8631,11 +8827,14 @@ const EARNED=FARM.filter(f=>f.earn);
 for(const f of EARNED)STEED_ORDER.push(f.k);
 SHINT.rides+=' The 🏆 ones can\'t be bought: win contests and play days in a row to earn them!';
 FLYK.comet={hz:.9,amp:.0,base:0,glide:.9,spd:12.5,tuckF:1.05,tuckB:1.2};
+FLYK.neema={hz:1.25,amp:.55,base:.1,glide:.7,spd:13,tuckF:1.15,tuckB:1.2};
 FLYK.phoenix={hz:1.8,amp:.62,base:.1,glide:.55,spd:13.5,tuckF:.9,tuckB:.9};
 // first time: wins you already had count (the win challenges you finished, and your 1-on-1 wins against Kai)
 if(!SAVE.earn){const d=(SAVE.chal&&SAVE.chal.done)||{};SAVE.earn={wins:(d.win?1:0)+(d.cakeWin?1:0)+(d.petWin?1:0)+((SAVE.sports&&SAVE.sports.v1w)||0),days:{last:null,n:0,best:0}};persist();}
 const ER=SAVE.earn;ER.days||={last:null,n:0,best:0};ER.wins||=0;
 // which contests you've won at least once (for the 🐘 "win all three contests" safari challenge); wins from before count
+// how many times you've won each contest (for the 🕊️ crowned crane's challenges); wins from before count as one each
+if(!ER.kn){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kn={contest:d.win?1:0,cakect:d.cakeWin?1:0,petct:d.petWin?1:0};persist();}
 if(!ER.kinds){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kinds={contest:d.win?1:0,cakect:d.cakeWin?1:0,petct:d.petWin?1:0};persist();}
 const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 // 'chal' = the 🦁 Safari challenges: how many of the ride's challenges (earn.ids) you've finished
@@ -8656,7 +8855,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
   const won=((k==='contest'||k==='cakect'||k==='petct')&&a===0)||(k==='sport'&&a==='v1win');if(!won)return;
-  ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
+  ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;if(ER.kn[k]!=null)ER.kn[k]++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
 function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const goal=f.earn?f.earn.goal:f.prize,have=f.earn?erHave(f):starsEarned();
@@ -8667,7 +8866,7 @@ function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.wh
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
 function earnTag(e){return e.by==='chal'?'🦁 Safari':`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0})});});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0,kn:{...ER.kn}})});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)

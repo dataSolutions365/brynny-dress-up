@@ -1,4 +1,4 @@
-// Safari rides test: 🦓 Kivu the okapi, 🐘 Tembo the elephant and 🦁 Jabari the lion only come once you finish ALL of their
+// Safari rides test: the safari rides (okapi, zebra, rhino, elephant, crowned crane, lion, giraffe) only come once you finish ALL of their
 // super hard 🦁 Safari challenges, they can't be bought, and you sit up on them properly when you ride.
 // Run it with:  node 3d/tests/safari-rides.mjs   SHOTS=folder saves pictures.
 import { createServer } from 'node:http';
@@ -53,9 +53,10 @@ try {
   let s = await get();
   if (s.st.streak !== 4 || s.st.best !== 4) fail(`The streak should be 4 today, it is ${s.st.streak} (best ${s.st.best}).`);
   if (s.st.kinds !== 2) fail(`Wins from the model and cake contests should count as 2 kinds of contest, it is ${s.st.kinds}.`);
-  for (const k of ['kivu', 'tembo', 'jabari']) if (s.own[k]) fail(`${k} should be locked at the start.`);
+  const SAF = ['kivu', 'punda', 'kifaru', 'tembo', 'neema', 'jabari', 'twiga'];
+  for (const k of SAF) if (s.own[k]) fail(`${k} should be locked at the start.`);
   // they can't be bought
-  const shop = await page.evaluate(() => ['kivu', 'tembo', 'jabari'].map(k => window.__game.SHOP.find(x => x.k === 'mount:' + k)).map(x => x && !!x.prize && !x.stars));
+  const shop = await page.evaluate(SAF => SAF.map(k => window.__game.SHOP.find(x => x.k === 'mount:' + k)).map(x => x && !!x.prize && !x.stars), SAF);
   if (!shop.every(Boolean)) fail('Every safari ride should be in the shop as earn-only (no star price).');
 
   // the 🦁 Safari tab shows each animal with its challenges
@@ -64,17 +65,18 @@ try {
   await page.evaluate(() => document.querySelector('#chalTabs [data-tab="safari"]').click());
   await page.waitForTimeout(300);
   let txt = await page.evaluate(() => document.querySelector('#chalList').innerText);
-  for (const n of ['Kivu', 'Tembo', 'Jabari', 'Feed all 6 kinds', 'Win all 3 contests', 'Beat Kai 1-on-1 at basketball 5 times', 'Play 14 days in a row', '4 / 5'])
+  for (const n of ['Kivu', 'Punda', 'Kifaru', 'Tembo', 'Neema', 'Jabari', 'Twiga', 'Feed all 7 kinds', 'Win the cake contest 5 times', 'Win all 3 contests', 'Beat Kai 1-on-1 at basketball 5 times', 'Play 14 days in a row', '4 / 5'])
     if (!txt.includes(n)) fail(`The Safari tab should show "${n}".`);
   if (SHOTS) await shot('safari-tab');
   await page.evaluate(() => document.querySelector('#chalDone').click());
 
   // Kivu: feed 6 kinds of zoo animals, win 5 times, play 5 days in a row. Two of three isn't enough.
-  for (const k of ['zebra', 'giraffe', 'rhino', 'okapi', 'elephant', 'lion']) await did('zoofeed', k);
+  for (const k of ['zebra', 'giraffe', 'rhino', 'okapi', 'elephant', 'lion', 'gorilla']) await did('zoofeed', k);
   await did('petct', 0);// 5th win, and the 3rd kind of contest
   await page.waitForTimeout(4000);
   s = await get();
   if (s.st.wins !== 5 || s.st.kinds !== 3) fail(`After winning the pet contest: wins should be 5 (is ${s.st.wins}) and kinds 3 (is ${s.st.kinds}).`);
+  if (JSON.stringify(s.st.kn) !== JSON.stringify({ contest: 1, cakect: 1, petct: 1 })) fail(`Each contest should count 1 win so far, got ${JSON.stringify(s.st.kn)}.`);
   if (s.have.kivu !== 2) fail(`Kivu should have 2 of 3 challenges done (feed and wins), has ${s.have.kivu}.`);
   if (s.own.kivu) fail('Kivu should not come with only 2 of her 3 challenges done.');
   if (s.have.tembo !== 1) fail(`Tembo should have 1 of 3 done (all 3 contests), has ${s.have.tembo}.`);
@@ -83,7 +85,7 @@ try {
   await page.waitForTimeout(4500);
   s = await get();
   if (!s.own.kivu) fail('Kivu the okapi should come after all 3 of her challenges.');
-  if (s.own.tembo || s.own.jabari) fail('Tembo and Jabari should still be locked.');
+  for (const k of SAF.slice(1)) if (s.own[k]) fail(`${k} should still be locked.`);
   // 5 wins against Kai is one of Jabari's 4 challenges, not all of them
   await page.evaluate(() => { window.__game.SAVE.sports.v1w = 5; });
   await page.waitForTimeout(2500);
@@ -91,15 +93,16 @@ try {
   if (s.have.jabari !== 1 || s.own.jabari) fail(`Jabari should have 1 of 4 done and stay locked (has ${s.have.jabari}, own ${s.own.jabari}).`);
 
   // the zoo has a lion now, and you can meet it
-  const zooLion = await page.evaluate(() => window.__game.zoo().some(a => a.k === 'lion'));
-  if (!zooLion) fail('The Safari Zoo should have a lion.');
+  const zooHas = await page.evaluate(() => window.__game.zoo().map(a => a.k));
+  for (const k of ['lion', 'gorilla']) if (!zooHas.includes(k)) fail(`The Safari Zoo should have a ${k}.`);
 
   // every safari ride can be ridden: you sit on its back (not inside it, not floating), and it walks
-  for (const k of ['kivu', 'tembo', 'jabari']) {
+  for (const k of SAF) {
     await page.evaluate(k => { const G = window.__game; if (G.ride()) G.stopRide(true); G.player.pos.set(6, 0, 12); G.getMount(k); }, k);
     await page.waitForTimeout(1200);
     await page.evaluate(k => window.__game.callSteed(k), k);
     await page.waitForTimeout(1500);
+    if (k === 'neema') { const j = await page.evaluate(() => document.querySelector('#jump').textContent); if (!j.includes('FLY')) fail(`Neema the crane should be able to fly, the jump button says "${j}".`); }
     const r = await page.evaluate(() => { const G = window.__game, a = G.ride(), av = G.av(), T = G.THREE;
       av.g.updateMatrixWorld(true); a.g.updateMatrixWorld(true);
       // the rider's hips, and the top of the animal's back right under them
