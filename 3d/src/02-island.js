@@ -46,6 +46,8 @@ const ZONES=[
   {id:'store',name:'👔 Clothing Store',ang:240,d:56.5,r:6,music:'fashion-walk',p0:43.2},
   // the trampoline park behind Christmas Village (12e-place-jump-park.js), with a short path from there
   {id:'jump',name:'🤸 Jump Park',ang:120,d:57,r:7,music:'stadium-cheer',p0:43.2},
+  // in the open grass between the Runway and the Beach path (ramps and tricks: 12f-place-skate-park.js, 24k-skate-park.js)
+  {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;

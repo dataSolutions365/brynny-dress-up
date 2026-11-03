@@ -53,7 +53,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||daddyFrozen())mag=0;// DADDY POWERS: remove "||daddyFrozen()" with 27-daddy-powers.js
   const p=player.pos;
-  if(!flyStep(dt,ix,iy,mag)&&!daddyFlyStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead
+  if(!flyStep(dt,ix,iy,mag)&&!daddyFlyStep(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
   // ^ DADDY POWERS: when removing 27-daddy-powers.js, take out "&&!daddyFlyStep(dt,ix,iy,mag)" above and this line
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them

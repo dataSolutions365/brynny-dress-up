@@ -301,6 +301,8 @@ const ZONES=[
   {id:'store',name:'👔 Clothing Store',ang:240,d:56.5,r:6,music:'fashion-walk',p0:43.2},
   // the trampoline park behind Christmas Village (12e-place-jump-park.js), with a short path from there
   {id:'jump',name:'🤸 Jump Park',ang:120,d:57,r:7,music:'stadium-cheer',p0:43.2},
+  // in the open grass between the Runway and the Beach path (ramps and tricks: 12f-place-skate-park.js, 24k-skate-park.js)
+  {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -1400,6 +1402,128 @@ function jpGround(x,z,h){const J=Z.jump;if(!J||!JP.block||Math.abs(x-J.x)>9||Mat
   let m=h;for(const p of JP.pads)if(lx>p.x0&&lx<p.x1&&lz>p.z0&&lz<p.z1)m=Math.max(m,p.h);return m;}
 // the trampoline under a local spot, or null
 function jpMatAt(lx,lz){for(const T of JP.mats)if(lx>T.x0&&lx<T.x1&&lz>T.z0&&lz<T.z1)return T;return null;}
+// ---- src/12f-place-skate-park.js ----
+/* ===== 🛹 Skate Park =====
+   A real-looking skate park on a concrete pad between the Runway and the Beach path: a wooden mini half-pipe with steel
+   coping and railings on the decks (like a backyard mini ramp), and a concrete street section with blue steel edges:
+   a quarter pipe, a funbox, a kicker ramp, a platform with stairs and a handrail, a long ledge and a flat bar.
+   This file builds it and knows how high the ground is everywhere in it (skateH, used by groundAt in 13-park-and-stars.js).
+   Riding the ramps, grinding and doing tricks on a skateboard, roller skates or a bike is in 24k-skate-park.js.
+   Local layout (z.toLocal): +z points back toward the plaza (the way in), the half-pipe is at the back (-z). */
+const SKZ={
+  hp:{x0:-3.96,x1:3.96,z0:-8.3,z1:-4.7,flat:1.1,RT:2,H:1.6,deck:.9,base:.05},// mini half-pipe: you ride it back and forth along x
+  qp:{x0:6,x1:8.2,z0:-3.2,z1:1.2,RT:1.5,H:1.2},// quarter pipe on the right, facing the middle
+  fb:{x0:1.6,x1:4.2,top:.7,ramp:1.6,h:.55},// funbox: a flat top with a ramp up each end (along z)
+  kick:{x0:4.4,x1:6.2,z0:3,z1:4.4,R:1.6},// kicker: a curved launch ramp, you hit it riding in from the gate (-z)
+  plat:{x0:-7.4,x1:-4.6,z0:-3.2,z1:-.6,h:.9,bank:-4.6,step:.45,n:3},// platform: a bank up the back, three stairs down the front
+  ledge:{x0:-3.4,x1:-2.8,z0:1,z1:5,h:.4},
+  // things to grind: a = start, b = end (local x,z), y0/y1 = how high the top is at each end
+  rails:[{k:'rail',n:'Rail',a:[0,1.2],b:[0,5.6],y0:.42,y1:.42},
+         {k:'rail',n:'Handrail',a:[-6,-.75],b:[-6,1.05],y0:1.43,y1:.23},
+         {k:'ledge',n:'Ledge',a:[-3.4,1],b:[-3.4,5],y0:.4,y1:.4},{k:'ledge',n:'Ledge',a:[-2.8,1],b:[-2.8,5],y0:.4,y1:.4},
+         {k:'ledge',n:'Funbox',a:[1.6,-.7],b:[1.6,.7],y0:.55,y1:.55},{k:'ledge',n:'Funbox',a:[4.2,-.7],b:[4.2,.7],y0:.55,y1:.55}]};
+{const h=SKZ.hp;h.TX=Math.sqrt(h.RT*h.RT-(h.RT-h.H)**2);const q=SKZ.qp;q.TX=Math.sqrt(q.RT*q.RT-(q.RT-q.H)**2);}
+// how high the riding surface is at a spot in the park (local x,z), not counting the thin rails
+function skateLH(x,z){const S=SKZ;let h=0;
+  {const p=S.hp;if(z>=p.z0&&z<=p.z1&&x>=p.x0&&x<=p.x1){const u=Math.abs(x),t=u-p.flat;
+    h=p.base+(t<=0?0:t<p.TX?p.RT-Math.sqrt(p.RT*p.RT-t*t):p.H);}}
+  {const p=S.qp;if(z>=p.z0&&z<=p.z1&&x>=p.x0&&x<=p.x1){const t=x-p.x0;h=Math.max(h,t<p.TX?p.RT-Math.sqrt(p.RT*p.RT-t*t):p.H);}}
+  {const p=S.fb,a=Math.abs(z);if(x>=p.x0&&x<=p.x1&&a<=p.top+p.ramp)h=Math.max(h,a<=p.top?p.h:p.h*(1-(a-p.top)/p.ramp));}
+  {const p=S.kick;if(x>=p.x0&&x<=p.x1&&z>=p.z0&&z<=p.z1){const t=p.z1-z;h=Math.max(h,p.R-Math.sqrt(p.R*p.R-t*t));}}
+  {const p=S.plat;if(x>=p.x0&&x<=p.x1){
+    if(z>=p.z0&&z<=p.z1)h=Math.max(h,p.h);
+    else if(z>=p.bank&&z<p.z0)h=Math.max(h,p.h*(z-p.bank)/(p.z0-p.bank));
+    else if(z>p.z1&&z<p.z1+p.step*p.n){const i=Math.floor((z-p.z1)/p.step);h=Math.max(h,p.h*(1-(i+1)/(p.n+1)));}}}
+  {const p=S.ledge;if(x>=p.x0&&x<=p.x1&&z>=p.z0&&z<=p.z1)h=Math.max(h,p.h);}
+  return h;}
+// the same, from a spot in town (world x,z): 0 outside the park
+function skateH(x,z){const s=Z.skate;if(!s)return 0;const dx=x-s.x,dz=z-s.z;if(dx*dx+dz*dz>(s.r+.5)*(s.r+.5))return 0;const [lx,lz]=s.toLocal(x,z);return skateLH(lx,lz);}
+
+{const z=Z.skate,g=z.g,S=SKZ;
+ // smooth broom-finished concrete with saw-cut joints, and maroon plywood panels like a real mini ramp
+ const conT=canvasTex(512,512,(x,w,h)=>{x.fillStyle='#b9bbbc';x.fillRect(0,0,w,h);
+   for(let i=0;i<9000;i++){const c=Math.random();x.fillStyle=c<.5?'rgba(255,255,255,.18)':c<.85?'rgba(90,90,95,.16)':'rgba(140,120,100,.12)';x.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2);}
+   for(let i=0;i<14;i++){const gr=x.createRadialGradient(0,0,0,0,0,40+Math.random()*60);gr.addColorStop(0,'rgba(80,80,85,.08)');gr.addColorStop(1,'rgba(80,80,85,0)');x.save();x.translate(Math.random()*w,Math.random()*h);x.fillStyle=gr;x.fillRect(-100,-100,200,200);x.restore();}
+   x.fillStyle='rgba(70,70,75,.45)';x.fillRect(0,0,w,3);x.fillRect(0,0,3,h);});
+ conT.wrapS=conT.wrapT=THREE.RepeatWrapping;
+ const plyT=canvasTex(512,512,(x,w,h)=>{x.fillStyle='#6f2d35';x.fillRect(0,0,w,h);
+   for(let i=0;i<260;i++){const y=Math.random()*h;x.strokeStyle=Math.random()<.5?'rgba(40,10,15,.18)':'rgba(150,80,85,.12)';x.lineWidth=.6+Math.random()*1.6;x.beginPath();x.moveTo(0,y);
+     for(let k=0;k<=8;k++)x.lineTo(k*w/8,y+Math.sin(k*1.3+i)*3);x.stroke();}
+   for(let i=0;i<500;i++){x.fillStyle='rgba(255,255,255,.05)';x.fillRect(Math.random()*w,Math.random()*h,2+Math.random()*10,1);}
+   x.fillStyle='rgba(25,5,10,.5)';x.fillRect(0,0,w,2);x.fillRect(0,h/2,w,2);x.fillRect(0,0,2,h);
+   x.fillStyle='rgba(30,25,25,.5)';for(const [px,py] of [[10,10],[w/2,10],[10,h/2+10],[w/2,h/2+10]])for(let k=0;k<4;k++){x.beginPath();x.arc(px+k*w/4,py,1.6,0,Math.PI*2);x.fill();}});
+ plyT.wrapS=plyT.wrapT=THREE.RepeatWrapping;
+ const tile=(t,k)=>{const c=t.clone();c.needsUpdate=true;c.repeat.set(k,k);return c;};
+ const conM=std('#ffffff',{map:tile(conT,.25),roughness:.88}),conSide=std('#d6d8d9',{map:tile(conT,.25),roughness:.9}),
+   plyM=std('#ffffff',{map:tile(plyT,.42),roughness:.62}),plySide=std('#c9c0c0',{map:tile(plyT,.42),roughness:.7}),
+   steel=std('#d5d9df',{metalness:.9,roughness:.28}),blue=phys('#2350c4',{metalness:.55,roughness:.35,clearcoat:.5}),dark=std('#3a3d44',{metalness:.6,roughness:.45});
+ // the concrete pad, slightly bigger than the park so the ramps never hang over grass
+ {const pm=std('#ffffff',{map:tile(conT,.22),roughness:.9});patch(z.r+.3,pm,z.x,z.z,.021);}
+ // a profile (points [across, up]) pushed out along local z from z0 to z1, or along local x (alongX) from x0 to x1
+ const prof=(pts,a0,a1,mats,alongX)=>{const sh=new THREE.Shape();pts.forEach(([u,v],i)=>i?sh.lineTo(u,v):sh.moveTo(u,v));
+   const geo=new THREE.ExtrudeGeometry(sh,{depth:a1-a0,bevelEnabled:false,steps:1});
+   if(alongX){geo.rotateY(-Math.PI/2);geo.translate(a1,0,0);}else geo.translate(0,0,a0);
+   const m=new THREE.Mesh(geo,mats);m.castShadow=m.receiveShadow=true;g.add(m);return m;};
+ const curve=(n,f)=>{const o=[];for(let i=0;i<=n;i++)o.push(f(i/n));return o;};
+ const tube=(a,b,r,m)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A),t=M(cyl(r,r,d.length(),14),m,0,0,0,g);
+   t.position.copy(A).add(B).multiplyScalar(.5);t.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return t;};
+
+ /* --- the wooden mini half-pipe --- */
+ {const p=S.hp,b=p.base,top=b+p.H,e=p.flat+p.TX;
+  const side=s=>curve(30,k=>{const t=p.TX*(1-k);return [s*(p.flat+t),b+p.RT-Math.sqrt(p.RT*p.RT-t*t)];});
+  const pts=[[p.x0,0],[p.x1,0],[p.x1,top],...side(1),...side(-1).reverse(),[p.x0,top]];
+  prof(pts,p.z0,p.z1,[plySide,plyM]);
+  for(const s of [-1,1]){
+    tube([s*e,top,p.z0],[s*e,top,p.z1],.045,steel);// steel coping along the lip
+    // railings across the back of each deck, and a little one down the side so you don't fall off
+    for(let i=0;i<=4;i++){const zz=p.z0+.12+i*(p.z1-p.z0-.24)/4;tube([s*(p.x1-.08),top,zz],[s*(p.x1-.08),top+1,zz],.025,dark);}
+    tube([s*(p.x1-.08),top+1,p.z0+.12],[s*(p.x1-.08),top+1,p.z1-.12],.03,dark);tube([s*(p.x1-.08),top+.5,p.z0+.12],[s*(p.x1-.08),top+.5,p.z1-.12],.02,dark);
+    for(const zz of [p.z0+.1])for(const xx of [e+.15,p.x1-.08]){tube([s*xx,top,zz],[s*xx,top+1,zz],.025,dark);}
+    tube([s*(e+.15),top+1,p.z0+.1],[s*(p.x1-.08),top+1,p.z0+.1],.03,dark);
+    // the name painted on each wall near the top, like at a real park
+    const lt=canvasTex(512,80,(x,w,h)=>{x.fillStyle='rgba(255,255,255,.88)';x.font='700 54px "Arial Black", Impact, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('SKATE PARK',w/2,h/2+3);});
+    const t=1.9,yy=b+p.RT-Math.sqrt(p.RT*p.RT-t*t),ang=Math.atan(t/Math.sqrt(p.RT*p.RT-t*t));
+    const pl=M(new THREE.PlaneGeometry(2.6,.34),new THREE.MeshStandardMaterial({map:lt,transparent:true,depthWrite:false,roughness:.7,polygonOffset:true,polygonOffsetFactor:-2}),
+      s*(p.flat+t-.035*Math.sin(ang)),yy+.035*Math.cos(ang),(p.z0+p.z1)/2,g,false,true);
+    pl.rotation.set(0,-s*Math.PI/2,0);pl.rotateX(-(Math.PI/2-ang));}
+  // a few scuffs where wheels hit the flat bottom
+  const scuff=canvasTex(256,64,(x,w,h)=>{for(let i=0;i<40;i++){x.strokeStyle='rgba(20,5,8,.12)';x.lineWidth=1+Math.random()*3;const y=h/2+(Math.random()-.5)*h*.7;x.beginPath();x.moveTo(Math.random()*w*.3,y);x.lineTo(w*.7+Math.random()*w*.3,y+(Math.random()-.5)*8);x.stroke();}});
+  const sc=M(new THREE.PlaneGeometry(2.2,2.4),new THREE.MeshStandardMaterial({map:scuff,transparent:true,opacity:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}),0,b+.002,(p.z0+p.z1)/2,g,false,true);sc.rotation.x=-Math.PI/2;}
+
+ /* --- concrete quarter pipe with blue coping --- */
+ {const p=S.qp;const pts=[[p.x1,0],[p.x1,p.H],[p.x0+p.TX,p.H],...curve(26,k=>{const t=p.TX*(1-k);return [p.x0+t,p.RT-Math.sqrt(p.RT*p.RT-t*t)];}),[p.x0,0]];
+  prof(pts.reverse(),p.z0,p.z1,[conSide,conM]);tube([p.x0+p.TX,p.H,p.z0],[p.x0+p.TX,p.H,p.z1],.05,blue);}
+ /* --- funbox: ramps up both ends, flat top, blue steel edges --- */
+ {const p=S.fb,a=p.top+p.ramp;prof([[-a,0],[-p.top,p.h],[p.top,p.h],[a,0]],p.x0,p.x1,[conSide,conM],true);
+  for(const s of [-1,1]){tube([p.x0,p.h,s*p.top],[p.x1,p.h,s*p.top],.03,blue);
+    for(const x of [p.x0,p.x1])M(box(.05,.05,p.top*2),blue,x,p.h-.02,0,g);}}
+ /* --- kicker --- */
+ {const p=S.kick,L=p.z1-p.z0;const pts=[[p.z1,0],...curve(20,k=>{const t=L*k;return [p.z1-t,p.R-Math.sqrt(p.R*p.R-t*t)];}),[p.z0,0]];
+  prof(pts.map(([u,v])=>[u,v]),p.x0,p.x1,[conSide,conM],true);const top=p.R-Math.sqrt(p.R*p.R-L*L);tube([p.x0,top,p.z0],[p.x1,top,p.z0],.04,blue);}
+ /* --- platform, bank and stairs with a handrail --- */
+ {const p=S.plat,w=p.x1-p.x0,cx=(p.x0+p.x1)/2;
+  prof([[p.bank,0],[p.z0,p.h],[p.z1,p.h],[p.z1,0]],p.x0,p.x1,[conSide,conM],true);
+  M(box(w,.05,.05),blue,cx,p.h-.02,p.z1,g);
+  for(let i=0;i<p.n;i++){const hh=p.h*(1-(i+1)/(p.n+1)),z0=p.z1+i*p.step;M(box(w,hh,p.step),conM,cx,hh/2,z0+p.step/2,g);M(box(w,.04,.04),blue,cx,hh-.02,z0+p.step-.02,g);}
+  const r=S.rails[1];tube([r.a[0],r.y0,r.a[1]],[r.b[0],r.y1,r.b[1]],.035,blue);
+  for(const [zz,yy] of [[r.a[1]+.05,p.h],[r.b[1]-.05,0]]){const k=(zz-r.a[1])/(r.b[1]-r.a[1]),top=r.y0+(r.y1-r.y0)*k;tube([r.a[0],yy,zz],[r.a[0],top,zz],.03,blue);}}
+ /* --- ledge with steel edges, and a flat bar on legs --- */
+ {const p=S.ledge,cx=(p.x0+p.x1)/2,cz=(p.z0+p.z1)/2,L=p.z1-p.z0;M(box(p.x1-p.x0,p.h,L),conSide,cx,p.h/2,cz,g);
+  const tp=M(new THREE.PlaneGeometry(p.x1-p.x0,L),conM,cx,p.h+.001,cz,g,false,true);tp.rotation.x=-Math.PI/2;
+  for(const x of [p.x0,p.x1])M(box(.04,.04,L),steel,x,p.h-.018,cz,g);}
+ {const r=S.rails[0];tube([r.a[0],r.y0,r.a[1]],[r.b[0],r.y1,r.b[1]],.035,blue);
+  for(const k of [.06,.5,.94]){const zz=r.a[1]+(r.b[1]-r.a[1])*k;tube([r.a[0],0,zz],[r.a[0],r.y0,zz],.028,blue);M(box(.18,.02,.18),dark,r.a[0],.01,zz,g);}}
+ // when you're walking, the rails are solid (on wheels the skate park code handles them)
+ for(const r of S.rails){if(r.k!=='rail')continue;const L=Math.hypot(r.b[0]-r.a[0],r.b[1]-r.a[1]),n=Math.ceil(L/.2);for(let i=0;i<=n;i++){const k=i/n,[x,w]=z.toWorld(r.a[0]+(r.b[0]-r.a[0])*k,r.a[1]+(r.b[1]-r.a[1])*k);obs.push({x,z:w,r:.06,skRail:1});}}
+ /* --- around the edge: light poles, benches, a trash can --- */
+ {const pole=std('#5b6068',{metalness:.7,roughness:.4}),lampG=lampMat;
+  for(const [x,w] of [[-8.3,-4.3],[8.6,-4.6],[-8.6,4.3],[8.3,4.5]]){M(cyl(.07,.1,5.2,10),pole,x,2.6,w,g);const hd=M(box(.7,.14,.32),pole,x*.97,5.2,w*.97,g);hd.lookAt(z.toWorld(0,0)[0],5.2,z.toWorld(0,0)[1]);
+    const lm=M(box(.6,.03,.24),lampG,x*.97,5.12,w*.97,g,false,false);lm.rotation.copy(hd.rotation);LAMPS.push(lm);z.ob(x,w,.15);}
+  const wood=std('#a9744a',{roughness:.8});
+  for(const [x,w,ry] of [[-7.2,6.3,.9],[7.4,6.1,-.9]]){const bg=new THREE.Group();bg.position.set(x,0,w);bg.rotation.y=ry;g.add(bg);
+    M(box(1.6,.08,.45),wood,0,.45,0,bg);M(box(1.6,.35,.06),wood,0,.75,-.22,bg);for(const s of [-1,1])M(box(.08,.45,.42),dark,s*.7,.22,0,bg);z.ob(x,w,.7);}
+  const can=M(cyl(.3,.28,.9,18),std('#3f6b4a',{roughness:.6,metalness:.3}),-2.8,.45,8.4,g);M(cyl(.33,.33,.08,18),dark,-2.8,.92,8.4,g);z.ob(-2.8,8.4,.35);}
+ signpost(z);}
 // ---- src/13-park-and-stars.js ----
 /* ---------- park trees ---------- */
 {const trunkM=std('#7a5236',{roughness:.9});const leafs=['#3f8f3a','#4fa645','#2f7a34','#5cb04a'].map(c=>phys(c,{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')}));
@@ -1438,6 +1562,7 @@ function groundAt(x,z){let h=0;if(x*x+z*z<6.2*6.2)h=.15;
   const r=Z.runway;if(r.rw){const [lx,lz]=r.toLocal(x,z);if(Math.abs(lx)<r.rw.w&&lz>r.rw.z0&&lz<r.rw.z1)h=r.rw.h;}
   const ag=Z.agency;if(ag.rw){const [lx,lz]=ag.toLocal(x,z);if(Math.abs(lx)<ag.rw.w&&lz>ag.rw.z0&&lz<ag.rw.z1)h=ag.rw.h;}
   const b=Z.beach;if(b.dock){const [lx,lz]=b.toLocal(x,z);if(Math.abs(lx-b.dock.lx)<1&&lz<b.dock.lz0+.2&&lz>b.dock.lz1)h=b.dock.h;}
+  const sk=skateH(x,z);if(sk>h)h=sk;// the ramps, stairs and ledges at the 🛹 Skate Park
   return jpGround(x,z,h);}
 function onDock(x,z){const b=Z.beach;const [lx,lz]=b.toLocal(x,z);return Math.abs(lx-b.dock.lx)<1&&lz<b.dock.lz0+.3&&lz>b.dock.lz1;}
 
@@ -1943,6 +2068,8 @@ class Avatar{
     if(this.skating)skatePose(this,tgt,sp,air,t);
     // riding a bike (17d-bicycle.js): sitting on the seat, pedaling, hands on the handlebars
     if(this.biking)bikePose(this,tgt,sp,air,t);
+    // ramps, grinds and tricks at the skate park (24k-skate-park.js)
+    if(this.parkPose)this.parkPose(this,tgt,sp,air,t);
     // dribbling, kicking and passing a ball (24g-ball-play.js)
     if(this.ballMove)ballPose(this,tgt,sp,t);
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
@@ -3542,6 +3669,7 @@ $('#jump').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
 function jump(){if(closetOpen)return;if(flyJump())return;// on a flying ride: take off (24h-flying.js)
   if(daddyJump())return;// DADDY POWERS (27-daddy-powers.js): remove this line with that file
   if(jpJump())return;// bouncing on a trampoline: bounce higher next time (26e-jump-park.js)
+  if(skateParkJump())return;// on wheels at the skate park: an ollie, or hop off a rail (24k-skate-park.js)
   if(player.onGround){player.vy=6.2;player.onGround=false;sfx('jump');}}
 let hintFaded=false;function fadeHint(){if(hintFaded)return;hintFaded=true;setTimeout(()=>$('#hint').style.opacity=0,2500);setTimeout(()=>$('#hint').style.display='none',3200);}
 if(!isTouch)$('#hint').innerHTML='Walk with W A S D or the arrow keys.<br>Drag to look around. Space to jump.';
@@ -3619,7 +3747,8 @@ anims.push((t,dt)=>{if(!started||!av)return;
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   const p=player.pos,pushing=Math.hypot(ix,iy)>.08;SK.pushing=pushing&&player.speed>SK.v+.05;
   const turn=((player.face-SK.dir+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
-  if(pushing){SK.v=player.speed;SK.dir=player.face;}
+  if(SKP.on){SK.v=player.speed;SK.dir=player.face;}// at the skate park, 24k-skate-park.js does the rolling
+  else if(pushing){SK.v=player.speed;SK.dir=player.face;}
   else if(SK.v>.15){SK.v*=Math.pow(.45,dt);const old=p.clone();p.x+=Math.sin(SK.dir)*SK.v*dt;p.z+=Math.cos(SK.dir)*SK.v*dt;collide(p);
     if(groundAt(p.x,p.z)-p.y>.45||p.distanceTo(old)<SK.v*dt*.3){p.x=old.x;p.z=old.z;SK.v=0;}player.speed=SK.v;}
   else SK.v=0;
@@ -3798,12 +3927,13 @@ anims.push((t,dt)=>{if(!started||!av)return;
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   const p=player.pos,pushing=Math.hypot(ix,iy)>.08;
   const turn=((player.face-BIKE.dir+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
-  if(pushing){BIKE.v=player.speed;BIKE.dir=player.face;}
+  if(SKP.on){BIKE.v=player.speed;BIKE.dir=player.face;}// at the skate park, 24k-skate-park.js does the rolling
+  else if(pushing){BIKE.v=player.speed;BIKE.dir=player.face;}
   else if(BIKE.v>.15){BIKE.v*=Math.pow(.5,dt);const old=p.clone();p.x+=Math.sin(BIKE.dir)*BIKE.v*dt;p.z+=Math.cos(BIKE.dir)*BIKE.v*dt;collide(p);
     if(groundAt(p.x,p.z)-p.y>.45||p.distanceTo(old)<BIKE.v*dt*.3){p.x=old.x;p.z=old.z;BIKE.v=0;}player.speed=BIKE.v;}
   else BIKE.v=0;
   const sp=pushing?player.speed:BIKE.v;
-  bikeStep(BIKE,BK,dt,sp,pushing&&sp>.15,turn/Math.max(dt,.001),player.onGround);
+  bikeStep(BIKE,BK,dt,sp,SKP.on?SKP.push:pushing&&sp>.15,turn/Math.max(dt,.001),player.onGround);
   av.g.position.copy(p);av.g.rotation.z=BIKE.lean;
   BK.g.position.copy(p);BK.g.rotation.set(0,player.face,0);BK.g.rotateZ(BIKE.lean);
   const air=!player.onGround;if(BIKE.air&&!air)tone(220,.05,'triangle',.05);BIKE.air=air;
@@ -8867,6 +8997,233 @@ function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.wh
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
 function earnTag(e){return e.by==='chal'?'🦁 Safari':`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0,kn:{...ER.kn}})});});
+// ---- src/24k-skate-park.js ----
+/* ================= 🛹 SKATE PARK: ramps, grinds and tricks =================
+   Roll into the Skate Park (12f-place-skate-park.js) on your 🛹 skateboard, your 🛼 roller skates or your 🚲 bike, and the
+   ramps work like real ones:
+   - you roll down into the half-pipe, up the other wall, slow down near the top and roll back, the same speed you went in
+     (gravity, like a real ramp). Push on the joystick on the flat parts to go faster, and you fly up out of the half-pipe
+     or the quarter pipe, turn around in the air and land back on the ramp.
+   - the kicker, the funbox and the stairs throw you into the air when you ride off them fast.
+   - JUMP does an ollie (a hop on the bike). Ollie onto the rail, the handrail, the ledge or the funbox edge going along it
+     and you grind it, with sparks, until you ride off the end (or JUMP off).
+   - the trick buttons next to JUMP do a trick in the air (they ollie for you first if you're on the ground):
+       🛹 Kickflip, 360, Grab      🛼 360, Backflip, Split      🚲 Backflip, 360, No hands
+     Each landed trick pops up with points, and a trick and a grind in one go make a combo. Your best combo is saved.
+   You lean with the ramp: the board, skates or bike tilt to match the ramp under you.
+   While you're on wheels in the park this file moves you (skateParkStep, called from the game loop in 25-game-loop.js);
+   walking around the park is normal walking. Everything is in the park's own directions (local x,z, see SKZ). */
+const SKP={on:false,kind:'',S:0,hd:0,face:0,lx:0,lz:0,y:0,air:false,vx:0,vz:0,vy:0,push:false,grind:null,
+  n:new THREE.Vector3(0,1,0),trick:null,combo:[],pts:0,vert:null,airT:0,spark:0,lbl:'',btns:'',gy:0};
+const SK_G=18;// the same gravity as jumping everywhere else in town
+const SK_MAX={board:10,skates:10,bike:10.5},SK_POP={board:6,skates:6.2,bike:5.6};
+const SK_TRICKS={
+  board:[{id:'kickflip',e:'🛹',n:'Kickflip',T:.5,pts:100},{id:'spin',e:'🌀',n:'360',T:.65,pts:150},{id:'grab',e:'✋',n:'Grab',T:.6,pts:80}],
+  skates:[{id:'spin',e:'🌀',n:'360',T:.65,pts:150},{id:'backflip',e:'🔄',n:'Backflip',T:.8,pts:250},{id:'split',e:'🤸',n:'Split',T:.6,pts:100}],
+  bike:[{id:'backflip',e:'🔄',n:'Backflip',T:.85,pts:250},{id:'spin',e:'🌀',n:'360',T:.7,pts:150},{id:'nohands',e:'🙌',n:'No hands',T:.7,pts:100}]};
+// which wheels you're on right now ('' when you're walking or riding an animal)
+const skWheels=()=>SK.on?'board':BIKE.on?'bike':(av&&av.rollers&&!boardBusy())?'skates':'';
+const skH=(x,z)=>skateLH(x,z);
+// how steep the ground is (rise per step along x and z), ignoring the sides of boxes and steps
+function skGrad(x,z,h0){const e=.03,f=(p,m)=>{const a=(p-h0)/e,b=(h0-m)/e,oa=Math.abs(a)<7,ob=Math.abs(b)<7;return oa&&ob?(a+b)/2:oa?a:ob?b:0;};
+  return [f(skH(x+e,z),skH(x-e,z)),f(skH(x,z+e),skH(x,z-e))];}
+const skAng=a=>((a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
+// a step or a wall right ahead (a sudden rise), as opposed to a ramp you can roll up
+function skWall(x0,z0,x1,z1,y){let px=x0,pz=z0,ph=y;for(let i=1;i<=4;i++){const k=i/4,x=x0+(x1-x0)*k,z=z0+(z1-z0)*k,h=skH(x,z),d=Math.hypot(x-px,z-pz)||1e-4;
+  if(h-ph>.035&&(h-ph)/d>8)return true;px=x;pz=z;ph=Math.max(ph,h);}return false;}
+const railY=(r,t)=>r.y0+(r.y1-r.y0)*t;
+
+function skEnter(kind,lx,lz){const P=SKP,z=Z.skate;P.on=true;P.kind=kind;P.lx=lx;P.lz=lz;P.y=player.pos.y;
+  P.S=SK.on?Math.max(SK.v,player.speed):BIKE.on?Math.max(BIKE.v,player.speed):player.speed;P.hd=P.face=player.face-z.rot;
+  P.air=!player.onGround;P.vx=Math.sin(P.hd)*P.S;P.vz=Math.cos(P.hd)*P.S;P.vy=player.vy;P.grind=null;P.trick=null;P.combo=[];P.pts=0;P.vert=null;P.n.set(0,1,0);
+  if(!SAVE.skatePark){SAVE.skatePark=1;persist();setTimeout(()=>toast(kind==='bike'?'🚲 Pedal on the flat to go fast, then ride up the ramps! Tap the trick buttons in the air':
+    '🛹 Push on the flat to go fast, then ride up the ramps! JUMP to ollie onto rails, trick buttons in the air'),400);}}
+function skLeave(){const P=SKP;if(!P.on)return;P.on=false;P.grind=null;P.trick=null;
+  if(SK.on){SK.v=player.speed;SK.dir=player.face;}if(BIKE.on){BIKE.v=player.speed;BIKE.dir=player.face;}
+  if(av){av.g.rotation.x=0;av.parkPose=null;if(av.deck){av.deck.rotation.z=0;av.deck.position.y=0;}}skButtons();}
+
+// where you'd land if you fell from here (for timing tricks so they finish before you touch down)
+function skLandIn(){const P=SKP,g=skH(P.lx,P.lz),d=P.y-g;return (P.vy+Math.sqrt(Math.max(0,P.vy*P.vy+2*SK_G*Math.max(0,d))))/SK_G;}
+function skPop(vy){const P=SKP;if(P.grind){skGrindOff(vy);return;}if(P.air)return;
+  const [gx,gz]=skGrad(P.lx,P.lz,P.y),dx=Math.sin(P.hd),dz=Math.cos(P.hd),k=gx*dx+gz*dz,vh=P.S/Math.sqrt(1+k*k);
+  P.air=true;P.vx=dx*vh;P.vz=dz*vh;P.vy=vh*k+vy;P.airT=0;sfx('jump');}
+function skateParkJump(){if(!SKP.on)return false;skPop(SK_POP[SKP.kind]);if(SK.on)tone(150,.05,'square',.05);return true;}
+function skTrick(id){const P=SKP;if(!P.on||closetOpen)return;const def=(SK_TRICKS[P.kind]||[]).find(t=>t.id===id);if(!def)return;
+  if(P.trick)return;// one at a time
+  if(!P.air||P.grind)skPop(Math.max(SK_POP[P.kind],SK_G*def.T*.62));
+  P.trick={def,p:0};P.tn=(P.tn||0)+1;}
+
+function skGrindOff(vy){const P=SKP,g=P.grind;if(!g)return;const r=g.r,L=g.L,ux=(r.b[0]-r.a[0])/L,uz=(r.b[1]-r.a[1])/L,sl=(r.y1-r.y0)/L,c=1/Math.sqrt(1+sl*sl);
+  P.vx=ux*g.dir*g.S*c;P.vz=uz*g.dir*g.S*c;P.vy=g.dir*sl*g.S*c+vy;P.air=true;P.airT=0;P.grind=null;
+  P.combo.push({n:g.r.k==='rail'?(g.r.n==='Handrail'?'Handrail grind':'Rail grind'):g.r.n==='Funbox'?'Edge grind':'Ledge grind',pts:50+Math.round(g.d*60)});}
+// catch a rail or ledge when you come down onto it going along it
+function skCatch(oy){const P=SKP,vh=Math.hypot(P.vx,P.vz);if(vh<1)return false;
+  for(const r of SKZ.rails){const ax=r.b[0]-r.a[0],az=r.b[1]-r.a[1],L=Math.hypot(ax,az),ux=ax/L,uz=az/L;
+    const t=((P.lx-r.a[0])*ux+(P.lz-r.a[1])*uz)/L;if(t<.02||t>.98)continue;
+    const cx=r.a[0]+ux*t*L,cz=r.a[1]+uz*t*L;if(Math.hypot(P.lx-cx,P.lz-cz)>.42)continue;
+    const ry=railY(r,t);if(P.y>ry+.3||P.y<ry-.32||oy<ry-.12)continue;
+    const along=(P.vx*ux+P.vz*uz);if(Math.abs(along)<vh*.55)continue;
+    const sl=(r.y1-r.y0)/L;P.grind={r,t,L,dir:Math.sign(along),S:Math.max(3,Math.abs(along)*Math.sqrt(1+sl*sl)),d:0};
+    P.lx=cx;P.lz=cz;P.y=ry;P.vy=0;P.air=false;P.hd=Math.atan2(ux*P.grind.dir,uz*P.grind.dir);
+    tone(260,.08,'square',.06);tone(120,.12,'sawtooth',.05,.03);return true;}
+  return false;}
+// a rail you'd ride into, low down: bump off it
+function skRailHit(x0,z0,x1,z1,y){for(const r of SKZ.rails){if(r.k!=='rail')continue;const ax=r.b[0]-r.a[0],az=r.b[1]-r.a[1],L=Math.hypot(ax,az),ux=ax/L,uz=az/L;
+  const s0=(x0-r.a[0])*uz-(z0-r.a[1])*ux,s1=(x1-r.a[0])*uz-(z1-r.a[1])*ux;if(Math.abs(s0)>.15&&Math.abs(s1)>.15&&Math.sign(s0)===Math.sign(s1))continue;if(Math.abs(s1)>.12&&Math.sign(s0)===Math.sign(s1))continue;
+  const t=((x1-r.a[0])*ux+(z1-r.a[1])*uz)/L;if(t<-.03||t>1.03)continue;if(y>railY(r,Math.max(0,Math.min(1,t)))-.04)continue;return [uz,-ux];}return null;}
+
+function skLand(){const P=SKP,[gx,gz]=skGrad(P.lx,P.lz,P.y),nl=Math.sqrt(1+gx*gx+gz*gz),nx=-gx/nl,ny=1/nl,nz=-gz/nl;
+  const vn=P.vx*nx+P.vy*ny+P.vz*nz,tx=P.vx-vn*nx,ty=P.vy-vn*ny,tz=P.vz-vn*nz,th=Math.hypot(tx,tz);
+  P.S=Math.hypot(tx,ty,tz)*.97;P.hd=th>.25?Math.atan2(tx,tz):Math.hypot(gx,gz)>.1?Math.atan2(-gx,-gz):P.hd;
+  if(P.vert){P.face=P.vert.f1;P.vert=null;}
+  const hard=P.vy<-6;P.air=false;P.vy=0;
+  if(P.trick){P.trick.p=1;skDone();}
+  if(hard)burst(new THREE.Vector3(player.pos.x,P.y+.05,player.pos.z),'#ffffff',10,1);
+  if(P.combo.length)skScore();}
+function skDone(){const P=SKP,tr=P.trick;if(!tr)return;P.trick=null;P.combo.push({n:tr.def.n,pts:tr.def.pts});did('trick',tr.def.id);}
+function skScore(){const P=SKP,c=P.combo;P.combo=[];const n=c.length,pts=c.reduce((s,x)=>s+x.pts,0)*(n>1?n:1);
+  const best=pts>(SAVE.skateBest||0);if(best){SAVE.skateBest=pts;persist();}
+  skPopText(c.map(x=>x.n).join(' + ')+'!',`+${pts}${n>1?` (combo ×${n})`:''}${best&&pts>=200?' 🏆 Best!':''}`);
+  tone(660,.08,'triangle',.1);tone(990,.12,'triangle',.1,.07);if(n>1)tone(1320,.15,'triangle',.08,.14);
+  if(n>1)did('skateCombo',n);}
+function skPopText(a,b){let el=$('#trickTxt');if(!el)return;el.innerHTML=`<b>${a}</b><span>${b}</span>`;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
+
+/* ---------- moving you: called from the game loop instead of walking while you're on wheels in the park ---------- */
+function skateParkStep(dt,ix,iy,mag){const z=Z.skate,P=SKP,p=player.pos,kind=skWheels();
+  const [lx,lz]=z.toLocal(p.x,p.z),dc=Math.hypot(lx,lz);
+  if(!P.on){if(!kind||!started||closetOpen||dc>z.r-.2||FLY.on)return false;skEnter(kind,lx,lz);skButtons();}
+  else if(!kind||closetOpen||FLY.on||(dc>z.r+.25&&!P.air&&!P.grind)){skLeave();return false;}
+  if(P.kind!==kind){P.kind=kind;P.trick=null;skButtons();}
+  if(av)av.g.rotation.set(0,0,0);
+  // the way you're pushing the joystick, in the park's directions
+  let want=null;if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;want=Math.atan2((fx*-iy+rx*ix)/n,(fz*-iy+rz*ix)/n)-z.rot;}
+  P.push=false;
+  const steps=Math.min(10,Math.max(1,Math.ceil(Math.max(P.S,Math.hypot(P.vx,P.vz),Math.abs(P.vy))*dt/.06))),h=dt/steps;
+  for(let i=0;i<steps;i++){
+    if(P.grind){const g=P.grind,r=g.r,sl=(r.y1-r.y0)/g.L,c=1/Math.sqrt(1+sl*sl);
+      g.S+=(-SK_G*g.dir*sl*c-.5)*h;g.S=Math.max(1.5,g.S);g.t+=g.dir*g.S*c/g.L*h;g.d+=h;
+      if(g.t<0||g.t>1){g.t=Math.max(0,Math.min(1,g.t));skGrindOff(.8);}
+      else{P.lx=r.a[0]+(r.b[0]-r.a[0])*g.t;P.lz=r.a[1]+(r.b[1]-r.a[1])*g.t;P.y=railY(r,g.t);}
+      continue;}
+    if(P.air){const ox=P.lx,oz=P.lz,oy=P.y;P.vy-=SK_G*h;P.lx+=P.vx*h;P.lz+=P.vz*h;P.y+=P.vy*h;P.airT+=h;
+      if(P.vy<=1&&skCatch(oy))continue;
+      const hit=skRailHit(ox,oz,P.lx,P.lz,P.y);if(hit){const d=P.vx*hit[0]+P.vz*hit[1];P.vx-=1.4*d*hit[0];P.vz-=1.4*d*hit[1];P.lx=ox;P.lz=oz;}
+      const hn=skH(P.lx,P.lz);
+      if(P.y<=hn){if(hn-oy>.12&&skH(ox,oz)<hn-.1){// flew into the side of something: bounce off it
+          const hx=skH(P.lx,oz)>oy+.05,hz=skH(ox,P.lz)>oy+.05;if(hx||!hz){P.vx*=-.3;P.lx=ox;}if(hz||!hx){P.vz*=-.3;P.lz=oz;}tone(110,.06,'square',.06);
+          const h2=skH(P.lx,P.lz);if(P.y<=h2){P.y=h2;skLand();}}
+        else{P.y=hn;skLand();}}
+      continue;}
+    // rolling on the ground
+    const y=P.y,[gx,gz]=skGrad(P.lx,P.lz,y),G2=gx*gx+gz*gz,sx=Math.sin(P.hd),sz=Math.cos(P.hd),k=gx*sx+gz*sz,c1=1/Math.sqrt(1+k*k),flat=G2<.2;
+    P.S+=-SK_G*k*c1*h;// gravity: slower going up, faster coming down
+    if(want!==null){const d=skAng(want-P.hd);
+      if(P.S<.6&&flat)P.hd=want;else{const tr=(flat?3.4:G2<2?1.6:.7)*Math.min(1,mag*1.3)*h;P.hd+=Math.max(-tr,Math.min(tr,d));}
+      if(flat&&Math.abs(d)<1.7&&P.S<SK_MAX[kind]){P.S=Math.min(SK_MAX[kind],P.S+7.5*mag*h);P.push=true;}
+      else if(flat&&Math.abs(d)>2.5)P.S=Math.max(0,P.S-6*h);}
+    if(P.S<0){P.S=-P.S;P.hd+=Math.PI;}// rolled to a stop up the ramp: back down you go
+    P.S=Math.max(0,P.S-(.1+.006*P.S*P.S)*h);
+    if(!flat){const s2=Math.sin(P.hd),c2=Math.cos(P.hd),lat=gx*c2-gz*s2;// the ramp's sideways slope turns you downhill
+      if(P.S>.4)P.hd+=-SK_G*lat/(1+G2)/P.S*h;else P.hd+=skAng(Math.atan2(-gx,-gz)-P.hd)*Math.min(1,h*6);}
+    else if(want===null&&P.S<.08)P.S=0;
+    const dx=Math.sin(P.hd),dz=Math.cos(P.hd),k2=gx*dx+gz*dz,vh=P.S/Math.sqrt(1+k2*k2),vys=vh*k2;
+    let nx=P.lx+dx*vh*h,nz=P.lz+dz*vh*h;
+    // ran into a step, a box or the side of a ramp: bounce back off it
+    if(skWall(P.lx,P.lz,nx,nz,y)){const bx=skWall(P.lx,P.lz,nx,P.lz,y),bz=skWall(P.lx,P.lz,P.lx,nz,y);let vx=dx*P.S,vz=dz*P.S;
+      if(bx||!bz){vx*=-.3;nx=P.lx;}if(bz||!bx){vz*=-.3;nz=P.lz;}P.S=Math.hypot(vx,vz);if(P.S>.05)P.hd=Math.atan2(vx,vz);if(P.S>2)tone(110,.06,'square',.06);}
+    const hit=skRailHit(P.lx,P.lz,nx,nz,y);if(hit){let vx=dx*P.S,vz=dz*P.S;const d=vx*hit[0]+vz*hit[1];vx-=1.3*d*hit[0];vz-=1.3*d*hit[1];P.S=Math.hypot(vx,vz);if(P.S>.05)P.hd=Math.atan2(vx,vz);nx=P.lx;nz=P.lz;}
+    const hn=skH(nx,nz);
+    // the ground drops away faster than you'd fall (the lip of a ramp, the top of the stairs): you're flying
+    // or you reach the coping of a steep wall going up: off you go too, whatever the size of this step (else you'd roll on over the deck)
+    const up=G2>2.5&&vys>0&&hn>y-.1,lip=up&&(()=>{const[a,b]=skGrad(nx,nz,hn);return a*a+b*b<.2;})();
+    if(lip||hn<y+vys*h-.5*SK_G*h*h-.012){P.air=true;P.airT=0;P.vx=dx*vh;P.vz=dz*vh;P.vy=vys;
+      if(lip&&hn>y+vys*h){P.y=y;}else{P.lx=nx;P.lz=nz;P.y=y+vys*h;}
+      // straight up off the top of a steep wall onto its deck (the half-pipe, the quarter pipe, not the kicker): go up and come back down onto the ramp, turning around in the air
+      if(up){const gl=Math.sqrt(G2),ux=gx/gl,uz=gz/gl,a=P.vx*ux+P.vz*uz;P.vx+=(-.3-a)*ux;P.vz+=(-.3-a)*uz;
+        const T=2*P.vy/SK_G,side=skAng(P.face-Math.atan2(ux,uz))>=0?1:-1;P.vert={f0:P.face,f1:P.face+side*Math.PI,t:0,T:Math.max(.3,T),vy0:Math.max(1,P.vy),n0:P.n.clone()};}
+      continue;}
+    P.lx=nx;P.lz=nz;P.y=hn;}
+  // facing: follow the way you roll (a quick kick-turn when you roll back down a ramp), or turn around in the air off a wall
+  if(P.vert){const v=P.vert;v.t+=dt;const k=Math.min(1,v.t/v.T),e=k*k*(3-2*k);P.face=v.f0+(v.f1-v.f0)*e;}
+  else if(P.grind)P.face=angDamp(P.face,P.hd,Math.min(1,dt*14));
+  else if(!P.air)P.face=angDamp(P.face,P.hd,Math.min(1,dt*(P.S<1.5?5:10)));
+  // trick in the air: speeds up if needed so it's done before you land
+  if(P.trick&&P.air){const tr=P.trick,need=1-tr.p,tl=skLandIn();tr.p+=Math.max(1/tr.def.T,need/Math.max(.05,tl-.05))*dt;if(tr.p>=1){tr.p=1;skDone();}}
+  if(P.vert&&!P.air)P.vert=null;
+  if(P.air&&P.vert&&P.airT>.45&&!P.vertScored){P.vertScored=true;P.combo.push({n:'Air',pts:60});}
+  if(!P.air)P.vertScored=false;
+  // put you there, sliding around the light poles, benches and signs
+  let [wx,wz]=z.toWorld(P.lx,P.lz);
+  if(!SKP.obs)SKP.obs=obs.filter(o=>!o.skRail&&Math.hypot(o.x-z.x,o.z-z.z)<z.r+1.5);
+  for(const o of SKP.obs){const ox=wx-o.x,oz=wz-o.z,d=Math.hypot(ox,oz),m=o.r+.3;if(d<m&&d>1e-4){wx=o.x+ox/d*m;wz=o.z+oz/d*m;[P.lx,P.lz]=z.toLocal(wx,wz);}}
+  p.set(wx,P.y,wz);
+  const vh=P.air?Math.hypot(P.vx,P.vz):P.grind?P.grind.S:P.S;
+  player.speed=vh;player.vy=P.air?P.vy:0;player.onGround=!P.air;player.face=P.face+z.rot;
+  // sparks and a scraping sound while grinding
+  if(P.grind){P.spark-=dt;if(P.spark<=0){P.spark=.06;const w=new THREE.Vector3(wx,P.y+.02,wz);burst(w,'#ffb347',6,1.6,.12);tone(85+Math.random()*50,.06,'sawtooth',.025);}}
+  // the surface under you, so the board, skates or bike tilt with the ramp
+  let tn=null;if(P.grind){const r=P.grind.r,L=P.grind.L,sl=(r.y1-r.y0)/L;const ux=(r.b[0]-r.a[0])/L,uz=(r.b[1]-r.a[1])/L;tn=[-ux*sl,1,-uz*sl];}
+  else{const gh=skH(P.lx,P.lz);if(!P.air||P.y-gh<1.2){const [gx,gz]=skGrad(P.lx,P.lz,gh);tn=[-gx,1,-gz];}else tn=[0,1,0];}
+  {const c=Math.cos(z.rot),s=Math.sin(z.rot),wnx=tn[0]*c+tn[2]*s,wnz=-tn[0]*s+tn[2]*c;tmpV.set(wnx,tn[1],wnz).normalize();
+    // up out of the half-pipe: lean back toward standing up at the top of the air, then lay back onto the wall to land
+    if(P.air&&P.vert){const k=.65*(1-Math.min(1,Math.abs(P.vy)/P.vert.vy0));tmpV.copy(P.vert.n0).lerp(SKQ.up,k).normalize();}
+    P.n.lerp(tmpV,Math.min(1,dt*(P.air?(P.vert?10:5):16))).normalize();}
+  SK.pushing=P.push;
+  return true;}
+
+/* ---------- how it looks: tilt with the ramp and do the tricks (after the skateboard and bike code has posed you) ---------- */
+const SKQ={t:new THREE.Quaternion(),s:new THREE.Quaternion(),f:new THREE.Quaternion(),r:new THREE.Quaternion(),o:new THREE.Vector3(),c:new THREE.Vector3(),c2:new THREE.Vector3(),up:new THREE.Vector3(0,1,0),
+  x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),q:new THREE.Quaternion(),e:new THREE.Euler()};
+const skEase=k=>k<.5?2*k*k:1-2*(1-k)*(1-k);
+function skParkPose(a,tgt,sp,air,t){const P=SKP;if(!P.on)return;const tr=P.trick,id=tr&&tr.def.id,k=tr?Math.sin(Math.min(1,tr.p)*Math.PI):0;
+  if(P.kind==='skates'){
+    // gliding: legs together, knees bent, arms out a little; a deep crouch going up and down the ramps and in the air
+    const steep=Math.hypot(...skGrad(P.lx,P.lz,P.y))>.6;
+    if(P.grind){tgt.l0=-.35;tgt.l1=-.2;tgt.k0=.75;tgt.k1=.55;tgt.l0z=-.25;tgt.l1z=.25;tgt.a0z=-1.2;tgt.a1z=1.2;tgt.a0x=tgt.a1x=0;tgt.lean=.3;tgt.bob=-.12;}
+    else if(air||steep||!P.push){const c=air?1:steep?.75:.45;tgt.l0=tgt.l1=-.55*c;tgt.k0=tgt.k1=1.1*c;tgt.l0z=-.06;tgt.l1z=.06;tgt.a0z=-.5-.5*c;tgt.a1z=.5+.5*c;tgt.a0x=tgt.a1x=-.2;tgt.e0=tgt.e1=-.4;tgt.lean=.25+.15*c;
+      const T=a.legX+.38,S=a.legX+.37;tgt.bob=(T*Math.cos(tgt.l0)+S*Math.cos(tgt.l0+tgt.k0))-(T+S);if(air)tgt.bob*=.5;}
+    if(id==='split'){tgt.l0z=-1.25*k;tgt.l1z=1.25*k;tgt.l0=tgt.l1=-.2*k;tgt.k0=tgt.k1=.1;tgt.a0z=-2.4*k;tgt.a1z=2.4*k;tgt.lean=.1;}
+    if(id==='backflip'||id==='spin'){tgt.l0=tgt.l1=-1.1;tgt.k0=tgt.k1=1.7;tgt.a0z=-.3;tgt.a1z=.3;tgt.a0x=tgt.a1x=-.9;tgt.e0=tgt.e1=-1.4;}}
+  if(P.kind==='board'){
+    if(id==='grab'){tgt.k0=tgt.k1=1.55;tgt.l0=tgt.l1=-1.2;tgt.lean=.55;tgt.a1x=.25;tgt.a1z=.25;tgt.e1=-.1;tgt.a0z=-1.6;tgt.bob=-.2;}
+    if(id==='kickflip'){tgt.k0=tgt.k1=1.4;tgt.l0=tgt.l1=-.95;tgt.bob=-.1;}
+    if(P.grind){tgt.k0=tgt.k1=.85;tgt.a0z=-1.3;tgt.a1z=1.3;}}}
+// tilt a rider (A: their Avatar, bg: their bike's group or null) to the ramp's up (n), and turn them for a trick
+// (id, p = how far along 0..1). Used for you and for friends online (26c-friends-see.js).
+function skPose(A,bg,pos,kind,n,id,p,grind){const k=id?skEase(Math.min(1,p)):0;
+  SKQ.t.setFromUnitVectors(SKQ.up,n);
+  const spin=id==='spin'?k*Math.PI*2:0,flip=id==='backflip'?k*Math.PI*2:0;
+  SKQ.s.setFromAxisAngle(SKQ.y,spin);SKQ.f.setFromAxisAngle(SKQ.x,-flip);
+  const base=A.g.quaternion.clone();// the turn and lean from the skateboard / bike code
+  const noFlip=SKQ.r.copy(SKQ.t).multiply(SKQ.s).multiply(base),all=SKQ.q.copy(noFlip).multiply(SKQ.f);
+  const up=kind==='board'?.1:0,cy=kind==='bike'?.75:.85;
+  SKQ.o.set(0,up,0).applyQuaternion(SKQ.t).add(pos);
+  if(flip){SKQ.c.set(0,cy,0).applyQuaternion(noFlip);SKQ.c2.set(0,cy,0).applyQuaternion(all);SKQ.o.add(SKQ.c).sub(SKQ.c2);}
+  // on a rail with the bike: the wheels go either side of it, so slide over a little
+  if(grind&&kind==='bike')SKQ.o.add(tmpV.set(.16,-.32,0).applyQuaternion(noFlip));
+  if(grind&&kind==='board')SKQ.o.y-=.05;
+  A.g.position.copy(SKQ.o);A.g.quaternion.copy(all);
+  if(bg){bg.position.copy(SKQ.o);bg.quaternion.copy(all);
+    // no hands: let go of the bars and throw both arms up
+    if(id==='nohands'){const w=Math.sin(Math.min(1,p)*Math.PI);for(const ar of A.arms){SKQ.e.set(0,0,ar.sx*-2.3);ar.sh.quaternion.slerp(tmpQ.setFromEuler(SKQ.e),w);ar.el.quaternion.slerp(tmpQ.identity(),w);}}}
+  if(A.deck){A.deck.rotation.z=id==='kickflip'?k*Math.PI*2:0;A.deck.position.y=id==='kickflip'?-Math.sin(k*Math.PI)*.16:0;}}
+// the ramp's up at a spot in town (world), for friends: their phone sends where they are, the ramps are the same here
+function skNormalAt(x,z,out){const s=Z.skate,[lx,lz]=s.toLocal(x,z),h=skH(lx,lz),[gx,gz]=skGrad(lx,lz,h),c=Math.cos(s.rot),sn=Math.sin(s.rot);
+  return out.set(-gx*c-gz*sn,1,gx*sn-gz*c).normalize();}
+anims.push((t,dt)=>{const P=SKP;if(!av)return;
+  av.parkPose=P.on?skParkPose:null;skLabel();
+  if(!P.on)return;
+  skPose(av,P.kind==='bike'?BK.g:null,player.pos,P.kind,P.n,P.trick&&P.trick.def.id,P.trick?P.trick.p:0,!!P.grind);});
+const tmpQ=new THREE.Quaternion();
+
+/* ---------- buttons: OLLIE on JUMP, and three trick buttons ---------- */
+function skButtons(){const el=$('#tricks');if(!el)return;const P=SKP,key=P.on?P.kind:'';if(key===P.btns)return;P.btns=key;
+  // in a wider ring outside the moves wheel around JUMP (19-ui-closet.js), so they never cover those buttons
+  const pos=deg=>{const a=deg*Math.PI/180,R=182;return `right:calc(env(safe-area-inset-right) + ${(66-Math.cos(a)*R-30).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(72+Math.sin(a)*R-30).toFixed(0)}px)`;};
+  el.innerHTML=key?SK_TRICKS[key].map((t,i)=>`<button data-t="${t.id}" aria-label="${t.n}" style="${pos([165,133,101][i])}">${t.e}<span>${t.n}</span></button>`).join(''):'';el.classList.toggle('show',!!key);}
+function skLabel(){const P=SKP,s=P.on?P.kind:'';if(s===P.lbl)return;P.lbl=s;if(!(barnRide&&isFlyer(barnRide)))$('#jump').textContent=s==='board'?'OLLIE':s==='bike'?'HOP':'JUMP';skButtons();}
+{const el=$('#tricks');if(el)el.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b)return;e.preventDefault();e.stopPropagation();skTrick(b.dataset.t);});}
+addEventListener('keydown',e=>{if(!SKP.on||e.target.tagName==='INPUT')return;const i={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(i!==undefined&&SK_TRICKS[SKP.kind])skTrick(SK_TRICKS[SKP.kind][i].id);});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -8923,7 +9280,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||daddyFrozen())mag=0;// DADDY POWERS: remove "||daddyFrozen()" with 27-daddy-powers.js
   const p=player.pos;
-  if(!flyStep(dt,ix,iy,mag)&&!daddyFlyStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead
+  if(!flyStep(dt,ix,iy,mag)&&!daddyFlyStep(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
   // ^ DADDY POWERS: when removing 27-daddy-powers.js, take out "&&!daddyFlyStep(dt,ix,iy,mag)" above and this line
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
@@ -9032,7 +9389,7 @@ function preUpload(){if(LITE)return;const off=[],near=isTouch?40:Infinity,v=new 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
 /* ================= MAP ================= */
-const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff'};
+const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -9183,6 +9540,8 @@ window.__game={freeObj,gpuNote,gameStatus,AG,ct,openGlam,closeGlam,openContest,e
 Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
 // 🚲 for the bike test (3d/tests/bike.mjs)
 Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
+// 🛹 for the skate park test (3d/tests/skate-park.mjs)
+Object.assign(window.__game,{skatePark:()=>SKP,skTrick,skateH,skateLH,SKZ,toggleSkate,sk:()=>SK});
 // ---- src/26b-portrait.js ----
 /* ================= PORTRAITS FOR THE 2D STUDIO ================= */
 // The 2D studio's top-left picture can be "my 3D character" or "my pet". Whenever your look (or your pet's outfit)
@@ -9321,6 +9680,21 @@ SHOW.push({k:'bike',
     A.g.rotation.z=h.lean;b.g.position.copy(A.g.position);b.g.rotation.set(0,yaw,0);b.g.rotateZ(h.lean);h.air=!!f.air;
     bikeRide(A,b,h,dt);},
   off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;bikeUnride(A);}}});
+
+// 🛹 at the skate park (24k-skate-park.js): your friend leans with the ramps on their board, skates or bike, and does the same tricks.
+// The ramps are the same on every phone, so only the trick is sent (t: which one, n: counts up for each new one); the lean comes from
+// where they are. Listed after 'skate' and 'bike' so it tilts the board and the bike those two have just placed.
+SHOW.push({k:'park',
+  mine(){return SKP.on?{k:SKP.kind,t:SKP.trick?SKP.trick.def.id:'',n:SKP.tn||0,g:SKP.grind?1:0}:null;},
+  on(){return {n:new THREE.Vector3(0,1,0),t:'',tn:-1,p:1,T:1};},
+  step(f,d,dt,h){const A=f.a;if(!A)return;const kind=d.k==='bike'||d.k==='skates'?d.k:'board';
+    A.g.rotation.x=0;if(kind==='skates')A.g.rotation.z=0;
+    if(d.n!==h.tn){h.tn=d.n;const def=(SK_TRICKS[kind]||[]).find(x=>x.id===d.t);if(def&&h.tn>0){h.t=def.id;h.p=0;h.T=def.T;}}
+    if(h.p<1){h.p=Math.min(1,h.p+dt/h.T);}const id=h.p<1?h.t:'';
+    const P=f.pos,want=f.air&&P.y-skateH(P.x,P.z)>1.2?tmpV.set(0,1,0):skNormalAt(P.x,P.z,tmpV);h.n.lerp(want,Math.min(1,dt*12)).normalize();
+    const bk=kind==='bike'&&f.shows&&f.shows.bike&&f.shows.bike.h&&f.shows.bike.h.b;
+    skPose(A,bk?bk.g:null,A.g.position.clone().setY(P.y),kind,h.n,id,h.p,!!d.g);},
+  off(f){const A=f.a;if(!A)return;A.g.rotation.x=0;if(A.deck){A.deck.rotation.z=0;A.deck.position.y=0;}}});
 
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){

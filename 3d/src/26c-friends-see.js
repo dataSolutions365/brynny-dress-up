@@ -111,6 +111,21 @@ SHOW.push({k:'bike',
     bikeRide(A,b,h,dt);},
   off(f,h){if(h&&h.b)scene.remove(h.b.g);const A=f.a;if(A){A.biking=false;A.g.rotation.z=0;bikeUnride(A);}}});
 
+// 🛹 at the skate park (24k-skate-park.js): your friend leans with the ramps on their board, skates or bike, and does the same tricks.
+// The ramps are the same on every phone, so only the trick is sent (t: which one, n: counts up for each new one); the lean comes from
+// where they are. Listed after 'skate' and 'bike' so it tilts the board and the bike those two have just placed.
+SHOW.push({k:'park',
+  mine(){return SKP.on?{k:SKP.kind,t:SKP.trick?SKP.trick.def.id:'',n:SKP.tn||0,g:SKP.grind?1:0}:null;},
+  on(){return {n:new THREE.Vector3(0,1,0),t:'',tn:-1,p:1,T:1};},
+  step(f,d,dt,h){const A=f.a;if(!A)return;const kind=d.k==='bike'||d.k==='skates'?d.k:'board';
+    A.g.rotation.x=0;if(kind==='skates')A.g.rotation.z=0;
+    if(d.n!==h.tn){h.tn=d.n;const def=(SK_TRICKS[kind]||[]).find(x=>x.id===d.t);if(def&&h.tn>0){h.t=def.id;h.p=0;h.T=def.T;}}
+    if(h.p<1){h.p=Math.min(1,h.p+dt/h.T);}const id=h.p<1?h.t:'';
+    const P=f.pos,want=f.air&&P.y-skateH(P.x,P.z)>1.2?tmpV.set(0,1,0):skNormalAt(P.x,P.z,tmpV);h.n.lerp(want,Math.min(1,dt*12)).normalize();
+    const bk=kind==='bike'&&f.shows&&f.shows.bike&&f.shows.bike.h&&f.shows.bike.h.b;
+    skPose(A,bk?bk.g:null,A.g.position.clone().setY(P.y),kind,h.n,id,h.p,!!d.g);},
+  off(f){const A=f.a;if(!A)return;A.g.rotation.x=0;if(A.deck){A.deck.rotation.z=0;A.deck.position.y=0;}}});
+
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){
   if(SP.mode)return {bat:'⚾ Batting practice',ft:'🏀 Free throws',shoot:'🔥 Basketball shootout',v1:'🆚 1-on-1 with Kai'}[SP.mode]||'🏀 Playing ball';
