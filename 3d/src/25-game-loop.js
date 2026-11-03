@@ -35,13 +35,9 @@ function walkWatch(mag,step){if(walkW.sent)return;if(mag<.5){walkW.t0=0;walkW.d=
   if(now-walkW.t0>5000){walkW.sent=true;window.reportProblem&&window.reportProblem("Tried to walk for 5 seconds but didn't move",'walking');}}
 const angDamp=(a,b,k)=>{let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k;};
 function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
-  if(!f.tgt&&f.wait<=0&&!f.follow){const z=Math.random()<.7?f.home:rnd(ZONES);const a=Math.random()*Math.PI*2,r=Math.random()*z.r*.8;f.tgt=new THREE.Vector3(z.x+Math.sin(a)*r,0,z.z+Math.cos(a)*r);}
+  if(!f.tgt&&f.wait<=0){const z=Math.random()<.7?f.home:rnd(ZONES);const a=Math.random()*Math.PI*2,r=Math.random()*z.r*.8;f.tgt=new THREE.Vector3(z.x+Math.sin(a)*r,0,z.z+Math.cos(a)*r);}
   let sp=0;const dP=P.distanceTo(f.pos);
   if(talkF===f){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*6);if(dP>5)closeTalk();}
-  else if(f.follow){const i=FRIENDS.filter(o=>o.follow).indexOf(f),a=player.face+Math.PI+(i%2?.7:-.7)*(1+(i>>1)*.5),r=1.4+(i>>1)*.6;
-    f.tgt=new THREE.Vector3(P.x+Math.sin(a)*r,0,P.z+Math.cos(a)*r);tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();
-    if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(8,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
-    else f.face=angDamp(f.face,player.face,dt*4);}
   else if(dP<2.4&&started){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*5);if(f.cool<=0){f.cool=14;f.play('wave');friendBubble(f,questReady(f)?'Come talk to me! 💬':rnd(f.info.hi));}}
   else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave',rnd(DANCES)[0]]));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
   f.cool-=dt;if(f.say){f.sayT-=dt;if(f.sayT<0){f.g.remove(f.say);f.say=null;}}

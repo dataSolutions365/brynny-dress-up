@@ -4301,7 +4301,9 @@ function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
   if(dancing)setTimeout(()=>floaties(headPos(),'🎵',4),300);
   if(id==='clap')setTimeout(()=>floaties(headPos(),'✨',4),300);
   if(id==='magic')for(let k=0;k<4;k++)setTimeout(()=>burst(new THREE.Vector3(P.x,P.y+1.4,P.z),rnd(['#ff8fc8','#ffd23f','#8fd8ff','#c6a6ff']),36,3,.2),k*350);
-  if(dancing||id==='wave')for(const f of FRIENDS)if(f.pos.distanceTo(P)<6){setTimeout(()=>{f.play(id);if(id==='wave')friendBubble(f,`Hi ${SAVE.name||'friend'}! 👋`);},300+Math.random()*500);}
+  // townspeople never copy your moves: only the one closest to you (and only if they're right there) waves back or claps for you
+  if(dancing||id==='wave'){let fc=null,bd=4;for(const f of FRIENDS){const d=f.pos.distanceTo(P);if(d<bd){bd=d;fc=f;}}
+    if(fc&&fc.cool<=0){fc.cool=14;setTimeout(()=>{fc.play(id==='wave'?'wave':'clap');friendBubble(fc,id==='wave'?`Hi ${SAVE.name||'friend'}! 👋`:'Nice moves! 👏');},300+Math.random()*500);}}
   if(myPet()&&myPet().pos.distanceTo(P)<5&&(dancing||id==='cheer'||id==='magic'))myPet().happy=1.5;}
 renderActions();
 function updateStars(){did('stars');}
@@ -5718,7 +5720,7 @@ function renderTalk(){const f=talkF;if(!f)return;$('#tface').textContent=f.info.
     const X=TALK_EXTRA.map(x=>{const r=x.btn(f);return r&&b(x.id,r[0],r[1],'go');}).filter(Boolean).join('');
     h=b('chat','💬','Chat')+b('nice','💖','Compliment')+b('dance','💃','Dance')+(X||b('wave','👋','Wave'))+
       (ready?b('quest','🎁','I did it!','go'):Q?b('quest','⭐','My task'):b('quest','⭐','Need help?'))+
-      (s.h>=3?(f.follow?b('stay','🛑','Stop walking'):b('follow','🚶‍♀️','Walk with me')):b('bye','👋','Bye'));}
+      b('bye','👋','Bye');}
   $('#topts').innerHTML=h;}
 function openTalk(f){if(closetOpen||!started)return;did('talk',f.name);if(talkF&&talkF!==f)closeTalk();talkF=f;talkMode='main';f.tgt=null;
   const s=townSave(f);let g;
@@ -5747,8 +5749,6 @@ $('#topts').addEventListener('click',e=>{const b=e.target.closest('button');cons
     else tsay(f,`${(()=>{const a=Q.def.ask;return typeof a==='function'?a(Q.arg):a;})()}\n\n💡 ${questHint(f)}`);}
   else if(t==='yes'){talkMode='main';tsay(f,`Yay! Thank you! 💕\n\n💡 ${questHint(f)}`);}
   else if(t==='no'){s.q=null;persist();talkMode='main';tsay(f,'That\'s okay! Maybe later 😊');}
-  else if(t==='follow'){f.follow=true;tsay(f,'Yay, let\'s go explore together! 🚶‍♀️✨');setTimeout(closeTalk,1300);}
-  else if(t==='stay'){f.follow=false;f.tgt=null;tsay(f,'Okay! I\'ll hang out here. See you later! 👋');}
   else if(t==='bye'){f.play('wave');friendBubble(f,'Bye bye! 👋');closeTalk();}});
 // the "Talk to …" button when you walk up to someone
 function talkBtn(){const P=player.pos;let best=null,bd=2.6;if(!talkF&&started&&!closetOpen)for(const f of FRIENDS){const d=Math.hypot(P.x-f.pos.x,P.z-f.pos.z);if(d<bd){bd=d;best=f;}}
@@ -9594,13 +9594,9 @@ function walkWatch(mag,step){if(walkW.sent)return;if(mag<.5){walkW.t0=0;walkW.d=
   if(now-walkW.t0>5000){walkW.sent=true;window.reportProblem&&window.reportProblem("Tried to walk for 5 seconds but didn't move",'walking');}}
 const angDamp=(a,b,k)=>{let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k;};
 function stepFriend(f,dt){f.wait-=dt;const P=player.pos;
-  if(!f.tgt&&f.wait<=0&&!f.follow){const z=Math.random()<.7?f.home:rnd(ZONES);const a=Math.random()*Math.PI*2,r=Math.random()*z.r*.8;f.tgt=new THREE.Vector3(z.x+Math.sin(a)*r,0,z.z+Math.cos(a)*r);}
+  if(!f.tgt&&f.wait<=0){const z=Math.random()<.7?f.home:rnd(ZONES);const a=Math.random()*Math.PI*2,r=Math.random()*z.r*.8;f.tgt=new THREE.Vector3(z.x+Math.sin(a)*r,0,z.z+Math.cos(a)*r);}
   let sp=0;const dP=P.distanceTo(f.pos);
   if(talkF===f){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*6);if(dP>5)closeTalk();}
-  else if(f.follow){const i=FRIENDS.filter(o=>o.follow).indexOf(f),a=player.face+Math.PI+(i%2?.7:-.7)*(1+(i>>1)*.5),r=1.4+(i>>1)*.6;
-    f.tgt=new THREE.Vector3(P.x+Math.sin(a)*r,0,P.z+Math.cos(a)*r);tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();
-    if(d>25){f.pos.set(f.tgt.x,P.y,f.tgt.z);}else if(d>.4){tmpV.normalize();sp=Math.min(8,1.2+d*2);f.pos.addScaledVector(tmpV,Math.min(d,sp*dt));collide(f.pos);f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*8);}
-    else f.face=angDamp(f.face,player.face,dt*4);}
   else if(dP<2.4&&started){f.face=angDamp(f.face,Math.atan2(P.x-f.pos.x,P.z-f.pos.z),dt*5);if(f.cool<=0){f.cool=14;f.play('wave');friendBubble(f,questReady(f)?'Come talk to me! 💬':rnd(f.info.hi));}}
   else if(f.tgt){tmpV.subVectors(f.tgt,f.pos);tmpV.y=0;const d=tmpV.length();if(d<.6){f.tgt=null;f.wait=3+Math.random()*5;if(Math.random()<.3)f.play(rnd(['dance','twirl','wave',rnd(DANCES)[0]]));}else{tmpV.normalize();const old=f.pos.clone();f.pos.addScaledVector(tmpV,dt*1.7);collide(f.pos);if(f.pos.distanceTo(old)<dt*.4){f.stuck=(f.stuck||0)+dt;if(f.stuck>1.5){f.tgt=null;f.stuck=0;}}sp=1.7;f.face=angDamp(f.face,Math.atan2(tmpV.x,tmpV.z),dt*6);}}
   f.cool-=dt;if(f.say){f.sayT-=dt;if(f.sayT<0){f.g.remove(f.say);f.say=null;}}
