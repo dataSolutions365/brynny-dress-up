@@ -146,7 +146,7 @@ const DAILY = [
   { id: 'd_bath', e: '🛁', t: 'Give your pet a bath', go: 'parlor', ev: { k: 'bath' } },
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
@@ -273,6 +273,9 @@ css.textContent = `
 .csaf>b{font-size:30px;font-weight:400;line-height:1}.csaf>b img,.crides .cq>b img{width:60px;height:60px;object-fit:contain;display:block}.csaf div{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.csaf strong{font-size:16px}.csaf span{font-size:12px;font-weight:600;color:#7a5a2a}
 .csaf.sea{background:linear-gradient(90deg,#c9f0ff,#a3def5);color:#0f4a66}.csaf.sea span{color:#2b6680}
 .csaf .own{font-size:13px;font-weight:700;color:#2e9b5a;white-space:nowrap}.csaf .lock{font-size:18px}.csaf.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9)}
+.csaf.place{background:linear-gradient(90deg,#e8dcff,#ffe1f0);color:#3d2a78}.csaf.place span{color:#6a5a9a}.csaf.place.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9);color:#1f6b3d}
+.csaf.place>b{font-size:32px}.csaf.place button{flex:0 0 auto;background:var(--purple);color:#fff;font-weight:700;font-size:14px;padding:9px 12px;border-radius:999px;box-shadow:0 3px 0 #6a4fd0;min-height:40px}
+.csaf.place button.here{background:#2fb8a5;box-shadow:0 3px 0 #23907f}
 .cbonus{background:linear-gradient(90deg,#efe3ff,#ffe6f2);border-radius:14px;padding:8px 12px;font-weight:600;font-size:14px;text-align:center}
 `;
 document.head.appendChild(css);
@@ -305,6 +308,7 @@ function render() {
   if (tab === 'today') { const st = G.earnState ? G.earnState() : null; h += `<div class="cnote">${st && st.streak > 1 ? `🔥 Day ${st.streak} in a row! ` : ''}New challenges every day! Finish all 3 for +${DAY_BONUS} bonus ⭐</div>`; }
   if (tab === 'safari') { $('#chalList').innerHTML = safariHTML(list, here); return; }
   if (tab === 'ocean') { $('#chalList').innerHTML = oceanHTML(list, here); return; }
+  if (tab === 'places') { $('#chalList').innerHTML = placesHTML(here); return; }
   const sorted = list.slice().sort((a, b) => isDone(a) - isDone(b));
   h += sorted.map(ch => {
     return chRow(ch, here);
@@ -342,6 +346,24 @@ function oceanHTML(list, here) {
     h += mine.map(ch => chRow(ch, here)).join('');
   }
   return h + '<div class="cnote">🦭 Pip the seal lives on her rock in the bay. You can\'t ride her, but she loves fish!</div>';
+}
+// 📍 the Places tab: a legend of every place in town with the challenges you do there (like the 🦁 Safari tab does for animals).
+// The place you're standing in comes first, then places with challenges left, in map order. Challenges you can do anywhere go last.
+function placesHTML(here) {
+  const all = allCh(), byZone = G.ZONES.map(z => ({ z, mine: all.filter(c => c.go === z.id) })).filter(g => g.mine.length);
+  const openN = g => g.mine.filter(c => !isDone(c)).length;
+  byZone.sort((a, b) => (b.z.id === here) - (a.z.id === here) || (openN(b) > 0) - (openN(a) > 0));
+  let h = '<div class="cnote">📍 Every place in town and the challenges you can do there. Tap Go and follow the pink arrow!</div>';
+  const block = (e, name, mine, zid) => {
+    const n = mine.filter(isDone).length, fin = n === mine.length;
+    const btn = !zid || fin ? (fin ? '<span class="own">✅ All done</span>' : '') : zid === here ? '<button disabled class="here">📍 Here!</button>' : `<button data-go="${zid}">📍 Go</button>`;
+    return `<div class="csaf place${fin ? ' own' : ''}"><b>${e}</b><div><strong>${name}</strong><span>${n} of ${mine.length} challenges done</span></div>${btn}</div>`
+      + mine.slice().sort((a, b) => isDone(a) - isDone(b)).map(ch => chRow(ch, here)).join('');
+  };
+  for (const { z, mine } of byZone) { const [e, ...rest] = z.name.split(' '); h += block(e, rest.join(' '), mine, z.id); }
+  const free = all.filter(c => !c.go || !Z[c.go]);
+  if (free.length) h += block('🌍', 'Anywhere in town', free, null);
+  return h;
 }
 // 🏆 special rides and outfits you can't buy: win contests and play days in a row (the game side is 3d/src/24i-earned-rides.js)
 function ridesHTML() {
