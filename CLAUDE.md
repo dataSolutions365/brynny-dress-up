@@ -93,6 +93,17 @@
   'hseat' entry sits passengers in their seat on every phone. Keep it real-looking, not a cartoon.
   `3d/tests/helicopter.mjs` (run on every PR) buys and wins it, flies it and lands it on the pad; `3d/tests/heli-friends.mjs`
   flies a friend along with two phones (same setup as `online-see.mjs`).
+- 🎄 Seasons: `3d/seasons.js` picks today's holiday. THE SEASON SWITCH is `TOWN_THEME` in that file: a holiday id plus the last day
+  it stays on (now Christmas until Dec 30), after which the calendar takes over again; `null` always follows the calendar.
+  Holiday shop things are only sold during their holiday but stay yours once bought. Halloween Hollow's pumpkins, ghosts,
+  gravestones and purple glow are listed in `Z.halloween.spooky` (`3d/src/05-place-halloween.js`) and only come out for Halloween.
+  `3d/christmas.js` is Christmas in town: snow on the ground, the really big tree in the middle (the 👗 dress-up pad moves in front of it:
+  the game loop reads `Z.studio.pad.x/.z`), lights round the street lights and along the tops of the buildings (instanced, one draw call
+  per half), 🎅 Santa walking round the plaza and out along the paths (a present once a day), ❄️ snowballs and snowball fights
+  (first to 5 hits, from the talk buttons), and ⛄ snowmen you roll by walking and stack (saved in `SAVE.xmas.snowmen`).
+  Its action buttons come in through `ACT_HOOKS` (`3d/src/19-ui-closet.js`). The 🎄 Christmas tab in `3d/challenges.js` uses `hol: 'christmas'`:
+  a challenge with `hol` only shows and counts during that holiday. Keep the Christmas look real, not cartoony.
+  `3d/tests/christmas.mjs` (run on every PR) checks the tree, the lights, Santa, a snowball hit, a whole snowman, and that Halloween brings the pumpkins back.
 - 🐾 Barn animals and the 🚨 Round-up (`3d/src/26g-town-animals.js`): four barn animals (Waddles, Billy, Truffle, Woolly, in `ROAM_LIST`)
   wander the meadow round the Happy Barn and never follow you (walking up makes one stop and look at you, then it carries on).
   "Start a Round-up" near the barn sends them out onto their own two streets each (street = the `ang` of a place with a path) until
