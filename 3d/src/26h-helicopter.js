@@ -161,7 +161,7 @@ function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on
   // the joystick: which way you want to go, the same as walking
   let wx=0,wz=0;if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;wx=(fx*-iy+rx*ix)/n*HELI_SPD*mag;wz=(fz*-iy+rz*ix)/n*HELI_SPD*mag;}
   if(H.mode==='ground'){H.vx=H.vy=H.vz=0;P.y=g;
-    if(up&&HM.rpm>.85){H.mode='air';H.vy=1.5;did('heli','takeoff');if(H.seats.some(Boolean))did('heli','friend');sfx('jump');}
+    if(up&&HM.rpm>.85){H.mode='air';H.vy=1.5;did('heli','takeoff');if(isTouch&&(SAVE.heliSteer|0)<3){SAVE.heliSteer=(SAVE.heliSteer|0)+1;persist();setTimeout(()=>{if(HELI.on&&HELI.mode!=='ground')toast('👈 Put a finger on the left side of the screen and drag to fly around the island!');},1200);}if(H.seats.some(Boolean))did('heli','friend');sfx('jump');}
     else if(up&&performance.now()-H.liftWarn>2500){H.liftWarn=performance.now();toast('⏳ Wait for the rotor to spin up…');}}
   else{
     // 🛬 landing by itself: fly over to the spot, slow down, and come straight down onto it
@@ -273,6 +273,10 @@ anims.push((t,dt)=>{const H=HELI;
   if(H.on){const n=window.__net,fr=n&&n.friends();for(let i=1;i<4;i++)if(H.seats[i]&&!(fr&&fr.has(H.seats[i])))H.seats[i]=null;}
   heliButtons();});
 // a game or the closet opening while you're in it: you're set down where you are (the helicopter lands itself first if it's up)
+// 🕹️ on a phone the joystick only shows once you touch the screen, so while you're flying a ghost one on the left shows
+// where to put your finger to fly around (it goes away while you're steering)
+const heliJoyEl=$('#heliJoy');let heliJoyS=null;
+anims.push(()=>{const H=HELI,s=isTouch&&H.on&&H.mode!=='ground'&&joy.id===null&&!closetOpen?'flex':'none';if(s!==heliJoyS){heliJoyS=s;heliJoyEl.style.display=s;}});
 anims.push(()=>{const H=HELI;if(!H.on||!(handsBusy()||closetOpen))return;
   if(H.mode!=='ground'){const [x,z]=heliSpot(H.pos.x,H.pos.z);H.pos.set(x,groundAt(x,z),z);H.mode='ground';H.vx=H.vz=H.vy=0;}heliOut();});
 
