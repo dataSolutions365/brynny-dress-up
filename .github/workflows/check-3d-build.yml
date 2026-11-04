@@ -49,6 +49,8 @@ jobs:
         run: node 3d/tests/challenge-places.mjs
       - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)
         run: node 3d/tests/townspeople.mjs
+      - name: Christmas in town - the big tree, lights, Santa, snowball fights and snowmen
+        run: node 3d/tests/christmas.mjs
       - name: Polar Ice works (skating, ice fishing, igloo, Polar escape) and the polar rides come only from their Polar challenges
         run: node 3d/tests/arctic.mjs
       - name: The 2D and 3D closets match

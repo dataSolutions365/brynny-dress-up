@@ -16,7 +16,7 @@
  const padIn=M(new THREE.CircleGeometry(.8,48),phys('#ffd6ea',{roughness:.2,clearcoat:1,emissive:'#ff6fae',emissiveIntensity:.2}),0,.165,0,g,false,true);padIn.rotation.x=-Math.PI/2;
  const padLbl=z.padLbl=sprite(labelTex('👗 Dress up!',{size:56}),1.8,.45);padLbl.position.set(0,1.0,0);g.add(padLbl);
  anims.push(t=>{padMat.opacity=.55+.45*Math.sin(t*3);padLbl.position.y=.95+Math.sin(t*2)*.08;});
- z.pad={x:0,z:0,r:.95};
+ z.pad={x:0,z:0,r:.95};z.padParts=[pad,padIn,padLbl];// christmas.js moves the pad when the big tree stands in the middle
  // mirrors
  for(const a of [deg(90),deg(270)]){const mg=new THREE.Group();mg.position.set(Math.sin(a)*4.2,0,Math.cos(a)*4.2);mg.rotation.y=a+Math.PI;g.add(mg);
    const fr=M(new THREE.TorusGeometry(.75,.08,12,48),gold,0,1.55,0,mg);fr.scale.y=1.45;
@@ -35,5 +35,5 @@
    const [x,w]=z.toWorld(lx,lz),[ox,ow]=z.toWorld(Math.sin(a)*1.7,Math.cos(a)*1.7);
    return Object.assign(p,{at:new THREE.Vector3(x,0,w),out:new THREE.Vector3(ox,0,ow),face:Math.atan2(-Math.sin(a),-Math.cos(a))});});
  // stage spot shine
- const sl=new THREE.PointLight('#ffb3e0',18,12,2);sl.position.set(0,4,0);g.add(sl);}
+ const sl=new THREE.PointLight('#ffb3e0',18,12,2);sl.position.set(0,4,0);g.add(sl);z.light=sl;}
 

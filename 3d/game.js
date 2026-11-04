@@ -363,7 +363,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
  const padIn=M(new THREE.CircleGeometry(.8,48),phys('#ffd6ea',{roughness:.2,clearcoat:1,emissive:'#ff6fae',emissiveIntensity:.2}),0,.165,0,g,false,true);padIn.rotation.x=-Math.PI/2;
  const padLbl=z.padLbl=sprite(labelTex('👗 Dress up!',{size:56}),1.8,.45);padLbl.position.set(0,1.0,0);g.add(padLbl);
  anims.push(t=>{padMat.opacity=.55+.45*Math.sin(t*3);padLbl.position.y=.95+Math.sin(t*2)*.08;});
- z.pad={x:0,z:0,r:.95};
+ z.pad={x:0,z:0,r:.95};z.padParts=[pad,padIn,padLbl];// christmas.js moves the pad when the big tree stands in the middle
  // mirrors
  for(const a of [deg(90),deg(270)]){const mg=new THREE.Group();mg.position.set(Math.sin(a)*4.2,0,Math.cos(a)*4.2);mg.rotation.y=a+Math.PI;g.add(mg);
    const fr=M(new THREE.TorusGeometry(.75,.08,12,48),gold,0,1.55,0,mg);fr.scale.y=1.45;
@@ -382,7 +382,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
    const [x,w]=z.toWorld(lx,lz),[ox,ow]=z.toWorld(Math.sin(a)*1.7,Math.cos(a)*1.7);
    return Object.assign(p,{at:new THREE.Vector3(x,0,w),out:new THREE.Vector3(ox,0,ow),face:Math.atan2(-Math.sin(a),-Math.cos(a))});});
  // stage spot shine
- const sl=new THREE.PointLight('#ffb3e0',18,12,2);sl.position.set(0,4,0);g.add(sl);}
+ const sl=new THREE.PointLight('#ffb3e0',18,12,2);sl.position.set(0,4,0);g.add(sl);z.light=sl;}
 
 // ---- src/04-place-birthday.js ----
 /* ===== Birthday ===== */
@@ -417,12 +417,16 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
 
 // ---- src/05-place-halloween.js ----
 /* ===== Halloween ===== */
-{const z=Z.halloween,g=z.g;patch(8.5,std('#8a6aa8',{map:TEX.grass,roughness:.95}),z.x,z.z);
+{const z=Z.halloween,g=z.g;z.ground=patch(8.5,std('#8a6aa8',{map:TEX.grass,roughness:.95}),z.x,z.z);
  const faceTex=canvasTex(256,128,(x)=>{x.fillStyle='#000';x.fillRect(0,0,256,128);x.fillStyle='#ffd25a';const tri=(a,b,c,d,e,f)=>{x.beginPath();x.moveTo(a,b);x.lineTo(c,d);x.lineTo(e,f);x.fill();};tri(44,50,56,30,62,52);tri(68,52,74,30,84,50);x.beginPath();x.moveTo(40,70);x.quadraticCurveTo(64,96,88,70);x.lineTo(80,74);x.lineTo(74,68);x.lineTo(64,76);x.lineTo(54,68);x.lineTo(48,74);x.closePath();x.fill();});
  const pumpMat=phys('#ff7a1a',{roughness:.45,clearcoat:.4,emissive:'#ffb347',emissiveMap:faceTex,emissiveIntensity:2.2});
  const stemMat=std('#4d6b2a');
+ // 🎃 the spooky pieces (pumpkins, ghosts, gravestones, the purple glow) are listed in z.spooky, so seasons.js can put them away
+ // when it isn't Halloween. The haunted house and the bare trees stay all year.
+ const c0=g.children.length,o0=obs.length;
  const pumpkin=(lx,lz,s)=>{const p=M(sph(.5*s,28,18),pumpMat,lx,.38*s,lz,g);p.scale.y=.78;p.rotation.y=Math.atan2(-lx,8-lz)-Math.PI/2*0;M(cyl(.05*s,.07*s,.22*s,8),stemMat,lx,.78*s,lz,g);z.ob(lx,lz,.45*s);return p;};
  [[-3,2],[3.2,2.6],[-5.5,-1],[5,-2],[-1.5,5],[1.8,4.6],[-6,3],[6.2,1.5],[0,-6.5]].forEach(([x,w],i)=>{const p=pumpkin(x,w,.9+(i%3)*.35);p.rotation.y=Math.atan2(-x,10-w);});
+ const c1=g.children.length,o1=obs.length;
  // haunted house
  const hg=new THREE.Group();hg.position.set(0,0,-4.2);g.add(hg);
  M(box(4,3,3.2),phys('#4a3566',{roughness:.8}),0,1.5,0,hg);const roof=M(new THREE.ConeGeometry(3.3,2.2,4),phys('#2a1d3d',{roughness:.6}),0,4.1,0,hg);roof.rotation.y=Math.PI/4;
@@ -435,6 +439,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
  for(const [lx,lz] of [[-6.5,-4],[6.5,-4.5],[-7,2],[7.3,4]]){const tg=new THREE.Group();tg.position.set(lx,0,lz);g.add(tg);M(cyl(.12,.25,3.4,8),bark,0,1.7,0,tg);
    for(let k=0;k<5;k++){const b=M(cyl(.03,.08,1.3,6),bark,0,0,0,tg);const a=k*1.3;b.position.set(Math.sin(a)*.35,2.2+k*.25,Math.cos(a)*.35);b.rotation.set(Math.cos(a)*.9,0,-Math.sin(a)*.9);}z.ob(lx,lz,.4);}
  // ghosts
+ const c2=g.children.length,o2=obs.length;
  const gm=phys('#ffffff',{roughness:.3,transparent:true,opacity:.82,emissive:'#d8d0ff',emissiveIntensity:.35});
  for(let i=0;i<3;i++){const gg=new THREE.Group();g.add(gg);const pts=[];for(let k=0;k<=12;k++){const t=k/12;pts.push(new THREE.Vector2(Math.sin(t*Math.PI*.5+.0)*.45*(t<.5?Math.sqrt(t*2):1)+.0001,.9-t*1.1));}
    M(new THREE.LatheGeometry(pts,24),gm,0,0,0,gg,true,false);for(const s of [-1,1])M(sph(.06,10,8),std('#111'),s*.15,.62,.38,gg,false,false);
@@ -442,6 +447,7 @@ function signpost(z){const g=new THREE.Group();const [x,w]=z.toWorld(2.2,z.r-.6)
  // gravestones
  for(const [lx,lz] of [[-3.5,-2],[-4.5,-.5],[3.5,-1.5],[4.5,.3]]){M(box(.7,.9,.18),phys('#9a9aa8',{roughness:.9}),lx,.45,lz,g).rotation.y=rand()-.5;M(cyl(.35,.35,.18,16,1),phys('#9a9aa8',{roughness:.9}),lx,.9,lz,g).rotation.x=Math.PI/2;z.ob(lx,lz,.45);}
  const pl=new THREE.PointLight('#b46bff',30,14,2);pl.position.set(0,3,0);g.add(pl);
+ z.spooky={parts:g.children.slice(c0,c1).concat(g.children.slice(c2)),obs:obs.slice(o0,o1).concat(obs.slice(o2))};
  signpost(z);}
 
 // ---- src/06-place-christmas.js ----
@@ -4581,7 +4587,9 @@ const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','
 // Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
 const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>ballActs().concat(skateActs()).concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+// ACT_HOOKS: modules outside game.js (like christmas.js) add their own buttons: {acts:()=>[[id,emoji,label]], run:id=>true if it was theirs}
+const ACT_HOOKS=[];const hookActs=()=>ACT_HOOKS.flatMap(h=>{try{return h.acts()||[];}catch(e){return [];}});
+const allActs=()=>hookActs().concat(ballActs()).concat(skateActs()).concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -4592,6 +4600,7 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
 function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  for(const h of ACT_HOOKS)if(h.run(id))return;
   if(id==='kick'){kickBall();return;}
   if(id==='skate'){toggleSkate();return;}
   if(id==='bike'){toggleBike();return;}
@@ -10867,7 +10876,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   // zones
   let z=null;for(const zz of ZONES){if(Math.hypot(p.x-zz.x,p.z-zz.z)<zz.r+(zz.d?1:1.4)){z=zz;break;}}z=z||(seaDepth(p.x,p.z,p.y)>.5?CANAL_ZONE:PARK);
   if(z!==curZone){curZone=z;$('#place').textContent=z.name;if(started)questEvent('zone',z.id);if(started){if(z!==PARK)banner(z.name);setTrack(z.music);if(z.id==='parlor'&&!closetOpen)setTimeout(()=>toast(myPet()?'Step on the glowing paw pad to start pet care 🐾':'Adopt a pet first, then bring them here! 🐾'),1600);if(z.id==='bakery'&&!closetOpen)setTimeout(()=>toast('Step on the glowing cupcake pad to design a cake 🎂'),1600);if(z.id==='garage'&&!closetOpen)setTimeout(()=>toast('Step on the glowing wrench pad to fix up your car 🔧'),1600);if(z.id==='beach'&&!closetOpen)setTimeout(()=>toast('Step on the glowing bucket pad to build a sandcastle 🏰'),1600);if(z.id==='agency'&&!closetOpen)setTimeout(()=>toast('Step on 🏆 for the model contest, or 💄 to sit at the glam mirror!'),1600);}}
-  const padD=Math.hypot(p.x,p.z);if(padD<Z.studio.pad.r&&player.onGround){if(!onPad&&started){onPad=true;openCloset();}}else if(padD>1.6)onPad=false;
+  const padD=Math.hypot(p.x-Z.studio.pad.x,p.z-Z.studio.pad.z);if(padD<Z.studio.pad.r&&player.onGround){if(!onPad&&started){onPad=true;openCloset();}}else if(padD>1.6)onPad=false;
   {const pz=Z.parlor,[lx,lz]=pz.toLocal(p.x,p.z),d=Math.hypot(lx-pz.ppad.lx,lz-pz.ppad.lz);if(d<pz.ppad.r&&player.onGround&&!closetOpen){if(!onPPad&&started){onPPad=true;tryParlor();}}else if(d>1.3)onPPad=false;}
   {const bz=Z.bakery,[lx,lz]=bz.toLocal(p.x,p.z),d=Math.hypot(lx-bz.bpad.lx,lz-bz.bpad.lz);if(d<bz.bpad.r&&player.onGround&&!closetOpen){if(!onBPad&&started){onBPad=true;openBakery();}}else if(d>1.3)onBPad=false;}
   {const wz=Z.garage,[lx,lz]=wz.toLocal(p.x,p.z),d=Math.hypot(lx-wz.gpad.lx,lz-wz.gpad.lz);if(d<wz.gpad.r&&player.onGround&&!closetOpen){if(!onWPad&&started){onWPad=true;openGarage();}}else if(d>1.3)onWPad=false;}
@@ -11101,7 +11110,7 @@ let miniT=0;
 onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('tada');banner(`🎉 You made it!`);burst(player.pos.clone().add(new THREE.Vector3(0,1.5,0)),'#ff8fc8',40,3);setDest(null);}
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={freeObj,gpuNote,gameStatus,AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
-  sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
+  sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,ACT_HOOKS,renderActions,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
 Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
 // 🚲 for the bike test (3d/tests/bike.mjs)
 Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
