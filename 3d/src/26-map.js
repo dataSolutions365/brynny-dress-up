@@ -1,5 +1,5 @@
 /* ================= MAP ================= */
-const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
+const MAPC={heli:'#c9d3de',studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -55,7 +55,7 @@ const mapFont=S=>`700 ${Math.round(S*.03*mapTS())}px system-ui,-apple-system,san
 // spot that doesn't cover another tag or emoji, so names never sit on top of each other.
 let mapLay=null;
 function mapLayout(){const S=mapCv.width;if(mapLay&&mapLay.S===S&&mapLay.n===ZONES.length&&mapLay.zm===mv.z)return mapLay.z;
-  const x=mapX,k=mapK(),ts=mapTS(),h=Math.round(S*.046*ts),pad=S*.008,c=S/2,VW=Math.min(MAPW,R+36),rIn=VW*k-S*.01;// VW: keep tags round the islandx.font=mapFont(S);
+  const x=mapX,k=mapK(),ts=mapTS(),h=Math.round(S*.046*ts),pad=S*.008,c=S/2,VW=Math.min(MAPW,R+36),rIn=VW*k-S*.01;x.font=mapFont(S);// VW: keep tags round the island
   const items=ZONES.map(z=>{const [px,py]=mapW2s(z.x,z.z,true),e=Math.round(Math.min(S*.06*ts,Math.max(S*.042*ts,z.r*k*1.05)));
     return {z,px,py,e,t:zLabel(z),w:x.measureText(zLabel(z)).width+S*.028*ts,eb:{x0:px-e*.55,y0:py-e*.62,x1:px+e*.55,y1:py+e*.48}};});
   const hit=(a,b,p=pad)=>a.x0<b.x1+p&&b.x0<a.x1+p&&a.y0<b.y1+p&&b.y0<a.y1+p;

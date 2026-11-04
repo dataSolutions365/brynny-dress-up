@@ -71,7 +71,8 @@
   (`makeFood(kind)` gives `{g, bits}`; bits disappear one by one as you eat) are in `3d/src/12g-place-restaurant.js` (`RST`).
   `3d/src/24l-restaurant.js` does sitting down to eat (Rosie walks the food over from the kitchen pass on her tray, `did('eat', food)`)
   and the 🛵 delivery rush (3 customers at places around town, a time limit, the food box on your back; `did('deliver', 0)` is a win
-  and counts toward the 🏆 earned rides). Add a food by adding it to `FOOD_MAIN`/`FOOD_SWEET` and a builder in `FOOD_BUILD`
+  and counts toward the 🏆 earned rides). Everyone who sits down takes the first free chair in `RST.seats` (`pickSeat()`), friends online
+  show sitting in theirs through the `dine` entry in `SHOW`, and townspeople get nudged out of the chairs. Add a food by adding it to `FOOD_MAIN`/`FOOD_SWEET` and a builder in `FOOD_BUILD`
   (and its id to `FOOD_MAINS`/`FOOD_SWEETS` in `3d/challenges.js`). `3d/tests/restaurant.mjs` (run on every PR) eats a meal and wins a rush.
 - ⛰️ Lookout Mountain and 🌲 Treetop Adventure: `3d/src/26h-adventure.js`, on the canal's far bank (angles 92 to 136), over a wooden footbridge.
   Places on the far bank push their own walkable sector into `BANK_LAND` and their footbridges into `BANK_BRIDGES` (both in `3d/src/26f-ocean.js`);
@@ -91,6 +92,16 @@
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
+- 🚁 The helicopter and the 🚁 Helipad (between the Basketball Court and the Jump Park): the pad is `3d/src/12h-place-helipad.js`
+  (`HPAD`), the helicopter is `3d/src/26h-helicopter.js` (`HELI` is yours, `makeHeli()` builds the model for you and for friends).
+  You get it by buying it in the shop's 🦖 Rides tab (`HELI_PRICE` 🪙) or by finishing the 4 challenges in `HELI_EARN` (Explore tab
+  of `3d/challenges.js`). It flies itself, not through FLY: `heliStep()` runs in the game loop before `flyStep`, takes off straight up,
+  tips its nose and banks like a real one, and uses `flyFloor` (24h-flying.js) to climb over trees and roofs; it only touches down on
+  open ground (`heliOpen`). Friends see it through the 'heli' entry in `SHOW`, and a friend standing next to yours while you're in it
+  on the ground can 🙋 ride along: the pilot's phone hands out seats with `{t:'heli'}` messages (online.js passes them on) and the
+  'hseat' entry sits passengers in their seat on every phone. Keep it real-looking, not a cartoon.
+  `3d/tests/helicopter.mjs` (run on every PR) buys and wins it, flies it and lands it on the pad; `3d/tests/heli-friends.mjs`
+  flies a friend along with two phones (same setup as `online-see.mjs`).
 - 🎄 Seasons: `3d/seasons.js` picks today's holiday. THE SEASON SWITCH is `TOWN_THEME` in that file: a holiday id plus the last day
   it stays on (now Christmas until Dec 30), after which the calendar takes over again; `null` always follows the calendar.
   Holiday shop things are only sold during their holiday but stay yours once bought. Halloween Hollow's pumpkins, ghosts,
@@ -110,6 +121,9 @@
   (`did('roundup', 0)`, which also counts as a win for the 🏆 rides). Challenges are in the 🗺️ Explore tab of `3d/challenges.js`.
   🦁 A Safari Round-up starts at the Safari Zoo the same way, with the safari runaways in `SAFARI_LIST` (hidden copies until it starts,
   walked back to the zoo). Only one Round-up runs at a time (`RU.grp`).
+  🌪️ The All-Animal Round-up (`RU.grp` 'all') starts by the Sparkle Studio: every runaway (barn, safari, and the polar ones in `POLAR_LIST`
+  once Polar Ice is in town) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
+  close and then stops for a breather; you can hold 3 on ropes (`ropeMax`) and each goes to its own home.
   Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
