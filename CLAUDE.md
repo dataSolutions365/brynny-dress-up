@@ -111,10 +111,10 @@
   they're caught: 🪢 Catch puts one on a rope behind you until you reach the barn. A bar at the top lists who's still out.
   Friends online in the room join in through `{t:'roam'}` messages (online.js passes them on); whoever brings the most home wins
   (`did('roundup', 0)`, which also counts as a win for the 🏆 rides). Challenges are in the 🗺️ Explore tab of `3d/challenges.js`.
-  🦁 A Safari Round-up starts at the Safari Zoo the same way, with the safari runaways in `SAFARI_LIST` (hidden copies until it starts,
-  walked back to the zoo). Only one Round-up runs at a time (`RU.grp`).
-  🌪️ The All-Animal Round-up (`RU.grp` 'all') starts by the Sparkle Studio: every runaway (barn, safari, and the polar ones in `POLAR_LIST`
-  once Polar Ice is in town) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
+  🦁 A Safari Round-up starts at the Safari Zoo the same way, with four of the zoo's own animals (`SAFARI_LIST` wraps the real `ZA`
+  animals, no copies: `penOut` sets `a.esc` so the zoo stops moving it and its pen empties, `penIn` puts it back), walked back to the zoo. Only one Round-up runs at a time (`RU.grp`).
+  🌪️ The All-Animal Round-up (`RU.grp` 'all') starts by the Sparkle Studio: EVERY animal (the barn four, all of the zoo's `ZA`, and
+  all of Polar Ice's `IA` once it's in town, `POLAR_LIST`) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
   close and then stops for a breather; you can hold 3 on ropes (`ropeMax`) and each goes to its own home.
   Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with

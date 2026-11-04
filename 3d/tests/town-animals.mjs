@@ -179,6 +179,11 @@ try {
   if (!SAF.every(n => s.modes[n] === 'street')) fail('In a Safari Round-up the safari animals should be out on the streets.');
   if (['Waddles', 'Billy', 'Truffle', 'Woolly'].some(n => s.modes[n] !== 'meadow')) fail('The barn animals should stay in their meadow during a Safari Round-up.');
   if (!SAF.every(n => zbar.includes(n))) fail('The bar should list the safari runaways.');
+  // no copies: the runaways ARE the zoo's own animals, so they're gone from the zoo while they're out
+  const pen = () => page.evaluate(() => { const G = window.__game; return { zoo: G.ZA.length, inPen: G.ZA.filter(a => !a.esc).length, out: G.ROAM.filter(c => c.real && c.a.esc).map(c => c.nm) }; });
+  let pz = await pen();
+  console.log(`safari round-up: ${pz.inPen} of the zoo's ${pz.zoo} animals still in the zoo, out: ${pz.out.join(', ')}`);
+  if (pz.inPen !== pz.zoo - 4 || SAF.some(n => !pz.out.includes(n))) fail('The 4 safari runaways should be the zoo\'s own animals, gone from the zoo (no copy left behind).');
   if (SHOTS) { await goTo('Twiga'); await gameWait(.3); await shot('safari-round-up'); }
   for (const nm of SAF) { await goTo(nm); await gameWait(.3); await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.2);
     await setMe(Zo.x * .85, Zo.z * .85); await gameWait(.6); }
@@ -186,12 +191,13 @@ try {
   const done3 = await page.evaluate(() => window.__game.SAVE.chal.done);
   console.log(`safari round-up: ${s.on ? 'still on' : 'done'}, safariRound ${done3.safariRound ? 'done' : 'not done'}`);
   if (s.on || !done3.safariRound) fail('Bringing all 4 safari runaways back to the zoo should finish the Safari Round-up.');
+  pz = await pen(); if (pz.inPen !== pz.zoo) fail(`Back home, all the zoo animals should be in the zoo again (${pz.inPen} of ${pz.zoo}).`);
 
   // 6. 🌪️ the All-Animal Round-up starts by the Sparkle Studio: every runaway (barn, safari, polar) breaks out at once, all round you,
   // runs anywhere in town (not just the streets), bolts when you get close, stops for a breather, and you can hold 3 at once
   await gameWait(10);
   const SR = await page.evaluate(() => window.__game.Z.studio.r);
-  await setMe(0, SR + 3); await page.evaluate(() => { const G = window.__game; G.player.face = 0; G.cam.yaw = G.cam.cy = Math.PI; }); await gameWait(.4);
+  await setMe(0, SR + 3); await page.evaluate(() => { const G = window.__game; G.player.face = Math.PI / 2; G.cam.yaw = G.cam.cy = Math.PI * 1.5; }); await gameWait(.4);
   const at = await btn('#roamCatch');
   if (!at.includes('All-Animal')) fail(`By the Sparkle Studio there should be a Start the All-Animal Round-up button (it says "${at}").`);
   await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.5);
@@ -200,7 +206,10 @@ try {
   const abar = await page.evaluate(() => document.querySelector('#ruBar').textContent);
   console.log(`all-animal: ${N} animals (${polar.length ? 'with the polar ones: ' + polar.join(', ') : 'no Polar Ice in town yet'}) | bar: ${abar.replace(/\n/g, ' · ')}`);
   if (!s.on || s.grp !== 'all') fail('Tapping it should start the All-Animal Round-up.');
-  if (N < 8 || Object.values(s.modes).some(m => m !== 'loose')) fail(`Every animal (barn and safari${polar.length ? ' and polar' : ''}) should be loose: ${JSON.stringify(s.modes)}`);
+  pz = await pen();
+  console.log(`all-animal: ${pz.zoo - pz.inPen} of the zoo's ${pz.zoo} animals are out, ${pz.inPen} left in the zoo`);
+  if (pz.inPen) fail(`Every zoo animal should leave the zoo in the All-Animal Round-up (${pz.inPen} stayed).`);
+  if (N < 4 + pz.zoo || Object.values(s.modes).some(m => m !== 'loose')) fail(`Every animal (barn and safari${polar.length ? ' and polar' : ''}) should be loose: ${JSON.stringify(s.modes)}`);
   if (!abar.includes(`${N} of ${N} still out`) || !abar.includes('⏱')) fail('The bar should say how many are still out and show the timer.');
   const stAll = () => page.evaluate(() => { const G = window.__game, p = G.player.pos; return G.ROAM.map(c => ({ nm: c.nm, x: c.pos.x, z: c.pos.z, mode: c.mode, streets: c.streets,
     ends: c.streets.map(G.roamEnd), me: Math.hypot(c.pos.x - p.x, c.pos.z - p.z), ok: G.looseOk(c.pos.x, c.pos.z), d: Math.hypot(c.pos.x, c.pos.z) })); });
@@ -259,7 +268,7 @@ try {
   if (s.on || !done4.allRound) fail('Bringing every runaway home should finish the All-Animal Round-up.');
   if (!done4.allTrio) fail('Holding 3 at once should finish the allTrio challenge.');
   if (coinsB - coinsA < 100) fail(`Finishing the All-Animal Round-up should give 100 coins (got ${coinsB - coinsA}).`);
-  if (Object.entries(s.modes).some(([n, m]) => m !== (['Waddles', 'Billy', 'Truffle', 'Woolly'].includes(n) ? 'meadow' : 'zoo'))) fail('After it every animal should be back at its own home.');
+  if (Object.entries(s.modes).some(([n, m]) => m !== (['Waddles', 'Billy', 'Truffle', 'Woolly'].includes(n) ? 'meadow' : 'pen'))) fail('After it every animal should be back at its own home.');
 
   if (errors.length) fail('Errors: ' + errors.join(' | '));
   if (!process.exitCode) console.log('✅ The barn animals wander their meadow, a Round-up sends them round town until they are caught and walked home, and the most catches wins.');

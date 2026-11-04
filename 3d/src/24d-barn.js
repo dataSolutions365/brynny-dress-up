@@ -467,7 +467,7 @@ function stepFarm(a,dt){if(a.ridden)return;let sp=0;
         if(a.ok(nx,nz,a.rad*.7)){a.lx=nx;a.lz=nz;}else{a.tgt=null;a.wait=.5;}a.face=angDamp(a.face,Math.atan2(dx,dz),Math.min(1,dt*4));}}
     a.graze+=((!a.tgt&&a.grazing?1:0)-a.graze)*Math.min(1,dt*2);}
   // gently push apart animals that bump into each other
-  for(const k in a.mates){const b=a.mates[k];if(b===a||!b.g.visible||b.ridden)continue;const dx=a.lx-b.lx,dz=a.lz-b.lz,d=Math.hypot(dx,dz),m=(a.rad+b.rad)*.75;
+  for(const k in a.mates){const b=a.mates[k];if(b===a||!b.g.visible||b.ridden||b.esc)continue;const dx=a.lx-b.lx,dz=a.lz-b.lz,d=Math.hypot(dx,dz),m=(a.rad+b.rad)*.75;
     if(d<m&&d>1e-4&&!(barnOpen&&a===barnSel)){const nx=a.lx+dx/d*(m-d)*.5,nz=a.lz+dz/d*(m-d)*.5;if(a.ok(nx,nz,a.rad*.6)){a.lx=nx;a.lz=nz;}}}
   // little hops when happy
   if(a.hop>0&&a.y<=0){a.vy=2.2;a.hop--;}a.vy-=12*dt;a.y=Math.max(0,a.y+a.vy*dt);if(a.y<=0)a.vy=0;
@@ -633,7 +633,7 @@ for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rh
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=a.spot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
-  let best=null,bd=1e9;for(const a of ZA){const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
+  let best=null,bd=1e9;for(const a of ZA){if(a.esc)continue;const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
   if(best!==zooNear){zooNear=best;const b=$('#zooBtn');if(best){b.textContent=`${best.F.e} Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`;b.style.display='block';}else b.style.display='none';}}
 $('#zooBtn').onclick=()=>{if(zooNear)openZoo(zooNear);};
 function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpen=true;zooSel=a;$('#zooBtn').style.display='none';zooNear=null;
@@ -654,7 +654,7 @@ $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;i
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
-function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA){stepFarm(a,dt);if(a.F.swim)swimSink(a,null,a.pos,dt);}zooButton(p);
+function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA){if(a.esc)continue;stepFarm(a,dt);if(a.F.swim)swimSink(a,null,a.pos,dt);}zooButton(p);
   if(zooOpen&&zooSel&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>8)closeZoo();}
 
 /* ---------- the animal book: every animal in the game, where to find it and what it costs ---------- */
