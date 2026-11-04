@@ -73,6 +73,17 @@
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
+- 🎄 Seasons: `3d/seasons.js` picks today's holiday. THE SEASON SWITCH is `TOWN_THEME` in that file: a holiday id plus the last day
+  it stays on (now Christmas until Dec 30), after which the calendar takes over again; `null` always follows the calendar.
+  Holiday shop things are only sold during their holiday but stay yours once bought. Halloween Hollow's pumpkins, ghosts,
+  gravestones and purple glow are listed in `Z.halloween.spooky` (`3d/src/05-place-halloween.js`) and only come out for Halloween.
+  `3d/christmas.js` is Christmas in town: snow on the ground, the really big tree in the middle (the 👗 dress-up pad moves in front of it:
+  the game loop reads `Z.studio.pad.x/.z`), lights round the street lights and along the tops of the buildings (instanced, one draw call
+  per half), 🎅 Santa walking round the plaza and out along the paths (a present once a day), ❄️ snowballs and snowball fights
+  (first to 5 hits, from the talk buttons), and ⛄ snowmen you roll by walking and stack (saved in `SAVE.xmas.snowmen`).
+  Its action buttons come in through `ACT_HOOKS` (`3d/src/19-ui-closet.js`). The 🎄 Christmas tab in `3d/challenges.js` uses `hol: 'christmas'`:
+  a challenge with `hol` only shows and counts during that holiday. Keep the Christmas look real, not cartoony.
+  `3d/tests/christmas.mjs` (run on every PR) checks the tree, the lights, Santa, a snowball hit, a whole snowman, and that Halloween brings the pumpkins back.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
