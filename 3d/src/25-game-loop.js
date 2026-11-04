@@ -50,7 +50,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||window.__daddy?.frozen())mag=0;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   const p=player.pos;
-  if(!heliStep(dt,ix,iy,mag)&&!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!advStep(dt)&&!iceSkateStep(dt,ix,iy,mag)&&!wpStep(dt,ix,iy,mag)){// on a waterslide, a tube or a surfboard, wpStep (26w-waterpark.js);// on the ice at ❄️ Polar Ice, iceSkateStep (24m-arctic.js); advStep (26h-adventure.js): climbing a ladder or the rock wall, or on a zip line// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
+  if(!skyStep(dt,ix,iy,mag)&&!heliStep(dt,ix,iy,mag)&&!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!advStep(dt)&&!iceSkateStep(dt,ix,iy,mag)&&!wpStep(dt,ix,iy,mag)){// skyStep (26i-sky-sports.js): hang gliding, skydiving or riding in the jump plane; on a waterslide, a tube or a surfboard, wpStep (26w-waterpark.js);// on the ice at ❄️ Polar Ice, iceSkateStep (24m-arctic.js); advStep (26h-adventure.js): climbing a ladder or the rock wall, or on a zip line// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
   // ^ DADDY POWERS: window.__daddy?.fly is Daddy flying, swinging or in the robot (27-daddy-powers.js); does nothing once that file is gone
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
@@ -99,7 +99,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   const playMode=!closetOpen;
   const ZM={eyes:[.012,.3],lips:[-.058,.26],face:[-.01,.55]}[closetOpen?czoom:'']||null;
   if(ZM)player.face=angDamp(player.face,cam.closetYaw,Math.min(1,dt*8));
-  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist+flyCamBack()+heliCamBack():ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
+  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist+flyCamBack()+heliCamBack()+skyCamBack():ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
   if(!started){cam.yaw+=dt*.12;}
   cam.cy=angDamp(cam.cy,tYaw,Math.min(1,dt*(playMode?14:6)));cam.cp+=(tPitch-cam.cp)*Math.min(1,dt*6);cam.cd+=(tDist-cam.cd)*Math.min(1,dt*5);
   const want=ZM?av.head.localToWorld(tmpV.set(0,ZM[0],.1)):tmpV.set(p.x,jpCamY(p.y,dt)+(playMode?1.15:.82),p.z);

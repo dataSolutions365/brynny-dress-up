@@ -139,9 +139,10 @@ try {
     // walk her off the sand into the water behind the zoo
     const shore = await page.evaluate(() => { const G = window.__game, Z = G.Z.zoo, [x, z] = Z.toWorld(0, G.ZOO_SHORE.edge + 1); return { x, z, face: Math.atan2(-Z.x, -Z.z) + Math.PI }; });
     await page.evaluate(s => { const G = window.__game; G.player.pos.set(s.x, 0, s.z); G.player.face = s.face; G.cam.yaw = s.face + Math.PI; if ('cy' in G.cam) G.cam.cy = G.cam.yaw; }, shore);
-    // keep walking until it's in deep water (a zoo animal on the sand can be in the way for a moment, so give it up to 8 s)
+    // keep walking until it's in deep water (a zoo animal on the sand can be in the way for a moment, so give it up to 8 s),
+    // and stop as soon as it gets there: Sunny Skies Airfield is on the far bank right across from the zoo
     await page.keyboard.down('ArrowUp');
-    for (let t = 0; t < 40; t++) { await page.waitForTimeout(200); if (t >= 10 && await page.evaluate(() => { const p = window.__game.player.pos; return window.__game.waterAt(p.x, p.z).k > .97; })) break; }
+    for (let t = 0; t < 40; t++) { await page.waitForTimeout(200); if (t >= 2 && await page.evaluate(() => { const p = window.__game.player.pos; return window.__game.waterAt(p.x, p.z).k > .97; })) break; }
     await page.keyboard.up('ArrowUp');
     await page.waitForTimeout(2500);
     const r = await page.evaluate(() => { const G = window.__game, a = G.ride(), av = G.av(), p = G.player.pos; const hp = new G.THREE.Vector3(); av.hips.getWorldPosition(hp); return { k: a && a.k, y: a && a.g.position.y, ay: hp.y, d: Math.hypot(p.x, p.z), k2: G.waterAt(p.x, p.z).k }; });

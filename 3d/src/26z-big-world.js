@@ -4,7 +4,7 @@
      90 is +x), each with its own landscape: ❄️ snowy mountains, rolling hills, a pine forest, a lake, red canyon mesas, an orchard.
    - All of it is 🚧 blocked off for now: a wooden fence runs round it with "Coming soon" signs, and you can't walk, swim or fly in.
      Places that are open over there (Lookout Mountain, the waterpark…) push a sector into BANK_LAND as usual (26f-ocean.js); this file
-     leaves their land flat, cuts holes for ones that draw their own ground (own:1), and runs the fence round their edge instead.
+     leaves their land flat, cuts holes for ones that draw their own ground (own:1 or ground:1), and runs the fence round their edge instead.
    - To open a new area later: build the place in its own file, push its BANK_LAND sector and footbridge (see 26h-adventure.js), and
      the hills there flatten and the fence moves round it by itself. No need to rebuild anything else.
    - The big map (26-map.js) shows every region with stripes and a 🔒 name; zoom all the way out to see the whole world.
@@ -67,7 +67,7 @@ function groundH(x,z){const {NA,NR,r0,r1,H}=WG,r=Math.hypot(x,z);if(r<r0)return 
   const idx=[];const vert=(i,j)=>j*NA+(i%NA);
   for(let j=0;j<NR;j++)for(let i=0;i<NA;i++){const a=vert(i,j),b=vert(i+1,j),c=vert(i,j+1),d=vert(i+1,j+1);
     // a hole where an open place draws its own ground
-    const mx=(pos[a*3]+pos[d*3])/2,mz=(pos[a*3+2]+pos[d*3+2])/2,L=openLand(mx,mz,-1);if(L&&L.own)continue;
+    const mx=(pos[a*3]+pos[d*3])/2,mz=(pos[a*3+2]+pos[d*3+2])/2,L=openLand(mx,mz,-1);if(L&&(L.own||L.ground))continue;
     idx.push(a,c,b,b,c,d);}
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();
   const nrm=geo.attributes.normal.array,C=new THREE.Color(),T=new THREE.Color();
