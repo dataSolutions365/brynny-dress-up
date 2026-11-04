@@ -62,7 +62,7 @@ if (Z.halloween && Z.halloween.ground) { const m = snowGround.clone(); m.map = s
 /* ================= LIGHTS ================= */
 // One InstancedMesh per batch of bulbs. Half the bulbs fade while the other half brighten, so they twinkle slowly.
 const allBulbs = [];
-function makeBulbs(points, colorOf, size, parent = scene) {
+function makeBulbs(points, colorOf, size, parent = scene, glowK = 9) {
   const geo = new THREE.SphereGeometry(size, 8, 6), halves = [[], []];
   points.forEach((p, i) => halves[(i * 7 + (i >> 3)) % 2].push([p, i]));
   const out = [];
@@ -74,13 +74,13 @@ function makeBulbs(points, colorOf, size, parent = scene) {
     im.frustumCulled = false; parent.add(im);
     // the soft glow round each bulb (only shows after dark)
     const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(gp, 3)); gg.setAttribute('color', new THREE.BufferAttribute(gc, 3));
-    const glow = new THREE.Points(gg, new THREE.PointsMaterial({ size: size * 9, map: softDot, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    const glow = new THREE.Points(gg, new THREE.PointsMaterial({ size: size * glowK, map: softDot, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
     glow.frustumCulled = false; parent.add(glow);
     const b = { im, glow, ph: out.length * Math.PI }; out.push(b); allBulbs.push(b); }
   return out;
 }
 ticks.push(() => { const t = performance.now() / 1000, n = night();
-  for (const b of allBulbs) { const tw = .5 + .5 * Math.sin(t * 1.3 + b.ph); b.im.material.color.setScalar(lerp(.95, 1.6, n) * (.72 + .28 * tw)); b.glow.material.opacity = n * (.45 + .4 * tw); } });
+  for (const b of allBulbs) { const tw = .5 + .5 * Math.sin(t * 1.3 + b.ph); b.im.material.color.setScalar(lerp(1.05, 2.2, n) * (.75 + .25 * tw)); b.glow.material.opacity = n * (.55 + .4 * tw); } });
 const LIGHT_COLS = ['#ff3b3b', '#2fd06b', '#4f8bff', '#ffb02e', '#ffd7a0', '#ff5fa8'];
 
 /* ================= THE BIG CHRISTMAS TREE ================= */
@@ -100,7 +100,7 @@ const tree = new THREE.Group(); tree.position.set(TREE.x, 0, TREE.z); scene.add(
     x.lineCap = 'round'; for (let i = 0; i < 2600; i++) { const px = Math.random() * w, py = Math.random() * h, a = Math.PI / 2 + (Math.random() - .5) * 1.4, l = 5 + Math.random() * 9;
       x.strokeStyle = rnd(cs); x.lineWidth = 1 + Math.random() * 1.4; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke(); }
   }, [7, 2]);
-  const pine = new THREE.MeshStandardMaterial({ color: '#ffffff', map: needles, roughness: .88, side: THREE.DoubleSide, vertexColors: true });
+  const pine = new THREE.MeshStandardMaterial({ color: '#ffffff', map: needles, roughness: .88, side: THREE.DoubleSide, vertexColors: true, emissive: '#3f9a52', emissiveMap: needles, emissiveIntensity: 0 });
   // the trunk, mostly hidden by the lowest branches
   const bark = new THREE.MeshStandardMaterial({ color: '#4a3324', roughness: .95 });
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.32, .55, TREE.base + 1.5, 14), bark); trunk.position.y = (TREE.base + 1.5) / 2; trunk.castShadow = true; tree.add(trunk);
@@ -130,16 +130,23 @@ const tree = new THREE.Group(); tree.position.set(TREE.x, 0, TREE.z); scene.add(
   // a spot on the tree's surface at height y (a little in front of the branch tips)
   const onTree = (y, a, k = 1) => { const r = treeR(y) * k; return new THREE.Vector3(Math.sin(a) * r, y, Math.cos(a) * r); };
   // ornaments: shiny glass balls in deep reds, gold, silver and blue
-  const ornCols = ['#9e1b24', '#b8122d', '#c9a23a', '#d8c27a', '#c7ccd4', '#1d3e7a', '#7a1424', '#e2b552'];
-  const NO = 170, orn = new THREE.InstancedMesh(new THREE.SphereGeometry(.17, 14, 10), new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: .55, roughness: .16, clearcoat: 1, clearcoatRoughness: .08 }), NO);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v3 = new THREE.Vector3(), sc = new THREE.Vector3();
-  for (let i = 0; i < NO; i++) { const y = TREE.base + .2 + Math.pow(sr(), 1.25) * (TREE.top - TREE.base - 1.6), p = onTree(y, sr() * Math.PI * 2, .93), s = .7 + sr() * .7 * (1 - (y - TREE.base) / 24);
-    m4.compose(p, q, sc.setScalar(s)); orn.setMatrixAt(i, m4); orn.setColorAt(i, new THREE.Color(rnd(ornCols))); }
-  orn.castShadow = false; tree.add(orn);
-  // warm white lights wound round the tree, with a few coloured ones
-  const bulbs = [], turns = 11;
-  for (let i = 0; i < 620; i++) { const u = i / 620, y = TREE.base + .1 + u * (TREE.top - TREE.base - .8), a = u * turns * Math.PI * 2 + (sr() - .5) * .25; bulbs.push(onTree(y, a, 1.0)); }
-  makeBulbs(bulbs, i => i % 7 === 3 ? rnd(['#ff3b3b', '#3fd06b', '#4f8bff', '#ffb02e']) : '#ffd7a0', .055, tree);
+  // ornaments: big shiny balls in bright reds, golds, blues, greens, pinks and purples. One batch per colour, so each can
+  // glow a little in its own colour after dark (the tree's own lights would light them up)
+  const ornCols = ['#e0182d', '#ffc21a', '#1e6bff', '#19b34a', '#ff3fa4', '#9b3dff', '#ff7a12', '#e8e8f0'];
+  const ornGeo = new THREE.SphereGeometry(.2, 14, 10), ornMats = [], q = new THREE.Quaternion(), sc = new THREE.Vector3(), m4 = new THREE.Matrix4();
+  for (const c of ornCols) { const mat = new THREE.MeshPhysicalMaterial({ color: c, metalness: .45, roughness: .18, clearcoat: 1, clearcoatRoughness: .08, emissive: c, emissiveIntensity: .12 });
+    const n = 44, orn = new THREE.InstancedMesh(ornGeo, mat, n);
+    for (let i = 0; i < n; i++) { const y = TREE.base + .2 + Math.pow(sr(), 1.2) * (TREE.top - TREE.base - 1.6), p = onTree(y, sr() * Math.PI * 2, .94), s = .75 + sr() * .75 * (1 - (y - TREE.base) / 24);
+      m4.compose(p, q, sc.setScalar(s)); orn.setMatrixAt(i, m4); }
+    orn.castShadow = false; tree.add(orn); ornMats.push(mat); }
+  // lights: lots of bright coloured bulbs in several strands wound round the tree, with some warm white between them
+  const bulbs = [], STRANDS = 3, PER = 520, TCOLS = ['#ff2a2a', '#20e060', '#2f7bff', '#ffc21a', '#ff3fd0', '#ff8a1a', '#9b5cff', '#ffe2b0'];
+  for (let s = 0; s < STRANDS; s++) for (let i = 0; i < PER; i++) { const u = i / PER, y = TREE.base + .1 + u * (TREE.top - TREE.base - .7), a = u * 10 * Math.PI * 2 + s * Math.PI * 2 / STRANDS + (sr() - .5) * .3; bulbs.push(onTree(y, a, 1.0)); }
+  // and a scatter of bulbs tucked in among the branches all over
+  for (let i = 0; i < 500; i++) { const y = TREE.base + .2 + Math.pow(sr(), .9) * (TREE.top - TREE.base - 1), a = sr() * Math.PI * 2; bulbs.push(onTree(y, a, .9 + sr() * .1)); }
+  makeBulbs(bulbs, i => TCOLS[(i * 5 + (i >> 4)) % TCOLS.length], .075, tree, 14);
+  // after dark the branches still show green: the lights fill the tree with a soft coloured glow
+  ticks.push(() => { const n = night(); pine.emissiveIntensity = lerp(0, .55, n); for (const m of ornMats) m.emissiveIntensity = lerp(.12, .6, n); });
   // a gold star on top that catches the light, with a soft glow round it
   const st = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, r = i % 2 ? .3 : .75; i ? st.lineTo(Math.sin(a) * r, Math.cos(a) * r) : st.moveTo(0, r); }
   const star = new THREE.Mesh(new THREE.ExtrudeGeometry(st, { depth: .16, bevelEnabled: true, bevelSize: .05, bevelThickness: .05, bevelSegments: 2 }),
