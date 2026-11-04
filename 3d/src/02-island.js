@@ -2,7 +2,7 @@
 const R=72;// island radius (was 44.5; grown so places have room to breathe)
 M(new THREE.CylinderGeometry(R+1.6,R+3.2,3,96),std('#f1d9a6',{map:TEX.sand,roughness:1}),0,-1.5,0,scene,false,true);
 const grass=M(new THREE.CircleGeometry(R,96),groundMat,0,.005,0,scene,false,true);grass.rotation.x=-Math.PI/2;
-const waterGeo=new THREE.PlaneGeometry(520,520,110,110);waterGeo.rotateX(-Math.PI/2);
+const waterGeo=new THREE.PlaneGeometry(640,640,110,110);waterGeo.rotateX(-Math.PI/2);
 const water=M(waterGeo,phys('#2ab0d4',{roughness:.06,metalness:.05,clearcoat:1,clearcoatRoughness:.05}),0,-.35,0,scene,false,true);
 const wpos=waterGeo.attributes.position;const wbase=Float32Array.from(wpos.array);let wTick=0;
 anims.push(t=>{if(++wTick%2)return;for(let i=0;i<wpos.count;i++){const x=wbase[i*3],z=wbase[i*3+2];wpos.array[i*3+1]=Math.sin(x*.35+t*1.3)*.07+Math.sin(z*.27+t*1.05)*.07+Math.sin((x+z)*.8+t*2.2)*.02;}wpos.needsUpdate=true;waterGeo.computeVertexNormals();});
@@ -50,6 +50,8 @@ const ZONES=[
   {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
   // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
   {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
+  // in the open grass between the Beach path and the Car Garage (12h-place-arctic.js, 24m-arctic.js): snow, ice and polar animals
+  {id:'arctic',name:'❄️ Polar Ice',ang:165,d:45,r:9,music:'winter-days'},
   // out on the open grass between the Basketball Court and the Jump Park, near the shore (12h-place-helipad.js, 26h-helicopter.js)
   {id:'heli',name:'🚁 Helipad',ang:105,d:62,r:6.5,music:'city-park'},
   // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one

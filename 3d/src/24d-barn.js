@@ -59,6 +59,7 @@ const ZOOA=[
   {k:'gator',e:'🐊',n:'Alligator',swim:.36,food:[['🐟','Fish'],['🍗','Chicken']],say:['*low rumbly bellow*','*snap snap!* 🐊','*lazy sunbathing*'],
     facts:[['🥗','Diet','Carnivore. Fish, turtles, snakes, birds and small animals. It can go months without eating in the winter!'],['🌍','Habitat','Rivers, lakes and swamps of the southeastern United States, like Florida and Louisiana. A cousin lives in China.'],['⏳','Lifespan','About 35 to 50 years in the wild, and up to 70 in zoos.'],['✨','Fun fact','You can tell an alligator from a crocodile by its wide, rounded U-shaped snout. When its mouth is shut you can only see its top teeth! It has about 80 teeth and grows new ones all its life.']]}
 ];
+ZOOA.push(...arcticZooList());FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
 const BS=SAVE.barn;BS.own||={};
@@ -639,7 +640,8 @@ $('#zooBtn').onclick=()=>{if(zooNear)openZoo(zooNear);};
 function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpen=true;zooSel=a;$('#zooBtn').style.display='none';zooNear=null;
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';player.speed=0;
   fcam.p.copy(camera.position);fcam.t.copy(cam.fv||player.pos);
-  const seen=zooSeen();if(!seen[a.k]){seen[a.k]=1;persist();did('zoolearn',a.k);}
+  if(a.F.arctic){const I=SAVE.ice||(SAVE.ice={});I.seen||={};if(!I.seen[a.k]){I.seen[a.k]=1;persist();}did('icelearn',a.k);}// ❄️ polar animals count for the Polar challenges, not the Safari ones
+  else{const seen=zooSeen();if(!seen[a.k]){seen[a.k]=1;persist();did('zoolearn',a.k);}}
   a.speak(rnd(a.F.say));renderZoo();$('#zooUI').classList.add('show');$('#zooContent').scrollTop=0;sfx('pop');}
 function closeZoo(){if(!zooOpen)return;zooOpen=closetOpen=false;document.body.classList.remove('dressing');$('#zooUI').classList.remove('show');
   const a=zooSel;zooSel=null;if(a){const yaw=Math.atan2(a.pos.x-player.pos.x,a.pos.z-player.pos.z);cam.yaw=cam.cy=yaw+Math.PI;player.face=yaw;}}
@@ -647,10 +649,10 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
-    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
-  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
+  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did(a.F.arctic?'icefeed':'zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
@@ -670,7 +672,8 @@ function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div
     <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
     <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
     <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
-    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}`;
+    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.filter(f=>!f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}
+    <h3>❄️ Polar Ice · free to visit</h3>${ZOOA.filter(f=>f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','arctic')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
 function closeCatalog(){catOpen=false;$('#catalog').classList.remove('show');}

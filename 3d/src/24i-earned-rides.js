@@ -106,7 +106,9 @@ if(!ER.kinds){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kinds={contest:d.win?1:
 const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 // 'chal' = the 🦁 Safari challenges: how many of the ride's challenges (earn.ids) you've finished
 const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:f.earn.by==='chal'?f.earn.ids.filter(id=>SAVE.chal&&SAVE.chal.done&&SAVE.chal.done[id]).length:0;
-const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} 🦁 Safari challenges`:`Play ${f.earn.goal} days in a row`;
+// the ❄️ Polar rides (24c9g-arctic-animals.js) are earned the same way, from the ❄️ Polar tab (their challenge ids start with ice_)
+const erPolar=e=>!!(e&&e.ids&&e.ids.some(id=>id.startsWith('ice_')));
+const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} ${erPolar(f.earn)?'❄️ Polar':'🦁 Safari'} challenges`:`Play ${f.earn.goal} days in a row`;
 // a new day you played: one more day in the streak if you also played yesterday, otherwise start again at 1
 function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.last===k)return;
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
@@ -121,7 +123,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
     burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);break;}}
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
-  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win')||(k==='roundup'&&a===0);if(!won)return;
+  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win')||(k==='roundup'&&a===0)||(k==='iceescape'&&a===0);if(!won)return;
   ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;if(ER.kn[k]!=null)ER.kn[k]++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
@@ -132,5 +134,5 @@ function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const go
 function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
-function earnTag(e){return e.by==='chal'?'🦁 Safari':`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+function earnTag(e){return e.by==='chal'?(erPolar(e)?'❄️ Polar':'🦁 Safari'):`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0,kn:{...ER.kn}})});});

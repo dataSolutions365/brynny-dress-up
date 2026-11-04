@@ -86,6 +86,19 @@ try {
   await page.mouse.move(jb.x + jb.width / 2, jb.y + jb.height / 2); await page.mouse.down();
   await until(() => window.__game.heli().pos.y > 12, 'holding ⬆️ UP lifts off and climbs');
   await page.mouse.up();
+  // on a phone: a ghost joystick on the left shows where to drag, and dragging there really flies it around
+  await until(() => document.querySelector('#heliJoy').style.display === 'flex', 'up in the air, the ghost joystick shows where to drag');
+  { const cdp = await ctx.newCDPSession(page), a = await G(() => ({ x: window.__game.heli().pos.x, z: window.__game.heli().pos.z }));
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 95, y: 640, id: 1 }] });
+    for (let k = 1; k <= 6; k++) { await page.waitForTimeout(80); await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 95, y: 640 - k * 10, id: 1 }] }); }
+    for (let k = 0; k < 10; k++) { await page.waitForTimeout(250); await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 95 + (k % 2), y: 580, id: 1 }] }); }
+    const b = await G(() => ({ x: window.__game.heli().pos.x, z: window.__game.heli().pos.z, ghost: document.querySelector('#heliJoy').style.display }));
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    const moved = Math.hypot(b.x - a.x, b.z - a.z);
+    console.log(`dragging a finger on the left flew it ${moved.toFixed(1)}`);
+    if (moved < 5) fail('Dragging a finger on the left side of the screen should fly the helicopter around.');
+    if (b.ghost !== 'none') fail('The ghost joystick should go away while you are steering.'); }
+  await shot('3a-ghost-joystick');
   // fly across town with the joystick (W): it stays above every tree and roof on the way
   await G(() => { window.__game.keys.KeyW = true; window.__game.cam.yaw = Math.atan2(window.__game.player.pos.x, window.__game.player.pos.z); });
   let low = 99, far = 0;
@@ -120,6 +133,34 @@ try {
   await page.waitForTimeout(500);
   await G(() => window.__game.doAction('heli'));
   await until(() => !window.__game.heli().auto && Math.hypot(window.__game.heli().pos.x + 20, window.__game.heli().pos.z - 25) < 20, '🚁 Heli flies it over and it lands near you');
+
+  // something really tall and thin over the helicopter (like a cable or a pole): it still rises smoothly, never jumps up
+  // into the sky, and once it's up the joystick flies it away instead of it getting stuck
+  await G(() => { const G = window.__game, H = G.heli(), T = G.THREE;
+    const pole = new T.Mesh(new T.CylinderGeometry(.05, .05, 1, 6), new T.MeshBasicMaterial()); pole.name = 'test-cable';
+    const a = new T.Vector3(H.pos.x - 9, 1, H.pos.z - 9), b = new T.Vector3(H.pos.x + 9, 60, H.pos.z + 9);
+    pole.position.copy(a).add(b).multiplyScalar(.5); pole.scale.y = a.distanceTo(b); pole.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    G.scene.add(pole); window.__testCable = pole; G.player.pos.set(H.pos.x + 2.6, 0, H.pos.z + 1.5); });
+  await until(() => /Get in/.test(document.querySelector('#heliBtn').textContent) && document.querySelector('#heliBtn').style.display === 'block', 'walk back up to it: 🚁 Get in');
+  await G(() => document.querySelector('#heliBtn').click());
+  await until(() => window.__game.heli().on && window.__game.heliModel().rpm > .9, 'in again, rotor spinning');
+  const fl = await G(() => { const G = window.__game, P = G.heli().pos; return G.flyFloor(P.x, P.z, 3); });
+  if (fl < 50) fail(`The test cable should be in the way (floor ${fl.toFixed(1)}).`);
+  const y0 = await G(() => window.__game.heli().pos.y);
+  await G(() => { window.__game.keys.Space = true; });
+  await page.waitForTimeout(500);
+  const y1 = await G(() => window.__game.heli().pos.y);
+  if (y1 - y0 > 6) fail(`It should rise smoothly like a real helicopter, it jumped ${(y1 - y0).toFixed(1)} up in half a second.`);
+  await page.waitForFunction(() => window.__game.heli().pos.y > 43, null, { timeout: 120_000, polling: 250 }).catch(() => fail('It should climb up to the top.'));
+  await G(() => { window.__game.keys.Space = false; });
+  const s0 = await G(() => ({ x: window.__game.heli().pos.x, z: window.__game.heli().pos.z }));
+  await G(() => { window.__game.joy.x = 1; });
+  await page.waitForTimeout(3000);
+  const s1 = await G(() => ({ x: window.__game.heli().pos.x, z: window.__game.heli().pos.z }));
+  await G(() => { window.__game.joy.x = 0; window.__game.scene.remove(window.__testCable); });
+  const gone = Math.hypot(s1.x - s0.x, s1.z - s0.z);
+  console.log(`up past something too tall to fly over, the joystick flew it ${gone.toFixed(1)}`);
+  if (gone < 10) fail('The joystick should still fly the helicopter when something too tall is in the way.');
   if (errors.length) fail(`The game had errors:\n  ${errors.join('\n  ')}`);
   if (!process.exitCode) console.log('✅ The helicopter can be won or bought, flies over the trees, lands on the Helipad and comes when you call.');
 } finally {

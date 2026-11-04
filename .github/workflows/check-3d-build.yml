@@ -45,12 +45,16 @@ jobs:
         run: node 3d/tests/restaurant.mjs
       - name: Lookout Mountain and the Treetop Adventure (footbridge, ladder, rope bridges, rock wall, trail, zip lines) work
         run: node 3d/tests/adventure.mjs
+      - name: The big world past the canal is there and blocked off, open land works, and the map shows it all
+        run: node 3d/tests/big-world.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
       - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)
         run: node 3d/tests/townspeople.mjs
       - name: Christmas in town - the big tree, lights, Santa, snowball fights and snowmen
         run: node 3d/tests/christmas.mjs
+      - name: Polar Ice works (skating, ice fishing, igloo, Polar escape) and the polar rides come only from their Polar challenges
+        run: node 3d/tests/arctic.mjs
       - name: The 2D and 3D closets match
         run: node 3d/tests/closets-match.mjs
       - name: The helicopter is won or bought, flies over the trees, lands on the Helipad and comes when called
