@@ -84,6 +84,16 @@
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
+- 🚁 The helicopter and the 🚁 Helipad (between the Basketball Court and the Jump Park): the pad is `3d/src/12h-place-helipad.js`
+  (`HPAD`), the helicopter is `3d/src/26h-helicopter.js` (`HELI` is yours, `makeHeli()` builds the model for you and for friends).
+  You get it by buying it in the shop's 🦖 Rides tab (`HELI_PRICE` 🪙) or by finishing the 4 challenges in `HELI_EARN` (Explore tab
+  of `3d/challenges.js`). It flies itself, not through FLY: `heliStep()` runs in the game loop before `flyStep`, takes off straight up,
+  tips its nose and banks like a real one, and uses `flyFloor` (24h-flying.js) to climb over trees and roofs; it only touches down on
+  open ground (`heliOpen`). Friends see it through the 'heli' entry in `SHOW`, and a friend standing next to yours while you're in it
+  on the ground can 🙋 ride along: the pilot's phone hands out seats with `{t:'heli'}` messages (online.js passes them on) and the
+  'hseat' entry sits passengers in their seat on every phone. Keep it real-looking, not a cartoon.
+  `3d/tests/helicopter.mjs` (run on every PR) buys and wins it, flies it and lands it on the pad; `3d/tests/heli-friends.mjs`
+  flies a friend along with two phones (same setup as `online-see.mjs`).
 - 🎄 Seasons: `3d/seasons.js` picks today's holiday. THE SEASON SWITCH is `TOWN_THEME` in that file: a holiday id plus the last day
   it stays on (now Christmas until Dec 30), after which the calendar takes over again; `null` always follows the calendar.
   Holiday shop things are only sold during their holiday but stay yours once bought. Halloween Hollow's pumpkins, ghosts,
