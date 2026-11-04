@@ -82,8 +82,10 @@ try {
   console.log(`santa walked ${moved.toFixed(2)} steps`);
   if (moved < 1) fail('Santa is not walking round town');
   // walking up to Santa: he says hi and gives a present
-  const gift = await page.evaluate(async () => { const G = window.__game, s = window.__xmas.santa(), c0 = G.SAVE.coins || 0; G.player.pos.set(s.x + 1.2, 0, s.z + 1.2);
-    await new Promise(r => setTimeout(r, 2500)); return { gift: G.SAVE.xmas.gift, coins: (G.SAVE.coins || 0) - c0, hi: window.__chal.isDone(window.__chal.list.find(c => c.id === 'xs_santa')) }; });
+  // (the present comes a moment after he says hi; give a slow test machine up to 15 seconds)
+  await page.evaluate(() => { const G = window.__game, s = window.__xmas.santa(); window.__c0 = G.SAVE.coins || 0; G.player.pos.set(s.x + 1.2, 0, s.z + 1.2); });
+  await page.waitForFunction(() => (window.__game.SAVE.coins || 0) - window.__c0 >= 25, null, { timeout: 15_000 }).catch(() => {});
+  const gift = await page.evaluate(() => { const G = window.__game; return { gift: G.SAVE.xmas.gift, coins: (G.SAVE.coins || 0) - window.__c0, hi: window.__chal.isDone(window.__chal.list.find(c => c.id === 'xs_santa')) }; });
   console.log('santa:', JSON.stringify(gift));
   if (!gift.gift || gift.coins < 25) fail('Santa did not give a present');
   if (!gift.hi) fail('saying hi to Santa did not count for the challenge');
