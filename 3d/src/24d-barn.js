@@ -34,12 +34,13 @@ const FARM=[
 ];
 FARM.push(...earnedRideList());// 🏆 rides you can only earn, not buy (24i-earned-rides.js)
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
+// model = which real-looking builder in ZOO_BUILD to use (the same one as the safari ride of that animal)
 const ZOOA=[
-  {k:'zebra',e:'🦓',n:'Zebra',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
+  {k:'zebra',e:'🦓',n:'Zebra',model:'zebraR',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
     facts:[['🥗','Diet','Herbivore. Mostly grass, plus some leaves, bark and shoots.'],['🌍','Habitat','Grasslands and savannas of eastern and southern Africa.'],['⏳','Lifespan','About 20 to 25 years in the wild, and up to 40 in zoos.'],['✨','Fun fact','No two zebras have the same stripes, just like fingerprints!']]},
-  {k:'giraffe',e:'🦒',n:'Giraffe',food:[['🥬','Lettuce'],['🌿','Acacia leaves']],say:['*long lick* 👅','Hello down there!','Mmm, leaves! 🌿'],
+  {k:'giraffe',e:'🦒',n:'Giraffe',model:'giraffeR',food:[['🥬','Lettuce'],['🌿','Acacia leaves']],say:['*long lick* 👅','Hello down there!','Mmm, leaves! 🌿'],
     facts:[['🥗','Diet','Herbivore. Leaves and twigs from tall trees, especially acacia. Up to 34 kg (75 lb) a day!'],['🌍','Habitat','Savannas and open woodlands of Africa.'],['⏳','Lifespan','About 25 years in the wild, and a bit longer in zoos.'],['✨','Fun fact','The tallest animal on Earth, up to 5.5 m (18 ft). Its tongue is about 50 cm (20 in) long!']]},
-  {k:'rhino',e:'🦏',n:'White rhino',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
+  {k:'rhino',e:'🦏',n:'White rhino',model:'rhinoR',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
     facts:[['🥗','Diet','Herbivore. A grazer that eats short grass all day long.'],['🌍','Habitat','Grasslands and savannas of southern Africa.'],['⏳','Lifespan','About 40 to 50 years.'],['✨','Fun fact','Its horns are made of keratin, the same stuff as your fingernails. Adults can weigh over 2,000 kg!']]},
   {k:'okapi',e:'🌿',n:'Okapi',food:[['🍃','Leaves'],['🍌','Banana']],say:['*soft huff*','*long tongue lick* 👅','Shh, I\'m shy! 🌿'],
     facts:[['🥗','Diet','Herbivore. Leaves, buds, fruit and even mushrooms, which it pulls off with its long tongue.'],['🌍','Habitat','Only in the thick rainforests of the Democratic Republic of the Congo, in central Africa.'],['⏳','Lifespan','About 20 to 30 years.'],['✨','Fun fact','It has zebra stripes, but its closest relative is the giraffe! Its tongue is so long it can lick its own ears.']]},
@@ -229,17 +230,11 @@ class FarmAnimal{
       const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.3),fV(0,-.15,-.6)],q=>.2*(1-q*.85),skin,tail,16,12);
       for(const [x,y,z,a] of [[.08,-.1,-.5,.9],[-.08,-.1,-.5,-.9],[.07,-.13,-.6,.9],[-.07,-.13,-.6,-.9]]){const sp=M(new THREE.ConeGeometry(.035,.22,8),fShiny('#fff4dc'),x,y,z,tail);sp.rotation.z=-a;}
       Object.assign(o,{neck,head,tail,nTilt:1.3,size:1,h:by+.45,rad:.65,dustR:[r,r,len*.8]});}
-    if(k==='monkey'){const r=.22,len=.12,leg=.3,by=leg+r*.7,fur=fm('#8a5a3b'),face=fm('#f6dcc0');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,18),fur,0,0,0,body);t.rotation.x=Math.PI/2-.35;M(sph(r*.75,14,10),face,0,-r*.25,len*.25,body).scale.set(.85,.9,1.1);
-      fLegs(this,g,r*.55,len*.6+.04,leg+.04,leg+.04,.055,fur,face);
-      const neck=new THREE.Group();neck.position.set(0,by+r*.75,len/2+r*.35);neck.rotation.x=.3;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.12,0);head.rotation.x=-.3;neck.add(head);const H=.21;
-      M(sph(H,22,16),fur,0,0,0,head);const fc=M(sph(H*.82,18,14),face,0,-H*.05,H*.32,head);fc.scale.set(1,.95,.85);M(sph(H*.5,14,10),face,0,-H*.38,H*.72,head).scale.set(1.1,.7,.8);
-      for(const sx of [-1,1]){M(sph(H*.32,12,10),fur,sx*H*1,H*.1,0,head).scale.set(.5,1,1);M(sph(H*.2,10,8),face,sx*H*1.06,H*.1,.01,head).scale.set(.4,1,1);}
-      fEyes(this,head,H,.32,.12,.88,.25,.2);fBlush(head,H,.55,-.2,.78);
-      const tail=new THREE.Group();tail.position.set(0,by,-(len/2+r*.9));g.add(tail);const pts=[];for(let i=0;i<=12;i++){const q=i/12;pts.push(fV(0,q*.45+Math.sin(q*Math.PI*1.6)*.05,-.15*Math.sin(q*Math.PI)-(q>.7?(q-.7)*.5:0)));}
-      taperTube(pts,q=>.035-.012*q,fur,tail,20,8);
-      Object.assign(o,{neck,head,tail,nTilt:.3,size:1,h:by+.55,rad:.4,dustR:[r,r,r]});}
+    // 🐒 Coco: a real-looking little monkey, the same builder as the Pet Parlor's real pets (Pet.buildReal in 16-animals-pets.js), in brown
+    if(k==='monkey'){const p=new Pet('monkey','#7b5b43','',null,{real:1,light:'#d8c4a6',face:'#2b211c',paw:'#2b211c'}),S=1.6;
+      if(p.tag){p.g.remove(p.tag);p.tag.material.map.dispose();p.tag.material.dispose();p.tag=null;}
+      p.g.scale.setScalar(S);g.add(p.g);this.tick=(t,dt,run)=>{p.speed=run*2.4;p.happy=this.happy;p.update(dt);};
+      Object.assign(o,{size:1,h:p.tagH*S,rad:.4,dustR:[.17,.55,.3]});}
     if(k==='trex'||k==='raptor'){const rap=k==='raptor',by=.62,skin=fm(rap?'#5ec8c8':'#86c96a',{roughness:.7}),belly=fm(rap?'#e8fbff':'#e6f5c8',{roughness:.7}),spot=fm(rap?'#ff8fc8':'#5fa850');
       body.position.y=by;body.rotation.x=-.25;const t=M(new THREE.CapsuleGeometry(.25,.3,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(.2,14,10),belly,0,-.1,.12,body).scale.set(.95,.9,1.3);
       for(let i=0;i<5;i++)M(new THREE.ConeGeometry(.04,.09,6),spot,0,.25-i*.005,.15-i*.12,body);
@@ -278,36 +273,6 @@ class FarmAnimal{
       fEyes(this,head,H,.45,.22,.62,.45,.24,'#2a3a6a');fBlush(head,H,.62,-.12,.7);
       const tail=new THREE.Group();tail.position.set(0,by+.1,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.1,-.4),fV(.1,-.35,-.9),fV(.25,-.6,-1.3)],q=>.28*(1-q*.85),skin,tail,24,12);
       Object.assign(o,{neck,head,tail,nTilt:.38,size:1.6,h:by+nl+.4,rad:1,dustR:[r,r,len*.8]});}
-    if(k==='zebra'){const stripes=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#fbfbf6';x.fillRect(0,0,w,h);x.fillStyle='#1f1b24';for(let i=0;i<13;i++){const Y=i*20+4;x.beginPath();x.moveTo(0,Y);for(let X=0;X<=w;X+=16)x.lineTo(X,Y+Math.sin(X*.05+i)*5);for(let X=w;X>=0;X-=16)x.lineTo(X,Y+9+Math.sin(X*.05+i)*4-(Math.abs(X-w/2)/w)*6);x.fill();}});
-      const h=horseLike(1,'#ffffff','#1f1b24',{light:'#fbfbf6',hoof:'#2a2420'});h.fur.map=stripes;h.fur.needsUpdate=true;
-      const nose=M(sph(h.H*.62,14,10),fm('#2a2420'),0,-h.H*.42,h.H*1.15,h.head);nose.scale.set(.9,.7,.7);}
-    if(k==='giraffe'){const spots=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#fff1d6';x.fillRect(0,0,w,h);x.fillStyle='#c46a2a';for(let i=0;i<5;i++)for(let j=0;j<5;j++){const cx=i*52+(j%2)*26+8,cy=j*52+8;x.beginPath();
-        for(let q=0;q<7;q++){const a=q/7*Math.PI*2,rr=19+Math.sin(q*2.3+i+j)*4;q?x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):x.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.fill();}},2);
-      const r=.32,len=.55,leg=1.1,by=leg+r*.6,fur=fm('#ffffff',{map:spots}),light=fm('#fff1d6'),dark=fm('#7a4a2a');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),fur,0,0,0,body);t.rotation.x=Math.PI/2;t.rotation.z=.12;
-      fLegs(this,g,r*.5,len*.45,leg+.05,leg+.05,.06,fur,fShiny('#4a3a30'));
-      const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.2);neck.rotation.x=.22;g.add(neck);const nl=1.35;
-      taperTube([fV(0,0,0),fV(0,nl*.4,.02),fV(0,nl*.75,0),fV(0,nl,-.02)],q=>.16-.07*q,fur,neck,24,14);
-      for(let i=0;i<10;i++)M(sph(.045,8,6),dark,0,.1+i*nl*.095,-.11+i*.006,neck).scale.set(.6,1.6,1);
-      const head=new THREE.Group();head.position.set(0,nl+.06,0);head.rotation.x=-.22+.25;neck.add(head);const H=.17;
-      M(sph(H,20,14),light,0,0,0,head).scale.set(.85,.9,1.2);M(sph(H*.65,14,10),light,0,-H*.3,H*.9,head).scale.set(.95,.75,1.1);
-      for(const sx of [-1,1]){M(cyl(H*.08,H*.1,H*.6,8),light,sx*H*.3,H*.95,-H*.15,head);M(sph(H*.15,10,8),dark,sx*H*.3,H*1.28,-H*.15,head);
-        const e=M(sph(H*.25,10,8),light,sx*H*.85,H*.45,-H*.2,head);e.scale.set(1.5,.5,.7);e.rotation.z=sx*.3;}
-      fEyes(this,head,H,.5,.22,.65,.5,.24);fBlush(head,H,.6,-.1,.75);
-      const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.9));g.add(tail);taperTube([fV(0,0,0),fV(0,-.25,-.06),fV(0,-.55,-.05)],q=>.025,light,tail,10,6);M(sph(.06,10,8),dark,0,-.6,-.05,tail).scale.y=1.8;
-      Object.assign(o,{neck,head,tail,nTilt:.22,size:1.5,h:by+nl+.45,rad:.6,dustR:[r,r,len*.8]});}
-    if(k==='rhino'){const r=.42,len=.65,leg=.32,by=leg+r*.6,skin=fm('#a9a6ad',{roughness:.75}),light=fm('#c8c5cc'),horn=fShiny('#e9dfcf',{roughness:.45});
-      body.position.y=by;const t=M(fuzz(new THREE.CapsuleGeometry(r,len,10,24),.015,12),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),light,0,-r*.3,len*.1,body).scale.set(.95,.7,1.3);
-      for(const s of [-1,1])M(new THREE.TorusGeometry(r*.98,.025,6,24,Math.PI),skin,0,0,s*len*.22,body).rotation.y=Math.PI/2;
-      fLegs(this,g,r*.6,len*.45,leg+.06,leg+.06,.12,skin,fShiny('#8a8790'));
-      const neck=new THREE.Group();neck.position.set(0,by,len/2+r*.6);neck.rotation.x=1.35;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.06,0);head.rotation.x=-1.35-.1;neck.add(head);const H=.27;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.85,.85,1.25);M(sph(H*.7,16,12),light,0,-H*.25,H*.85,head).scale.set(1.05,.8,.9);
-      const h1=M(new THREE.ConeGeometry(H*.3,H*1.25,14),horn,0,H*.5,H*1.05,head);h1.rotation.x=.35;const h2=M(new THREE.ConeGeometry(H*.16,H*.45,12),horn,0,H*.6,H*.55,head);h2.rotation.x=.2;
-      for(const sx of [-1,1]){const e=M(new THREE.ConeGeometry(H*.18,H*.42,10),skin,sx*H*.45,H*.75,-H*.35,head);e.rotation.z=-sx*.3;e.scale.z=.6;}
-      fEyes(this,head,H,.52,.15,.55,.6,.16);fBlush(head,H,.62,-.15,.75);
-      const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.95));g.add(tail);taperTube([fV(0,0,0),fV(0,-.15,-.06),fV(0,-.3,-.05)],q=>.025,skin,tail,8,6);
-      Object.assign(o,{neck,head,tail,nTilt:1.35,size:1.2,h:by+.6,rad:.75,dustR:[r,r,len*.8]});}
     /* ---- rides from the shop (24g-mounts.js): all original designs ---- */
     // 🐱 a giant fluffy cat: round and soft, pointy ears, green eyes, a big curly tail
     if(k==='kitty'){const r=.36,len=.5,leg=.42,by=leg+r*.7,fur=fm('#fff3e4',{roughness:1}),peach=fm('#ffc999'),white=fm('#ffffff',{roughness:1}),pink=fShiny('#ffa3bf',{roughness:.45}),whisk=std('#b8a796');
