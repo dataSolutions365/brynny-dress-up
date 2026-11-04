@@ -147,7 +147,7 @@ const CUST_N=['Sam','Lena','Theo','Maya','Ben','Ruby','Leo','Ivy','Noah','Ella',
 const fmtT=s=>{s=Math.max(0,Math.ceil(s));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;};
 // where a customer waits: just outside the front of a place, beside its path
 function custSpot(z){const [x,w]=z.toWorld(-1.9,z.r+.4);const p=new THREE.Vector3(x,0,w);collide(p,.35);return p;}
-function pickOrders(){const pool=ZONES.filter(z=>z.d&&!['diner','bay','studio'].includes(z.id));const out=[];let from=RZ;
+function pickOrders(){const pool=ZONES.filter(z=>z.d&&!z.far&&!['diner','bay','studio'].includes(z.id));const out=[];let from=RZ;
   while(out.length<3){const ok=pool.filter(z=>!out.includes(z)&&Math.hypot(z.x-from.x,z.z-from.z)>18);const z=rnd(ok.length?ok:pool.filter(z=>!out.includes(z)));out.push(z);from=z;}
   return out.map(z=>({z,food:rnd(FOOD_MAIN),p:custSpot(z)}));}
 function startRush(){if(DL.on||!started)return;buildRest();

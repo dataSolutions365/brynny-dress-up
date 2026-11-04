@@ -20,31 +20,71 @@
 const BAY=Z.bay,WATER_Y=-.35,CANAL={inR:R+1.6,outR:R+17};
 const CANAL_ZONE={id:'canal',name:'🌊 Canal',music:'sea-waves'};// where you are when you swim anywhere but the bay (25-game-loop.js)
 MAPC.bay='#7fd6ee';
+/* ---------- 🏝️ land on the far bank, and footbridges over the canal ----------
+   Most of the far bank is scenery you can't reach, but an area listed in BANK_LAND is real land: walk over its footbridge (or swim
+   across and wade out) and you can walk, ride and play there. a0..a1: the angles it covers (degrees, like ZONES), out: how far out
+   from the middle of the island it reaches. own: it draws its own ground, so the bank's grass, sand and palm trees leave a gap there.
+   BANK_BRIDGES: a footbridge at angle a (degrees), w wide. Its deck only counts as ground once you've stepped on it from one of its
+   ends (BRG.on), so you can still swim under it. BANK_POOLS: pools on that land, f(x,z) gives how deep (0..1) it is there.
+   BANK_GROUND: things you can stand on there, f(x,z) gives how high. */
+// own: a place like the waterpark that does its own walking, wading and bridge (seaKeep, seaDepth and bankOK below), so bankLand leaves it out.
+// Its entries are here, not in its own file, because the bank below is built before that file runs.
+const BANK_LAND=[{id:'water',a0:220,a1:260,out:R+56,own:1}];// 💦 the waterpark (26w-waterpark.js)
+const BANK_BRIDGES=[{id:'water',a:240,w:2.6,own:1,on:()=>false}];
+const BANK_POOLS=[],BANK_GROUND=[],BRG={on:''};
+var bankReady=false;// groundAt is asked before this file has run; it stays 0 until then
+const bankAng=(x,z)=>(Math.atan2(x,z)*180/Math.PI+360)%360;
+const bankSector=(x,z,m=0)=>{const a=bankAng(x,z);return BANK_LAND.find(s=>s.own&&a>=s.a0-m&&a<=s.a1+m);};
+function onBankLand(x,z){const d=Math.hypot(x,z);if(d<CANAL.outR)return false;const s=bankSector(x,z);return !!s&&d<=s.out;}
+// on a footbridge over the canal: {b, t 0 at the island .. 1 at the far bank, side: how far from its middle line}
+function bridgeAt(x,z,any){const d=Math.hypot(x,z);if(d<R-1||d>BANK.in+2)return null;
+  for(const b of BANK_BRIDGES){if(!b.own)continue;const a=deg(b.a),ux=Math.sin(a),uz=Math.cos(a),along=x*ux+z*uz,side=x*uz-z*ux;
+    if(along>0&&(any||Math.abs(side)<b.w/2))return {b,t:(along-(R+.3))/(BANK.in+.8-(R+.3)),side,ux,uz,along};}
+  return null;}
+// the bridge deck arches up over the water
+const bridgeH=t=>t<=0||t>=1?0:.12+1.25*Math.sin(Math.PI*t);
+function bankGround(x,z){if(!bankReady||x*x+z*z<(R-1.5)*(R-1.5))return 0;let h=0;
+  const b=bridgeAt(x,z);if(b&&(BRG.on||SW.k<.3))h=bridgeH(b.t);
+  for(const f of BANK_GROUND){const g=f(x,z);if(g>h)h=g;}return h;}
+// keeps p on the far-bank land it's standing on (and inside its edges). minD: how close to the water it may go
+function bankHold(p,minD){const d=Math.hypot(p.x,p.z);if(d<minD)return false;const s=bankSector(p.x,p.z,4);if(!s)return false;
+  const a=deg(Math.max(s.a0,Math.min(s.a1,bankAng(p.x,p.z)))),dd=Math.min(d,s.out-.5);p.x=Math.sin(a)*dd;p.z=Math.cos(a)*dd;return true;}
+// for pets and friends (collide in 25-game-loop.js): they may be on the far-bank land and the bridges too
+function bankOK(p){return bankReady&&(bankHold(p,CANAL.outR-.1)||!!bridgeAt(p.x,p.z));}
 // how deep you are: 0 on the sand, 1 swimming (the island's sand edge ends at R+1.6)
 // y (optional): how high you are; up on a footbridge over the water you're not swimming
-function seaDepth(x,z,y){if(y>1.05)return 0;const d=Math.hypot(x,z);return d>CANAL.outR?0:Math.max(0,Math.min(1,(d-(R+1.3))/2.6));}
+function seaDepth(x,z,y){if(y>1.05)return 0;const d=Math.hypot(x,z);
+  if(BRG.on&&bridgeAt(x,z))return 0;
+  if(d>CANAL.outR-1.5&&bankReady&&bankSector(x,z)){// wading out onto the far-bank land, and its pools
+    if(d<BANK.in)return Math.max(0,Math.min(1,(BANK.in-.2-d)/1.6));let m=0;for(const f of BANK_POOLS){const k=f(x,z);if(k>m)m=k;}return m;}
+  return d>CANAL.outR?0:Math.max(0,Math.min(1,(d-(R+1.3))/2.6));}
 function inCanal(x,z){const d=Math.hypot(x,z);return d>CANAL.inR&&d<CANAL.outR;}
 // a spot in the canal at angle ang (like ZONES: x=sin, z=cos), t 0 at the island's shore .. 1 at the far bank
 function canalSpot(ang,t){const r=CANAL.inR+(CANAL.outR-CANAL.inR)*t;return [Math.sin(ang)*r,Math.cos(ang)*r];}
 let seaNoRideT=0;
 // collide() asks: the player is past the island's edge; may they be out here? Keeps them on the water side of the far bank.
 function seaKeep(p,lim){if(!started)return false;
-  if((barnRide&&!barnRide.F.swim)||BIKE.on||SK.on){// a barn ride with swim:1 in FARM (the safari hippo) may go in
+  // on a footbridge: stay between its railings until you step off one end
+  if(BRG.on){const b=bridgeAt(p.x,p.z,true);if(b){const w=b.b.w/2-.3,sd=Math.max(-w,Math.min(w,b.side));p.x=b.ux*b.along+b.uz*sd;p.z=b.uz*b.along-b.ux*sd;return true;}}
+  const rider=(barnRide&&!barnRide.F.swim)||BIKE.on||SK.on;
+  // on the far-bank land (the waterpark): walk and ride about, but riders don't go into the water
+  if(bankHold(p,rider?BANK.in:CANAL.outR-.1))return true;
+  const d=Math.hypot(p.x,p.z),sec=bankSector(p.x,p.z);
+  if(rider){// a barn ride with swim:1 in FARM (the safari hippo) may go in
+    if(sec&&d>(CANAL.inR+CANAL.outR)/2){p.x*=BANK.in/d;p.z*=BANK.in/d;return true;}// riding by the water on the far-bank land: stay on the land
     if(performance.now()>seaNoRideT){seaNoRideT=performance.now()+5000;toast('Hop off to go swimming 🏊');}return false;}
-  const d=Math.hypot(p.x,p.z),edge=CANAL.outR-.5;if(d>edge){p.x*=edge/d;p.z*=edge/d;}
+  const edge=sec?BANK.in:CANAL.outR-.5;if(d>edge){p.x*=edge/d;p.z*=edge/d;}// you can wade out onto the far-bank land
   return true;}
 
 /* ---------- the far bank of the canal: sand, grass and palm trees all the way round ---------- */
 const BANK={in:CANAL.outR+1.2,out:CANAL.outR+18};
-// Bits of the far bank you can walk on, and footbridges over to them. Each place over there pushes its own entries from its own file:
+// Other bits of the far bank you can walk on, and footbridges over to them, pushed into BANK_LAND and BANK_BRIDGES from their own files:
 //   BANK_LAND:    {a0,a1,out}  a sector in degrees (like ZONES: 0 is +z, 90 is +x), walkable out to distance out from the middle
 //   BANK_BRIDGES: {a,w,on(p)}  a footbridge at angle a (degrees), w wide; on(p) says if p is up on its deck
-const BANK_LAND=[],BANK_BRIDGES=[];
-const bankAng=(x,z)=>((Math.atan2(x,z)*180/Math.PI)+360)%360;
 // collide() (25-game-loop.js) asks this when p is past the island's edge: true if p may be there (it may move p back onto the land)
 function bankLand(p){const d=Math.hypot(p.x,p.z);if(d<R)return false;const a=bankAng(p.x,p.z);
-  for(const b of BANK_BRIDGES){const da=(((a-b.a)%360)+540)%360-180,side=Math.abs(Math.sin(da*Math.PI/180)*d);if(Math.abs(da)<90&&side<b.w/2&&d<BANK.in+3&&b.on(p))return true;}
-  for(const L of BANK_LAND){if(a<L.a0||a>L.a1)continue;
+  for(const b of BANK_BRIDGES){if(b.own)continue;const da=(((a-b.a)%360)+540)%360-180,side=Math.abs(Math.sin(da*Math.PI/180)*d);if(Math.abs(da)<90&&side<b.w/2&&d<BANK.in+3&&b.on(p))return true;}
+  for(const L of BANK_LAND){if(L.own||a<L.a0||a>L.a1)continue;
     if(d>=CANAL.outR-.5){if(d>L.out){p.x*=L.out/d;p.z*=L.out/d;}return true;}
     // on a bike, a skateboard or a ride you can't go in the water, so you stay on the bank instead of popping back to the island
     if(p===player.pos&&d>CANAL.outR-4&&((barnRide&&!barnRide.F.swim)||BIKE.on||SK.on)){const k=(CANAL.outR-.4)/d;p.x*=k;p.z*=k;return true;}}
@@ -52,10 +92,15 @@ function bankLand(p){const d=Math.hypot(p.x,p.z);if(d<R)return false;const a=ban
 {const sand=std('#f1d9a6',{map:TEX.sand,roughness:1});
   // the sandy slope up out of the water (seen from the island side), the grass on top, and the slope down to the open sea
   const wall=M(new THREE.CylinderGeometry(BANK.in,CANAL.outR-1,3,128,1,true),sand.clone(),0,-1.5,0,scene,false,true);wall.material.side=THREE.BackSide;
-  const top=M(new THREE.RingGeometry(BANK.in,BANK.out,128,1),groundMat,0,.004,0,scene,false,true);top.rotation.x=-Math.PI/2;
-  const beach=M(new THREE.RingGeometry(BANK.in,BANK.in+2.2,128,1),sand,0,.012,0,scene,false,false);beach.rotation.x=-Math.PI/2;
+  // the grass, the sand and the slope down to the open sea go all the way round, except where a BANK_LAND area draws its own ground
+  const own=BANK_LAND.filter(s=>s.own).sort((a,b)=>a.a0-b.a0),spans=[];
+  {let a=own.length?own[own.length-1].a1-360:0;for(const s of own){spans.push([a,s.a0]);a=s.a1;}if(!own.length)spans.push([0,360]);else spans.push([own[own.length-1].a1,own[0].a0+360]);}
+  for(const [a0,a1] of spans){if(a1-a0<.5)continue;const n=Math.max(8,Math.round(128*(a1-a0)/360)),t0=deg(a0-90),tl=deg(a1-a0);// RingGeometry angle 0 is ZONES angle 90
+    const top=M(new THREE.RingGeometry(BANK.in,BANK.out,n,1,t0,tl),groundMat,0,.004,0,scene,false,true);top.rotation.x=-Math.PI/2;
+    const beach=M(new THREE.RingGeometry(BANK.in,BANK.in+2.2,n,1,t0,tl),sand,0,.012,0,scene,false,false);beach.rotation.x=-Math.PI/2;
+    M(new THREE.CylinderGeometry(BANK.out,BANK.out+2,3,n,1,true,deg(a0),tl),sand,0,-1.5,0,scene,false,true);}
   sand.polygonOffset=true;sand.polygonOffsetFactor=-2;sand.polygonOffsetUnits=-2;
-  M(new THREE.CylinderGeometry(BANK.out,BANK.out+2,3,128,1,true),sand,0,-1.5,0,scene,false,true);
+  const ownAt=(x,z)=>{const a=bankAng(x,z);return own.some(s=>a>s.a0-3&&a<s.a1+3);};
   // palm trees and bushes: one shape each for all of them (instanced), so the whole bank is only a few draws
   let sd=7;const rr=()=>((sd=(sd*16807)%2147483647)-1)/2147483646;
   const NP=46,NB=90,mx=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),sc=new THREE.Vector3();
@@ -63,12 +108,12 @@ function bankLand(p){const d=Math.hypot(p.x,p.z);if(d<R)return false;const a=ban
     bush=new THREE.InstancedMesh(sph(1,8,6),std('#4fa645',{roughness:.9}),NB);
   let li=0;
   const placeHere=(x,z)=>ZONES.some(o=>o.d>CANAL.outR&&Math.hypot(x-o.x,z-o.z)<o.r+4);// no palms where a place stands on the far bank
-  for(let i=0;i<NP;i++){const a=(i+rr()*.6)/NP*Math.PI*2,r=BANK.in+3.5+rr()*9,x=Math.sin(a)*r,z=Math.cos(a)*r,lean=(rr()-.5)*.35;let s=.8+rr()*.5;if(placeHere(x,z))s=.001;
+  for(let i=0;i<NP;i++){const a=(i+rr()*.6)/NP*Math.PI*2,r=BANK.in+3.5+rr()*9,x=Math.sin(a)*r,z=Math.cos(a)*r,lean=(rr()-.5)*.35;let s=.8+rr()*.5;if(placeHere(x,z)||ownAt(x,z))s=.001;
     e.set(lean,rr()*6,lean*.5);q.setFromEuler(e);mx.compose(v.set(x,2.1*s,z),q,sc.set(s,s,s));trunk.setMatrixAt(i,mx);
     const tx=x+Math.sin(e.y)*lean*2*s,tz=z+Math.cos(e.y)*lean*2*s;
     for(let k=0;k<6;k++){e.set(Math.PI/2+.55,k/6*Math.PI*2+rr(),0,'YXZ');q.setFromEuler(e);const d=new THREE.Vector3(0,0,1.1*s).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,e.y,0)));
       mx.compose(v.set(tx+d.x,4.2*s,tz+d.z),q,sc.set(1.3*s,s,.15*s));leaf.setMatrixAt(li++,mx);}}
-  for(let i=0;i<NB;i++){const a=rr()*Math.PI*2,r=BANK.in+2.6+rr()*13;let s=.5+rr()*.6;if(placeHere(Math.sin(a)*r,Math.cos(a)*r))s=.001;mx.compose(v.set(Math.sin(a)*r,s*.35,Math.cos(a)*r),q.identity(),sc.set(s*1.2,s*.75,s*1.2));bush.setMatrixAt(i,mx);}
+  for(let i=0;i<NB;i++){const a=rr()*Math.PI*2,r=BANK.in+2.6+rr()*13;let s=.5+rr()*.6;if(placeHere(Math.sin(a)*r,Math.cos(a)*r)||ownAt(Math.sin(a)*r,Math.cos(a)*r))s=.001;mx.compose(v.set(Math.sin(a)*r,s*.35,Math.cos(a)*r),q.identity(),sc.set(s*1.2,s*.75,s*1.2));bush.setMatrixAt(i,mx);}
   for(const m of [trunk,leaf,bush]){m.instanceMatrix.needsUpdate=true;m.castShadow=false;m.receiveShadow=false;m.computeBoundingSphere();scene.add(m);}}
 // on the minimap and the big map (26-map.js drawWorld): the far bank all the way round
 function canalBank(x,cx,cy,k){x.beginPath();x.arc(cx,cy,BANK.out*k,0,Math.PI*2);x.fillStyle='#8fd36f';x.fill();
@@ -228,6 +273,8 @@ const seaNearYou=(c,r=80)=>Math.hypot(player.pos.x-c.pos.x,player.pos.z-c.pos.z)
 const seaSwimming=()=>SW.k>.6;
 
 function seaStep(dt){const p=player.pos,t=performance.now()/1000;
+  // step onto a footbridge from one of its ends (not from the water underneath) and you walk on it until you step off an end
+  {const b=bridgeAt(p.x,p.z,true);if(BRG.on){if(!b||b.t<-.03||b.t>1.03)BRG.on='';}else if(b&&Math.abs(b.side)<b.b.w/2-.1&&b.t>-.05&&b.t<1.05&&SW.k<.3&&p.y>-.05&&!FLY.on)BRG.on=b.b.id;}
   // how deep you are, eased so wading in looks smooth
   const want=started&&!FLY.on?seaDepth(p.x,p.z,p.y):0;SW.k+=(want-SW.k)*Math.min(1,dt*6);if(SW.k<.002)SW.k=0;
   if(SW.ride&&(SW.k<.35||closetOpen))seaHopOff(true);
@@ -352,7 +399,7 @@ function sharkEnd(how){if(SHARK.mode!=='chase')return;SHARK.mode='leave';SHARK.l
     p.x+=Math.sin(c.face)*1.6;p.z+=Math.cos(c.face)*1.6;collide(p);toast('🦈 Bump! He just wanted a look. He swims on');did('shark','tag');}}
 function sharkStep(dt){const p=player.pos,S=SHARK,c=S.c;
   if(SW.ride===c){S.mode='';return;}
-  if(!S.mode){if(started&&seaSwimming()&&!SW.ride&&!FLY.on){S.next-=dt;
+  if(!S.mode){if(started&&seaSwimming()&&inCanal(p.x,p.z)&&!SW.ride&&!FLY.on){S.next-=dt;
       if(S.next<0&&Math.hypot(p.x-c.pos.x,p.z-c.pos.z)<24)sharkStart();}return;}
   S.t+=dt;c.t+=dt;const dx=p.x-c.pos.x,dz=p.z-c.pos.z,d=Math.hypot(dx,dz);let spd;
   if(S.mode==='chase'){
@@ -444,3 +491,4 @@ SHOW.push({k:'sea',
       A.rideW=SEA_KIND[k].rideW;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
     else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph);}},
   off(f,h){if(h&&h.m){scene.remove(h.m.g);freeObj(h.m.g);}if(f.a){f.a.rideW=0;}}});
+bankReady=true;

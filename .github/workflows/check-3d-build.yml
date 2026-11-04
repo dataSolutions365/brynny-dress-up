@@ -49,6 +49,8 @@ jobs:
         run: node 3d/tests/big-world.mjs
       - name: Hang glide off Lookout Mountain (thermals, landing) and skydive from the plane at the airfield
         run: node 3d/tests/sky.mjs
+      - name: The waterpark's bridge, slides, lazy river, surfing and floating playground work
+        run: node 3d/tests/waterpark.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
       - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)
