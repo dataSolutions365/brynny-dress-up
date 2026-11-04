@@ -63,12 +63,15 @@ try {
   // ⛸️ skating: step onto the rink, the skates go on, you keep gliding when you let go, and Spin works
   const rink = await page.evaluate(() => window.__game.ICE.rink);
   await goIce(rink.x, rink.z + rink.rz - .6, Math.PI);
-  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(700);
+  // a short push onto the ice, then let go (pushing on across the whole rink would step you off the far side)
+  await page.keyboard.down('ArrowUp');
+  await page.waitForFunction(() => window.__game.ICS.on, null, { timeout: 5000 }).catch(() => {});
+  await page.waitForFunction(() => { const I = window.__game.ICS; return Math.hypot(I.vx, I.vz) > 1.5 || !I.on; }, null, { timeout: 4000 }).catch(() => {});
+  await page.keyboard.up('ArrowUp');
   let s = await state();
   if (!s.skating) fail('Walking onto the ice rink should put skates on.');
-  await page.waitForTimeout(500); await page.keyboard.up('ArrowUp');
-  const glide = await page.evaluate(async () => { const G = window.__game, p = G.player.pos, a = { x: p.x, z: p.z }; await new Promise(r => setTimeout(r, 500)); return Math.hypot(p.x - a.x, p.z - a.z); });
-  console.log(`glided ${glide.toFixed(2)} m in half a second after letting go`);
+  const glide = await page.evaluate(async () => { const G = window.__game, p = G.player.pos, a = { x: p.x, z: p.z }; await new Promise(r => setTimeout(r, 1000)); return Math.hypot(p.x - a.x, p.z - a.z); });
+  console.log(`glided ${glide.toFixed(2)} m in a second after letting go`);
   if (!(glide > .05)) fail('You should keep gliding on the ice after letting go.');
   if ((await btn()).a !== '🌀 Spin') fail(`On the ice the button should say Spin, it says "${(await btn()).a}".`);
   await page.evaluate(() => document.querySelector('#iceAct').click());

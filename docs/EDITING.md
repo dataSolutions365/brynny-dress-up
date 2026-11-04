@@ -98,7 +98,7 @@ something made in one file can be used in another.
 **Places** (the buildings themselves): `03-place-sparkle-studio`, `04-place-birthday`, `05-place-halloween`,
 `06-place-christmas`, `07-place-beach`, `08-place-runway`, `09-place-spring-garden`, `10-place-pet-parlor`,
 `11-place-bakery`, `11b-place-garage`, `12-place-model-agency`, `12b-place-barber-and-store`, `12b-place-barn`,
-`12c-place-sports`, `12d-place-zoo`, `12e-place-jump-park`, `12f-place-skate-park`, `12g-place-restaurant`.
+`12c-place-sports`, `12d-place-zoo`, `12e-place-jump-park`, `12f-place-skate-park`, `12g-place-restaurant`, `12h-place-helipad`.
 
 **What you do in each place** (the activities):
 
@@ -117,6 +117,7 @@ something made in one file can be used in another.
 | Basketball and batting, matches vs friends | `24e-sports.js`, `24e2-sports-friends.js` |
 | Sandcastle | `24f-sandcastle.js` |
 | Shop rides, flying, earned rides | `24g-mounts.js`, `24h-flying.js`, `24i-earned-rides.js` |
+| 🚁 Helicopter (buy or win it, fly it, friends ride along) and the Helipad | `26h-helicopter.js` (price: `HELI_PRICE`), `12h-place-helipad.js` |
 | Skate park tricks, jump park, ball play | `24k-skate-park.js`, `26e-jump-park.js`, `26d-ball-play.js` |
 | Dolphin Bay (swimming) | `26f-ocean.js` |
 | Secret Daddy powers | `27-daddy-powers.js` |
@@ -157,6 +158,7 @@ remembers who already bought it.
 
 Holiday items have their prices in `3d/seasons.js` (the `p:` inside each holiday's `items`). Store fashion prices
 are the last number in each line of `FASHION_GUY` / `FASHION_GIRL` in `3d/src/14d-fashion.js`.
+The 🚁 helicopter's price is `const HELI_PRICE=500` near the top of `3d/src/26h-helicopter.js`.
 
 ### 🪙 How many coins things give you
 - **Starting coins** (new players): `3d/src/22-shop-welcome.js`, first lines: `SAVE.coins=30`.

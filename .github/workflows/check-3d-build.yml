@@ -55,3 +55,5 @@ jobs:
         run: node 3d/tests/arctic.mjs
       - name: The 2D and 3D closets match
         run: node 3d/tests/closets-match.mjs
+      - name: The helicopter is won or bought, flies over the trees, lands on the Helipad and comes when called
+        run: node 3d/tests/helicopter.mjs
