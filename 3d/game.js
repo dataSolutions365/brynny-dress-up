@@ -13348,6 +13348,7 @@ function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 
   if(PE.on)return 'No fast pass during a Polar escape! ❄️ Catch them the fun way!';
   if(ICF.on)return 'Reel in your line first! 🎣';
   if(WP.ride)return 'Finish your water ride first! 💦';
+  if(SKY.mode)return 'Land first! 🪂';// hang gliding, skydiving or in the jump plane (26i-sky-sports.js)
   if(handsBusy()||ct.on)return 'Finish what you are doing first ✨';return '';}
 function fastTravel(z){const why=fpBlocked();if(why){toast(why);return false;}
   const p=player.pos;burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ffd23f',40,3);sfx('star');
