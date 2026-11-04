@@ -4,7 +4,7 @@
 // 🎟️ Zip there now (you pop up at the front of that place in a puff of sparkles) or 🗺️ Show me the way (the pink arrow, as before).
 // Your barn ride comes with you; a bike or skateboard does too, except into the water at 🐬 Dolphin Bay, where you swim.
 // It's off during a 🛵 delivery rush, a 🚨 Round-up and while you're on a ladder, wall or zip line, so those stay fair,
-// and in the 🚁 helicopter (you fly that yourself).
+// a ❄️ Polar escape, ice fishing, and in the 🚁 helicopter (you fly that yourself).
 // Friends online just see you pop up somewhere else (they get your position as usual).
 SHOP.push({k:'power:fastpass',tab:'powers',e:'🎟️',n:'Fast Pass',p:250,
   d:'Zip to any place in town in a puff of sparkles! Tap a place on the 🗺️ map (or 📍 Go on a challenge) and pick 🎟️ Zip there now. Buy it once, use it forever.'});
@@ -21,10 +21,13 @@ function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 
   if(RU.on)return 'No fast pass during a Round-up! 🚨 Catch them the fun way!';
   if(ADS.mode)return 'Hold on tight until you get off! 🦺';
   if(HELI.on||HELI.ride)return 'Land the helicopter and hop out first! 🚁';
+  if(PE.on)return 'No fast pass during a Polar escape! ❄️ Catch them the fun way!';
+  if(ICF.on)return 'Reel in your line first! 🎣';
   if(handsBusy()||ct.on)return 'Finish what you are doing first ✨';return '';}
 function fastTravel(z){const why=fpBlocked();if(why){toast(why);return false;}
   const p=player.pos;burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ffd23f',40,3);sfx('star');
   if(FLY.on)flyEnd(true);// a flying ride comes down at the other end
+  iceSkateOff();// skates come off when you leave the ice
   if(z.id==='bay'){if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);if(barnRide&&!barnRide.F.swim)stopRide(true);}
   const [x,w]=fpSpot(z);p.x=x;p.z=w;collide(p);HIGH.on=false;p.y=groundAt(p.x,p.z);player.vy=0;player.onGround=true;player.speed=0;
   player.face=z.d?Math.atan2(z.x,z.z):Math.PI;cam.yaw=player.face+Math.PI;cam.fv=null;// facing into the place
