@@ -33,6 +33,9 @@
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
   🐆🐅 The cheetah and tiger (zoo animals and the Duma and Raja rides) are one builder, `bigCat()` in `3d/src/24c9e-big-cats.js`.
   🐊 The alligator (zoo and the Bayou ride) is `3d/src/24c9f-alligator.js`.
+  Every real animal has ONE real-looking model: the Safari Zoo's zebra, giraffe and rhino use the ride builders through `model:` in ZOOA,
+  🦁 Goldie the champion lion is the zoo lion with a gold saddle, and 🐒 Coco the barn monkey is built by `Pet.buildReal` (`3d/src/16-animals-pets.js`).
+  Don't add a cartoon copy of an animal that already has a real-looking one; reuse the real model.
   🦛 The hippo model is `3d/src/24c9d-hippo.js`. Animals with `swim` (the zoo hippo and alligator, and the Kiboko and Bayou rides) sink into the canal
   round the city through `swimSink()` in `3d/src/26f2-hippo-swim.js` (rideStep, the zoo and friends online all call it), and Kiboko and Bayou are the
   only barn rides `seaKeep()` lets into the water. The back of the Safari Zoo's fence is open (`ZOO_SHORE` in `3d/src/12d-place-zoo.js`):

@@ -2,7 +2,7 @@
    Tembo the elephant, Kivu the okapi and Jabari the lion only come to players who finish their super hard
    🦁 Safari challenges (the list is in 24i-earned-rides.js, the challenges themselves in challenges.js).
    The elephant and okapi use the zoo's real-looking models (24c9-zoo-okapi-elephant.js) with a saddle on top;
-   the lion is built here the same way: true colors and shapes, no cartoon blush or crown (that's Goldie). */
+   the lion is built here the same way: true colors and shapes, no cartoon blush. Goldie the champion lion (24i-earned-rides.js) is this lion too, with a gold saddle. */
 
 // short tawny fur: lots of fine strokes in a few shades, so the coat isn't one flat color
 let LION_FUR=null;
@@ -73,7 +73,7 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
 
 // a saddle for the safari rides (and a decorated blanket for the elephant), so you can tell they're yours and ready to ride
 // where the saddle sits on each ride: r = body radius under it, sx/sy = body shape, y/z = where on the body, col = blanket color, seatY = saddle height
-const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
+const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},goldlion:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#c9961e',seatY:.33},
   punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
   neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31},
   zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47},

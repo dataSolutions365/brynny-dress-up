@@ -6745,7 +6745,7 @@ const ZOO_BUILD={
    Tembo the elephant, Kivu the okapi and Jabari the lion only come to players who finish their super hard
    🦁 Safari challenges (the list is in 24i-earned-rides.js, the challenges themselves in challenges.js).
    The elephant and okapi use the zoo's real-looking models (24c9-zoo-okapi-elephant.js) with a saddle on top;
-   the lion is built here the same way: true colors and shapes, no cartoon blush or crown (that's Goldie). */
+   the lion is built here the same way: true colors and shapes, no cartoon blush. Goldie the champion lion (24i-earned-rides.js) is this lion too, with a gold saddle. */
 
 // short tawny fur: lots of fine strokes in a few shades, so the coat isn't one flat color
 let LION_FUR=null;
@@ -6816,7 +6816,7 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
 
 // a saddle for the safari rides (and a decorated blanket for the elephant), so you can tell they're yours and ready to ride
 // where the saddle sits on each ride: r = body radius under it, sx/sy = body shape, y/z = where on the body, col = blanket color, seatY = saddle height
-const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
+const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},goldlion:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#c9961e',seatY:.33},
   punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
   neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31},
   zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47},
@@ -7387,12 +7387,13 @@ const FARM=[
 ];
 FARM.push(...earnedRideList());// 🏆 rides you can only earn, not buy (24i-earned-rides.js)
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
+// model = which real-looking builder in ZOO_BUILD to use (the same one as the safari ride of that animal)
 const ZOOA=[
-  {k:'zebra',e:'🦓',n:'Zebra',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
+  {k:'zebra',e:'🦓',n:'Zebra',model:'zebraR',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
     facts:[['🥗','Diet','Herbivore. Mostly grass, plus some leaves, bark and shoots.'],['🌍','Habitat','Grasslands and savannas of eastern and southern Africa.'],['⏳','Lifespan','About 20 to 25 years in the wild, and up to 40 in zoos.'],['✨','Fun fact','No two zebras have the same stripes, just like fingerprints!']]},
-  {k:'giraffe',e:'🦒',n:'Giraffe',food:[['🥬','Lettuce'],['🌿','Acacia leaves']],say:['*long lick* 👅','Hello down there!','Mmm, leaves! 🌿'],
+  {k:'giraffe',e:'🦒',n:'Giraffe',model:'giraffeR',food:[['🥬','Lettuce'],['🌿','Acacia leaves']],say:['*long lick* 👅','Hello down there!','Mmm, leaves! 🌿'],
     facts:[['🥗','Diet','Herbivore. Leaves and twigs from tall trees, especially acacia. Up to 34 kg (75 lb) a day!'],['🌍','Habitat','Savannas and open woodlands of Africa.'],['⏳','Lifespan','About 25 years in the wild, and a bit longer in zoos.'],['✨','Fun fact','The tallest animal on Earth, up to 5.5 m (18 ft). Its tongue is about 50 cm (20 in) long!']]},
-  {k:'rhino',e:'🦏',n:'White rhino',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
+  {k:'rhino',e:'🦏',n:'White rhino',model:'rhinoR',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
     facts:[['🥗','Diet','Herbivore. A grazer that eats short grass all day long.'],['🌍','Habitat','Grasslands and savannas of southern Africa.'],['⏳','Lifespan','About 40 to 50 years.'],['✨','Fun fact','Its horns are made of keratin, the same stuff as your fingernails. Adults can weigh over 2,000 kg!']]},
   {k:'okapi',e:'🌿',n:'Okapi',food:[['🍃','Leaves'],['🍌','Banana']],say:['*soft huff*','*long tongue lick* 👅','Shh, I\'m shy! 🌿'],
     facts:[['🥗','Diet','Herbivore. Leaves, buds, fruit and even mushrooms, which it pulls off with its long tongue.'],['🌍','Habitat','Only in the thick rainforests of the Democratic Republic of the Congo, in central Africa.'],['⏳','Lifespan','About 20 to 30 years.'],['✨','Fun fact','It has zebra stripes, but its closest relative is the giraffe! Its tongue is so long it can lick its own ears.']]},
@@ -7582,17 +7583,11 @@ class FarmAnimal{
       const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.3),fV(0,-.15,-.6)],q=>.2*(1-q*.85),skin,tail,16,12);
       for(const [x,y,z,a] of [[.08,-.1,-.5,.9],[-.08,-.1,-.5,-.9],[.07,-.13,-.6,.9],[-.07,-.13,-.6,-.9]]){const sp=M(new THREE.ConeGeometry(.035,.22,8),fShiny('#fff4dc'),x,y,z,tail);sp.rotation.z=-a;}
       Object.assign(o,{neck,head,tail,nTilt:1.3,size:1,h:by+.45,rad:.65,dustR:[r,r,len*.8]});}
-    if(k==='monkey'){const r=.22,len=.12,leg=.3,by=leg+r*.7,fur=fm('#8a5a3b'),face=fm('#f6dcc0');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,18),fur,0,0,0,body);t.rotation.x=Math.PI/2-.35;M(sph(r*.75,14,10),face,0,-r*.25,len*.25,body).scale.set(.85,.9,1.1);
-      fLegs(this,g,r*.55,len*.6+.04,leg+.04,leg+.04,.055,fur,face);
-      const neck=new THREE.Group();neck.position.set(0,by+r*.75,len/2+r*.35);neck.rotation.x=.3;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.12,0);head.rotation.x=-.3;neck.add(head);const H=.21;
-      M(sph(H,22,16),fur,0,0,0,head);const fc=M(sph(H*.82,18,14),face,0,-H*.05,H*.32,head);fc.scale.set(1,.95,.85);M(sph(H*.5,14,10),face,0,-H*.38,H*.72,head).scale.set(1.1,.7,.8);
-      for(const sx of [-1,1]){M(sph(H*.32,12,10),fur,sx*H*1,H*.1,0,head).scale.set(.5,1,1);M(sph(H*.2,10,8),face,sx*H*1.06,H*.1,.01,head).scale.set(.4,1,1);}
-      fEyes(this,head,H,.32,.12,.88,.25,.2);fBlush(head,H,.55,-.2,.78);
-      const tail=new THREE.Group();tail.position.set(0,by,-(len/2+r*.9));g.add(tail);const pts=[];for(let i=0;i<=12;i++){const q=i/12;pts.push(fV(0,q*.45+Math.sin(q*Math.PI*1.6)*.05,-.15*Math.sin(q*Math.PI)-(q>.7?(q-.7)*.5:0)));}
-      taperTube(pts,q=>.035-.012*q,fur,tail,20,8);
-      Object.assign(o,{neck,head,tail,nTilt:.3,size:1,h:by+.55,rad:.4,dustR:[r,r,r]});}
+    // 🐒 Coco: a real-looking little monkey, the same builder as the Pet Parlor's real pets (Pet.buildReal in 16-animals-pets.js), in brown
+    if(k==='monkey'){const p=new Pet('monkey','#7b5b43','',null,{real:1,light:'#d8c4a6',face:'#2b211c',paw:'#2b211c'}),S=1.6;
+      if(p.tag){p.g.remove(p.tag);p.tag.material.map.dispose();p.tag.material.dispose();p.tag=null;}
+      p.g.scale.setScalar(S);g.add(p.g);this.tick=(t,dt,run)=>{p.speed=run*2.4;p.happy=this.happy;p.update(dt);};
+      Object.assign(o,{size:1,h:p.tagH*S,rad:.4,dustR:[.17,.55,.3]});}
     if(k==='trex'||k==='raptor'){const rap=k==='raptor',by=.62,skin=fm(rap?'#5ec8c8':'#86c96a',{roughness:.7}),belly=fm(rap?'#e8fbff':'#e6f5c8',{roughness:.7}),spot=fm(rap?'#ff8fc8':'#5fa850');
       body.position.y=by;body.rotation.x=-.25;const t=M(new THREE.CapsuleGeometry(.25,.3,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(.2,14,10),belly,0,-.1,.12,body).scale.set(.95,.9,1.3);
       for(let i=0;i<5;i++)M(new THREE.ConeGeometry(.04,.09,6),spot,0,.25-i*.005,.15-i*.12,body);
@@ -7631,36 +7626,6 @@ class FarmAnimal{
       fEyes(this,head,H,.45,.22,.62,.45,.24,'#2a3a6a');fBlush(head,H,.62,-.12,.7);
       const tail=new THREE.Group();tail.position.set(0,by+.1,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.1,-.4),fV(.1,-.35,-.9),fV(.25,-.6,-1.3)],q=>.28*(1-q*.85),skin,tail,24,12);
       Object.assign(o,{neck,head,tail,nTilt:.38,size:1.6,h:by+nl+.4,rad:1,dustR:[r,r,len*.8]});}
-    if(k==='zebra'){const stripes=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#fbfbf6';x.fillRect(0,0,w,h);x.fillStyle='#1f1b24';for(let i=0;i<13;i++){const Y=i*20+4;x.beginPath();x.moveTo(0,Y);for(let X=0;X<=w;X+=16)x.lineTo(X,Y+Math.sin(X*.05+i)*5);for(let X=w;X>=0;X-=16)x.lineTo(X,Y+9+Math.sin(X*.05+i)*4-(Math.abs(X-w/2)/w)*6);x.fill();}});
-      const h=horseLike(1,'#ffffff','#1f1b24',{light:'#fbfbf6',hoof:'#2a2420'});h.fur.map=stripes;h.fur.needsUpdate=true;
-      const nose=M(sph(h.H*.62,14,10),fm('#2a2420'),0,-h.H*.42,h.H*1.15,h.head);nose.scale.set(.9,.7,.7);}
-    if(k==='giraffe'){const spots=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#fff1d6';x.fillRect(0,0,w,h);x.fillStyle='#c46a2a';for(let i=0;i<5;i++)for(let j=0;j<5;j++){const cx=i*52+(j%2)*26+8,cy=j*52+8;x.beginPath();
-        for(let q=0;q<7;q++){const a=q/7*Math.PI*2,rr=19+Math.sin(q*2.3+i+j)*4;q?x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):x.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.fill();}},2);
-      const r=.32,len=.55,leg=1.1,by=leg+r*.6,fur=fm('#ffffff',{map:spots}),light=fm('#fff1d6'),dark=fm('#7a4a2a');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),fur,0,0,0,body);t.rotation.x=Math.PI/2;t.rotation.z=.12;
-      fLegs(this,g,r*.5,len*.45,leg+.05,leg+.05,.06,fur,fShiny('#4a3a30'));
-      const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.2);neck.rotation.x=.22;g.add(neck);const nl=1.35;
-      taperTube([fV(0,0,0),fV(0,nl*.4,.02),fV(0,nl*.75,0),fV(0,nl,-.02)],q=>.16-.07*q,fur,neck,24,14);
-      for(let i=0;i<10;i++)M(sph(.045,8,6),dark,0,.1+i*nl*.095,-.11+i*.006,neck).scale.set(.6,1.6,1);
-      const head=new THREE.Group();head.position.set(0,nl+.06,0);head.rotation.x=-.22+.25;neck.add(head);const H=.17;
-      M(sph(H,20,14),light,0,0,0,head).scale.set(.85,.9,1.2);M(sph(H*.65,14,10),light,0,-H*.3,H*.9,head).scale.set(.95,.75,1.1);
-      for(const sx of [-1,1]){M(cyl(H*.08,H*.1,H*.6,8),light,sx*H*.3,H*.95,-H*.15,head);M(sph(H*.15,10,8),dark,sx*H*.3,H*1.28,-H*.15,head);
-        const e=M(sph(H*.25,10,8),light,sx*H*.85,H*.45,-H*.2,head);e.scale.set(1.5,.5,.7);e.rotation.z=sx*.3;}
-      fEyes(this,head,H,.5,.22,.65,.5,.24);fBlush(head,H,.6,-.1,.75);
-      const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.9));g.add(tail);taperTube([fV(0,0,0),fV(0,-.25,-.06),fV(0,-.55,-.05)],q=>.025,light,tail,10,6);M(sph(.06,10,8),dark,0,-.6,-.05,tail).scale.y=1.8;
-      Object.assign(o,{neck,head,tail,nTilt:.22,size:1.5,h:by+nl+.45,rad:.6,dustR:[r,r,len*.8]});}
-    if(k==='rhino'){const r=.42,len=.65,leg=.32,by=leg+r*.6,skin=fm('#a9a6ad',{roughness:.75}),light=fm('#c8c5cc'),horn=fShiny('#e9dfcf',{roughness:.45});
-      body.position.y=by;const t=M(fuzz(new THREE.CapsuleGeometry(r,len,10,24),.015,12),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),light,0,-r*.3,len*.1,body).scale.set(.95,.7,1.3);
-      for(const s of [-1,1])M(new THREE.TorusGeometry(r*.98,.025,6,24,Math.PI),skin,0,0,s*len*.22,body).rotation.y=Math.PI/2;
-      fLegs(this,g,r*.6,len*.45,leg+.06,leg+.06,.12,skin,fShiny('#8a8790'));
-      const neck=new THREE.Group();neck.position.set(0,by,len/2+r*.6);neck.rotation.x=1.35;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.06,0);head.rotation.x=-1.35-.1;neck.add(head);const H=.27;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.85,.85,1.25);M(sph(H*.7,16,12),light,0,-H*.25,H*.85,head).scale.set(1.05,.8,.9);
-      const h1=M(new THREE.ConeGeometry(H*.3,H*1.25,14),horn,0,H*.5,H*1.05,head);h1.rotation.x=.35;const h2=M(new THREE.ConeGeometry(H*.16,H*.45,12),horn,0,H*.6,H*.55,head);h2.rotation.x=.2;
-      for(const sx of [-1,1]){const e=M(new THREE.ConeGeometry(H*.18,H*.42,10),skin,sx*H*.45,H*.75,-H*.35,head);e.rotation.z=-sx*.3;e.scale.z=.6;}
-      fEyes(this,head,H,.52,.15,.55,.6,.16);fBlush(head,H,.62,-.15,.75);
-      const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.95));g.add(tail);taperTube([fV(0,0,0),fV(0,-.15,-.06),fV(0,-.3,-.05)],q=>.025,skin,tail,8,6);
-      Object.assign(o,{neck,head,tail,nTilt:1.35,size:1.2,h:by+.6,rad:.75,dustR:[r,r,len*.8]});}
     /* ---- rides from the shop (24g-mounts.js): all original designs ---- */
     // 🐱 a giant fluffy cat: round and soft, pointy ears, green eyes, a big curly tail
     if(k==='kitty'){const r=.36,len=.5,leg=.42,by=leg+r*.7,fur=fm('#fff3e4',{roughness:1}),peach=fm('#ffc999'),white=fm('#ffffff',{roughness:1}),pink=fShiny('#ffa3bf',{roughness:.45}),whisk=std('#b8a796');
@@ -9537,7 +9502,7 @@ function flyCamBack(){const a=barnRide;if(!FLY.on||!isFlyer(a))return 0;const p=
    (it adds the entries to FARM and builds the models from FarmAnimal.build). Friends online see them through the 'ride' entry. */
 function earnedRideList(){return [
   {k:'panda',e:'🐼',n:'Giant panda',nm:'Bamboo',earn:{by:'days',goal:3},ride:1.08,about:'A big cuddly panda who only comes to players who play 3 days in a row. Slow, soft and always munching bamboo!',food:[['🎋','Bamboo'],['🍎','Apple'],['🍠','Sweet potato']],say:['*munch munch* 🎋','Hug time! 🐼','*happy roly-poly*']},
-  {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',earn:{by:'wins',goal:3},ride:1.13,about:'A golden lion with a royal crown, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
+  {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',model:'lion',gear:1,scale:1.15,earn:{by:'wins',goal:3},ride:1.38,about:'A real-looking golden lion with a champion\'s gold saddle, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
   {k:'comet',e:'🦌',n:'Flying reindeer',nm:'Comet',earn:{by:'days',goal:7},fly:1,ride:1.15,about:'A magic reindeer with a glowing red nose who flies without wings! Only for players who play 7 days in a row.',food:[['🥕','Carrot'],['🍪','Cookie'],['🍎','Apple']],say:['*jingle jingle* 🔔','Up to the stars! ✨','*nose glows bright* ❤️']},
   // 🦁 safari rides: real-looking animals from the Safari Zoo, for players who finish every one of their super hard 🦁 Safari challenges
   // (challenges.js, ids in earn.ids). model = the zoo animal to build (zoo = which Safari Zoo animal it is, when that's different), gear = a saddle, seat = sit this far forward, wide = legs spread, boost = speed.
@@ -9579,29 +9544,6 @@ function earnedRideModel(k,{g,body,o,horseLike}){
     fBlush(head,H,.68,-.28,.72);
     const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.9));g.add(tail);M(sph(.1,10,8),wh,0,0,0,tail);
     Object.assign(o,{neck,head,tail,nTilt:.3,size:1.1,h:by+.85,rad:.7,dustR:[r,r,len*.8]});return true;}
-  // 🦁 a golden lion with a big fluffy mane and a little royal crown
-  if(k==='goldlion'){const r=.36,len=.62,leg=.5,by=leg+r*.65,fur=fm('#f2b54a'),light=fm('#ffe4ad'),mane=fm('#c8682a',{roughness:1}),mane2=fm('#e88a35',{roughness:1}),
-      gold=fShiny('#ffd23f',{metalness:.6,roughness:.25}),gem=phys('#ff4d8d',{roughness:.1,clearcoat:1,emissive:'#ff4d8d',emissiveIntensity:.3});
-    body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),fur,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.8,14,10),light,0,-r*.32,len*.1,body).scale.set(.92,.72,1.3);
-    fLegs(this,g,r*.55,len*.45,leg+.05,leg+.05,.1,fur,null);
-    for(const l of this.legs)M(sph(.12,12,10),light,0,-(leg+.05)+.06,.03,l.g).scale.set(1,.6,1.25);
-    const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.45);neck.rotation.x=.5;g.add(neck);
-    M(sph(.26,16,12),fur,0,.05,0,neck);fFluff(neck,mane2,.3,.3,.26,26,.12,.05,-.02);
-    const head=new THREE.Group();head.position.set(0,.24,.06);head.rotation.x=-.5+.1;neck.add(head);const H=.28;
-    M(sph(H,22,16),fur,0,0,0,head).scale.set(1.05,.95,1);
-    fFluff(head,mane,H*1.25,H*1.25,H*.6,48,H*.32,0,-H*.3);
-    for(const sx of [-1,1])M(sph(H*.25,12,10),fur,sx*H*.66,H*.8,-H*.02,head).scale.set(1,1,.5);
-    M(sph(H*.42,14,10),light,0,-H*.3,H*.78,head).scale.set(1.25,.75,.8);
-    M(sph(H*.12,10,8),std('#7a3a22'),0,-H*.1,H*1.06,head,false,false).scale.set(1.3,.8,.7);
-    fEyes(this,head,H,.42,.12,.82,.38,.22,'#8a5a12');fBlush(head,H,.64,-.18,.74);
-    const crown=new THREE.Group();crown.position.set(0,H*1.12,-H*.05);head.add(crown);
-    M(cyl(H*.36,H*.32,H*.2,18),gold,0,0,0,crown);
-    for(let i=0;i<5;i++){const a=i/5*Math.PI*2;M(new THREE.ConeGeometry(H*.08,H*.24,8),gold,Math.sin(a)*H*.34,H*.2,Math.cos(a)*H*.34,crown);}
-    M(sph(H*.075,10,8),gem,0,0,H*.35,crown,false,false);
-    const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.85));g.add(tail);
-    taperTube([fV(0,0,0),fV(0,-.12,-.3),fV(0,-.08,-.6),fV(0,.1,-.8)],q=>.05-.018*q,fur,tail,16,8);M(sph(.1,10,8),mane,0,.13,-.83,tail);
-    this.sparkle=true;
-    Object.assign(o,{neck,head,tail,nTilt:.5,size:1.05,h:by+.9,rad:.65,dustR:[r,r,len*.8]});return true;}
   // 🦌 a reindeer with big antlers, a glowing red nose and a jingle bell (she flies without wings, it's magic)
   if(k==='comet'){const h=horseLike(1,'#a8744a','#f4ede4',{light:'#f3e2cc',hoof:'#4a3324'}),H=h.H,antM=fShiny('#f6e7c8',{roughness:.5});
     for(const sx of [-1,1]){taperTube([fV(sx*H*.3,H*.7,-H*.1),fV(sx*H*.7,H*1.5,-H*.3),fV(sx*H*1,H*2.3,-H*.2),fV(sx*H*1.2,H*2.9,H*.1)],q=>H*(.1-.055*q),antM,h.head,16,8);
