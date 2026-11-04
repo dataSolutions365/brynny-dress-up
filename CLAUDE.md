@@ -96,7 +96,7 @@
 - 🗺️ The big world (`3d/src/26z-big-world.js`): past the canal's far bank the land keeps going out to `WORLD.out`, with mountains all round
   the edge, split into `REGIONS` (🏔️ Snowy Peaks, 🌻 Sunflower Hills, 🌲 Whispering Woods, 🏞️ Crystal Lake, 🏜️ Sunset Canyon, 🍎 Apple Orchard).
   It's all 🚧 blocked off (a fence with "Coming soon" signs; you can't walk, swim or fly in) until a place opens there. To open a new area,
-  build the place in its own file (named to sort before `26z`), push its `BANK_LAND` sector (add `own:1` if it draws its own ground) and a
+  build the place in its own file (named to sort before `26z`), push its `BANK_LAND` sector (add `ground:1` if it draws its own ground, or `own:1` if it also does its own walking like the waterpark) and a
   footbridge into `BANK_BRIDGES`: the hills there flatten, the trees step aside and the fence goes round its edge by itself. Write positions
   relative to `R`, `BANK` and `WORLD`, never raw numbers, so the world can keep growing. The ground is one shape (`WG`, `groundH(x,z)` reads it)
   and every tree/rock kind is one instanced shape, to stay cheap on phones. The big map opens on the island (zoom step 1); ➖ zooms out to the
@@ -104,7 +104,7 @@
 - 🪂 Hang gliding and ✈️ skydiving: `3d/src/26i-sky-sports.js`. The hang glider launches off a ramp on top of Lookout Mountain (`RAMP`),
   you lie prone in the harness under a real-looking glider (`hgBuild`, `hgPlace` puts glider and pilot together), steer with the joystick,
   ride the thermals in `THERM` (a hawk circles in each) and ridge lift off the mountain (`skyLift`), and flare to land. ✈️ Sunny Skies Airfield
-  (`AIRF`, zone 'airfield') sits past the canal at angle 64 (its own `BANK_LAND` sector 52 to 76, with `own:1` because it draws its own ground,
+  (`AIRF`, zone 'airfield') sits past the canal at angle 64 (its own `BANK_LAND` sector 52 to 76, with `ground:1` because it draws its own ground but walks like normal bank land; `own:1` is only for places like the waterpark that do their own walking,
   and a footbridge at 70). The jump plane (`planeBuild`, flown by `planeStep`) takes off, climbs to `PL_ALT`, opens its door for the jump,
   then lands and taxis back. Free fall, the auto-opening square canopy (`canBuild`, `canPlace`) and the 🎯 target landing are in `skyStep()`,
   which 25-game-loop.js asks first. `skyFloor()` is what's under you (never land on a roof, a tree or steep rock: it lifts you over them) and

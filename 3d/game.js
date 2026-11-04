@@ -13519,7 +13519,7 @@ AIRF.ux=Math.sin(deg(AIRF.a));AIRF.uz=Math.cos(deg(AIRF.a));AIRF.vx=AIRF.uz;AIRF
 AIRF.at=(t,s)=>[AIRF.ux*t+AIRF.vx*s,AIRF.uz*t+AIRF.vz*s];// a spot by distance from the middle of the island (t) and to the side (s)
 AIRF.loc=(x,z)=>[x*AIRF.ux+z*AIRF.uz,x*AIRF.vx+z*AIRF.vz];
 AIRF.hdg=Math.atan2(AIRF.ux,AIRF.uz);// the way a plane faces taking off
-BANK_LAND.push({id:'airfield',a0:AIRF.a0,a1:AIRF.a1,out:AIRF.out,own:1});
+BANK_LAND.push({id:'airfield',a0:AIRF.a0,a1:AIRF.a1,out:AIRF.out,ground:1});// ground: it draws its own ground, but you walk on it like any bank land (own:1 is for places that do their own walking)
 AIRF.hangar={t:BANK.out+14,s:9.5,len:9,r:3.6};AIRF.tgt={t:BANK.out+30,s:10.5,r:3.2};AIRF.sockAt={t:BANK.out+24,s:-5};
 AIRF.park={t:AIRF.t0+4.2,s:0};AIRF.pad={t:AIRF.t0+4.6,s:3.2};
 AIRF.near=(x,z)=>{const d=Math.hypot(x,z);return d>BANK.out-2&&d<AIRF.out+2&&Math.abs(bankAng(x,z)-AIRF.a)<14;};
@@ -13865,10 +13865,12 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     const [lift,inT]=skyLift(p.x,p.z,p.y);
     if(inT){S.therm+=dt;if(S.therm>2&&!S.gotThermal){S.gotThermal=true;did('hglide','thermal');toast('🦅 You found a thermal! Circle in it to go up and up');tone(784,.12,'triangle',.08);tone(1047,.2,'triangle',.08,.1);}}else S.therm=0;
     const sink=flare?1.0:(S.land?(spotD<4?2.6:1.9):.85)+Math.abs(S.bank)*.6;
-    let wantVy=flare?-1.1:(S.land?0:lift)-sink;// landing: you fly out of the rising air and come downif(p.y>30)wantVy=Math.min(wantVy,0);
+    let wantVy=flare?-1.1:(S.land?0:lift)-sink;// landing: you fly out of the rising air and come down
+    if(p.y>30)wantVy=Math.min(wantVy,0);
     S.vy+=(wantVy-S.vy)*Math.min(1,dt*(flare?3:1.4));
     // trees, roofs and the mountain coming up: the glider lifts over them (never into them)
-    const vx=Math.sin(S.hd)*S.sp,vz=Math.cos(S.hd)*S.sp,ahead=Math.max(skyFloor(p.x+vx*.45,p.z+vz*.45),skyFloor(p.x+vx*1,p.z+vz*1));
+    // (coming in to land, it only looks as far as the landing spot, so a fence just past it doesn't hold you up in the air)
+    const vx=Math.sin(S.hd)*S.sp,vz=Math.cos(S.hd)*S.sp,look=S.land&&spotD<S.sp?spotD/Math.max(S.sp,.1):1,ahead=Math.max(skyFloor(p.x+vx*.45*look,p.z+vz*.45*look),skyFloor(p.x+vx*look,p.z+vz*look));
     const need=ahead+.55-p.y;if(need>0&&!flare)S.vy=Math.max(S.vy,Math.min(4.5,need*3));
     p.x+=vx*dt;p.z+=vz*dt;p.y+=S.vy*dt;
     const fl=skyFloor(p.x,p.z),g=groundAt(p.x,p.z);if(p.y<fl+.3&&fl>g+.2)p.y=fl+.3;
@@ -14546,7 +14548,7 @@ wpReady=true;
      90 is +x), each with its own landscape: ❄️ snowy mountains, rolling hills, a pine forest, a lake, red canyon mesas, an orchard.
    - All of it is 🚧 blocked off for now: a wooden fence runs round it with "Coming soon" signs, and you can't walk, swim or fly in.
      Places that are open over there (Lookout Mountain, the waterpark…) push a sector into BANK_LAND as usual (26f-ocean.js); this file
-     leaves their land flat, cuts holes for ones that draw their own ground (own:1), and runs the fence round their edge instead.
+     leaves their land flat, cuts holes for ones that draw their own ground (own:1 or ground:1), and runs the fence round their edge instead.
    - To open a new area later: build the place in its own file, push its BANK_LAND sector and footbridge (see 26h-adventure.js), and
      the hills there flatten and the fence moves round it by itself. No need to rebuild anything else.
    - The big map (26-map.js) shows every region with stripes and a 🔒 name; zoom all the way out to see the whole world.
@@ -14609,7 +14611,7 @@ function groundH(x,z){const {NA,NR,r0,r1,H}=WG,r=Math.hypot(x,z);if(r<r0)return 
   const idx=[];const vert=(i,j)=>j*NA+(i%NA);
   for(let j=0;j<NR;j++)for(let i=0;i<NA;i++){const a=vert(i,j),b=vert(i+1,j),c=vert(i,j+1),d=vert(i+1,j+1);
     // a hole where an open place draws its own ground
-    const mx=(pos[a*3]+pos[d*3])/2,mz=(pos[a*3+2]+pos[d*3+2])/2,L=openLand(mx,mz,-1);if(L&&L.own)continue;
+    const mx=(pos[a*3]+pos[d*3])/2,mz=(pos[a*3+2]+pos[d*3+2])/2,L=openLand(mx,mz,-1);if(L&&(L.own||L.ground))continue;
     idx.push(a,c,b,b,c,d);}
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();
   const nrm=geo.attributes.normal.array,C=new THREE.Color(),T=new THREE.Color();
