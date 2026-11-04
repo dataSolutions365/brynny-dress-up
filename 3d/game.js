@@ -12191,7 +12191,7 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{adv:(
      tail rotor, skids, navigation lights and a flashing red beacon. Keep it that way. */
 const HELI_PRICE=500,HELI_K='heli:skyhawk';
 const HELI_EARN=['heli_visit','heli_places','heli_wins','heli_stars'];// the challenges that win it (challenges.js)
-const HELI_SPD=15,HELI_UP=4.5,HELI_DOWN=3.6,HELI_MAX=32,HELI_EDGE=R+9;// top speed, climb and sink rates, ceiling, how far out over the water
+const HELI_SPD=15,HELI_UP=4.5,HELI_DOWN=3.6,HELI_MAX=44,HELI_EDGE=R+9,HELI_CLIMB=6.5;// top speed, climb and sink rates, ceiling (above the big Christmas tree), how far out over the water
 // where people sit: the spot their feet go (the 'chair' pose sits them on the seat). 0 = the pilot, front right like a real one
 const HELI_SEATS=[[-.36,.6,.4],[.36,.6,.4],[-.36,.6,-.42],[.36,.6,-.42]].map(a=>new THREE.Vector3(...a));
 const HELI_SEAT_Y=.52;// how high the seats' feet spot is above the skids (in HELI_SEATS)
@@ -12312,7 +12312,7 @@ setInterval(()=>{if(!started)return;if(owns(HELI_K)&&!SAVE.heli.got){SAVE.heli.g
 RIDE_ACTS.push(()=>heliOwn()&&!HELI.on&&!HELI.ride?[['heli','🚁','Heli']]:[]);
 
 /* ---------- getting in and out ---------- */
-function heliBoard(){if(!heliOwn()||HELI.on||HELI.ride||HELI.auto)return;flyGrid();if(heliBusy()){toast('Finish what you are doing first! 🚁');return;}
+function heliBoard(){if(!heliOwn()||HELI.on||HELI.ride||HELI.auto)return;FG.h=null;flyGrid();// a fresh map of what's tall, so nothing that moved since start-up is in the wayif(heliBusy()){toast('Finish what you are doing first! 🚁');return;}
   if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);
   Object.assign(HELI,{on:true,mode:'ground',vx:0,vz:0,vy:0,pitch:0,bank:0,turn:0,spot:null,t:0});HELI.ob.r=0;
   player.face=HELI.hd;player.vy=0;player.speed=0;sfx('pop');tone(220,.5,'sawtooth',.03,0,90);renderActions();heliHud(true);
@@ -12336,7 +12336,7 @@ function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on
   // the joystick: which way you want to go, the same as walking
   let wx=0,wz=0;if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;wx=(fx*-iy+rx*ix)/n*HELI_SPD*mag;wz=(fz*-iy+rz*ix)/n*HELI_SPD*mag;}
   if(H.mode==='ground'){H.vx=H.vy=H.vz=0;P.y=g;
-    if(up&&HM.rpm>.85){H.mode='air';H.vy=1.5;did('heli','takeoff');if(H.seats.some(Boolean))did('heli','friend');sfx('jump');}
+    if(up&&HM.rpm>.85){H.mode='air';H.vy=1.5;did('heli','takeoff');if(isTouch&&(SAVE.heliSteer|0)<3){SAVE.heliSteer=(SAVE.heliSteer|0)+1;persist();setTimeout(()=>{if(HELI.on&&HELI.mode!=='ground')toast('👈 Put a finger on the left side of the screen and drag to fly around the island!');},1200);}if(H.seats.some(Boolean))did('heli','friend');sfx('jump');}
     else if(up&&performance.now()-H.liftWarn>2500){H.liftWarn=performance.now();toast('⏳ Wait for the rotor to spin up…');}}
   else{
     // 🛬 landing by itself: fly over to the spot, slow down, and come straight down onto it
@@ -12352,10 +12352,12 @@ function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on
     // never into trees and buildings: climb over them before you get there
     let nx=P.x+H.vx*dt,nz=P.z+H.vz*dt;const nr=Math.hypot(nx,nz);if(nr>HELI_EDGE){nx*=HELI_EDGE/nr;nz*=HELI_EDGE/nr;}
     const below=flyFloor(nx,nz,3),ahead=Math.max(below,flyFloor(nx+H.vx*.7,nz+H.vz*.7,3));
-    if(P.y>=below-.1){P.x=nx;P.z=nz;}else{H.vx*=.5;H.vz*=.5;}
-    const gg=groundAt(P.x,P.z),clear=ahead>gg+.1?ahead+.4:gg;
-    if(P.y<clear&&H.vy<(clear-P.y)*3+.5)H.vy+=((clear-P.y)*3+.5-H.vy)*Math.min(1,dt*6);
-    P.y+=H.vy*dt;{const fl=flyFloor(P.x,P.z,3);if(fl>gg+.1&&P.y<fl+.05){P.y=fl+.05;if(H.vy<0)H.vy=0;}}// never down into a tree or onto a roof
+    // (something taller than the ceiling never stops you: you just fly on, so the helicopter can't get stuck up there)
+    if(P.y>=below-.1||below>HELI_MAX-1){P.x=nx;P.z=nz;}else{H.vx*=.5;H.vz*=.5;}
+    // it climbs over what's ahead like a real one, never faster than HELI_CLIMB (no jumping up into the sky)
+    const gg=groundAt(P.x,P.z),clear=ahead>gg+.1?Math.min(HELI_MAX,ahead+.4):gg,cv=Math.min(HELI_CLIMB,(clear-P.y)*3+.5);
+    if(P.y<clear&&H.vy<cv)H.vy+=(cv-H.vy)*Math.min(1,dt*6);
+    P.y+=H.vy*dt;{const fl=flyFloor(P.x,P.z,3);if(fl>gg+.1&&P.y<fl+.05){if(fl-P.y<.8)P.y=fl+.05;if(H.vy<0)H.vy=0;}}// never down into a tree or onto a roof (and well below one: only climbing)
     if(P.y>HELI_MAX){P.y=HELI_MAX;H.vy=Math.min(0,H.vy);}
     if(P.y>=HELI_MAX-.5){H.highT+=dt;if(H.highT>1.5&&!H.wentHigh){H.wentHigh=1;did('heli','high');toast('☁️ Up with the clouds!');}}else H.highT=0;
     // touching down: only on open ground, softly
@@ -12369,9 +12371,19 @@ function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on
     const wantP=Math.max(-.32,Math.min(.2,-fwd/HELI_SPD*.2-aF*.025)),wantB=Math.max(-.42,Math.min(.42,H.turn*sp*.045+side/HELI_SPD*.15));
     H.pitch+=(wantP-H.pitch)*Math.min(1,dt*2.5);H.bank+=(wantB-H.bank)*Math.min(1,dt*2.5);}
   if(H.mode==='ground'){H.pitch*=Math.max(0,1-dt*6);H.bank*=Math.max(0,1-dt*6);}
+  heliStuckWatch(dt,mag);
   // you're in the pilot's seat
   heliSeatAt(P,H.hd,H.pitch,H.bank,0,player.pos);player.face=H.hd;player.speed=0;player.vy=0;player.onGround=false;
   heliHud();return true;}
+// pushing the joystick in the air but not getting anywhere is a bug that throws no error: tell the grown-ups (once a visit)
+// what was in the way, so it can be fixed (index.html, reportProblem)
+function heliStuckWatch(dt,mag){const H=HELI,P=H.pos;if(H.mode!=='air'||mag<.3||H.stuckSent||Math.hypot(P.x,P.z)>HELI_EDGE-3){H.stk=null;return;}
+  if(!H.stk)H.stk={t:0,x:P.x,z:P.z};const k=H.stk;k.t+=dt;if(k.t<2.5)return;
+  if(Math.hypot(P.x-k.x,P.z-k.z)<1&&window.reportProblem){H.stuckSent=1;const box=new THREE.Box3(),hit=[];
+    scene.traverse(o=>{if(!o.isMesh||!o.geometry||hit.length>=4)return;box.setFromObject(o);if(box.min.y<9&&box.max.y>P.y-1&&box.min.x<P.x+3&&box.max.x>P.x-3&&box.min.z<P.z+3&&box.max.z>P.z-3)
+      hit.push(`${o.name||o.geometry.type}${o.parent&&o.parent.name?' in '+o.parent.name:''} ${(box.max.x-box.min.x).toFixed(0)}x${(box.max.y-box.min.y).toFixed(0)}x${(box.max.z-box.min.z).toFixed(0)} top ${box.max.y.toFixed(0)}`);});
+    window.reportProblem('helicopter stuck',`y ${P.y.toFixed(1)} floor ${flyFloor(P.x,P.z,3).toFixed(1)} | ${hit.join('; ')||'nothing in the way'}`);}
+  H.stk=null;}
 function heliLand(){const H=HELI;if(!H.on||H.mode!=='air')return;const P=H.pos,pz=Z.heli;
   // the Helipad if it's close and nobody's on it, or else the nearest open patch a little ahead
   if(Math.hypot(P.x-pz.x,P.z-pz.z)<30&&heliOpen(pz.x,pz.z))H.spot=[pz.x,pz.z];
@@ -12448,6 +12460,10 @@ anims.push((t,dt)=>{const H=HELI;
   if(H.on){const n=window.__net,fr=n&&n.friends();for(let i=1;i<4;i++)if(H.seats[i]&&!(fr&&fr.has(H.seats[i])))H.seats[i]=null;}
   heliButtons();});
 // a game or the closet opening while you're in it: you're set down where you are (the helicopter lands itself first if it's up)
+// 🕹️ on a phone the joystick only shows once you touch the screen, so while you're flying a ghost one on the left shows
+// where to put your finger to fly around (it goes away while you're steering)
+const heliJoyEl=$('#heliJoy');let heliJoyS=null;
+anims.push(()=>{const H=HELI,s=isTouch&&H.on&&H.mode!=='ground'&&joy.id===null&&!closetOpen?'flex':'none';if(s!==heliJoyS){heliJoyS=s;heliJoyEl.style.display=s;}});
 anims.push(()=>{const H=HELI;if(!H.on||!(handsBusy()||closetOpen))return;
   if(H.mode!=='ground'){const [x,z]=heliSpot(H.pos.x,H.pos.z);H.pos.set(x,groundAt(x,z),z);H.mode='ground';H.vx=H.vz=H.vy=0;}heliOut();});
 
