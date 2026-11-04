@@ -71,6 +71,16 @@
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
+- 🚁 The helicopter and the 🚁 Helipad (between the Basketball Court and the Jump Park): the pad is `3d/src/12h-place-helipad.js`
+  (`HPAD`), the helicopter is `3d/src/26g-helicopter.js` (`HELI` is yours, `makeHeli()` builds the model for you and for friends).
+  You get it by buying it in the shop's 🦖 Rides tab (`HELI_PRICE` 🪙) or by finishing the 4 challenges in `HELI_EARN` (Explore tab
+  of `3d/challenges.js`). It flies itself, not through FLY: `heliStep()` runs in the game loop before `flyStep`, takes off straight up,
+  tips its nose and banks like a real one, and uses `flyFloor` (24h-flying.js) to climb over trees and roofs; it only touches down on
+  open ground (`heliOpen`). Friends see it through the 'heli' entry in `SHOW`, and a friend standing next to yours while you're in it
+  on the ground can 🙋 ride along: the pilot's phone hands out seats with `{t:'heli'}` messages (online.js passes them on) and the
+  'hseat' entry sits passengers in their seat on every phone. Keep it real-looking, not a cartoon.
+  `3d/tests/helicopter.mjs` (run on every PR) buys and wins it, flies it and lands it on the pad; `3d/tests/heli-friends.mjs`
+  flies a friend along with two phones (same setup as `online-see.mjs`).
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

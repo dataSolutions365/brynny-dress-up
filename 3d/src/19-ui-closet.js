@@ -22,6 +22,7 @@ function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
   if(id==='skate'){toggleSkate();return;}
   if(id==='bike'){toggleBike();return;}
   if(id==='horse'){toggleHorse();return;}
+  if(id==='heli'){heliCall();return;}// 🚁 26g-helicopter.js
   if(SK.on)stopSkate(true);
   if(BIKE.on)stopBike(true);
   if(id==='dance'&&!picked){openDances();return;}

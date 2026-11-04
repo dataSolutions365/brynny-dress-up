@@ -104,6 +104,15 @@ const LIST = [
   { id: 'spookyFlip', tab: 'explore', e: '🎃', t: 'Do a flip in Halloween Hollow', r: 1, go: 'halloween', ev: { k: 'act', a: a => a === 'flip', z: 'halloween' } },
   { id: 'snowDance', tab: 'explore', e: '🎄', t: 'Dance in Christmas Village', r: 1, go: 'christmas', ev: { k: 'act', a: a => a === 'dance', z: 'christmas' } },
   { id: 'partyCheer', tab: 'explore', e: '🎂', t: 'Cheer at the Birthday Party', r: 1, go: 'birthday', ev: { k: 'act', a: a => a === 'cheer', z: 'birthday' } },
+  // 🚁 the helicopter (3d/src/26g-helicopter.js): finish the 4 marked "for the helicopter" and you win it (ids in HELI_EARN there), or buy it with 🪙
+  { id: 'heli_visit', tab: 'explore', e: '🚁', t: 'Visit the Helipad (1 of 4 to win the helicopter)', r: 1, go: 'heli', ev: { k: 'zone', a: a => a === 'heli' } },
+  { id: 'heli_places', tab: 'explore', e: '🧭', t: 'Visit 12 different places (2 of 4 to win the helicopter)', r: 2, goal: 12, u: true, ev: { k: 'zone', a: a => !!Z[a] } },
+  { id: 'heli_wins', tab: 'explore', e: '🏆', t: 'Win 5 contests or games (3 of 4 to win the helicopter)', r: 3, goal: 5, go: 'agency', poll: () => es().wins },
+  { id: 'heli_stars', tab: 'explore', e: '🌟', t: 'Earn 40 ⭐ (4 of 4 to win the helicopter)', r: 3, goal: 40, poll: () => C.stars || 0 },
+  { id: 'heli_fly', tab: 'explore', e: '🚁', t: 'Take off in your helicopter', r: 1, go: 'heli', ev: { k: 'heli', a: a => a === 'takeoff' } },
+  { id: 'heli_pad', tab: 'explore', e: '🛬', t: 'Land your helicopter on the Helipad', r: 2, go: 'heli', ev: { k: 'heli', a: a => a === 'pad' } },
+  { id: 'heli_high', tab: 'explore', e: '☁️', t: 'Fly your helicopter all the way up to the clouds', r: 2, go: 'heli', ev: { k: 'heli', a: a => a === 'high' } },
+  { id: 'heli_friend', tab: 'explore', e: '👭', t: 'Fly a friend in your helicopter, or ride along in theirs', r: 2, ev: { k: 'heli', a: a => a === 'friend' || a === 'ride' } },
   { id: 'gardenBow', tab: 'explore', e: '🌷', t: 'Curtsy in the Spring Garden', r: 1, go: 'spring', ev: { k: 'act', a: a => a === 'bow', z: 'spring' } },
   // 🦁 Safari: super hard challenges. Finish all of one animal's challenges (grp) and you can ride it (3d/src/24i-earned-rides.js)
   { id: 'saf_feed5', tab: 'safari', grp: 'kivu', e: '🍃', t: 'Feed all 11 kinds of animals at the Safari Zoo', r: 3, goal: 11, u: true, go: 'zoo', ev: { k: 'zoofeed' } },
@@ -412,7 +421,7 @@ function ridesHTML() {
   let h = '<div class="cnote">Special rides and outfits you can\'t buy! Win contests and play days in a row to earn them.</div>';
   h += `<div class="cstreak"><span>🔥 ${st.streak} ${st.streak === 1 ? 'day' : 'days'} in a row<small>Best: ${st.best}</small></span><span>🏆 ${st.wins} ${st.wins === 1 ? 'win' : 'wins'}<small>Contests and 1-on-1</small></span></div>`;
   h += '<div class="crides" style="display:flex;flex-direction:column;gap:7px">' + rides.sort((a, b) => a.own - b.own).map(r => {
-    const bar = r.own ? 'Yours! Tap 🏇 with your moves to ride' : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
+    const bar = r.own ? (r.ownTxt || 'Yours! Tap 🏇 with your moves to ride') : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
     return `<div class="cq${r.own ? ' done' : ''}"><b>${r.pic ? `<img src="${r.pic}" alt="">` : r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}${r.fly ? ' 🪽' : ''}</strong><i>${r.own ? '' : r.what + ' · '}${bar}</i></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
   }).join('') + '</div>';
   if (looks.length) h += '<div class="cnote" style="margin-top:8px">👗 Modern outfits</div><div class="crides" style="display:flex;flex-direction:column;gap:7px">' + looks.sort((a, b) => a.own - b.own).map(r => {
