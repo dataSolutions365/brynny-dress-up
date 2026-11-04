@@ -114,7 +114,7 @@ function mapZoom(i,fx,fy){const S=mapCv.width;i=Math.max(0,Math.min(MAPZ.length-
 function mapCenterOn(wx,wz){const k=mapK();mv.ox=-wx*k;mv.oy=-wz*k;mapClamp();}
 let mapOpen=false;
 function openMap(){if(closetOpen)return;mapOpen=true;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#mapStop').style.display=mapDest?'inline-block':'none';
-  $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:'Tap a place and a sparkly arrow will show you the way!';
+  $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:hasFastPass()?'Tap a place to 🎟️ zip there, or follow a sparkly arrow!':'Tap a place and a sparkly arrow will show you the way!';
   if(mv.zi>1)mapCenterOn(player.pos.x,player.pos.z);else if(mv.zi===1)mapCenterOn(0,0);
   $('#map').classList.add('show');sfx('pop');(function loop(){if(!mapOpen)return;drawMap();requestAnimationFrame(loop);})();}
 function closeMap(){mapOpen=false;$('#map').classList.remove('show');}
@@ -145,6 +145,7 @@ mapCv.addEventListener('click',e=>{if(mdrag>mapCv.width*.02)return;// that was a
   for(const it of lay){const b=it.lb;if(sx>=b.x0-4&&sx<=b.x1+4&&sy>=b.y0-4&&sy<=b.y1+4){best=it.z;bd=0;break;}}
   if(!best)for(const it of lay){const d=Math.hypot(sx-it.px,sy-it.py);if(d<Math.max(it.z.r*k,S*.06)&&d<bd){bd=d;best=it.z;}}
   if(!best){worldMapTap(sx,sy);return;}if(curZone===best){toast(`You're already at ${zLabel(best)}! ✨`);return;}
+  if(fastPassAsk(best))return;// 🎟️ Fast Pass: zip there or follow the arrow (26i-fast-pass.js)
   setDest(best);sfx('star');closeMap();toast(`Follow the pink arrow on the map to ${zLabel(best)} 💗`);});
 $('#mini').addEventListener('click',openMap);
 $('#mapClose').onclick=closeMap;
