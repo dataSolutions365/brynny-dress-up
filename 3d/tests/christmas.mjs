@@ -72,7 +72,7 @@ try {
   const closet = await page.evaluate(async () => { const G = window.__game, p = G.player; p.pos.set(G.Z.studio.pad.x, 0, G.Z.studio.pad.z + 2); await new Promise(r => setTimeout(r, 300));
     p.pos.set(G.Z.studio.pad.x, 0, G.Z.studio.pad.z); await new Promise(r => setTimeout(r, 600)); const open = G.closetOpen(); if (open) G.closeCloset(); return open; });
   if (!closet) fail('stepping on the moved dress-up pad does not open the closet');
-  await page.evaluate(() => window.__game.player.pos.set(0, 0, 14));
+  await page.evaluate(() => window.__game.player.pos.set(-40, 0, 30)); // out of Santa's way, so he doesn't stop for you
 
   // 🎅 Santa walks
   const a = await page.evaluate(() => window.__xmas.santa());
@@ -83,7 +83,7 @@ try {
   if (moved < 1) fail('Santa is not walking round town');
   // walking up to Santa: he says hi and gives a present
   // (the present comes a moment after he says hi; give a slow test machine up to 15 seconds)
-  await page.evaluate(() => { const G = window.__game, s = window.__xmas.santa(); window.__c0 = G.SAVE.coins || 0; G.player.pos.set(s.x + 1.2, 0, s.z + 1.2); });
+  await page.evaluate(() => { const G = window.__game, s = window.__xmas.santa(); G.SAVE.xmas.gift = null; window.__c0 = G.SAVE.coins || 0; G.player.pos.set(s.x + 1.2, 0, s.z + 1.2); });
   await page.waitForFunction(() => (window.__game.SAVE.coins || 0) - window.__c0 >= 25, null, { timeout: 15_000 }).catch(() => {});
   const gift = await page.evaluate(() => { const G = window.__game; return { gift: G.SAVE.xmas.gift, coins: (G.SAVE.coins || 0) - window.__c0, hi: window.__chal.isDone(window.__chal.list.find(c => c.id === 'xs_santa')) }; });
   console.log('santa:', JSON.stringify(gift));
