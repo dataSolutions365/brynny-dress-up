@@ -1,6 +1,6 @@
 // Helicopter with friends: two phones in the same family room. The host sits in their helicopter at the Helipad, the guest
 // walks up and taps 🙋 Ride along, they take off together and both phones show the guest in their seat, then the pilot lands
-// and the guest hops out. (3d/src/26g-helicopter.js + 3d/online.js)
+// and the guest hops out. (3d/src/26h-helicopter.js + 3d/online.js)
 //
 // Run it with:  npm i --no-save playwright peer && npx playwright install chromium && node 3d/tests/heli-friends.mjs
 // It starts its own little PeerJS server, so nothing goes out to the internet except the 3D engine and PeerJS.

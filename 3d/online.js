@@ -267,6 +267,7 @@ function addOther(id, d, quiet) {
   const { THREE, scene, Avatar } = G;
   const name = String(d.name || 'Friend').slice(0, 16);
   const tc = TAGC[others.size % TAGC.length], a = new Avatar(d.look, name, tc);
+  if (a.tag) a.tag.renderOrder = 3; // a friend's name tag draws over yours, so it never hides behind it
   const st = d.st || { p: [0, .15, 2], f: 0, sp: 0 };
   const o = { name, tc, look: d.look, a, st, pos: new THREE.Vector3(...st.p), tgt: new THREE.Vector3(...st.p), face: st.f, sp: 0, air: false, say: null, sayT: 0, g: a.g };
   o.heard = performance.now(); a.g.position.copy(o.pos); scene.add(a.g); others.set(id, o);
@@ -282,7 +283,7 @@ function removeOther(id, quiet) {
   badge();
 }
 // the bakery cake contest (3d/src/21b-cake-contest.js), ball passing (3d/src/26d-ball-play.js) and sports matches with friends
-// (3d/src/24e2-sports-friends.js) and riding along in a friend's helicopter (3d/src/26g-helicopter.js) send their own messages through the room
+// (3d/src/24e2-sports-friends.js) and riding along in a friend's helicopter (3d/src/26h-helicopter.js) send their own messages through the room
 const netFns = [];
 window.__net = { live: () => !!role && others.size > 0, send: d => send(d), on: f => netFns.push(f), friends: () => others, id: () => myId };
 function handle(id, d) {
@@ -293,7 +294,7 @@ function handle(id, d) {
     o.look = d.look;
     // style (glam/cute) or girl/guy changes the body, so rebuild; otherwise just re-dress
     if ((d.look.style || 'glam') !== (o.a.look.style || 'glam') || (d.look.body || 'girl') !== (o.a.look.body || 'girl') || JSON.stringify(d.look.face || {}) !== JSON.stringify(o.a.look.face || {})) {
-      const n = new G.Avatar(d.look, o.name, o.tc);
+      const n = new G.Avatar(d.look, o.name, o.tc); if (n.tag) n.tag.renderOrder = 3;
       if (G.friendShowClear) G.friendShowClear(o);
       G.scene.remove(o.a.g); if (G.freeObj) G.freeObj(o.a.g); o.a = n; o.g = n.g; o.say = null; G.scene.add(n.g); n.g.position.copy(o.pos);
     } else { try { o.a.dress(d.look); } catch (e) { } }
@@ -302,7 +303,7 @@ function handle(id, d) {
   else if (d.t === 'emo' && typeof d.id === 'string') { o.a.play(d.id); if (d.id === 'magic' || d.id === 'cheer') G.burst(o.pos.clone().add(new G.THREE.Vector3(0, 1.2, 0)), '#ffd23f', 30, 2.5, .18); }
   else if (d.t === 'show' && d.show && typeof d.show === 'object') { o.show = d.show; if (G.friendShow) G.friendShow(o, d.show); }
   else if (d.t === 'say' && SAY.includes(d.text)) G.friendBubble(o, d.text);
-  else if (d.t === 'cake' || d.t === 'ball' || d.t === 'sport' || d.t === 'heli') for (const f of netFns) try { f(id, o.name, d); } catch (e) { }
+  else if (d.t === 'cake' || d.t === 'ball' || d.t === 'sport' || d.t === 'roam' || d.t === 'heli') for (const f of netFns) try { f(id, o.name, d); } catch (e) { }
 }
 
 G.onTick.push(dt => {

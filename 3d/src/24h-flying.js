@@ -23,7 +23,7 @@ const isFlyer=a=>!!(a&&a.F&&a.F.fly);
 /* ---------- what's below you: a height map of every building, tree and lamp on the island (made once) ---------- */
 const FG={o:Math.ceil(R+4),h:null};
 function flyGrid(){if(FG.h)return;const o=FG.o,n=o*2+1,h=new Float32Array(n*n);
-  const skip=new Set([av.g,...FRIENDS.map(f=>f.g),...PETS.map(p=>p.g),...Object.values(FA).map(a=>a.g),...STARS.map(s=>s.m),...heliSkip()]);// (helicopters are never in the way: 26g-helicopter.js)
+  const skip=new Set([av.g,...FRIENDS.map(f=>f.g),...PETS.map(p=>p.g),...Object.values(FA).map(a=>a.g),...STARS.map(s=>s.m),...heliSkip()]);// (helicopters are never in the way: 26h-helicopter.js)
   const box=new THREE.Box3();scene.updateMatrixWorld(true);
   const walk=ob=>{if(skip.has(ob))return;
     if(ob.isMesh&&!ob.isInstancedMesh&&!ob.isSkinnedMesh&&ob.geometry){const gm=ob.geometry;if(!gm.boundingBox)gm.computeBoundingBox();box.copy(gm.boundingBox).applyMatrix4(ob.matrixWorld);

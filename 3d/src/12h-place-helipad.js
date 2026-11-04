@@ -1,5 +1,5 @@
 /* ===== 🚁 Helipad: a real-looking helicopter landing pad on the open grass between the Basketball Court and the Jump Park =====
-   The helicopter itself (the model, flying it, buying or winning it, and friends riding along) is in 26g-helicopter.js.
+   The helicopter itself (the model, flying it, buying or winning it, and friends riding along) is in 26h-helicopter.js.
    Like a real heliport: a square concrete apron, a dark touchdown circle with a yellow ring and a big white H,
    green edge lights around the circle, a windsock that swings in the breeze, a fuel cart and a little operations hut.
    Local space: +z points toward the middle of town (the path in), so the helicopter parks facing it.

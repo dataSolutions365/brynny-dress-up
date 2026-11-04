@@ -33,6 +33,9 @@
   `seat` slides the animal back so you sit further forward, `wide` spreads the rider's legs, `boost` sets the speed.
   🐆🐅 The cheetah and tiger (zoo animals and the Duma and Raja rides) are one builder, `bigCat()` in `3d/src/24c9e-big-cats.js`.
   🐊 The alligator (zoo and the Bayou ride) is `3d/src/24c9f-alligator.js`.
+  Every real animal has ONE real-looking model: the Safari Zoo's zebra, giraffe and rhino use the ride builders through `model:` in ZOOA,
+  🦁 Goldie the champion lion is the zoo lion with a gold saddle, and 🐒 Coco the barn monkey is built by `Pet.buildReal` (`3d/src/16-animals-pets.js`).
+  Don't add a cartoon copy of an animal that already has a real-looking one; reuse the real model.
   🦛 The hippo model is `3d/src/24c9d-hippo.js`. Animals with `swim` (the zoo hippo and alligator, and the Kiboko and Bayou rides) sink into the canal
   round the city through `swimSink()` in `3d/src/26f2-hippo-swim.js` (rideStep, the zoo and friends online all call it), and Kiboko and Bayou are the
   only barn rides `seaKeep()` lets into the water. The back of the Safari Zoo's fence is open (`ZOO_SHORE` in `3d/src/12d-place-zoo.js`):
@@ -47,8 +50,10 @@
   follow you (only adopted pets do): you swim up next to them, and that counts for the challenges. A barn ride with `swim:1` in FARM may go in the water. They show on the minimap. 🐟 Feed sends `did('seafeed', kind)`.
   🐢 Shelly, 🐬 Splash, 🐋 Big Blue and 🦭 Pip are rides you earn in the 🌊 Ocean tab of `3d/challenges.js` (ids in `SEA_RIDES`), and only work in the water
   (Pip slides off her rock when you ride her and goes back when you hop off). 🐠 Ray the manta ray and 🦦 Ollie the sea otter are for swimming with and feeding.
-  🦈 Now and then a great white chases you while you swim (`sharkStep`): it's harmless (reach the shore to escape, `did('shark','escape')`, or he just bumps you
-  and swims off). It looks like a real great white on purpose, not a cartoon; keep it that way.
+  🦈 Ghost the great white swims round the canal by himself (a SEAS animal, `SHARK.c`); swim near him and now and then he chases you (`sharkStep`): it's
+  harmless (reach the shore to escape, `did('shark','escape')`, or he just bumps you and swims on). He's a ride too, with the hardest Ocean challenges
+  (grp 'ghost': escape 10 times, 5 in a row, ride all 4 other sea rides, swim 5000 steps); once he's yours he stops chasing you.
+  He looks like a real great white on purpose, not a cartoon; keep it that way.
   `3d/tests/ocean.mjs` (run on every PR) checks you swim all round, the animals keep their own way instead of following you, feeding counts, the rides stay locked until earned and you sit on their back.
 - 📍 The Places tab of ⭐ Star Challenges (`placesHTML()` in `3d/challenges.js`) is a legend of every place in town with the challenges
   you do there, grouped by each challenge's `go` place (no `go` puts it under "Anywhere in town"). Give a new challenge a `go` and it shows up
@@ -72,7 +77,7 @@
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
 - 🚁 The helicopter and the 🚁 Helipad (between the Basketball Court and the Jump Park): the pad is `3d/src/12h-place-helipad.js`
-  (`HPAD`), the helicopter is `3d/src/26g-helicopter.js` (`HELI` is yours, `makeHeli()` builds the model for you and for friends).
+  (`HPAD`), the helicopter is `3d/src/26h-helicopter.js` (`HELI` is yours, `makeHeli()` builds the model for you and for friends).
   You get it by buying it in the shop's 🦖 Rides tab (`HELI_PRICE` 🪙) or by finishing the 4 challenges in `HELI_EARN` (Explore tab
   of `3d/challenges.js`). It flies itself, not through FLY: `heliStep()` runs in the game loop before `flyStep`, takes off straight up,
   tips its nose and banks like a real one, and uses `flyFloor` (24h-flying.js) to climb over trees and roofs; it only touches down on
@@ -81,6 +86,15 @@
   'hseat' entry sits passengers in their seat on every phone. Keep it real-looking, not a cartoon.
   `3d/tests/helicopter.mjs` (run on every PR) buys and wins it, flies it and lands it on the pad; `3d/tests/heli-friends.mjs`
   flies a friend along with two phones (same setup as `online-see.mjs`).
+- 🐾 Barn animals and the 🚨 Round-up (`3d/src/26g-town-animals.js`): four barn animals (Waddles, Billy, Truffle, Woolly, in `ROAM_LIST`)
+  wander the meadow round the Happy Barn and never follow you (walking up makes one stop and look at you, then it carries on).
+  "Start a Round-up" near the barn sends them out onto their own two streets each (street = the `ang` of a place with a path) until
+  they're caught: 🪢 Catch puts one on a rope behind you until you reach the barn. A bar at the top lists who's still out.
+  Friends online in the room join in through `{t:'roam'}` messages (online.js passes them on); whoever brings the most home wins
+  (`did('roundup', 0)`, which also counts as a win for the 🏆 rides). Challenges are in the 🗺️ Explore tab of `3d/challenges.js`.
+  🦁 A Safari Round-up starts at the Safari Zoo the same way, with the safari runaways in `SAFARI_LIST` (hidden copies until it starts,
+  walked back to the zoo). Only one Round-up runs at a time (`RU.grp`).
+  Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

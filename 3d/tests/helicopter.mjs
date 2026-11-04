@@ -1,6 +1,6 @@
 // Helicopter test: on an iPhone-size screen, checks the 🚁 helicopter waits at the Helipad, can be won with its 4 challenges
 // or bought for 500 coins, you sit in the pilot's seat, hold ⬆️ UP to lift off, fly across town above the trees with the nose
-// dipped, 🛬 Land sets you down on the Helipad, you get out, and 🚁 Heli in the moves wheel calls it over.  (3d/src/26g-helicopter.js)
+// dipped, 🛬 Land sets you down on the Helipad, you get out, and 🚁 Heli in the moves wheel calls it over.  (3d/src/26h-helicopter.js)
 //
 // Run it with:  node 3d/tests/helicopter.mjs   (needs Playwright: npm i --no-save playwright && npx playwright install chromium)
 // SHOTS=some/folder saves a picture at each step.
