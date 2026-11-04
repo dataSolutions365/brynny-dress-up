@@ -305,6 +305,8 @@ const ZONES=[
   {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
   // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
   {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
+  // in the open grass between the Beach path and the Car Garage (12h-place-arctic.js, 24m-arctic.js): snow, ice and polar animals
+  {id:'arctic',name:'❄️ Polar Ice',ang:165,d:45,r:9,music:'winter-days'},
   // out on the open grass between the Basketball Court and the Jump Park, near the shore (12h-place-helipad.js, 26h-helicopter.js)
   {id:'heli',name:'🚁 Helipad',ang:105,d:62,r:6.5,music:'city-park'},
   // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one
@@ -1754,6 +1756,108 @@ function deliveryBox(){const g=new THREE.Group();
   z.ob(-4.75,3.7,.6);}
  signpost(z);}
 
+// ---- src/12h-place-arctic.js ----
+/* ===== ❄️ Polar Ice: a snowy, icy corner of town between the Beach path and the Car Garage =====
+   This file builds the place: deep snow with drifts all round the edge (the way in is at the front), a frozen pond to ice skate on,
+   a frozen lake with two fishing holes, a flat spot at the back to build an igloo, blue ice rocks, snowy pine trees and falling snow.
+   The polar animals that live here, ice skating, ice fishing, the igloo and the 🚨 Polar escape are in 24m-arctic.js and 24m2-arctic-escape.js.
+   Local layout (z.toLocal): +z points to the plaza (the way in), the igloo spot is at the back (-z).
+   ICE says where everything is (in the place's own directions), so the other files and the animals can keep clear of it. */
+const ICE={
+  rink:{x:-4.1,z:.9,rx:2.75,rz:2.3},// the frozen pond you skate on (an oval)
+  lake:{x:4.3,z:-1.1,r:2.4,holes:[[3.55,-.25],[5.05,-1.95]]},// the frozen lake with the fishing holes
+  igloo:{x:0,z:-5.3,r:1.75},// where you build the igloo
+  fence:8.3,// the snow drifts go round at this distance
+  avoid:[]};// [x,z,r] the animals walk round (filled in below)
+{const z=Z.arctic,g=z.g;
+ // deep snow, a bit sparkly, with soft blue shadows
+ const snowT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#f4f8fc';x.fillRect(0,0,w,h);
+   for(let i=0;i<2600;i++){const c=Math.random();x.fillStyle=c<.45?'rgba(200,215,235,.45)':c<.85?'rgba(255,255,255,.9)':'rgba(170,195,225,.35)';const s=1+Math.random()*3;x.beginPath();x.arc(Math.random()*w,Math.random()*h,s,0,Math.PI*2);x.fill();}},4);
+ const snowM=std('#ffffff',{map:snowT,roughness:.92});
+ patch(z.r+.7,snowM,z.x,z.z,.024);
+ // the white snow carries on a little way out into the grass in soft, uneven blobs, so it doesn't stop in a hard circle
+ for(let i=0;i<14;i++){const a=i/14*Math.PI*2+.2,[x,w]=z.toWorld(Math.sin(a)*(z.r+.5),Math.cos(a)*(z.r+.5));if(Math.abs(Math.sin(a/2))<.12)continue;patch(.9+((i*7)%4)*.25,snowM,x,w,.023);}
+ const drift=std('#f7fafd',{roughness:.95}),driftShade=std('#e6eef7',{roughness:.95});
+ // snow drifts round the edge, with a gap at the front for the way in
+ {const FR=ICE.fence,N=36;for(let i=0;i<N;i++){const a=i/N*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<.42)continue;
+   const s=.55+((i*13)%5)*.09,x=Math.sin(a)*FR,w=Math.cos(a)*FR,m=M(sph(s,14,10),i%3?drift:driftShade,x,0,w,g);m.scale.set(1.5,.55,1.1);m.rotation.y=a+Math.PI/2;z.ob(x,w,s*.75);}}
+ // ⛸️ the frozen pond: smooth, glassy pale-blue ice with a snowy bank round it (open on the side facing the middle)
+ {const R0=ICE.rink,iceT=canvasTex(256,256,(x,w,h)=>{const gr=x.createRadialGradient(w/2,h/2,10,w/2,h/2,w/2);gr.addColorStop(0,'#dff3fb');gr.addColorStop(1,'#b6dcef');x.fillStyle=gr;x.fillRect(0,0,w,h);
+     x.strokeStyle='rgba(255,255,255,.55)';x.lineWidth=1.2;for(let i=0;i<70;i++){x.beginPath();const cx=Math.random()*w,cy=Math.random()*h,r=20+Math.random()*60,a=Math.random()*6;x.arc(cx,cy,r,a,a+.6+Math.random());x.stroke();}// skate marks
+     x.strokeStyle='rgba(120,170,200,.35)';x.lineWidth=.8;for(let i=0;i<10;i++){x.beginPath();let X=Math.random()*w,Y=Math.random()*h;x.moveTo(X,Y);for(let k=0;k<4;k++){X+=(Math.random()-.5)*60;Y+=(Math.random()-.5)*60;x.lineTo(X,Y);}x.stroke();}});// little cracks
+   const iceM=phys('#ffffff',{map:iceT,roughness:.08,clearcoat:1,clearcoatRoughness:.05,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+   const rk=M(new THREE.CircleGeometry(1,64),iceM,R0.x,.032,R0.z,g,false,true);rk.rotation.x=-Math.PI/2;rk.scale.set(R0.rx,R0.rz,1);ICE.rinkMesh=rk;
+   const N=30;for(let i=0;i<N;i++){const a=i/N*Math.PI*2,ox=Math.sin(a),oz=Math.cos(a);if(ox>.55)continue;// the way onto the ice faces the middle (+x)
+     const x=R0.x+ox*(R0.rx+.35),w=R0.z+oz*(R0.rz+.35),m=M(sph(.32+((i*5)%3)*.06,10,8),drift,x,0,w,g);m.scale.set(1.3,.6,1);m.rotation.y=Math.atan2(ox,oz)+Math.PI/2;}
+   // a little wooden bench to sit and lace up, and a sign
+   const wood=std('#8a5a36',{roughness:.85}),bg=new THREE.Group();bg.position.set(R0.x-.4,0,R0.z+R0.rz+.95);g.add(bg);
+   M(box(1.3,.08,.38),wood,0,.45,0,bg);for(const s of [-1,1])M(box(.08,.45,.34),wood,s*.55,.22,0,bg);M(box(1.3,.3,.06),wood,0,.72,-.17,bg);
+   M(box(1.25,.06,.3),std('#ffffff',{roughness:.95}),0,.52,0,bg,false,false);z.ob(R0.x-.4,R0.z+R0.rz+.95,.55);
+   const sg=new THREE.Group();sg.position.set(R0.x+1.6,0,R0.z+R0.rz+.6);g.add(sg);M(cyl(.05,.05,1.5,8),wood,0,.75,0,sg);
+   const t=canvasTex(256,96,(c,W,H)=>{c.fillStyle='#f4fbff';c.fillRect(0,0,W,H);c.fillStyle='#2f6a9a';c.font='700 40px Fredoka, sans-serif';c.textAlign='center';c.fillText('⛸️ Ice Rink',W/2,62);});
+   M(box(1.1,.42,.05),wood,0,1.4,0,sg);for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1,.36),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.4,s*.03,sg,false,false);if(s<0)p.rotation.y=Math.PI;}
+   z.ob(R0.x+1.6,R0.z+R0.rz+.6,.15);}
+ // 🎣 the frozen lake: darker, snow-dusted ice with two round holes cut in it, a stool and a bucket by each
+ {const L=ICE.lake,lakeT=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#a9cde0';x.fillRect(0,0,w,h);
+     for(let i=0;i<500;i++){x.fillStyle=`rgba(255,255,255,${.15+Math.random()*.4})`;x.beginPath();x.arc(Math.random()*w,Math.random()*h,2+Math.random()*9,0,Math.PI*2);x.fill();}
+     x.strokeStyle='rgba(70,120,150,.35)';x.lineWidth=1;for(let i=0;i<12;i++){x.beginPath();let X=Math.random()*w,Y=Math.random()*h;x.moveTo(X,Y);for(let k=0;k<5;k++){X+=(Math.random()-.5)*50;Y+=(Math.random()-.5)*50;x.lineTo(X,Y);}x.stroke();}});
+   const lm=phys('#ffffff',{map:lakeT,roughness:.2,clearcoat:.8,clearcoatRoughness:.2,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+   const lk=M(new THREE.CircleGeometry(L.r,48),lm,L.x,.031,L.z,g,false,true);lk.rotation.x=-Math.PI/2;
+   const holeM=phys('#0d2c3e',{roughness:.05,clearcoat:1,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}),chunk=phys('#d8eef8',{roughness:.15,clearcoat:1,transparent:true,opacity:.92});
+   const wood=std('#7a4f2e',{roughness:.85}),pail=std('#5a7d96',{roughness:.5,metalness:.4});
+   ICE.holeWater=[];
+   L.holes.forEach(([hx,hz],i)=>{const hm=M(new THREE.CircleGeometry(.36,28),holeM,hx,.036,hz,g,false,false);hm.rotation.x=-Math.PI/2;ICE.holeWater.push(hm);
+     for(let k=0;k<9;k++){const a=k/9*Math.PI*2+i,c=M(new THREE.IcosahedronGeometry(.07+((k*3)%4)*.02,0),chunk,hx+Math.sin(a)*.42,.05,hz+Math.cos(a)*.42,g,false,false);c.rotation.set(a,a*2,0);}
+     // a wooden stool and a bucket for your catch, on the side away from the middle of the lake
+     const ax=hx-L.x,az=hz-L.z,ad=Math.hypot(ax,az)||1,sx=hx+ax/ad*.85,sz=hz+az/ad*.85;
+     const st=new THREE.Group();st.position.set(sx,0,sz);g.add(st);M(cyl(.2,.2,.06,14),wood,0,.36,0,st);for(let k=0;k<3;k++){const a=k/3*Math.PI*2,l=M(cyl(.025,.03,.36,6),wood,Math.sin(a)*.13,.18,Math.cos(a)*.13,st);l.rotation.set(Math.cos(a)*.2,0,-Math.sin(a)*.2);}
+     const b=M(cyl(.14,.11,.24,14),pail,sx+(az/ad)*.45,.12,sz-(ax/ad)*.45,g);ICE.holeSeat=ICE.holeSeat||[];ICE.holeSeat.push([sx,sz]);});
+   // a little rack of fishing rods by the lake
+   const rg=new THREE.Group();rg.position.set(L.x+2.3,0,L.z+1.7);rg.rotation.y=-.6;g.add(rg);for(const s of [-1,1])M(cyl(.04,.04,1.1,6),wood,s*.45,.55,0,rg);M(box(1,.06,.06),wood,0,1.05,0,rg);
+   for(let i=0;i<3;i++){const r=M(cyl(.012,.02,1.2,6),std('#3b3b40',{roughness:.4}),-.3+i*.3,.55,.05,rg);r.rotation.z=.12;}z.ob(L.x+2.3,L.z+1.7,.4);
+   const sg=new THREE.Group();sg.position.set(L.x-.6,0,L.z+L.r+.75);g.add(sg);M(cyl(.05,.05,1.5,8),wood,0,.75,0,sg);
+   const t=canvasTex(256,96,(c,W,H)=>{c.fillStyle='#f4fbff';c.fillRect(0,0,W,H);c.fillStyle='#2f6a9a';c.font='700 38px Fredoka, sans-serif';c.textAlign='center';c.fillText('🎣 Ice Fishing',W/2,62);});
+   M(box(1.1,.42,.05),wood,0,1.4,0,sg);for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1,.36),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.4,s*.03,sg,false,false);if(s<0)p.rotation.y=Math.PI;}
+   z.ob(L.x-.6,L.z+L.r+.75,.15);}
+ // 🧱 the igloo spot: a flat circle of packed snow, a pile of snow blocks and a snow saw stuck in the snow
+ {const I=ICE.igloo,pm=std('#e9f1f8',{roughness:.85,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+   const c=M(new THREE.CircleGeometry(I.r+.25,40),pm,I.x,.031,I.z,g,false,true);c.rotation.x=-Math.PI/2;
+   ICE.blockM=std('#f6f9fc',{roughness:.8});
+   const pile=new THREE.Group();pile.position.set(I.x+I.r+1.1,0,I.z+.6);g.add(pile);ICE.pile=pile;
+   for(let i=0;i<7;i++){const b=M(box(.5,.24,.3),ICE.blockM,(i%3-1)*.52,.12+Math.floor(i/3)*.25,(i%2)*.06,pile);b.rotation.y=(i%2-.5)*.15;}
+   const saw=new THREE.Group();saw.position.set(I.x+I.r+1.1,0,I.z-.5);saw.rotation.set(0,.4,.25);g.add(saw);
+   M(box(.06,.55,.012),std('#c9ced6',{metalness:.8,roughness:.3}),0,.3,0,saw);M(box(.08,.16,.05),std('#7a4f2e',{roughness:.8}),0,.62,0,saw);
+   z.ob(I.x+I.r+1.1,I.z+.6,.75);}
+ // blue ice rocks: chunky, glassy blocks with sharp edges
+ {const iceRock=phys('#bfe3f2',{roughness:.12,clearcoat:1,clearcoatRoughness:.1,transmission:0,transparent:true,opacity:.93}),iceRock2=phys('#9fd0e8',{roughness:.15,clearcoat:1,transparent:true,opacity:.95});
+   for(const [x,w,s] of [[-1.3,-3.4,.7],[-.6,-3.1,.42],[6.6,3.3,.75],[-6.7,-3.8,.85],[-6.1,-4.6,.5],[2.4,4.7,.45]]){const r=M(new THREE.IcosahedronGeometry(s,0),s>.6?iceRock:iceRock2,x,s*.45,w,g);r.rotation.set(s*3,s*5,s*2);r.scale.y=.85;z.ob(x,w,s*.85);ICE.avoid.push([x,w,s+.25]);}
+   ICE.perch=[6.6,3.3,.75*.85*1.55];}// the top of the big ice rock by the way in (the snowy owl likes to sit up there)
+ // snowy pine trees
+ {const bark=std('#5a3d28',{roughness:.9}),pine=std('#2e5a3f',{roughness:.85}),cap=std('#fbfdff',{roughness:.9});
+   for(const [x,w,s] of [[-7.1,3.4,1],[7.3,1,1.1],[1.9,-7.5,.95],[-3.4,-7.2,1.05],[5.2,-5.6,.9],[-7.4,-1.2,.85]]){const tg=new THREE.Group();tg.position.set(x,0,w);tg.scale.setScalar(s);g.add(tg);
+     M(cyl(.12,.16,1,8),bark,0,.5,0,tg);for(let i=0;i<4;i++){const r=1.05-i*.22,y=1.05+i*.6;M(new THREE.ConeGeometry(r,1,12),pine,0,y,0,tg);M(new THREE.ConeGeometry(r*.78,.5,12),cap,0,y+.28,0,tg,false,false);}
+     z.ob(x,w,.35*s);ICE.avoid.push([x,w,1.1*s]);}}
+ // info board by the way in
+ {const wood=std('#7a4f2e',{roughness:.85}),bg=new THREE.Group();const [x,w]=z.toWorld(-2.3,z.r-1);bg.position.set(x,0,w);bg.rotation.y=z.rot;scene.add(bg);
+  for(const s of [-1,1])M(cyl(.05,.05,1.6,8),wood,s*.6,.8,0,bg);M(box(1.45,.9,.08),wood,0,1.3,0,bg);M(box(1.6,.1,.3),std('#ffffff',{roughness:.95}),0,1.8,0,bg,false,false);
+  const t=canvasTex(512,320,(c,W,H)=>{c.fillStyle='#f4fbff';c.fillRect(0,0,W,H);c.fillStyle='#2f6a9a';c.font='700 54px Fredoka, sans-serif';c.textAlign='center';c.fillText('Polar Ice',W/2,70);
+    c.font='600 30px Fredoka, sans-serif';c.fillStyle='#3b2357';c.fillText('🐻‍❄️ Polar bears  🦭 Walrus  🐧 Penguins',W/2,140);c.fillText('🦊 Arctic fox  🐺 Arctic wolf  🦉 Snowy owl',W/2,190);
+    c.font='500 27px Fredoka, sans-serif';c.fillText('⛸️ Skate · 🎣 Fish · 🧱 Build an igloo',W/2,262);});
+  for(const s of [1,-1]){const p=M(new THREE.PlaneGeometry(1.35,.82),new THREE.MeshStandardMaterial({map:t,roughness:.7}),0,1.3,s*.045,bg,false,false);if(s<0)p.rotation.y=Math.PI;}
+  obs.push({x,z:w,r:.4});ICE.avoid.push([-2.3,z.r-1,.7]);}
+ signpost(z);ICE.avoid.push([2.2,z.r-.6,.5]);
+ // ❄️ snow falling gently over the whole place
+ {const n=LITE?120:260,pos=new Float32Array(n*3),sp=new Float32Array(n);
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*(z.r+1);pos[i*3]=Math.sin(a)*r;pos[i*3+1]=Math.random()*7;pos[i*3+2]=Math.cos(a)*r;sp[i]=.5+Math.random()*.6;}
+  const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const flake=canvasTex(32,32,(x)=>{const gr=x.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.5,'rgba(255,255,255,.7)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,32,32);});
+  const pts=new THREE.Points(gg,new THREE.PointsMaterial({map:flake,size:4,sizeAttenuation:false,transparent:true,depthWrite:false,color:'#ffffff'}));pts.frustumCulled=false;g.add(pts);
+  let tk=0;anims.push((t,dt)=>{if(++tk%2)return;const P=player.pos;if((P.x-z.x)**2+(P.z-z.z)**2>40*40){pts.visible=false;return;}pts.visible=true;
+    for(let i=0;i<n;i++){let y=pos[i*3+1]-sp[i]*dt*2;if(y<0)y+=7;pos[i*3+1]=y;pos[i*3]+=Math.sin(t*.7+i)*.004;}gg.attributes.position.needsUpdate=true;});}
+ // the animals keep off the ice, the lake, the igloo spot and the snow-block pile
+ ICE.avoid.push([ICE.rink.x,ICE.rink.z,Math.max(ICE.rink.rx,ICE.rink.rz)+.45],[ICE.lake.x,ICE.lake.z,ICE.lake.r+.35],[ICE.igloo.x,ICE.igloo.z,ICE.igloo.r+.4],[ICE.igloo.x+ICE.igloo.r+1.1,ICE.igloo.z+.6,.9]);}
+// is (x,z) (world) on the skating ice? how far in: 1 at the middle, 0 at the edge, below 0 outside
+function onRink(x,zz){const z=Z.arctic,[lx,lz]=z.toLocal(x,zz),R0=ICE.rink;return 1-Math.hypot((lx-R0.x)/R0.rx,(lz-R0.z)/R0.rz);}
 // ---- src/12h-place-helipad.js ----
 /* ===== 🚁 Helipad: a real-looking helicopter landing pad on the open grass between the Basketball Court and the Jump Park =====
    The helicopter itself (the model, flying it, buying or winning it, and friends riding along) is in 26h-helicopter.js.
@@ -2345,7 +2449,7 @@ class Avatar{
     // walking the runway in the model contest: girls do a catwalk, guys a confident stride (24-model-agency.js sets runwayT)
     if(this.runwayT>0){this.runwayT-=dt;if(sp>.03)runwayWalk(this,tgt,sp);}
     // wearing roller skates or inline skates (14f-roller-skates.js): a skating stride with swinging arms
-    if(this.rollers&&!air&&!this.emote&&!this.skating&&!this.biking&&!this.ballMove&&!(this.runwayT>0))rollerPose(this,tgt,sp,dt);else this.rollOn=false;
+    if((this.rollers||this.iceSk)&&!air&&!this.emote&&!this.skating&&!this.biking&&!this.ballMove&&!(this.runwayT>0))rollerPose(this,tgt,sp,dt);else this.rollOn=false;
     const e=this.emote;let ext=0;
     if(e){e.t+=dt;const k=e.t;
       if(e.id==='wave'){tgt.a0z=-2.7;tgt.e0=0;tgt.a0x=0;ext=Math.sin(k*12)*.5;tgt.hd=.12;if(k>2)this.emote=null;}
@@ -7311,6 +7415,230 @@ ZOO_BUILD.gator=function(g,body,o){const r=.24,len=.9,hip=.26,by=.3;
     this.gapeT-=dt;if(this.gapeT<0&&!run&&!this.ridden){this.gape=2.2;this.gapeT=9+Math.random()*12;}
     const op=this.gape>0?Math.sin(Math.min(1,(2.2-this.gape)/2.2)*Math.PI):0;this.gape=Math.max(0,this.gape-dt);jaw.rotation.x=op*.55;top.rotation.x=-op*.12;};
   Object.assign(o,{neck,head,tail,nTilt:0,gz:.15,size:1.3,h:by+r+.25,rad:.75,dustR:[r,r,len*.8]});};
+// ---- src/24c9g-arctic-animals.js ----
+/* ===== ❄️ Polar animals: a polar bear, a walrus, emperor penguins, an arctic fox, an arctic wolf and a snowy owl =====
+   Real-looking on purpose (true colors and shapes, no cartoon blush or big shiny eyes), like the Safari Zoo animals.
+   They live at ❄️ Polar Ice (24m-arctic.js) and four of them are rides you earn with the ❄️ Polar challenges
+   (arcticRideList below: Nanuq the polar bear, Tusk the walrus who swims, Ukpik the snowy owl who flies, Amaruq the arctic wolf).
+   arcticZooList() is what you learn about each one (it's added to ZOOA in 24d-barn.js). Materials are shared through safM. */
+function arcticZooList(){return [
+  {k:'polarbear',e:'🐻‍❄️',n:'Polar bear',arctic:1,food:[['🐟','Fish'],['🍖','Meat']],say:['*deep huff*','*sniffs the air*','*big bear yawn*'],
+    facts:[['🥗','Diet','Carnivore. Mostly seals, which it catches at holes in the sea ice. It can smell a seal from about 1.5 km (1 mile) away!'],['🌍','Habitat','The sea ice of the Arctic, around the North Pole: Canada, Alaska, Greenland, Russia and Norway.'],['⏳','Lifespan','About 20 to 25 years in the wild, and up to 30 in zoos.'],['✨','Fun fact','The biggest meat-eater on land: a big male can weigh 700 kg (1,500 lb)! Its fur isn\'t really white: each hair is clear and hollow, and its skin underneath is black.']]},
+  {k:'walrus',e:'🦭',n:'Walrus',arctic:1,swim:.5,food:[['🦪','Clams'],['🐟','Fish']],say:['*loud bellow*','*whisker wiggle*','*happy grunt*'],
+    facts:[['🥗','Diet','Clams, mussels, snails and worms from the sea floor. It sucks clams right out of their shells, thousands in one meal!'],['🌍','Habitat','The Arctic Ocean and the seas around it, resting on floating sea ice and rocky beaches.'],['⏳','Lifespan','About 30 to 40 years.'],['✨','Fun fact','Both boys and girls have tusks, up to 1 m (3 ft) long! A walrus uses them to pull itself out of the water onto the ice. Its face has about 450 super-sensitive whiskers to feel for food.']]},
+  {k:'penguin',e:'🐧',n:'Emperor penguin',arctic:1,food:[['🐟','Fish'],['🦐','Krill']],say:['*trumpet call*','*waddle waddle*','*flipper flap*'],
+    facts:[['🥗','Diet','Carnivore. Fish, krill and squid. It can dive more than 500 m (1,600 ft) deep and hold its breath for over 20 minutes!'],['🌍','Habitat','Only in Antarctica, around the South Pole. Penguins live at the other end of the Earth from polar bears, so they never meet in the wild!'],['⏳','Lifespan','About 20 years.'],['✨','Fun fact','The tallest penguin in the world, about 1.1 m (3.7 ft). The dads keep the egg warm on their feet, under a flap of belly skin, for about 2 months through the winter.']]},
+  {k:'arcticfox',e:'🦊',n:'Arctic fox',arctic:1,food:[['🫐','Berries'],['🥚','Egg']],say:['*yip yip*','*fluffy tail swish*','*curious head tilt*'],
+    facts:[['🥗','Diet','Omnivore. Lemmings, voles, birds and eggs, berries, and leftovers from polar bears.'],['🌍','Habitat','The cold, treeless tundra all round the Arctic.'],['⏳','Lifespan','About 3 to 6 years in the wild, and up to 14 in zoos.'],['✨','Fun fact','Its coat is snowy white in winter and turns brown and gray in summer! It has fur on the bottoms of its paws and stays cozy down to -50 °C (-58 °F).']]},
+  {k:'arcticwolf',e:'🐺',n:'Arctic wolf',arctic:1,food:[['🍖','Meat'],['🥩','Steak']],say:['*soft howl* 🌙','*friendly wag*','*ears up*'],
+    facts:[['🥗','Diet','Carnivore. Musk oxen, arctic hares and caribou, hunted together as a pack.'],['🌍','Habitat','The far north of Canada and Greenland, where the ground stays frozen most of the year.'],['⏳','Lifespan','About 7 to 10 years in the wild, and up to 18 in zoos.'],['✨','Fun fact','Its ears are smaller and rounder than other wolves\' so they lose less heat. A pack\'s howls can be heard up to 16 km (10 miles) away!']]},
+  {k:'snowyowl',e:'🦉',n:'Snowy owl',arctic:1,food:[['🐭','Mouse'],['🍗','Chicken']],say:['*hoo hoo*','*slow blink*','*head turns all the way round*'],
+    facts:[['🥗','Diet','Carnivore. Mostly lemmings, more than 1,500 in a year, plus hares and birds.'],['🌍','Habitat','The Arctic tundra. In winter some fly far south, even to farm fields in the USA.'],['⏳','Lifespan','About 10 years in the wild, and up to 28 in zoos.'],['✨','Fun fact','Unlike most owls it hunts in the daytime, since Arctic summers have no night! The boys get whiter as they grow up, and the girls keep dark spots. Its feet are covered in feathers like fluffy slippers.']]}];}
+// 🏆 the polar rides you earn by finishing all of their ❄️ Polar challenges (challenges.js, ids in earn.ids). Same fields as the safari rides (24i-earned-rides.js).
+function arcticRideList(){return [
+  {k:'nanuq',e:'🐻‍❄️',n:'Polar bear',nm:'Nanuq',model:'polarbear',zoo:'polarbear',gear:1,safari:1,arctic:1,earn:{by:'chal',ids:['ice_feedB','ice_fish10','ice_escape3'],goal:3},ride:1.34,boost:1.75,about:'A huge, gentle polar bear who carries you across the snow! Only for explorers who finish all 3 of his ❄️ Polar challenges.',food:[['🐟','Fish'],['🍖','Meat'],['🫐','Berries']],say:['*deep happy huff*','*big bear stretch*','Hold on tight! ❄️']},
+  {k:'tusk',e:'🦭',n:'Walrus',nm:'Tusk',model:'walrus',zoo:'walrus',gear:1,safari:1,arctic:1,swim:.5,earn:{by:'chal',ids:['ice_feedW','ice_fish20','ice_swim'],goal:3},ride:.98,boost:1.45,about:'A big, whiskery walrus who swims you all the way round the city! Ride him right into the water. Only for swimmers who finish all 3 of his ❄️ Polar challenges.',food:[['🦪','Clams'],['🐟','Fish'],['🦐','Shrimp']],say:['*loud happy bellow*','*whisker wiggle*','Into the water! 🌊']},
+  {k:'ukpik',e:'🦉',n:'Snowy owl',nm:'Ukpik',model:'snowyowl',zoo:'snowyowl',safari:1,arctic:1,fly:1,scale:3.3,earn:{by:'chal',ids:['ice_meetAll','ice_igloo','ice_spins'],goal:3},ride:1.36,boost:1.8,about:'A giant snowy owl with golden eyes. Tap 🪽 Fly to soar silently over the island! Only for explorers who finish all 3 of her ❄️ Polar challenges.',food:[['🐭','Mouse'],['🍗','Chicken'],['🐟','Fish']],say:['*hoo hoo*','*silent wing flap*','Up we go! ☁️']},
+  {k:'amaruq',e:'🐺',n:'Arctic wolf',nm:'Amaruq',model:'arcticwolf',zoo:'arcticwolf',gear:1,safari:1,arctic:1,scale:1.45,earn:{by:'chal',ids:['ice_home12','ice_gold','ice_skate'],goal:3},ride:1.45,boost:2.15,about:'A fast, snowy-white arctic wolf who races you across town! Only for explorers who finish all 3 of his ❄️ Polar challenges.',food:[['🍖','Meat'],['🥩','Steak'],['🐟','Fish']],say:['*soft happy howl* 🌙','*tail wag*','Let\'s run! 💨']}];}
+Object.assign(SADDLE,{nanuq:{r:.44,sx:.9,sy:.92,y:.02,z:.02,col:'#2f5a8a',seatY:.41},tusk:{r:.5,sx:1.02,sy:.86,y:.02,z:.14,col:'#7a3a2f',seatY:.45},
+  amaruq:{r:.22,sx:.88,sy:1,y:.02,z:.03,col:'#3a5a7a',seatY:.21}});
+
+// a coat texture: soft fur strokes in a few shades (c0 = the main color)
+function arcFurTex(c0,cs){return canvasTex(128,128,(x,w,h)=>{x.fillStyle=c0;x.fillRect(0,0,w,h);x.lineCap='round';
+  for(let i=0;i<900;i++){x.strokeStyle=cs[i%cs.length];x.lineWidth=.8+Math.random()*1.2;x.beginPath();const X=Math.random()*w,Y=Math.random()*h;x.moveTo(X,Y);x.lineTo(X+(Math.random()-.5)*3,Y+3+Math.random()*5);x.stroke();}},2);}
+const arcFur=(k,c0,cs,o={})=>safM(k,()=>phys('#ffffff',{map:arcFurTex(c0,cs),roughness:.9,sheen:.6,sheenColor:new THREE.Color('#ffffff'),sheenRoughness:.6,...o}));
+// real animal eyes: small, dark and glossy, set into the face (no big cartoon whites)
+function arcEyes(a,head,H,ex,ey,ez,ry,size,col){const m=safM('arcEye'+col,()=>phys(col,{roughness:.12,clearcoat:1,clearcoatRoughness:.05})),pu=safM('arcPupil',()=>phys('#050506',{roughness:.1,clearcoat:1}));
+  for(const sx of [-1,1]){const g=new THREE.Group();g.position.set(sx*H*ex,H*ey,H*ez);g.rotation.y=sx*ry;head.add(g);
+    M(sph(H*size,12,10),m,0,0,0,g,false,false).scale.set(1,1,.6);if(col!=='#050506')M(sph(H*size*.55,10,8),pu,0,0,H*size*.4,g,false,false).scale.set(1,1,.5);a.eyes.push(g);}}
+// four legs that swing from the shoulders and hips: upper leg, lower leg and a paw
+function arcLegs(a,g,mat,pawM,lx,lz,hip,r0,r1,paw,frontZ=0){for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*lx,hip,sz*lz+(sz>0?frontZ:0));g.add(lg);a.legs.push({g:lg,ph});
+  M(sph(r0*1.3,12,10),mat,0,0,0,lg).scale.set(.9,1.3,1.1);M(cyl(r0*1.1,r1,hip*.55,12),mat,0,-hip*.28,sz>0?0:-.02,lg);M(sph(r1*1.05,10,8),mat,0,-hip*.56,sz>0?.01:-.03,lg);
+  M(cyl(r1,r1*.92,hip*.42,12),mat,0,-hip*.77,sz>0?.015:-.02,lg);const p=M(sph(paw,12,10),pawM,0,-hip+paw*.45,.03,lg);p.scale.set(1,.55,1.35);}}
+
+/* 🐻‍❄️ Polar bear: big and heavy with a long neck and a small, long head, a high rump, short round ears, a black nose,
+   huge furry paws, and creamy white fur that looks a little yellow in the light. The cub is the same bear, smaller. */
+ZOO_BUILD.polarbear=function(g,body,o){const r=.44,len=.92,hip=.66,by=.86;
+  const fur=arcFur('pbFur','#f1ebdc',['#e6dfcc','#faf6ec','#ddd4bf']),fur2=safM('pbFur2',()=>phys('#e9e1cf',{roughness:.95,sheen:.6,sheenColor:new THREE.Color('#fffaf0')})),
+    blk=safM('pbBlk',()=>phys('#111113',{roughness:.35,clearcoat:.3})),pad=safM('pbPad',()=>std('#2a2a2c',{roughness:.8}));
+  body.position.y=by;
+  // the body is three big soft ovals blended together: deep chest and shoulders, the middle, and the big high rump
+  const blob=(rr,x,y,z,sx,sy,sz,m=fur)=>{const b=M(fuzz(sph(rr,22,16),.012,26),m,x,y,z,body);b.scale.set(sx,sy,sz);return b;};
+  blob(r,0,0,0,.95,.95,1.35);blob(r,0,-.02,len*.4,.97,1.03,1.05);blob(r,0,.06,-len*.42,1,1.05,1.1);
+  M(sph(r*.8,14,10),fur2,0,-r*.55,0,body).scale.set(.9,.45,1.8);// shaggy belly
+  for(let i=0;i<10;i++)M(sph(.08,8,6),fur2,(i%2?1:-1)*r*.55,-r*.78,(i/9-.5)*len*.9,body,false,false).scale.set(.7,1.5,1);// longer hair hanging under the belly
+  // thick, heavy legs and huge furry paws with black claws
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.55,hip,sz*len*.44+(sz>0?.04:0));g.add(lg);this.legs.push({g:lg,ph});
+    M(fuzz(sph(.2,14,10),.01,26),fur,0,-.02,0,lg).scale.set(.9,1.4,1.1);M(fuzz(cyl(.17,.14,hip*.62,14),.008,26),fur,0,-hip*.36,sz>0?.01:-.02,lg);
+    M(fuzz(cyl(.14,.15,hip*.36,14),.008,26),fur,0,-hip*.78,sz>0?.03:0,lg);
+    const p=M(fuzz(sph(.16,14,10),.01,26),fur2,0,-hip+.07,.06,lg);p.scale.set(1.05,.55,1.3);
+    for(const dx of [-.08,-.03,.03,.08])M(sph(.02,6,4),pad,dx,-hip+.04,.25,lg,false,false).scale.set(1,.7,1.5);}
+  // the long neck and the small, long head
+  const neck=new THREE.Group();neck.position.set(0,by+r*.25,len/2+r*.55);neck.rotation.x=.95;g.add(neck);
+  M(fuzz(new THREE.CapsuleGeometry(.24,.32,8,16),.015,24),fur,0,.2,0,neck).scale.set(.9,1,1.05);
+  const head=new THREE.Group();head.position.set(0,.5,.02);head.rotation.x=-.95+.1;neck.add(head);const H=.17;
+  M(sph(H,20,14),fur,0,0,0,head).scale.set(1.05,.95,1.15);
+  const snout=M(new THREE.CapsuleGeometry(H*.52,H*.9,8,14),fur,0,-H*.2,H*.95,head);snout.rotation.x=Math.PI/2+.08;snout.scale.set(1,.85,1);// the long "Roman nose"
+  M(sph(H*.24,12,10),blk,0,-H*.12,H*1.72,head).scale.set(1.25,.85,.9);// black nose
+  M(sph(H*.3,10,8),blk,0,-H*.52,H*1.38,head,false,false).scale.set(1.1,.25,.9);// dark lips
+  M(sph(H*.48,12,10),fur2,0,-H*.55,H*.75,head).scale.set(1,.55,1.2);// chin
+  for(const sx of [-1,1]){const e=M(sph(H*.24,12,10),fur,sx*H*.68,H*.62,-H*.2,head);e.scale.set(1,.85,.5);M(sph(H*.13,8,6),pad,sx*H*.68,H*.6,-H*.12,head,false,false).scale.set(1,.85,.3);}// short round ears
+  arcEyes(this,head,H,.42,.25,.82,.45,.085,'#050506');
+  const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.95));g.add(tail);M(sph(.08,10,8),fur,0,0,0,tail).scale.set(1,.8,.8);
+  // a slow, heavy, rolling walk: the head swings low
+  this.tick=(t,dt,run)=>{body.rotation.z=Math.sin(this.phase)*.045*Math.min(1,run);};
+  Object.assign(o,{neck,head,tail,nTilt:.95,gz:.55,size:1.3,h:by+r+.38,rad:.75,dustR:[r,r,len*.8]});};
+
+/* 🦭 Walrus: a huge wrinkly cinnamon-brown body that lies low, a thick neck, a broad bristly whisker pad,
+   two long ivory tusks, tiny eyes, front flippers it props itself up on, and back flippers that fan out behind. */
+function walrusTex(){return canvasTex(256,256,(x,w,h)=>{x.fillStyle='#a86f55';x.fillRect(0,0,w,h);
+  for(let i=0;i<1400;i++){const c=Math.random();x.fillStyle=c<.4?'rgba(205,140,115,.35)':c<.75?'rgba(120,70,50,.3)':'rgba(230,175,150,.25)';x.beginPath();x.arc(Math.random()*w,Math.random()*h,1+Math.random()*4,0,Math.PI*2);x.fill();}
+  x.strokeStyle='rgba(90,50,35,.45)';x.lineWidth=1.4;for(let i=0;i<70;i++){x.beginPath();const X=Math.random()*w,Y=Math.random()*h,L=10+Math.random()*30;x.moveTo(X,Y);x.quadraticCurveTo(X+L/2,Y+(Math.random()-.5)*8,X+L,Y+(Math.random()-.5)*4);x.stroke();}},2);}
+ZOO_BUILD.walrus=function(g,body,o){const r=.52,len=.9,by=.5;
+  const skin=safM('wrSkin',()=>{const tx=walrusTex();return phys('#ffffff',{map:tx,bumpMap:tx,bumpScale:3,roughness:.75,sheen:.3,sheenColor:new THREE.Color('#ffd8c8')});}),
+    dark=safM('wrDark',()=>phys('#7a4a38',{roughness:.7})),ivory=safM('wrIvory',()=>phys('#efe4c8',{roughness:.35,clearcoat:.5})),
+    whisk=safM('wrWhisk',()=>std('#e8dcc0',{roughness:.6})),pad=safM('wrPad',()=>phys('#b98468',{roughness:.8}));
+  body.position.y=by;
+  M(sph(r,26,18),skin,0,0,0,body).scale.set(1.08,.9,(len/2+r)/r);
+  M(sph(r*1.02,20,14),skin,0,.06,len*.32,body).scale.set(1.08,1.02,1);// the huge chest and shoulders
+  const rear=M(new THREE.CapsuleGeometry(r*.6,.5,8,16),skin,0,-.18,-len*.72,body);rear.rotation.x=Math.PI/2+.3;rear.scale.set(1.2,.8,1);// the body tapers back to the tail
+  M(sph(r*.98,20,14),skin,0,-.02,-len*.18,body).scale.set(1.1,.92,1.25);// a soft, heavy middle that sags onto the ground
+  // front flippers: propped out to the sides under the chest (they swing as it hitches along)
+  for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*r*.85,by-.15,len*.42);g.add(lg);this.legs.push({g:lg,ph});
+    const f=M(new THREE.CapsuleGeometry(.09,.32,6,12),skin,sx*.06,-.2,.06,lg);f.rotation.set(-.4,0,sx*.35);f.scale.set(1.5,1,.45);
+    M(sph(.12,10,8),pad,sx*.12,-.36,.16,lg).scale.set(1.3,.25,1.4);}
+  // back flippers fanned out behind
+  for(const sx of [-1,1]){const f=M(new THREE.CapsuleGeometry(.1,.26,6,12),skin,sx*.16,-by+.08,-len*.98,body);f.rotation.set(Math.PI/2+.1,0,sx*.55);f.scale.set(1.6,1,.35);}
+  // the head: thick and round, on a neck you can't really see
+  const neck=new THREE.Group();neck.position.set(0,by+.12,len/2+r*.65);neck.rotation.x=.35;g.add(neck);
+  M(sph(.42,18,14),skin,0,.05,0,neck).scale.set(1.02,1,.95);
+  const head=new THREE.Group();head.position.set(0,.22,.2);head.rotation.x=-.35+.05;neck.add(head);const H=.27;
+  M(sph(H,20,14),skin,0,0,0,head).scale.set(1.05,1,1);
+  // the broad, puffy whisker pad (two big round cheeks), full of stiff bristles
+  for(const sx of [-1,1]){M(sph(H*.55,16,12),pad,sx*H*.33,-H*.32,H*.75,head).scale.set(1,.95,.85);
+    for(let i=0;i<14;i++){const row=i%3,col=Math.floor(i/3),bx=sx*H*(.12+col*.11),by2=-H*(.18+row*.15),bz=H*(1.18-col*.07-Math.abs(row-1)*.04),b=M(cyl(.004,.006,.07,4),whisk,bx,by2,bz,head,false,false);b.rotation.set(Math.PI/2-.25,0,sx*.35);}}
+  M(sph(H*.2,10,8),dark,0,-H*.68,H*.55,head,false,false).scale.set(1.3,.6,1);// mouth under the whiskers
+  for(const sx of [-1,1]){M(sph(H*.07,8,6),dark,sx*H*.2,H*.02,H*1.05,head,false,false).scale.set(1.4,.5,.6);// nostrils on top of the snout
+    // the long tusks: down from the top jaw, curving in and back a little
+    taperTube([fV(sx*H*.3,-H*.55,H*.88),fV(sx*H*.28,-H*1.3,H*.9),fV(sx*H*.22,-H*2.05,H*.78),fV(sx*H*.16,-H*2.55,H*.6)],q=>H*(.085-.05*q),ivory,head,14,8);}
+  arcEyes(this,head,H,.58,.3,.62,.65,.06,'#120806');
+  // a slow hitch-and-slide: the body heaves up and down as the flippers pull
+  this.tick=(t,dt,run)=>{const k=Math.min(1,run);body.rotation.x=Math.sin(this.phase)*.06*k;neck.position.y=by+.12+Math.abs(Math.sin(this.phase))*.04*k;};
+  Object.assign(o,{neck,head,tail:null,nTilt:.35,gz:.35,size:1.3,h:by+r+.42,rad:.8,dustR:[r,r,len*.8]});};
+
+/* 🐧 Emperor penguin: tall and sleek, black back, wings and head, a white belly that blushes pale yellow up top,
+   bright yellow-orange ear patches, and a long, slightly curved black bill with a pink-orange stripe. Waddles. The chick is gray and fluffy. */
+let ARC_CHICK=false;// set while building the penguin chick (24m-arctic.js)
+ZOO_BUILD.penguin=function(g,body,o){const chick=ARC_CHICK,blk=safM('pgBlk',()=>phys('#16181d',{roughness:.45,sheen:.5,sheenColor:new THREE.Color('#8fa3c0')})),
+    wht=safM('pgWht',()=>phys('#f4f3ee',{roughness:.6,sheen:.4})),yel=safM('pgYel',()=>phys('#f8e7a6',{roughness:.6})),ear=safM('pgEar',()=>phys('#f2a92a',{roughness:.5,sheen:.5,sheenColor:new THREE.Color('#ffe08a')})),
+    bill=safM('pgBill',()=>phys('#e8836a',{roughness:.35,clearcoat:.5})),feet=safM('pgFeet',()=>std('#2a2a30',{roughness:.6})),
+    gray=safM('pgGray',()=>phys('#a7aab0',{roughness:.95,sheen:.8,sheenColor:new THREE.Color('#ffffff')}));
+  const r=chick?.2:.24,by=chick?.28:.5;body.position.y=by;
+  if(chick){M(fuzz(sph(r,18,14),.02,30),gray,0,0,0,body).scale.set(1,1.15,.95);}
+  else{M(sph(r,22,16),blk,0,0,-.03,body).scale.set(1,2.05,.95);// tall, sleek body (black back)
+    M(sph(r*.92,22,16),wht,0,-.03,.04,body).scale.set(.95,1.95,.95);// white front
+    M(sph(r*.55,16,12),yel,0,r*1.35,.11,body).scale.set(1.1,.75,.5);}// a pale yellow blush on the upper chest
+  // flippers
+  this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.92,chick?.04:r*.75,0);body.add(w);
+    const f=M(new THREE.CapsuleGeometry(chick?.04:.05,chick?.12:.32,6,10),chick?gray:blk,0,chick?-.08:-.2,0,w);f.scale.set(.35,1,1.1);w.rotation.z=sx*.12;this.wings.push({w,sx,fly:0});}
+  // short legs and broad dark feet
+  for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*r*.42,by-(chick?r*.95:r*1.75),0);g.add(lg);this.legs.push({g:lg,ph});
+    M(cyl(.03,.03,.06,8),feet,0,-.02,0,lg);const ft=M(sph(chick?.045:.065,10,8),feet,0,-.05,.05,lg);ft.scale.set(1,.3,1.5);}
+  // head on a short neck
+  const neck=new THREE.Group();neck.position.set(0,by+(chick?r*.75:r*1.75),chick?0:.02);g.add(neck);
+  const head=new THREE.Group();head.position.set(0,chick?.12:.11,.02);neck.add(head);const H=chick?.13:.13;
+  M(sph(H,18,14),blk,0,0,0,head).scale.set(.85,.92,1.12);
+  if(!chick)M(sph(H*.9,14,10),blk,0,-H*.6,-H*.15,head).scale.set(.9,1,.95);// the head flows down into the body
+  if(chick){for(const sx of [-1,1])M(sph(H*.55,12,10),wht,sx*H*.42,-H*.05,H*.55,head).scale.set(.7,1,.6);// the chick's white face mask
+    const b=M(new THREE.ConeGeometry(H*.13,H*.6,8),blk,0,-H*.1,H*1.15,head);b.rotation.x=Math.PI/2+.1;}
+  else{for(const sx of [-1,1]){const e=M(sph(H*.4,12,10),ear,sx*H*.7,-H*.38,-H*.1,head);e.scale.set(.42,1.25,.85);e.rotation.set(.35,0,-sx*.12);// the yellow-orange ear patches
+      const e2=M(sph(H*.32,10,8),yel,sx*H*.48,-H*.95,H*.08,head,false,false);e2.scale.set(.5,1.1,.85);}// fading down into the chest
+    // the long, slightly down-curved bill: black on top, a pink-orange stripe along the bottom
+    const bk=new THREE.Group();bk.position.set(0,-H*.12,H*.78);bk.rotation.x=.15;head.add(bk);
+    taperTube([fV(0,0,0),fV(0,-H*.04,H*.8),fV(0,-H*.18,H*1.55)],q=>H*(.2-.17*q),blk,bk,12,10);
+    taperTube([fV(0,-H*.1,H*.05),fV(0,-H*.13,H*.75),fV(0,-H*.22,H*1.35)],q=>H*(.15-.12*q),bill,bk,12,10);}
+  arcEyes(this,head,H,.5,.15,.6,.7,.08,'#3a1f14');
+  const tail=new THREE.Group();tail.position.set(0,by-(chick?r*.7:r*1.55),-r*.8);g.add(tail);M(new THREE.ConeGeometry(.04,.12,6),blk,0,0,0,tail).rotation.x=-2.2;
+  // the waddle: rock from foot to foot
+  this.tick=(t,dt,run)=>{const k=Math.min(1,run*1.5);body.rotation.z=Math.sin(this.phase)*.16*k;neck.rotation.z=Math.sin(this.phase)*.1*k;
+    for(const w of this.wings)w.w.rotation.z=w.sx*(.12+.25*k+(this.happy>0?.5+Math.sin(t*18)*.4:0));};
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.5,size:chick?.5:.8,h:chick?.62:by+r*2+.32,rad:chick?.22:.3,biped:true,dustR:[r,r*1.5,r]});};
+
+/* 🦊🐺 Arctic fox and arctic wolf: one dog-family body.
+   The fox is small with short legs, a short muzzle, small round ears and a huge bushy tail, all puffy white winter fur.
+   The wolf is tall and long-legged with a longer muzzle, pointed ears and amber eyes, white with a creamy back. */
+function arcticCanid(a,wolf,g,body,o){const r=wolf?.25:.17,len=wolf?.6:.34,hip=wolf?.62:.25,by=wolf?.78:.35;
+  const fur=wolf?arcFur('wfFur','#efebe2',['#e2dccd','#f8f6f0','#d6cdb9']):arcFur('fxFur','#f6f6f3',['#e9ebee','#ffffff','#dde1e6']),
+    fur2=safM(wolf?'wfFur2':'fxFur2',()=>phys(wolf?'#ddd3be':'#e4e7eb',{roughness:.95,sheen:.6,sheenColor:new THREE.Color('#ffffff')})),
+    blk=safM('cnBlk',()=>phys('#141414',{roughness:.3,clearcoat:.4})),inEar=safM(wolf?'wfEar':'fxEar',()=>phys(wolf?'#cdbfa8':'#d8dde3',{roughness:.9}));
+  body.position.y=by;
+  // the body: soft ovals for the chest, the middle and the hips (a deep chest and a tucked-up waist)
+  const blob=(rr,x,y,z,sx,sy,sz)=>{const b=M(fuzz(sph(rr,20,14),wolf?.008:.014,30),fur,x,y,z,body);b.scale.set(sx,sy,sz);return b;};
+  blob(r,0,0,0,.85,.88,1.5);blob(r,0,0,len*.45,.92,1.08,1.05);blob(r,0,.02,-len*.42,.88,.95,1.05);
+  if(!wolf)blob(r,0,.05,0,1,1,1.6);// the fox's thick winter coat makes it round and puffy
+  // slim legs with neat, furry paws
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const lg=new THREE.Group();lg.position.set(sx*r*.5,hip,sz*len*.48);g.add(lg);a.legs.push({g:lg,ph});
+    const r0=wolf?.07:.055,r1=wolf?.045:.038;
+    M(sph(r0*1.3,12,10),fur,0,0,0,lg).scale.set(.9,1.5,1.2);M(cyl(r0,r1,hip*.55,10),fur,0,-hip*.3,sz>0?0:-.03,lg);
+    M(cyl(r1,r1*.95,hip*.45,10),fur2,0,-hip*.75,sz>0?.01:-.03,lg);
+    M(sph(r1*1.45,10,8),fur2,0,-hip+r1*.7,.025,lg).scale.set(1,.7,1.4);}
+  const neck=new THREE.Group();neck.position.set(0,by+r*.35,len/2+r*.4);neck.rotation.x=wolf?.85:.7;g.add(neck);
+  M(fuzz(new THREE.CapsuleGeometry(wolf?.13:.11,wolf?.14:.08,6,12),.012,30),fur,0,.08,0,neck).scale.set(1,1,1.1);
+  const head=new THREE.Group();head.position.set(0,wolf?.22:.17,.02);head.rotation.x=-(wolf?.85:.7)+.1;neck.add(head);const H=wolf?.13:.11;
+  M(fuzz(sph(H,18,14),.006,40),fur,0,0,0,head).scale.set(1,.9,1.1);// the skull
+  for(const sx of [-1,1])M(fuzz(sph(H*.55,12,10),.008,40),fur,sx*H*.58,-H*.28,H*.1,head).scale.set(.75,.95,1.15);// ruffs of fur on the cheeks
+  // the muzzle: long and narrowing to the nose (the fox's is short and fine)
+  const mL=wolf?1.85:1.6;taperTube([fV(0,-H*.12,H*.55),fV(0,-H*.22,H*1.05),fV(0,-H*.3,H*mL)],q=>H*(.5-.3*q),fur,head,12,12);
+  M(sph(H*.17,10,8),blk,0,-H*.24,H*(mL+.08),head).scale.set(1.15,.85,.9);// black nose
+  M(sph(H*.3,10,8),fur2,0,-H*.55,H*(mL*.6),head,false,false).scale.set(.75,.35,1.4);// chin
+  M(new THREE.TorusGeometry(H*.25,H*.02,4,12,Math.PI*.9),blk,0,-H*.47,H*(mL*.7),head,false,false).rotation.set(Math.PI/2,0,Math.PI*.05);// mouth line
+  // ears: the fox's are short and rounded, the wolf's bigger and pointed
+  for(const sx of [-1,1]){const eg=new THREE.Group();eg.position.set(sx*H*.5,H*.72,-H*.15);eg.rotation.set(-.15,0,-sx*.3);head.add(eg);
+    const e=M(new THREE.ConeGeometry(H*(wolf?.34:.32),H*(wolf?.75:.5),12),fur,0,H*(wolf?.3:.2),0,eg);e.scale.z=.5;
+    M(new THREE.ConeGeometry(H*.2,H*(wolf?.55:.36),10),inEar,0,H*(wolf?.26:.17),H*.07,eg,false,false).scale.z=.3;}
+  arcEyes(a,head,H,.38,.2,.95,.42,.1,wolf?'#c8902a':'#2a1a10');
+  // the tail: long and bushy (the fox's is huge and fluffy), carried low
+  const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.7));g.add(tail);
+  const tl=wolf?.52:.4;taperTube([fV(0,0,0),fV(0,-.1,-tl*.35),fV(0,-.2,-tl*.75),fV(0,-.22,-tl)],q=>(wolf?.06:.07)*(.7+.6*Math.sin(Math.min(1,q*1.3)*Math.PI*.8)),fur,tail,16,10,.01);
+  M(fuzz(sph(wolf?.05:.06,10,8),.01,30),fur,0,-.22,-tl,tail);tail.rotation.x=wolf?-.3:-.15;
+  Object.assign(o,{neck,head,tail,nTilt:wolf?.85:.7,gz:.7,size:wolf?.95:.55,h:by+r+(wolf?.42:.3),rad:wolf?.5:.32,dustR:[r,r,len*.8]});}
+ZOO_BUILD.arcticfox=function(g,body,o){arcticCanid(this,false,g,body,o);};
+ZOO_BUILD.arcticwolf=function(g,body,o){arcticCanid(this,true,g,body,o);};
+
+/* 🦉 Snowy owl: big and round, white with dark brown bars and spots, a round head with no ear tufts, golden-yellow eyes,
+   a small black hooked beak almost hidden in feathers, and feathered feet. Its wings open wide to fly (24h-flying.js). */
+function owlTex(){return canvasTex(256,256,(x,w,h)=>{x.fillStyle='#f7f6f2';x.fillRect(0,0,w,h);
+  for(let i=0;i<170;i++){const X=Math.random()*w,Y=Math.random()*h;x.fillStyle=Math.random()<.5?'#3a2e26':'#5a4a3e';x.beginPath();x.ellipse(X,Y,3+Math.random()*4,1.2+Math.random()*1.4,(Math.random()-.5)*.4,0,Math.PI*2);x.fill();}});}
+ZOO_BUILD.snowyowl=function(g,body,o){const r=.17,ride=this.k==='ukpik',by=ride?.25:.27;// Ukpik (the ride) leans forward like an owl in flight, so you sit on her back
+  const T=safM('owT',()=>owlTex()),barred=safM('owBar',()=>phys('#ffffff',{map:T,roughness:.85,sheen:.6,sheenColor:new THREE.Color('#ffffff')})),
+    wht=safM('owWht',()=>phys('#fbfaf6',{roughness:.85,sheen:.6,sheenColor:new THREE.Color('#ffffff')})),blk=safM('owBlk',()=>phys('#1a1a1c',{roughness:.3,clearcoat:.4}));
+  body.position.y=by;body.rotation.x=ride?1.25:-.12;
+  M(fuzz(sph(r,20,16),.01,40),barred,0,0,0,body).scale.set(1.05,1.35,1);// round, upright body
+  M(fuzz(sph(r*.88,18,14),.008,40),wht,0,-.01,r*.25,body).scale.set(1,1.25,.85);// whiter front
+  // the wings: folded along the sides, and they open wide to fly
+  this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.85,r*.55,-.01);body.add(w);
+    M(new THREE.CapsuleGeometry(.05,.22,6,10),barred,sx*.14,0,-.02,w,true,false).rotation.z=Math.PI/2;
+    for(let i=0;i<9;i++){const q=i/8,L=.16+.08*Math.sin(q*Math.PI),f=new THREE.Group();f.position.set(sx*(.04+q*.3),0,-.03);f.rotation.y=sx*(.1-q*.8);w.add(f);
+      const fe=M(new THREE.CapsuleGeometry(.04,L,4,8),q>.7?barred:wht,0,0,-L/2-.02,f,true,false);fe.rotation.x=Math.PI/2;fe.scale.set(1,1,.25);}
+    this.wings.push({w,sx,fly:0,fold:1.35});}
+  // feathered feet with black talons
+  for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*r*.42,by-r*1.1,.02);g.add(lg);this.legs.push({g:lg,ph});
+    M(fuzz(sph(.05,10,8),.008,40),wht,0,-.06,.02,lg).scale.set(1,1.3,1.3);
+    for(const a of [-.35,0,.35]){const c=M(new THREE.ConeGeometry(.008,.04,6),blk,Math.sin(a)*.04,-.11,.06+Math.cos(a)*.02,lg,false,false);c.rotation.x=Math.PI/2+.6;}}
+  // the big round head right on the body (owls have no neck you can see)
+  const neck=new THREE.Group();neck.position.set(0,ride?by+r*.62:by+r*1.15,ride?r*1.25:.01);g.add(neck);
+  const head=new THREE.Group();head.position.set(0,.04,0);neck.add(head);const H=.13;
+  M(fuzz(sph(H,20,16),.008,40),barred,0,0,0,head).scale.set(1.08,.95,.95);
+  M(sph(H*.9,18,14),wht,0,-H*.04,H*.3,head,false,false).scale.set(1.12,.95,.62);// the flat, pure white facial disc
+  for(let i=0;i<8;i++)M(sph(H*.09,6,4),barred,(i/7-.5)*H*1.2,H*.7,-H*.3,head,false,false).scale.set(1.4,.5,.6);// a few dark flecks on the crown
+  const bk=M(new THREE.ConeGeometry(H*.11,H*.32,8),blk,0,-H*.12,H*.8,head);bk.rotation.x=Math.PI/2+.6;// small hooked beak
+  for(const sx of [-1,1])M(sph(H*.24,10,8),wht,sx*H*.12,-H*.05,H*.72,head,false,false).scale.set(.9,.7,.5);// feathers round the beak
+  arcEyes(this,head,H,.36,.12,.72,.32,.17,'#f1c21b');
+  const tail=new THREE.Group();tail.position.set(0,ride?by+r*.15:by-r*.9,ride?-r*1.45:-r*.85);if(ride)tail.rotation.x=-1;g.add(tail);
+  for(let i=0;i<5;i++){const f=M(new THREE.CapsuleGeometry(.03,.12,4,6),barred,(i-2)*.025,0,-.06,tail,false,false);f.rotation.x=Math.PI/2+.5;f.scale.set(1,1,.3);}
+  // owls turn their heads a long way round to look about
+  this.tick=(t,dt,run)=>{if(run<.05){this.look=(this.look||0)+dt;head.rotation.y=Math.sin(this.look*.4)*1.2*(Math.sin(this.look*.13)>0?1:.2);}else head.rotation.y*=.9;};
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.4,size:.42,h:by+r*1.15+.3,rad:.22,biped:true,dustR:[r,r*1.3,r]});};
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -7502,6 +7830,7 @@ const ZOOA=[
   {k:'gator',e:'🐊',n:'Alligator',swim:.36,food:[['🐟','Fish'],['🍗','Chicken']],say:['*low rumbly bellow*','*snap snap!* 🐊','*lazy sunbathing*'],
     facts:[['🥗','Diet','Carnivore. Fish, turtles, snakes, birds and small animals. It can go months without eating in the winter!'],['🌍','Habitat','Rivers, lakes and swamps of the southeastern United States, like Florida and Louisiana. A cousin lives in China.'],['⏳','Lifespan','About 35 to 50 years in the wild, and up to 70 in zoos.'],['✨','Fun fact','You can tell an alligator from a crocodile by its wide, rounded U-shaped snout. When its mouth is shut you can only see its top teeth! It has about 80 teeth and grows new ones all its life.']]}
 ];
+ZOOA.push(...arcticZooList());FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
 const BS=SAVE.barn;BS.own||={};
@@ -7910,7 +8239,7 @@ function stepFarm(a,dt){if(a.ridden)return;let sp=0;
         if(a.ok(nx,nz,a.rad*.7)){a.lx=nx;a.lz=nz;}else{a.tgt=null;a.wait=.5;}a.face=angDamp(a.face,Math.atan2(dx,dz),Math.min(1,dt*4));}}
     a.graze+=((!a.tgt&&a.grazing?1:0)-a.graze)*Math.min(1,dt*2);}
   // gently push apart animals that bump into each other
-  for(const k in a.mates){const b=a.mates[k];if(b===a||!b.g.visible||b.ridden)continue;const dx=a.lx-b.lx,dz=a.lz-b.lz,d=Math.hypot(dx,dz),m=(a.rad+b.rad)*.75;
+  for(const k in a.mates){const b=a.mates[k];if(b===a||!b.g.visible||b.ridden||b.esc)continue;const dx=a.lx-b.lx,dz=a.lz-b.lz,d=Math.hypot(dx,dz),m=(a.rad+b.rad)*.75;
     if(d<m&&d>1e-4&&!(barnOpen&&a===barnSel)){const nx=a.lx+dx/d*(m-d)*.5,nz=a.lz+dz/d*(m-d)*.5;if(a.ok(nx,nz,a.rad*.6)){a.lx=nx;a.lz=nz;}}}
   // little hops when happy
   if(a.hop>0&&a.y<=0){a.vy=2.2;a.hop--;}a.vy-=12*dt;a.y=Math.max(0,a.y+a.vy*dt);if(a.y<=0)a.vy=0;
@@ -8082,7 +8411,8 @@ $('#zooBtn').onclick=()=>{if(zooNear)openZoo(zooNear);};
 function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpen=true;zooSel=a;$('#zooBtn').style.display='none';zooNear=null;
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';player.speed=0;
   fcam.p.copy(camera.position);fcam.t.copy(cam.fv||player.pos);
-  const seen=zooSeen();if(!seen[a.k]){seen[a.k]=1;persist();did('zoolearn',a.k);}
+  if(a.F.arctic){const I=SAVE.ice||(SAVE.ice={});I.seen||={};if(!I.seen[a.k]){I.seen[a.k]=1;persist();}did('icelearn',a.k);}// ❄️ polar animals count for the Polar challenges, not the Safari ones
+  else{const seen=zooSeen();if(!seen[a.k]){seen[a.k]=1;persist();did('zoolearn',a.k);}}
   a.speak(rnd(a.F.say));renderZoo();$('#zooUI').classList.add('show');$('#zooContent').scrollTop=0;sfx('pop');}
 function closeZoo(){if(!zooOpen)return;zooOpen=closetOpen=false;document.body.classList.remove('dressing');$('#zooUI').classList.remove('show');
   const a=zooSel;zooSel=null;if(a){const yaw=Math.atan2(a.pos.x-player.pos.x,a.pos.z-player.pos.z);cam.yaw=cam.cy=yaw+Math.PI;player.face=yaw;}}
@@ -8090,10 +8420,10 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
-    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the 🦁 Safari challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
-  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
+  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did(a.F.arctic?'icefeed':'zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
@@ -8113,7 +8443,8 @@ function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div
     <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
     <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
     <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
-    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}`;
+    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.filter(f=>!f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}
+    <h3>❄️ Polar Ice · free to visit</h3>${ZOOA.filter(f=>f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','arctic')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
 function closeCatalog(){catOpen=false;$('#catalog').classList.remove('show');}
@@ -9381,7 +9712,7 @@ function getMount(k,won){const F=FK[k];if(!F||BS.own[k])return;
 
 // 🏆 the prize dragon comes once you've earned enough stars (your star rank never goes down, so she stays)
 function askPrize(s){const st=starsEarned();
-  if(s.earn){const f={earn:s.earn},ride=s.k.startsWith('mount:');$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':s.earn.by==='chal'?'Tap ⭐🏆 at the top and look in the 🦁 Safari tab to see each challenge. They are super hard!':'Come back and play tomorrow! A day counts as soon as you start playing.'} ${ride?`This ride can't be bought. ${FK[s.k.slice(6)].nm} comes to you as soon as you earn ${s.earn.by==='chal'?'it':'her'}!`:`This can't be bought. It shows up in your closet once you earn it!`}</p><button class="btn ghost" data-b="close">OK</button>`;
+  if(s.earn){const f={earn:s.earn},ride=s.k.startsWith('mount:');$('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">🏆 ${erWhat(f)}: <b>${Math.min(s.earn.goal,erHave(f))}</b> of ${s.earn.goal}</p><p>${s.earn.by==='wins'?'Win the model, cake or pet contest, or beat Kai 1-on-1 at basketball.':s.earn.by==='chal'?`Tap ⭐🏆 at the top and look in the ${erPolar(s.earn)?'❄️ Polar':'🦁 Safari'} tab to see each challenge. They are super hard!`:'Come back and play tomorrow! A day counts as soon as you start playing.'} ${ride?`This ride can't be bought. ${FK[s.k.slice(6)].nm} comes to you as soon as you earn ${s.earn.by==='chal'?'it':'her'}!`:`This can't be bought. It shows up in your closet once you earn it!`}</p><button class="btn ghost" data-b="close">OK</button>`;
     $('#buy').dataset.k=s.k;$('#buy').classList.add('show');return;}
   $('#buyCard').innerHTML=`<div class="bigE">${s.e}</div><h2>${s.n}</h2><p>${s.d}</p><p class="bneed">You've earned <b>${st}</b> of ${s.prize} ⭐</p><p>Finish ⭐🏆 challenges to earn more stars. She comes to you by herself!</p><button class="btn ghost" data-b="close">OK</button>`;
   $('#buy').dataset.k=s.k;$('#buy').classList.add('show');}
@@ -9684,7 +10015,9 @@ if(!ER.kinds){const d=(SAVE.chal&&SAVE.chal.done)||{};ER.kinds={contest:d.win?1:
 const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 // 'chal' = the 🦁 Safari challenges: how many of the ride's challenges (earn.ids) you've finished
 const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:f.earn.by==='chal'?f.earn.ids.filter(id=>SAVE.chal&&SAVE.chal.done&&SAVE.chal.done[id]).length:0;
-const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} 🦁 Safari challenges`:`Play ${f.earn.goal} days in a row`;
+// the ❄️ Polar rides (24c9g-arctic-animals.js) are earned the same way, from the ❄️ Polar tab (their challenge ids start with ice_)
+const erPolar=e=>!!(e&&e.ids&&e.ids.some(id=>id.startsWith('ice_')));
+const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} ${erPolar(f.earn)?'❄️ Polar':'🦁 Safari'} challenges`:`Play ${f.earn.goal} days in a row`;
 // a new day you played: one more day in the streak if you also played yesterday, otherwise start again at 1
 function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.last===k)return;
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
@@ -9699,7 +10032,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
     burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);break;}}
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
-  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win')||(k==='roundup'&&a===0);if(!won)return;
+  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win')||(k==='roundup'&&a===0)||(k==='iceescape'&&a===0);if(!won)return;
   ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;if(ER.kn[k]!=null)ER.kn[k]++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
@@ -9710,7 +10043,7 @@ function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const go
 function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
-function earnTag(e){return e.by==='chal'?'🦁 Safari':`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+function earnTag(e){return e.by==='chal'?(erPolar(e)?'❄️ Polar':'🦁 Safari'):`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0,kn:{...ER.kn}})});});
 // ---- src/24k-skate-park.js ----
 /* ================= 🛹 SKATE PARK: ramps, grinds and tricks =================
@@ -10161,6 +10494,402 @@ anims.push((t,dt)=>{if(!started)return;const p=player.pos;
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{restaurant:{RST,meal,DL,RP,RD,seatTaken,pickSeat,openRest,closeRest,order,takeBite,takeSip,startRush,endRush,
   state:()=>({open:restOpen,phase:meal.phase,seat:RST.seats.indexOf(meal.seat),bites:meal.bites,food:meal.food&&meal.food.g.userData.kind,rosie:RP.rosie&&{x:RP.rosie.pos.x,z:RP.rosie.pos.z,tray:RP.rosie.tray.visible,walking:!!(RP.rosie.path&&RP.rosie.path.length)},
     rush:{on:DL.on,i:DL.i,t:DL.t,limit:DL.limit,box:!!(DL.box&&DL.box.parent),orders:DL.orders.map(o=>({id:o.z.id,x:o.p.x,z:o.p.z})),cust:DL.cust&&{x:DL.cust.pos.x,z:DL.cust.pos.z}},best:RD.best||null})}});});
+// ---- src/24m-arctic.js ----
+/* ================= ❄️ POLAR ICE: the animals, ⛸️ ice skating, 🎣 ice fishing and 🧱 building an igloo =================
+   (the place itself is 12h-place-arctic.js, the animal models 24c9g-arctic-animals.js, the 🚨 Polar escape 24m2-arctic-escape.js)
+   - The animals (IA) live here like the Safari Zoo's do: they wander about the snow, never follow you, and you walk up and tap
+     "Meet the ..." to pet them, feed them and learn about them (the zoo's panel, openZoo in 24d-barn.js). Feeding sends
+     did('icefeed', kind), meeting did('icelearn', kind). The snowy owl sits up on the big ice rock by the way in.
+   - ⛸️ Step onto the frozen pond (ICE.rink) and skates appear on your feet: you glide and keep sliding when you let go,
+     bounce gently off the snowy bank, and can 🌀 spin (did('icespin')). Time spent skating is saved (SAVE.ice.skate, seconds).
+     iceSkateStep() moves you while you skate (25-game-loop.js asks it, like the skate park). Friends see your skates ('ice' in SHOW).
+   - 🎣 At a fishing hole tap Ice fish: wait for the bobber to dip, then tap Reel! in time. did('icefish', kind) for each catch;
+     the 🌟 golden char is rare. Counts are in SAVE.ice.fish.
+   - 🧱 At the igloo spot at the back, tap Build an igloo: every tap brings over snow blocks from the pile, ring by ring up into a dome,
+     then the entrance tunnel and a lamp inside. did('igloo') when it's done. It stays built (SAVE.ice.igloo) and you can walk inside;
+     tap Build again to knock it down and start over. */
+SAVE.ice||={};const IS=SAVE.ice;IS.fish||={};IS.seen||={};IS.skate||=0;IS.spins||=0;
+const IZ=Z.arctic,IA=[];
+const iceLocal=(x,z)=>IZ.toLocal(x,z);
+function iceOk(lx,lz,r){if(Math.hypot(lx,lz)>ICE.fence-.75-r)return false;for(const [x,z,rr] of ICE.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;if(IGL.built&&Math.hypot(lx-ICE.igloo.x,lz-ICE.igloo.z-1.6)<1.1+r)return false;return true;}
+function iceSpot(r){for(let i=0;i<80;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*(ICE.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(iceOk(lx,lz,r))return [lx,lz];}return [0,2];}
+// the walrus likes to lie at the edge of the frozen lake
+function iceSpotW(r){const L=ICE.lake;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,d=L.r+.45+r+Math.random()*1.2,lx=L.x+Math.sin(a)*d,lz=L.z+Math.cos(a)*d;if(iceOk(lx,lz,r))return [lx,lz];}return iceSpot(r);}
+const IGL={built:!!IS.igloo,n:0,blocks:[],g:null,lamp:null,tunnel:null,busy:false};
+for(const [k,sc,chick] of [['polarbear',1],['polarbear',.5],['walrus',1],['penguin',1],['penguin',.93],['penguin',1.04],['penguin',1,1],['arcticfox',1],['arcticwolf',1],['snowyowl',1]]){
+  ARC_CHICK=!!chick;const a=new FarmAnimal(k);ARC_CHICK=false;a.Z=IZ;a.ok=iceOk;a.spot=k==='walrus'?iceSpotW:iceSpot;a.mates=IA;a.dust.forEach(d=>d.visible=false);
+  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;}if(sc<.8||chick)a.baby=true;
+  if(k==='snowyowl'){a.perch=true;[a.lx,a.lz]=[ICE.perch[0],ICE.perch[1]];a.face=Math.PI*.8;}else[a.lx,a.lz]=a.spot(a.rad);
+  IA.push(a);scene.add(a.g);placeFarm(a);if(a.perch)a.g.position.y=ICE.perch[2];}
+let iceNear=null;
+{document.body.insertAdjacentHTML('beforeend','<button class="hud" id="iceMeet"></button><button class="hud" id="iceAct"></button><button class="hud" id="iceAct2"></button>');
+ const st=document.createElement('style');st.textContent=`
+#iceMeet,#iceAct,#iceAct2{position:fixed;left:50%;transform:translateX(-50%);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5}
+#iceMeet{bottom:calc(env(safe-area-inset-bottom) + 250px);background:linear-gradient(90deg,#7cc7e8,#3a8fc8);box-shadow:0 6px 18px rgba(58,143,200,.4)}
+#iceAct{bottom:calc(env(safe-area-inset-bottom) + 310px);background:linear-gradient(90deg,#8fd8ff,#5a7bd8);box-shadow:0 6px 18px rgba(90,123,216,.4)}
+#iceAct2{bottom:calc(env(safe-area-inset-bottom) + 370px);background:linear-gradient(90deg,#b388ff,#7a5ad8);box-shadow:0 6px 18px rgba(122,90,216,.4)}
+#iceAct.go{background:linear-gradient(90deg,#ff6a3d,#e8336d);box-shadow:0 6px 18px rgba(232,51,109,.45)}
+#iceMeet:active,#iceAct:active,#iceAct2:active{transform:translateX(-50%) scale(.94)}
+body.dressing #iceMeet,body.talking #iceMeet,body.shopping #iceMeet,body.dressing #iceAct,body.talking #iceAct,body.shopping #iceAct,body.dressing #iceAct2,body.talking #iceAct2,body.shopping #iceAct2{display:none!important}
+#fishUI{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 150px);z-index:8;display:none;flex-direction:column;align-items:center;gap:8px;pointer-events:none;width:max-content;max-width:calc(100vw - 32px)}
+#fishUI.show{display:flex}
+#fishUI b{background:rgba(255,255,255,.94);color:#2f4a7a;border-radius:999px;padding:8px 16px;font-size:17px;box-shadow:0 4px 14px rgba(0,0,0,.18);text-align:center;white-space:normal}
+#fishUI b.bite{background:#ffd23f;color:#7a3a00;animation:fbite .35s infinite alternate}
+#fishUI small{background:rgba(255,255,255,.85);color:#3b2357;border-radius:999px;padding:4px 12px;font-weight:700;font-size:13px}
+@keyframes fbite{from{transform:scale(1)}to{transform:scale(1.08)}}
+@media (max-height:520px){#iceMeet{bottom:calc(env(safe-area-inset-bottom) + 130px)}#iceAct{bottom:calc(env(safe-area-inset-bottom) + 185px)}#iceAct2{bottom:calc(env(safe-area-inset-bottom) + 240px)}#fishUI{top:calc(env(safe-area-inset-top) + 52px)}}`;
+ document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<div id="fishUI"><b id="fishMsg"></b><small id="fishCount"></small></div>');}
+
+/* ---------- the animals ---------- */
+function iceAnimalsStep(dt){const p=player.pos,near=Math.hypot(p.x-IZ.x,p.z-IZ.z)<45;
+  for(const a of IA){if(a.esc)continue;// out on the streets in a Polar escape (24m2-arctic-escape.js)
+    if(!near&&!(zooOpen&&a===zooSel)){a.g.visible=false;continue;}a.g.visible=true;
+    if(a.perch){// the owl stays up on her rock, turning her head, and faces you while you meet her
+      if(zooOpen&&a===zooSel){const [px,pz]=iceLocal(p.x,p.z);a.face=angDamp(a.face,Math.atan2(px-a.lx,pz-a.lz),Math.min(1,dt*4));}
+      a.update(dt,0);placeFarm(a);a.g.position.y=ICE.perch[2];a.pos.y=ICE.perch[2];continue;}
+    stepFarm(a,dt);}
+  // the "Meet" button
+  let best=null,bd=1e9;if(!closetOpen&&started&&!barnRide&&!FLY.on)for(const a of IA){if(a.esc||!a.g.visible)continue;const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
+  if(best!==iceNear){iceNear=best;const b=$('#iceMeet');if(best){b.textContent=`${best.F.e} Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`;b.style.display='block';}else b.style.display='none';}
+  if(zooOpen&&zooSel&&IA.includes(zooSel)&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>8)closeZoo();}
+$('#iceMeet').onclick=()=>{if(iceNear){const a=iceNear;iceNear=null;$('#iceMeet').style.display='none';openZoo(a);}};
+
+/* ---------- ⛸️ ice skating ---------- */
+const ICS={on:false,vx:0,vz:0,t:0,blades:[],av:null,saveT:0};
+const bladeM=std('#d9dde3',{metalness:.9,roughness:.2}),bladeBoot=phys('#f6f2ea',{roughness:.5,clearcoat:.4});
+// skates on an avatar's feet: a white boot round the foot and a steel blade underneath (yours, or a friend's online)
+function iceBlades(A,on){if(!A||!A.legs)return;if(!on){if(A.iceB){for(const m of A.iceB){m.parent&&m.parent.remove(m);}A.iceB=null;}A.iceSk=false;return;}
+  if(A.iceB)return;A.iceB=[];A.iceSk=true;
+  for(const l of A.legs){const an=l.an;if(!an)continue;const g=new THREE.Group();an.add(g);A.iceB.push(g);
+    M(sph(.066,14,10),bladeBoot,0,-.012,.045,g,false,false).scale.set(1.15,.95,1.9);
+    M(box(.012,.05,.27),bladeM,0,-.1,.045,g,false,false);
+    for(const z of [-.04,.13])M(box(.016,.04,.02),bladeM,0,-.07,z,g,false,false);}}
+function iceSkateStep(dt,ix,iy,mag){const p=player.pos;
+  const can=started&&!closetOpen&&!barnRide&&!FLY.on&&!SK.on&&!BIKE.on&&!(typeof SW!=='undefined'&&SW.k>.05)&&!ICF.on;
+  const k=onRink(p.x,p.z);
+  if(!ICS.on){if(!can||k<.02||!player.onGround)return false;// step onto the ice: skates on
+    ICS.on=true;ICS.vx=Math.sin(player.face)*player.speed*.5;ICS.vz=Math.cos(player.face)*player.speed*.5;iceBlades(av,true);ICS.av=av;
+    if(!IS.skated){IS.skated=1;persist();setTimeout(()=>toast('⛸️ Skates on! Glide around the ice. Let go and you keep sliding!'),300);}did('iceskate',0);iceButtons();}
+  else if(!can){iceSkateOff();return false;}
+  if(ICS.av!==av){iceBlades(ICS.av,false);iceBlades(av,true);ICS.av=av;}// you changed clothes: the skates go on the new you
+  // push with the joystick, glide when you let go
+  if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1,mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
+    ICS.vx+=mx*7.5*mag*dt;ICS.vz+=mz*7.5*mag*dt;}
+  let sp=Math.hypot(ICS.vx,ICS.vz);const max=6.2,fr=mag>.08?.9:.35;if(sp>max){ICS.vx*=max/sp;ICS.vz*=max/sp;sp=max;}
+  const dec=Math.max(0,1-fr*dt);ICS.vx*=dec;ICS.vz*=dec;sp*=dec;
+  const nx=p.x+ICS.vx*dt,nz=p.z+ICS.vz*dt,nk=onRink(nx,nz);
+  if(nk<0){// at the edge: step off if you're pushing outward, otherwise bounce softly off the snowy bank
+    const [lx,lz]=iceLocal(nx,nz),R0=ICE.rink,gx=(lx-R0.x)/(R0.rx*R0.rx),gz=(lz-R0.z)/(R0.rz*R0.rz),c=Math.cos(IZ.rot),s=Math.sin(IZ.rot);
+    let wx=gx*c+gz*s,wz=-gx*s+gz*c;const wl=Math.hypot(wx,wz)||1;wx/=wl;wz/=wl;
+    let push=false;if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;push=((fx*-iy+rx*ix)/n)*wx+((fz*-iy+rz*ix)/n)*wz>.5;}
+    if(push){p.x=nx;p.z=nz;iceSkateOff();return true;}
+    const d=ICS.vx*wx+ICS.vz*wz;if(d>0){ICS.vx-=1.6*d*wx;ICS.vz-=1.6*d*wz;if(d>1.5){tone(180,.06,'sine',.06);burst(new THREE.Vector3(p.x,p.y+.1,p.z),'#ffffff',8,1);}}}
+  else{p.x=nx;p.z=nz;}
+  if(sp>.15)player.face=angDamp(player.face,Math.atan2(ICS.vx,ICS.vz),Math.min(1,dt*6));
+  player.speed=Math.max(sp,mag>.08?1.2:0)*.9;
+  // up and down (jumps work on the ice)
+  const gy=.05;player.vy-=18*dt;p.y+=player.vy*dt;
+  if(p.y<=gy){if(!player.onGround&&player.vy<-3){burst(new THREE.Vector3(p.x,gy+.05,p.z),'#e8f6ff',12,1);did('icejump',0);}p.y=gy;player.vy=0;player.onGround=true;}else if(p.y>gy+.05)player.onGround=false;
+  if(sp>.4){ICS.t+=dt;IS.skate+=dt;if((ICS.saveT+=dt)>5){ICS.saveT=0;persist();}if(Math.random()<dt*sp*2)burst(new THREE.Vector3(p.x,.08,p.z),'#ffffff',3,.5,.08);}
+  return true;}
+function iceSkateOff(){if(!ICS.on)return;ICS.on=false;iceBlades(ICS.av,false);ICS.av=null;persist();iceButtons();}
+function iceSpin(){if(!ICS.on)return;av.play('twirl');IS.spins++;persist();sfx('pop');burst(new THREE.Vector3(player.pos.x,player.pos.y+.2,player.pos.z),'#bfe8ff',16,1.4);did('icespin',0);
+  const n=IS.spins;if(n===1||n%5===0)toast(n===1?'🌀 What a spin!':`🌀 ${n} spins!`);}
+// friends online see your skates: the 'ice' entry in SHOW is in 26i-arctic-see.js (SHOW is made after this file)
+
+/* ---------- 🎣 ice fishing ---------- */
+const FISH=[// k, e, name, how likely, coins, body color, belly color, length
+  {k:'cod',e:'🐟',n:'arctic cod',w:34,c:2,col:'#8a8f7a',bel:'#e8e4d4',L:.32},
+  {k:'char',e:'🐟',n:'arctic char',w:30,c:3,col:'#4a6a6a',bel:'#e86a3a',L:.4},
+  {k:'salmon',e:'🐟',n:'salmon',w:20,c:4,col:'#7a8ea0',bel:'#f0d8cc',L:.48},
+  {k:'halibut',e:'🐠',n:'halibut',w:12,c:5,col:'#6a5a44',bel:'#f4f1ea',L:.5,flat:1},
+  {k:'gold',e:'🌟',n:'golden char',w:4,c:25,col:'#f2b21b',bel:'#ffe68a',L:.44,gold:1}];
+const ICE_UP=new THREE.Vector3(0,1,0);
+const ICF={on:false,hole:-1,st:'',t:0,bite:0,rod:null,line:null,bob:null,fish:null,fishT:0,n:0};
+const holeWorld=i=>{const [hx,hz]=ICE.lake.holes[i];const [x,w]=IZ.toWorld(hx,hz);return new THREE.Vector3(x,.04,w);};
+function nearHole(){const p=player.pos;for(let i=0;i<ICE.lake.holes.length;i++){const h=holeWorld(i);if(Math.hypot(p.x-h.x,p.z-h.z)<1.05)return i;}return -1;}
+function fishModel(F){const g=new THREE.Group(),m=phys(F.col,{roughness:.35,clearcoat:.8,metalness:F.gold?.6:.1}),b=phys(F.bel,{roughness:.4,clearcoat:.6});
+  const L=F.L,body=M(sph(L*.5,16,10),m,0,0,0,g,false,false);body.scale.set(F.flat?.35:.28,F.flat?.8:.42,1);
+  M(sph(L*.45,14,10),b,0,-L*.06,0,g,false,false).scale.set(F.flat?.32:.26,F.flat?.6:.3,.9);
+  const t=M(new THREE.ConeGeometry(L*.2,L*.28,4),m,0,0,-L*.6,g,false,false);t.rotation.x=-Math.PI/2;t.scale.set(.25,1,1);
+  for(const sx of [-1,1])M(sph(L*.05,8,6),std('#111111'),sx*L*.1,L*.07,L*.36,g,false,false);
+  if(F.gold)g.userData.sparkle=1;return g;}
+function iceFishStart(i){if(ICF.on||i<0)return;iceSkateOff();ICF.on=true;ICF.hole=i;ICF.n=0;const h=holeWorld(i),p=player.pos;
+  // stand at the hole's edge, facing it
+  const dx=p.x-h.x,dz=p.z-h.z,d=Math.hypot(dx,dz)||1;p.set(h.x+dx/d*.75,p.y,h.z+dz/d*.75);player.face=Math.atan2(h.x-p.x,h.z-p.z);player.speed=0;
+  // the rod in your right hand, the line down into the hole and a red and white bobber
+  const rod=new THREE.Group();const R=M(cyl(.008,.016,1.1,6),std('#2b2b30',{roughness:.4}),0,.55,0,rod,false,false);M(cyl(.025,.025,.06,10),std('#c9ced6',{metalness:.8,roughness:.3}),.03,.15,0,rod,false,false).rotation.z=Math.PI/2;
+  rod.rotation.x=1.1;av.arms[0].hand.add(rod);ICF.rod=rod;ICF.tip=new THREE.Object3D();ICF.tip.position.set(0,1.1,0);rod.add(ICF.tip);
+  ICF.line=M(cyl(.002,.002,1,4),new THREE.MeshBasicMaterial({color:'#ffffff'}),0,0,0,scene,false,false);
+  ICF.bob=new THREE.Group();M(sph(.045,12,8),phys('#e8322a',{roughness:.3,clearcoat:1}),0,.02,0,ICF.bob,false,false);M(sph(.044,12,8,0,Math.PI*2,0,Math.PI/2),phys('#ffffff',{roughness:.3}),0,.022,0,ICF.bob,false,false);
+  ICF.bob.position.copy(h);scene.add(ICF.bob);
+  closeTalk();$('#fishUI').classList.add('show');iceFishWait();sfx('pop');iceButtons();}
+function iceFishWait(){ICF.st='wait';ICF.t=2+Math.random()*4;ICF.bite=0;$('#fishMsg').className='';$('#fishMsg').textContent='🎣 Waiting for a bite… watch the bobber!';fishCount();iceButtons();}
+function fishCount(){const n=Object.values(IS.fish).reduce((a,b)=>a+b,0);$('#fishCount').textContent=`🐟 ${n} caught${ICF.n?` · ${ICF.n} today here`:''}`;}
+function iceFishReel(){if(!ICF.on)return;if(ICF.st==='bite'){// caught one!
+    let r=Math.random()*FISH.reduce((a,f)=>a+f.w,0),F=FISH[0];for(const f of FISH){if((r-=f.w)<0){F=f;break;}}
+    IS.fish[F.k]=(IS.fish[F.k]||0)+1;ICF.n++;persist();ICF.st='caught';ICF.t=2.2;
+    const h=holeWorld(ICF.hole),fm=fishModel(F);fm.position.copy(h);scene.add(fm);ICF.fish=fm;ICF.fishF=F;ICF.fishT=0;
+    burst(h.clone().add(new THREE.Vector3(0,.2,0)),F.gold?'#ffd23f':'#bfe8ff',F.gold?40:18,2);sfx(F.gold?'tada':'pop');
+    const art=F.gold?'the rare ':/^[aeiou]/.test(F.n)?'an ':'a ';$('#fishMsg').className='';$('#fishMsg').textContent=`${F.e} You caught ${art}${F.n}!`;
+    setTimeout(()=>earn(F.c,`Caught ${F.gold?'the golden char':'a fish'}`),600);did('icefish',F.k);fishCount();iceButtons();}
+  else if(ICF.st==='wait'){ICF.st='early';ICF.t=1.3;$('#fishMsg').textContent='😅 Too soon! The fish swam off. Wait for the bobber to dip.';tone(220,.12,'triangle',.08);iceButtons();}}
+function iceFishStop(){if(!ICF.on)return;ICF.on=false;for(const o of [ICF.line,ICF.bob,ICF.fish])if(o){scene.remove(o);freeObj(o);}if(ICF.rod){ICF.rod.parent&&ICF.rod.parent.remove(ICF.rod);freeObj(ICF.rod);}
+  Object.assign(ICF,{rod:null,line:null,bob:null,fish:null,st:''});$('#fishUI').classList.remove('show');iceButtons();}
+function iceFishStep(dt){if(!ICF.on)return;const h=holeWorld(ICF.hole),p=player.pos;
+  if(Math.hypot(p.x-h.x,p.z-h.z)>1.6||closetOpen||barnRide||!started){iceFishStop();return;}
+  ICF.t-=dt;
+  if(ICF.st==='wait'&&ICF.t<0){ICF.st='bite';ICF.t=1.25;$('#fishMsg').className='bite';$('#fishMsg').textContent='❗ A bite! Tap Reel in!';tone(880,.08,'square',.08);tone(990,.08,'square',.08,.1);iceButtons();}
+  else if(ICF.st==='bite'&&ICF.t<0){ICF.st='early';ICF.t=1.3;$('#fishMsg').className='';$('#fishMsg').textContent='🐟 It got away! Be quicker next time.';iceButtons();}
+  else if((ICF.st==='early'||ICF.st==='caught')&&ICF.t<0){if(ICF.fish){scene.remove(ICF.fish);freeObj(ICF.fish);ICF.fish=null;}iceFishWait();}
+  // the bobber bobs, and dips under when a fish bites
+  const tt=performance.now()/1000;let by=.04+Math.sin(tt*2.2)*.012;if(ICF.st==='bite')by=-.02+Math.sin(tt*18)*.03;ICF.bob.position.set(h.x,by,h.z);
+  // the line from the rod tip to the bobber
+  const tip=ICF.tip.getWorldPosition(new THREE.Vector3()),b=ICF.bob.position.clone().add(new THREE.Vector3(0,.05,0));
+  ICF.line.position.copy(tip).add(b).multiplyScalar(.5);ICF.line.scale.set(1,tip.distanceTo(b),1);ICF.line.quaternion.setFromUnitVectors(ICE_UP,b.sub(tip).normalize());
+  // a caught fish jumps up out of the hole, wriggling, and then drops into your bucket
+  if(ICF.fish){ICF.fishT+=dt;const q=ICF.fishT,f=ICF.fish;f.position.set(h.x,.05+Math.min(1.3,q*3)-Math.max(0,q-1.4)*2,h.z);f.rotation.set(-Math.PI/2+Math.sin(q*18)*.3,q*2,0);
+    if(ICF.fishF.gold&&Math.random()<dt*10)burst(f.position.clone(),'#ffd23f',3,.6,.1);}
+  player.speed=0;player.face=angDamp(player.face,Math.atan2(h.x-p.x,h.z-p.z),Math.min(1,dt*6));}
+
+/* ---------- 🧱 building an igloo ---------- */
+// the blocks: rings that get smaller and lean in as they go up, into a dome; the bottom two rings leave a gap for the door (toward the way in, +z)
+const IGLOO_R=1.55,IGLOO_ROWS=[[0,15],[.27,14],[.55,12],[.82,9],[1.1,6],[1.33,3]];
+const IGLOO_PLAN=(()=>{const out=[];IGLOO_ROWS.forEach(([ph,n],row)=>{const rr=IGLOO_R*Math.cos(ph),y=IGLOO_R*Math.sin(ph)*1.02+.15;
+  for(let i=0;i<n;i++){const a=(i+(row%2)*.5)/n*Math.PI*2;if(row<2&&Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<.42)continue;
+    out.push({x:Math.sin(a)*rr,y,z:Math.cos(a)*rr,a,tilt:ph,w:Math.min(.62,2*Math.PI*rr/n*1.02)});}});
+  out.push({x:0,y:IGLOO_R*1.02+.12,z:0,a:0,tilt:Math.PI/2,w:.5,cap:1});return out;})();
+const IGLOO_STEP=4;// blocks per tap
+function iglooGroup(){if(IGL.g)return IGL.g;const g=new THREE.Group();const [x,w]=IZ.toWorld(ICE.igloo.x,ICE.igloo.z);g.position.set(x,0,w);g.rotation.y=IZ.rot;scene.add(g);IGL.g=g;return g;}
+function iglooBlock(b,fly){const g=iglooGroup(),m=M(box(b.w,b.cap?.24:.3,b.cap?b.w:.3),ICE.blockM,b.x,b.y,b.z,g,true,true);m.rotation.order='YXZ';m.rotation.y=b.a;m.rotation.x=b.cap?0:-b.tilt;
+  if(fly){const from=ICE.pile.position;m.userData.fly={t:0,fx:from.x-ICE.igloo.x,fz:from.z-ICE.igloo.z,x:b.x,y:b.y,z:b.z};m.position.set(m.userData.fly.fx,.4,m.userData.fly.fz);}
+  IGL.blocks.push(m);return m;}
+function iglooTunnel(){const g=iglooGroup(),t=new THREE.Group();t.position.set(0,0,IGLOO_R-.15);g.add(t);
+  const arch=new THREE.CylinderGeometry(.62,.62,1.1,18,1,true,-Math.PI/2,Math.PI);arch.rotateX(Math.PI/2);const am=M(arch,std('#f4f8fc',{roughness:.85,side:THREE.DoubleSide}),0,.15,.55,t);am.scale.set(1,1.15,1);
+  for(let i=0;i<5;i++){const a=(i/4-.5)*Math.PI*.95,b=M(box(.3,.26,.36),ICE.blockM,Math.sin(a)*.64,.15+Math.cos(a)*.7,.55,t,true,true);b.rotation.z=-a;}
+  for(const z of [.15,.95]){for(let i=0;i<5;i++){const a=(i/4-.5)*Math.PI*.95,b=M(box(.3,.24,.3),ICE.blockM,Math.sin(a)*.66,.15+Math.cos(a)*.72,z,t,true,true);b.rotation.z=-a;}}
+  IGL.tunnel=t;return t;}
+function iglooLamp(){const g=iglooGroup(),l=new THREE.Group();l.position.set(.45,0,-.4);g.add(l);M(cyl(.12,.15,.08,14),std('#7a5a3a',{roughness:.6}),0,.04,0,l);
+  M(sph(.07,12,8),glow('#ffcf7a',2.2),0,.13,0,l,false,false);const halo=M(sph(.85,16,12),new THREE.MeshBasicMaterial({color:'#ffd89a',transparent:true,opacity:.18,depthWrite:false}),0,.6,0,l,false,false);
+  IGL.lamp=l;return l;}
+// the built igloo is solid all round, except the door: a ring of bumps you can't walk through
+const IGL_OBS=[];function iglooObs(on){for(const o of IGL_OBS){const i=obs.indexOf(o);if(i>=0)obs.splice(i,1);}IGL_OBS.length=0;if(!on)return;
+  for(let i=0;i<22;i++){const a=i/22*Math.PI*2;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<.5)continue;const [x,w]=IZ.toWorld(ICE.igloo.x+Math.sin(a)*(IGLOO_R+.05),ICE.igloo.z+Math.cos(a)*(IGLOO_R+.05));const o={x,z:w,r:.28};obs.push(o);IGL_OBS.push(o);}
+  for(const s of [-1,1]){const [x,w]=IZ.toWorld(ICE.igloo.x+s*.78,ICE.igloo.z+IGLOO_R+.6);const o={x,z:w,r:.22};obs.push(o);IGL_OBS.push(o);}}
+function iglooBuildAll(){for(const b of IGLOO_PLAN)iglooBlock(b,false);iglooTunnel();iglooLamp();IGL.n=IGLOO_PLAN.length;IGL.built=true;iglooObs(true);}
+function iglooClear(){if(IGL.g){scene.remove(IGL.g);freeObj(IGL.g);}IGL.g=null;IGL.blocks=[];IGL.tunnel=null;IGL.lamp=null;IGL.n=0;IGL.built=false;iglooObs(false);}
+function iglooTap(){if(IGL.built){iglooClear();IS.igloo=0;persist();burst(iceW(ICE.igloo.x,1,ICE.igloo.z),'#ffffff',40,3);sfx('pop');toast('❄️ Knocked it down! Tap to build a new igloo');iceButtons();return;}
+  if(IGL.n<IGLOO_PLAN.length){const end=Math.min(IGLOO_PLAN.length,IGL.n+IGLOO_STEP);for(let i=IGL.n;i<end;i++)setTimeout(()=>iglooBlock(IGLOO_PLAN[i],true),(i-IGL.n)*110);
+    IGL.n=end;sfx('pop');tone(330,.06,'triangle',.08);
+    const pct=Math.round(IGL.n/IGLOO_PLAN.length*100);if(IGL.n===IGLOO_STEP)toast('🧱 Snow blocks, ring by ring! Keep tapping to build your igloo');else if(IGL.n>=IGLOO_PLAN.length)toast('🧱 The dome is done! Now the doorway tunnel');
+    $('#iceAct').textContent=iceActLabel();return;}
+  if(!IGL.tunnel){iglooTunnel();sfx('pop');burst(iceW(ICE.igloo.x,.5,ICE.igloo.z+IGLOO_R+.5),'#ffffff',20,1.5);toast('🚪 A tunnel to crawl in! Last thing: light the lamp');$('#iceAct').textContent=iceActLabel();return;}
+  // the lamp: done!
+  iglooLamp();IGL.built=true;IS.igloo=1;IS.igloos=(IS.igloos||0)+1;persist();iglooObs(true);sfx('tada');banner('🧊 You built an igloo!');
+  for(let k=0;k<3;k++)setTimeout(()=>burst(iceW(ICE.igloo.x,2,ICE.igloo.z),['#ffffff','#bfe8ff','#ffd23f'][k],40,3),k*200);
+  setTimeout(()=>earn(20,'Built an igloo'),900);did('igloo',IS.igloos);iceButtons();}
+const iceW=(lx,y,lz)=>{const [x,w]=IZ.toWorld(lx,lz);return new THREE.Vector3(x,y,w);};
+function iglooStep(dt){for(const m of IGL.blocks){const f=m.userData.fly;if(!f)continue;f.t+=dt*2.6;const q=Math.min(1,f.t),e=q*q*(3-2*q);
+  m.position.set(f.fx+(f.x-f.fx)*e,.4+(f.y-.4)*e+Math.sin(q*Math.PI)*.9,f.fz+(f.z-f.fz)*e);if(q>=1){m.position.set(f.x,f.y,f.z);m.userData.fly=null;}}}
+if(IGL.built)iglooBuildAll();
+const nearIgloo=()=>{const [lx,lz]=iceLocal(player.pos.x,player.pos.z);return Math.hypot(lx-ICE.igloo.x,lz-(ICE.igloo.z+IGLOO_R+1))<1.7||(!IGL.built&&Math.hypot(lx-ICE.igloo.x,lz-ICE.igloo.z)<IGLOO_R+1.3);};
+function iceActLabel(){if(IGL.built)return '🔨 Build a new igloo';if(IGL.n<IGLOO_PLAN.length)return IGL.n?`🧱 Add snow blocks (${Math.round(IGL.n/IGLOO_PLAN.length*100)}%)`:'🧱 Build an igloo';if(!IGL.tunnel)return '🚪 Dig the doorway';return '🕯️ Light the lamp';}
+
+/* ---------- the buttons: what you can do where you're standing ---------- */
+let iceKey='';
+function iceButtons(){const p=player.pos,inZ=Math.hypot(p.x-IZ.x,p.z-IZ.z)<IZ.r+1.5,busy=closetOpen||!started||barnRide||FLY.on;
+  const hole=inZ&&!busy&&!ICS.on?nearHole():-1,igl=inZ&&!busy&&!ICS.on&&!ICF.on&&nearIgloo();
+  const key=[inZ,busy,ICS.on,ICF.on,ICF.st,hole,igl,IGL.n,!!IGL.tunnel,IGL.built,PE.on,!!PE.endT,RU.on].join('|');if(key===iceKey)return;iceKey=key;
+  const A=$('#iceAct'),B=$('#iceAct2');A.classList.remove('go');A.style.display=B.style.display='none';if(busy)return;
+  if(ICS.on){A.textContent='🌀 Spin';A.style.display='block';A.onclick=iceSpin;return;}
+  if(ICF.on){A.textContent=ICF.st==='bite'?'🎣 Reel in!':'🎣 Reel in';A.classList.toggle('go',ICF.st==='bite');A.style.display=ICF.st==='caught'?'none':'block';A.onclick=iceFishReel;
+    B.textContent='✋ Stop fishing';B.style.display='block';B.onclick=iceFishStop;return;}
+  if(hole>=0){A.textContent='🎣 Ice fish';A.style.display='block';A.onclick=()=>iceFishStart(nearHole());return;}
+  if(igl){A.textContent=iceActLabel();A.style.display='block';A.onclick=iglooTap;return;}
+  // 🚨 anywhere else at Polar Ice: start a Polar escape (24m2-arctic-escape.js)
+  if(inZ&&!PE.on&&!PE.endT&&!RU.on){A.textContent='🚨 Start a Polar escape!';A.classList.add('go');A.style.display='block';A.onclick=peBegin;}}
+
+/* ---------- every frame ---------- */
+anims.push((t,dt)=>{if(!started)return;iceAnimalsStep(dt);iceFishStep(dt);iglooStep(dt);
+  if(ICS.on&&onRink(player.pos.x,player.pos.z)<-.3)iceSkateOff();iceButtons();});
+// on the map: the polar animals show as little emojis when you're close
+// for challenges.js and the tests
+function iceState(){const fish=Object.values(IS.fish).reduce((a,b)=>a+b,0);return {fish,kinds:Object.keys(IS.fish).length,gold:IS.fish.gold||0,skate:Math.floor(IS.skate),spins:IS.spins,
+  igloo:!!IGL.built,igloos:IS.igloos||0,seen:Object.keys(IS.seen).length,skating:ICS.on,fishing:ICF.on?ICF.st:'',n:IA.length};}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{IA,ICE,ICS,ICF,IGL,iceState,onRink,iceSpin,iceFishStart,iceFishReel,iceFishStop,iglooTap,iglooClear,nearHole,holeWorld,iceSkateOff});});
+// ---- src/24m2-arctic-escape.js ----
+/* ================= 🚨 POLAR ESCAPE: the polar animals break out all over town, and you catch them and walk them home =================
+   Works like the barn animals' 🚨 Round-up (Preston's idea, 26g-town-animals.js): tap "Start a Polar escape!" at ❄️ Polar Ice and
+   four of the polar animals (the polar bear, the walrus, a penguin and the arctic fox, all from IA in 24m-arctic.js) run off,
+   each along one of its two streets (PE_LIST streets = the ang of a place with a path in 02-island.js, in different parts of town),
+   and stays out until someone catches it. A bar at the top says who's still out. Tap 🪢 Catch next to one and it walks behind you
+   on a rope until you get back to Polar Ice. When all four are home the escape is over.
+   - 👭 Friends online in your room join in by themselves: everyone hunts the same four, whoever brings the most home wins
+     (+40 🪙 and it counts as a win for the 🏆 rides; everyone else +15 🪙). Alone, +40 🪙 when they're all home.
+     Messages go through the room as {t:'icerun', a, r (which escape)}: go {seed}, catch {nm}, let {nm}, home {nm}, st (the whole
+     state every few seconds, so a friend who joins late catches up). Two people catching the same one at once: the lower id keeps it.
+   - did('icehome', name) for each one you bring home, did('iceescape', place) at the end (place 0 = you won against friends, -1 alone).
+     The ⭐ challenges are in the ❄️ Polar tab of challenges.js. */
+const PE_LIST=[
+  {k:'polarbear',nm:'Nanook',e:'🐻‍❄️',streets:[150,195],say:['*big bear huff*','*sniff sniff* Fish?','*rolls in the grass*']},
+  {k:'walrus',nm:'Wally',e:'🦭',streets:[180,240],say:['*loud bellow*','*whisker wiggle*','*flop flop flop*']},
+  {k:'penguin',nm:'Pebble',e:'🐧',streets:[90,30],say:['*trumpet call*','*waddle waddle*','*slides on its belly*']},
+  {k:'arcticfox',nm:'Frost',e:'🦊',streets:[270,330],say:['*yip yip!*','*pounce!*','*fluffy tail swish*']}];
+const PE_RING=7.15,PE_REACH=2.6,PE_SPD=1.3;
+const PE_ANI=PE_LIST.map(o=>{const a=IA.find(x=>x.k===o.k&&!x.baby);const tag=sprite(labelTex(o.nm,{size:58,fg:'#2f6a9a',bg:'rgba(255,255,255,.88)',border:null}),.8,.2);
+  tag.position.y=a.h/(a.g.scale.y||1)+.15;tag.visible=false;a.g.add(tag);return {...o,a,tag,pos:new THREE.Vector3(),face:0,mode:'home',wp:[],wait:0,street:o.streets[0],next:o.streets[0],lookT:0,owner:''};});
+const peByName=nm=>PE_ANI.find(c=>c.nm===nm);
+// where each street stops: just in front of the first place along it (like roamEnd in the Round-up)
+function peEnd(ang){const z=ZONES.filter(z=>z.d&&!z.nopath&&Math.abs(z.ang-ang)<.5).sort((a,b)=>a.d-b.d)[0];return z?z.d-z.r-1.5:24;}
+function peSpot(ang,d,side=0){const a=deg(ang);return {x:Math.sin(a)*d+Math.cos(a)*side,z:Math.cos(a)*d-Math.sin(a)*side};}
+// a walk along its street: out to the end, a look around, back to the plaza, round the ring to the next street
+function pePlan(c,from){const wp=c.wp,end=peEnd(c.street),side=()=>(Math.random()-.5)*.9;
+  for(let d=(from!=null?from+5:10);d<end;d+=5)wp.push({...peSpot(c.street,d,side()),w:Math.random()<.2?1.5+Math.random()*2:0});
+  wp.push({...peSpot(c.street,end,side()),w:3+Math.random()*4});
+  for(let d=end-5;d>9;d-=5)wp.push({...peSpot(c.street,d,side()),w:0});
+  const next=Math.random()<.75?c.streets.find(s=>s!==c.street)??c.street:c.street;
+  const diff=((next-c.street+540)%360)-180,n=Math.max(1,Math.ceil(Math.abs(diff)/12));
+  for(let i=0;i<=n;i++)wp.push({...peSpot(c.street+diff*i/n,PE_RING+(Math.random()-.5)*.6),w:i===n?1+Math.random()*2:0});
+  c.next=next;}
+function peToStreet(c){const P=c.pos,d0=Math.hypot(P.x,P.z),ang=Math.atan2(P.x,P.z)*180/Math.PI;
+  c.street=c.streets.reduce((b,s)=>Math.abs(((s-ang+540)%360)-180)<Math.abs(((b-ang+540)%360)-180)?s:b);c.next=c.street;
+  const d=Math.max(9,Math.min(peEnd(c.street)-1,d0));c.wp=[{...peSpot(c.street,d),w:0}];pePlan(c,d);}
+
+/* ---------- the escape ---------- */
+const PE={on:false,r:'',seed:0,home:{},sc:{},names:{},stT:0,endT:0,done:{},t:0};
+const peNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
+const peMe=()=>{const n=window.__net;return (n&&n.id&&n.id())||'me';};
+const peEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+function peSend(d){const n=peNet();if(n)try{n.send(Object.assign({t:'icerun',r:PE.r},d));}catch(e){}}
+const peRand=seed=>{let s=(Math.abs(Math.floor(seed))%2147483646)+1;return ()=>((s=(s*16807)%2147483647)-1)/2147483646;};
+// the animal leaves Polar Ice and goes out onto the streets (or comes home and goes back to its life there)
+function peOut(c){const a=c.a;if(zooOpen&&zooSel===a)closeZoo();a.esc=true;a.ob.r=0;a.tgt=null;a.graze=0;c.tag.visible=true;}
+function peIn(c){const a=c.a;a.esc=false;c.tag.visible=false;c.mode='home';c.owner='';
+  let [lx,lz]=IZ.toLocal(c.pos.x,c.pos.z);if(!iceOk(lx,lz,a.rad))[lx,lz]=a.spot(a.rad);a.lx=lx;a.lz=lz;a.y=0;a.wait=1;a.tgt=a.spot(a.rad,a);a.face=Math.atan2(-lx,-lz);placeFarm(a);}
+// everyone starts the same escape from the same seed, so the animals run to the same spots on every phone
+function peStart(r,seed,who,whoName){if(PE.on||RU.on)return;// one at a time: not during a barn or safari Round-up (26g-town-animals.js)
+  Object.assign(PE,{on:true,r,seed,home:{},sc:{},names:{},stT:0,endT:0});
+  PE.names[peMe()]=SAVE.name||'You';if(who&&who!==peMe())PE.names[who]=String(whoName||'Friend').slice(0,16);
+  const rr=peRand(seed);if(ICS.on)iceSkateOff();if(ICF.on)iceFishStop();
+  for(const c of PE_ANI){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#bfe8ff',16,1.4);peOut(c);
+    c.mode='street';c.owner='';c.wait=0;c.lookT=0;c.street=c.streets[Math.floor(rr()*2)];const d=12+rr()*(peEnd(c.street)-15),s=peSpot(c.street,d,(rr()-.5)*.8);
+    c.pos.set(s.x,0,s.z);c.wp=[];pePlan(c,d);c.face=deg(c.street);}
+  sfx('tada');banner('🚨 Polar escape! The polar animals got out!');
+  setTimeout(()=>toast(who&&who!==peMe()?`👭 ${whoName||'A friend'} started a Polar escape! Catch them 🪢 and bring them back to ❄️ Polar Ice`:`Catch all ${PE_ANI.length} runaways 🪢 and walk them back to ❄️ Polar Ice. Look on the minimap!`),1900);
+  did('icestart',0);peBar();peKey='?';}
+function peBegin(){if(PE.on)return;const r=peMe().slice(0,8)+'-'+Date.now().toString(36),seed=1+Math.floor(Math.random()*2e9);peStart(r,seed);peSend({a:'go',seed});}
+function peCatch(c){if(!PE.on||!c||c.mode!=='street'||PE_ANI.some(o=>o.mode==='rope'))return;c.mode='rope';c.owner=peMe();c.wp=[];c.wait=0;c.a.speak(rnd(c.say));sfx('pop');
+  toast(`🪢 You caught ${c.nm}! Walk ${c.e} ${c.nm} back to ❄️ Polar Ice`);did('icecatch',c.nm);peSend({a:'catch',nm:c.nm});peBar();peKey='?';}
+function peLetGo(c,quiet){if(!c||(c.mode!=='rope'&&c.mode!=='friend'))return;const mine=c.mode==='rope';c.mode='street';c.owner='';peToStreet(c);
+  if(mine&&!quiet){sfx('pop');toast(`${c.e} ${c.nm} runs off again!`);peSend({a:'let',nm:c.nm});}peBar();peKey='?';}
+function peHome(c,who,quiet){if(!PE.on||PE.home[c.nm])return;PE.home[c.nm]=who;PE.sc[who]=(PE.sc[who]||0)+1;
+  if(c.mode==='street'&&who!==peMe()){const [x,w]=IZ.toWorld(...iceSpot(c.a.rad));c.pos.set(x,0,w);}// a friend brought it home: it's back at Polar Ice on your phone too
+  peIn(c);
+  if(who===peMe()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.4,0)),'#bfe8ff',24,1.6);floaties(c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0)),'🏠',5);sfx('tada');
+    IS.home=(IS.home||0)+1;persist();did('icehome',c.nm);peSend({a:'home',nm:c.nm});const left=PE_ANI.length-Object.keys(PE.home).length;
+    if(left)toast(`🏠 ${c.nm} is back at Polar Ice! ${left} still out`);}
+  else if(!quiet)toast(`🏠 ${PE.names[who]||'A friend'} brought ${c.nm} home`);
+  peBar();peKey='?';if(Object.keys(PE.home).length>=PE_ANI.length)peEnd2();}
+function peEnd2(){const me=peMe(),ids=Object.keys(PE.names),friends=ids.filter(id=>id!==me),mine=PE.sc[me]||0;
+  const best=Math.max(0,...ids.map(id=>PE.sc[id]||0)),place=friends.length?ids.filter(id=>(PE.sc[id]||0)>mine).length:-1;
+  PE.on=false;PE.done[PE.r]=1;PE.endT=PE.t||1e-3;PE.last={sc:{...PE.sc},names:{...PE.names}};IS.escapes=(IS.escapes||0)+1;persist();
+  if(!friends.length){banner('🏠 Polar escape done! Everyone is home');setTimeout(()=>earn(40,'Polar escape'),900);}
+  else if(place===0&&mine===best&&mine>0){banner(`🏆 You won the Polar escape! ${mine} caught`);setTimeout(()=>earn(40,'Won the Polar escape'),900);}
+  else{banner(`🏠 Polar escape done! You caught ${mine}`);setTimeout(()=>earn(15,'Polar escape'),900);}
+  sfx('tada');did('iceescape',place);peBar();peKey='?';}
+// what friends send
+function peFromNet(id,name,d){if(!d||typeof d.a!=='string'||typeof d.r!=='string')return;id=String(id).slice(0,40);const r=d.r.slice(0,40),c=typeof d.nm==='string'?peByName(d.nm):null;
+  if(d.a==='go'||d.a==='st'){if(!PE.on&&started&&!PE.done[r]){const sd=+d.seed;if(Number.isFinite(sd))peStart(r,sd,id,name);}
+    if(!PE.on||r!==PE.r)return;PE.names[id]=String(name||'Friend').slice(0,16);
+    if(d.a==='st'){for(const [nm,w] of Object.entries(d.h||{})){const a=peByName(nm);if(a&&typeof w==='string'&&!PE.home[nm])peHome(a,w.slice(0,40),true);}
+      for(const [nm,w] of Object.entries(d.c||{})){const a=peByName(nm);if(a&&w===id&&a.mode==='street'){a.mode='friend';a.owner=id;}}
+      peBar();}
+    return;}
+  if(!PE.on||r!==PE.r||!c)return;PE.names[id]=String(name||'Friend').slice(0,16);
+  if(d.a==='catch'){if(c.mode==='rope'){if(id<peMe()){toast(`😮 ${PE.names[id]} caught ${c.nm} first!`);c.mode='friend';c.owner=id;}}
+    else if(c.mode==='street'||c.mode==='friend'){c.mode='friend';c.owner=id;}peBar();peKey='?';}
+  else if(d.a==='let'){if(c.mode==='friend'&&c.owner===id)peLetGo(c,true);}
+  else if(d.a==='home')peHome(c,id);}
+addEventListener('load',()=>{if(window.__net)window.__net.on((id,name,d)=>{if(d&&d.t==='icerun')peFromNet(id,name,d);});});
+
+/* ---------- moving them ---------- */
+let peNear=null,peKey='';
+const peAtIce=(P,extra)=>Math.hypot(P.x-IZ.x,P.z-IZ.z)<IZ.r+extra;
+const peFriend=id=>{const n=window.__net;return (n&&n.friends&&n.friends().get(id))||(PE.fake&&PE.fake[id])||null;};// fake: friends made up by the tests
+function peFollow(c,P,face,dt){const back=face+Math.PI+.6,r=1.3+c.a.rad,tx=P.x+Math.sin(back)*r,tz=P.z+Math.cos(back)*r,dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
+  if(d>14){c.pos.set(tx,0,tz);return 0;}if(d>.2){const sp=Math.min(7,1+d*3),st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*6));return sp;}
+  c.face=angDamp(c.face,face,Math.min(1,dt*3));return 0;}
+function peStep(dt){if(!started)return;PE.t+=dt;const P=player.pos;
+  for(const c of PE_ANI){if(c.mode==='home')continue;const a=c.a,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z),vis=dP<70;a.g.visible=vis;let sp=0;
+    if(c.mode==='rope'){sp=peFollow(c,P,player.face,dt);a.graze=0;if(peAtIce(P,1.5)){peHome(c,peMe());continue;}}
+    else if(c.mode==='friend'){const o=peFriend(c.owner);if(!o)peLetGo(c,true);else{sp=peFollow(c,o.pos,o.cur??o.face??0,dt);a.graze=0;}}
+    else{// on its own: when you walk up it stops and looks at you for a moment, then goes on its way (it never comes after you)
+      const look=dP<2.4&&c.lookT<2;if(dP<2.4)c.lookT+=dt;else if(dP>4)c.lookT=0;
+      if(look){c.wait=0;c.face=angDamp(c.face,Math.atan2(P.x-c.pos.x,P.z-c.pos.z),Math.min(1,dt*4));a.graze+=(0-a.graze)*Math.min(1,dt*3);}
+      else if(c.wait>0){c.wait-=dt;a.graze+=(1-a.graze)*Math.min(1,dt*2);}
+      else{if(!c.wp.length){c.street=c.next;pePlan(c);}
+        const w=c.wp[0],dx=w.x-c.pos.x,dz=w.z-c.pos.z,d=Math.hypot(dx,dz);
+        if(d<.12){c.wp.shift();c.wait=w.w||0;}
+        else{sp=PE_SPD*(c.k==='walrus'?.7:1);const st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*4));}
+        a.graze+=(0-a.graze)*Math.min(1,dt*3);}}
+    if(!vis)continue;
+    c.pos.y=groundAt(c.pos.x,c.pos.z);a.pos.copy(c.pos);a.g.position.copy(c.pos);a.g.rotation.y=c.face;a.update(dt,sp);}
+  // the ropes: from your hand (or a friend's) to the animal on it
+  PE_ANI.forEach((c,i)=>{const R0=PE_ROPES[i];let h=null;
+    if(c.mode==='rope')h=av.g.position;else if(c.mode==='friend'){const o=peFriend(c.owner);if(o)h=o.pos;}
+    if(!h||!c.a.g.visible){R0.visible=false;return;}
+    const hv=h.clone().add(new THREE.Vector3(0,.9,0)),b=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h*.7,0));
+    R0.visible=true;R0.position.copy(hv).add(b).multiplyScalar(.5);R0.scale.set(1,hv.distanceTo(b),1);R0.quaternion.setFromUnitVectors(LIMB_UP,b.sub(hv).normalize());});
+  if(PE.on&&(PE.stT-=dt)<0){PE.stT=3;const cc={};for(const c of PE_ANI)if(c.mode==='rope')cc[c.nm]=peMe();peSend({a:'st',seed:PE.seed,h:PE.home,c:cc});}
+  if(!PE.on&&PE.endT&&PE.t-PE.endT>9){PE.endT=0;peBar();}
+  peButton();}
+anims.push((t,dt)=>peStep(dt));
+const peRopeMat=std('#c8a46a',{roughness:.9}),PE_ROPES=PE_ANI.map(()=>{const m=M(cyl(.012,.012,1,6),peRopeMat,0,0,0,scene,false,false);m.visible=false;return m;});
+
+/* ---------- the Catch button and the bar at the top ---------- */
+{const st=document.createElement('style');st.textContent=`
+#peCatch{position:fixed;left:50%;transform:translateX(-50%);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5;
+  bottom:calc(env(safe-area-inset-bottom) + 370px);background:linear-gradient(90deg,#7cc7e8,#2f6a9a);box-shadow:0 6px 18px rgba(47,106,154,.4)}
+#peCatch:active{transform:translateX(-50%) scale(.94)}
+body.dressing #peCatch,body.talking #peCatch,body.shopping #peCatch,body.sp-on #peCatch,body.dressing #peBar,body.shopping #peBar,body.sp-on #peBar{display:none!important}
+#peBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 156px);z-index:8;display:none;flex-direction:column;align-items:center;gap:5px;width:max-content;max-width:calc(100vw - 32px);pointer-events:none}
+#peBar.show{display:flex}
+#peBar b{background:#2f6a9a;color:#fff;border-radius:999px;padding:4px 12px;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
+#peBar div{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+#peBar span{background:rgba(255,255,255,.92);color:#3b2357;border-radius:999px;padding:4px 10px;font-weight:700;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
+#peBar span.home{opacity:.6}#peBar span.rope{background:#d8f0ff}#peBar span.me{background:#ffd23f}
+#peBar small{font-weight:600;color:#7a5a8c;margin-left:3px}
+@media (max-height:520px){#peCatch{bottom:calc(env(safe-area-inset-bottom) + 240px)}#peBar{top:calc(env(safe-area-inset-top) + 52px)}}`;
+  document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<button class="hud" id="peCatch"></button><div id="peBar"></div>');}
+function peBar(){const el=$('#peBar');if(!PE.on&&!PE.endT){el.classList.remove('show');el.innerHTML='';return;}
+  const me=peMe(),nm=id=>id===me?'You':peEsc(PE.names[id]||'Friend'),src=PE.on?PE:PE.last;
+  const out=PE_ANI.filter(c=>!PE.home[c.nm]).length;
+  let h=PE.on?`<b>🚨 Polar escape! ${out} of ${PE_ANI.length} still out</b>`:`<b>🏁 Polar escape over!</b>`;
+  h+='<div>'+PE_ANI.map(c=>{const hm=PE.home[c.nm];if(hm)return `<span class="home">🏠 ${c.nm}<small>${nm(hm)}</small></span>`;
+    if(c.mode==='rope'||c.mode==='friend')return `<span class="rope">🪢 ${c.e} ${c.nm}<small>${nm(c.owner)}</small></span>`;
+    return `<span>${c.e} ${c.nm}</span>`;}).join('')+'</div>';
+  const ids=Object.keys(src.names||{});
+  if(ids.length>1)h+='<div>'+ids.sort((a,b)=>(src.sc[b]||0)-(src.sc[a]||0)).map(id=>`<span class="${id===me?'me':''}">${nm(id)} <small>🏠 ${src.sc[id]||0}</small></span>`).join('')+'</div>';
+  el.innerHTML=h;el.classList.add('show');}
+// Catch / Let go out in town (starting an escape is a button at Polar Ice, in iceButtons in 24m-arctic.js)
+function peButton(){const P=player.pos;let best=null,bd=PE_REACH;
+  if(PE.on&&!closetOpen&&!(typeof SW!=='undefined'&&SW.k>.3))for(const c of PE_ANI){if(c.mode!=='street')continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(d<bd){bd=d;best=c;}}
+  peNear=best;const rope=PE_ANI.find(c=>c.mode==='rope');
+  const key=(best?best.nm:'')+'|'+(rope?rope.nm:'')+'|'+(PE.on?1:0);if(key===peKey)return;peKey=key;const k=$('#peCatch');
+  if(rope){k.textContent=`🪢 Let go of ${rope.nm}`;k.style.display='block';}
+  else if(best){k.textContent=`🪢 Catch ${best.e} ${best.nm}`;k.style.display='block';}
+  else k.style.display='none';}
+$('#peCatch').onclick=()=>{const rope=PE_ANI.find(c=>c.mode==='rope');if(rope)peLetGo(rope);else peCatch(peNear);};
+
+// the runaways on the minimap, so you can go looking for them (heading-up, like drawMini in 26-map.js)
+addEventListener('load',()=>onTick.push(()=>{if(!started||!PE.on)return;const cv=$('#miniCv');if(!cv)return;const x=cv.getContext('2d'),S=cv.width,h=S/2,k=S/54,p=player.pos,
+  fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.08)}px serif`;x.textAlign='center';x.textBaseline='middle';
+  for(const c of PE_ANI){if(c.mode!=='street')continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
+  x.restore();}));
+
+function peState(){return {on:PE.on,home:Object.keys(PE.home).length,n:PE_ANI.length,sc:{...PE.sc},rope:(PE_ANI.find(c=>c.mode==='rope')||{}).nm||null,
+  modes:Object.fromEntries(PE_ANI.map(c=>[c.nm,c.mode])),escapes:IS.escapes||0,homeAll:IS.home||0};}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{PE,PE_ANI,peState,peBegin,peCatch,peLetGo,peFromNet,peMe,peEnd});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -10213,7 +10942,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||window.__daddy?.frozen())mag=0;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   const p=player.pos;
-  if(!heliStep(dt,ix,iy,mag)&&!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!advStep(dt)){// advStep (26h-adventure.js): climbing a ladder or the rock wall, or on a zip line// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
+  if(!heliStep(dt,ix,iy,mag)&&!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!advStep(dt)&&!iceSkateStep(dt,ix,iy,mag)){// on the ice at ❄️ Polar Ice, iceSkateStep (24m-arctic.js); advStep (26h-adventure.js): climbing a ladder or the rock wall, or on a zip line// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
   // ^ DADDY POWERS: window.__daddy?.fly is Daddy flying, swinging or in the robot (27-daddy-powers.js); does nothing once that file is gone
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
@@ -10323,7 +11052,7 @@ function preUpload(){if(LITE)return;const off=[],near=isTouch?40:Infinity,v=new 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
 /* ================= MAP ================= */
-const MAPC={heli:'#c9d3de',studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
+const MAPC={arctic:'#e4f4ff',heli:'#c9d3de',studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -12192,7 +12921,7 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{adv:(
      tail rotor, skids, navigation lights and a flashing red beacon. Keep it that way. */
 const HELI_PRICE=500,HELI_K='heli:skyhawk';
 const HELI_EARN=['heli_visit','heli_places','heli_wins','heli_stars'];// the challenges that win it (challenges.js)
-const HELI_SPD=15,HELI_UP=4.5,HELI_DOWN=3.6,HELI_MAX=32,HELI_EDGE=R+9;// top speed, climb and sink rates, ceiling, how far out over the water
+const HELI_SPD=15,HELI_UP=4.5,HELI_DOWN=3.6,HELI_MAX=44,HELI_EDGE=R+9,HELI_CLIMB=6.5;// top speed, climb and sink rates, ceiling (above the big Christmas tree), how far out over the water
 // where people sit: the spot their feet go (the 'chair' pose sits them on the seat). 0 = the pilot, front right like a real one
 const HELI_SEATS=[[-.36,.6,.4],[.36,.6,.4],[-.36,.6,-.42],[.36,.6,-.42]].map(a=>new THREE.Vector3(...a));
 const HELI_SEAT_Y=.52;// how high the seats' feet spot is above the skids (in HELI_SEATS)
@@ -12313,7 +13042,7 @@ setInterval(()=>{if(!started)return;if(owns(HELI_K)&&!SAVE.heli.got){SAVE.heli.g
 RIDE_ACTS.push(()=>heliOwn()&&!HELI.on&&!HELI.ride?[['heli','🚁','Heli']]:[]);
 
 /* ---------- getting in and out ---------- */
-function heliBoard(){if(!heliOwn()||HELI.on||HELI.ride||HELI.auto)return;flyGrid();if(heliBusy()){toast('Finish what you are doing first! 🚁');return;}
+function heliBoard(){if(!heliOwn()||HELI.on||HELI.ride||HELI.auto)return;FG.h=null;flyGrid();// a fresh map of what's tall, so nothing that moved since start-up is in the wayif(heliBusy()){toast('Finish what you are doing first! 🚁');return;}
   if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);
   Object.assign(HELI,{on:true,mode:'ground',vx:0,vz:0,vy:0,pitch:0,bank:0,turn:0,spot:null,t:0});HELI.ob.r=0;
   player.face=HELI.hd;player.vy=0;player.speed=0;sfx('pop');tone(220,.5,'sawtooth',.03,0,90);renderActions();heliHud(true);
@@ -12337,7 +13066,7 @@ function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on
   // the joystick: which way you want to go, the same as walking
   let wx=0,wz=0;if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;wx=(fx*-iy+rx*ix)/n*HELI_SPD*mag;wz=(fz*-iy+rz*ix)/n*HELI_SPD*mag;}
   if(H.mode==='ground'){H.vx=H.vy=H.vz=0;P.y=g;
-    if(up&&HM.rpm>.85){H.mode='air';H.vy=1.5;did('heli','takeoff');if(H.seats.some(Boolean))did('heli','friend');sfx('jump');}
+    if(up&&HM.rpm>.85){H.mode='air';H.vy=1.5;did('heli','takeoff');if(isTouch&&(SAVE.heliSteer|0)<3){SAVE.heliSteer=(SAVE.heliSteer|0)+1;persist();setTimeout(()=>{if(HELI.on&&HELI.mode!=='ground')toast('👈 Put a finger on the left side of the screen and drag to fly around the island!');},1200);}if(H.seats.some(Boolean))did('heli','friend');sfx('jump');}
     else if(up&&performance.now()-H.liftWarn>2500){H.liftWarn=performance.now();toast('⏳ Wait for the rotor to spin up…');}}
   else{
     // 🛬 landing by itself: fly over to the spot, slow down, and come straight down onto it
@@ -12353,10 +13082,12 @@ function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on
     // never into trees and buildings: climb over them before you get there
     let nx=P.x+H.vx*dt,nz=P.z+H.vz*dt;const nr=Math.hypot(nx,nz);if(nr>HELI_EDGE){nx*=HELI_EDGE/nr;nz*=HELI_EDGE/nr;}
     const below=flyFloor(nx,nz,3),ahead=Math.max(below,flyFloor(nx+H.vx*.7,nz+H.vz*.7,3));
-    if(P.y>=below-.1){P.x=nx;P.z=nz;}else{H.vx*=.5;H.vz*=.5;}
-    const gg=groundAt(P.x,P.z),clear=ahead>gg+.1?ahead+.4:gg;
-    if(P.y<clear&&H.vy<(clear-P.y)*3+.5)H.vy+=((clear-P.y)*3+.5-H.vy)*Math.min(1,dt*6);
-    P.y+=H.vy*dt;{const fl=flyFloor(P.x,P.z,3);if(fl>gg+.1&&P.y<fl+.05){P.y=fl+.05;if(H.vy<0)H.vy=0;}}// never down into a tree or onto a roof
+    // (something taller than the ceiling never stops you: you just fly on, so the helicopter can't get stuck up there)
+    if(P.y>=below-.1||below>HELI_MAX-1){P.x=nx;P.z=nz;}else{H.vx*=.5;H.vz*=.5;}
+    // it climbs over what's ahead like a real one, never faster than HELI_CLIMB (no jumping up into the sky)
+    const gg=groundAt(P.x,P.z),clear=ahead>gg+.1?Math.min(HELI_MAX,ahead+.4):gg,cv=Math.min(HELI_CLIMB,(clear-P.y)*3+.5);
+    if(P.y<clear&&H.vy<cv)H.vy+=(cv-H.vy)*Math.min(1,dt*6);
+    P.y+=H.vy*dt;{const fl=flyFloor(P.x,P.z,3);if(fl>gg+.1&&P.y<fl+.05){if(fl-P.y<.8)P.y=fl+.05;if(H.vy<0)H.vy=0;}}// never down into a tree or onto a roof (and well below one: only climbing)
     if(P.y>HELI_MAX){P.y=HELI_MAX;H.vy=Math.min(0,H.vy);}
     if(P.y>=HELI_MAX-.5){H.highT+=dt;if(H.highT>1.5&&!H.wentHigh){H.wentHigh=1;did('heli','high');toast('☁️ Up with the clouds!');}}else H.highT=0;
     // touching down: only on open ground, softly
@@ -12370,9 +13101,19 @@ function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on
     const wantP=Math.max(-.32,Math.min(.2,-fwd/HELI_SPD*.2-aF*.025)),wantB=Math.max(-.42,Math.min(.42,H.turn*sp*.045+side/HELI_SPD*.15));
     H.pitch+=(wantP-H.pitch)*Math.min(1,dt*2.5);H.bank+=(wantB-H.bank)*Math.min(1,dt*2.5);}
   if(H.mode==='ground'){H.pitch*=Math.max(0,1-dt*6);H.bank*=Math.max(0,1-dt*6);}
+  heliStuckWatch(dt,mag);
   // you're in the pilot's seat
   heliSeatAt(P,H.hd,H.pitch,H.bank,0,player.pos);player.face=H.hd;player.speed=0;player.vy=0;player.onGround=false;
   heliHud();return true;}
+// pushing the joystick in the air but not getting anywhere is a bug that throws no error: tell the grown-ups (once a visit)
+// what was in the way, so it can be fixed (index.html, reportProblem)
+function heliStuckWatch(dt,mag){const H=HELI,P=H.pos;if(H.mode!=='air'||mag<.3||H.stuckSent||Math.hypot(P.x,P.z)>HELI_EDGE-3){H.stk=null;return;}
+  if(!H.stk)H.stk={t:0,x:P.x,z:P.z};const k=H.stk;k.t+=dt;if(k.t<2.5)return;
+  if(Math.hypot(P.x-k.x,P.z-k.z)<1&&window.reportProblem){H.stuckSent=1;const box=new THREE.Box3(),hit=[];
+    scene.traverse(o=>{if(!o.isMesh||!o.geometry||hit.length>=4)return;box.setFromObject(o);if(box.min.y<9&&box.max.y>P.y-1&&box.min.x<P.x+3&&box.max.x>P.x-3&&box.min.z<P.z+3&&box.max.z>P.z-3)
+      hit.push(`${o.name||o.geometry.type}${o.parent&&o.parent.name?' in '+o.parent.name:''} ${(box.max.x-box.min.x).toFixed(0)}x${(box.max.y-box.min.y).toFixed(0)}x${(box.max.z-box.min.z).toFixed(0)} top ${box.max.y.toFixed(0)}`);});
+    window.reportProblem('helicopter stuck',`y ${P.y.toFixed(1)} floor ${flyFloor(P.x,P.z,3).toFixed(1)} | ${hit.join('; ')||'nothing in the way'}`);}
+  H.stk=null;}
 function heliLand(){const H=HELI;if(!H.on||H.mode!=='air')return;const P=H.pos,pz=Z.heli;
   // the Helipad if it's close and nobody's on it, or else the nearest open patch a little ahead
   if(Math.hypot(P.x-pz.x,P.z-pz.z)<30&&heliOpen(pz.x,pz.z))H.spot=[pz.x,pz.z];
@@ -12449,6 +13190,10 @@ anims.push((t,dt)=>{const H=HELI;
   if(H.on){const n=window.__net,fr=n&&n.friends();for(let i=1;i<4;i++)if(H.seats[i]&&!(fr&&fr.has(H.seats[i])))H.seats[i]=null;}
   heliButtons();});
 // a game or the closet opening while you're in it: you're set down where you are (the helicopter lands itself first if it's up)
+// 🕹️ on a phone the joystick only shows once you touch the screen, so while you're flying a ghost one on the left shows
+// where to put your finger to fly around (it goes away while you're steering)
+const heliJoyEl=$('#heliJoy');let heliJoyS=null;
+anims.push(()=>{const H=HELI,s=isTouch&&H.on&&H.mode!=='ground'&&joy.id===null&&!closetOpen?'flex':'none';if(s!==heliJoyS){heliJoyS=s;heliJoyEl.style.display=s;}});
 anims.push(()=>{const H=HELI;if(!H.on||!(handsBusy()||closetOpen))return;
   if(H.mode!=='ground'){const [x,z]=heliSpot(H.pos.x,H.pos.z);H.pos.set(x,groundAt(x,z),z);H.mode='ground';H.vx=H.vz=H.vy=0;}heliOut();});
 
@@ -12500,6 +13245,10 @@ addEventListener('load',()=>{const G=window.__game;if(!G)return;const er=G.earne
     what:`Finish the ${HELI_EARN.length} 🚁 helicopter challenges, or buy it for ${HELI_PRICE} 🪙`,ownTxt:'Yours! It\'s parked at the 🚁 Helipad'}]);
 });
 Object.assign(window.__game,{heli:()=>HELI,heliModel:()=>HM,heliBoard,heliOut,heliLand,heliCall,heliGet,heliAsk,heliDrop,heliOpen,HELI_SEATS,HELI_K});
+// ---- src/26i-arctic-see.js ----
+/* ❄️ Polar Ice for friends online (after 26c-friends-see.js, which makes SHOW): friends see the ice skates on your feet
+   while you skate (iceBlades in 24m-arctic.js; the skating stride comes from the rollerPose they already use). */
+SHOW.push({k:'ice',mine(){return ICS.on?{on:1}:null;},on(f){iceBlades(f.a,true);return {};},step(f){if(f.a&&!f.a.iceB)iceBlades(f.a,true);},off(f){iceBlades(f.a,false);}});
 // ---- src/26i-fast-pass.js ----
 /* ================= 🎟️ FAST PASS: zip to any place in town ================= */
 // A power you buy once in the shop's ⚡ Powers tab (with coins) and keep forever, like a fast pass at a theme park.
