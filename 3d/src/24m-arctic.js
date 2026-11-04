@@ -202,7 +202,7 @@ function iceActLabel(){if(IGL.built)return '🔨 Build a new igloo';if(IGL.n<IGL
 let iceKey='';
 function iceButtons(){const p=player.pos,inZ=Math.hypot(p.x-IZ.x,p.z-IZ.z)<IZ.r+1.5,busy=closetOpen||!started||barnRide||FLY.on;
   const hole=inZ&&!busy&&!ICS.on?nearHole():-1,igl=inZ&&!busy&&!ICS.on&&!ICF.on&&nearIgloo();
-  const key=[inZ,busy,ICS.on,ICF.on,ICF.st,hole,igl,IGL.n,!!IGL.tunnel,IGL.built,PE.on,!!PE.endT].join('|');if(key===iceKey)return;iceKey=key;
+  const key=[inZ,busy,ICS.on,ICF.on,ICF.st,hole,igl,IGL.n,!!IGL.tunnel,IGL.built,PE.on,!!PE.endT,RU.on].join('|');if(key===iceKey)return;iceKey=key;
   const A=$('#iceAct'),B=$('#iceAct2');A.classList.remove('go');A.style.display=B.style.display='none';if(busy)return;
   if(ICS.on){A.textContent='🌀 Spin';A.style.display='block';A.onclick=iceSpin;return;}
   if(ICF.on){A.textContent=ICF.st==='bite'?'🎣 Reel in!':'🎣 Reel in';A.classList.toggle('go',ICF.st==='bite');A.style.display=ICF.st==='caught'?'none':'block';A.onclick=iceFishReel;
@@ -210,7 +210,7 @@ function iceButtons(){const p=player.pos,inZ=Math.hypot(p.x-IZ.x,p.z-IZ.z)<IZ.r+
   if(hole>=0){A.textContent='🎣 Ice fish';A.style.display='block';A.onclick=()=>iceFishStart(nearHole());return;}
   if(igl){A.textContent=iceActLabel();A.style.display='block';A.onclick=iglooTap;return;}
   // 🚨 anywhere else at Polar Ice: start a Polar escape (24m2-arctic-escape.js)
-  if(inZ&&!PE.on&&!PE.endT){A.textContent='🚨 Start a Polar escape!';A.classList.add('go');A.style.display='block';A.onclick=peBegin;}}
+  if(inZ&&!PE.on&&!PE.endT&&!RU.on){A.textContent='🚨 Start a Polar escape!';A.classList.add('go');A.style.display='block';A.onclick=peBegin;}}
 
 /* ---------- every frame ---------- */
 anims.push((t,dt)=>{if(!started)return;iceAnimalsStep(dt);iceFishStep(dt);iglooStep(dt);

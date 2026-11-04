@@ -1,0 +1,221 @@
+/* ================= 🐾 THE BARN ANIMALS AND THE 🚨 ROUND-UP =================
+   - Four barn animals (🦆 Waddles, 🐐 Billy, 🐷 Truffle, 🐑 Woolly) live in the big meadow all round the 🐴 Happy Barn. Most of the
+     time they just wander about out there (not shut in the little paddock), sniff the grass and look at you when you walk up.
+     They never follow you (only the pet you adopt does). Tap 🌽 Feed next to one.
+   - 🚨 Round-up (Preston's idea): tap "Start a Round-up" near the barn and the animals break out all over town. Each one runs off to one
+     of its two streets (ROAM_LIST streets = the ang of a place with a path in 02-island.js, in different parts of town so they never
+     bunch up) and stays out until someone catches it. A bar at the top says the Round-up is on and lists who's still out.
+     Tap 🪢 Catch next to one and it walks behind you on a rope (only then, and only until the barn); walk it back to the Happy Barn.
+     When all four are home the Round-up ends.
+   - 👭 Friends online in your room join in by themselves: everyone hunts the same four animals, and whoever brings the most home wins
+     (+40 🪙 and it counts as a win for the 🏆 rides; everyone else +15 🪙). Playing alone works too (+40 🪙 when they're all home).
+     Messages go through the room as {t:'roam', a, r (which Round-up)}: go {seed}, catch {nm}, let {nm}, home {nm}, st (the whole state,
+     every few seconds, so a friend who joins late or missed a message catches up). Two people catching the same animal at once:
+     the lower id keeps it, on every phone.
+   - did('roamhome', name) for each one you bring home, did('roundup', place) at the end (place 0 = you won against friends, -1 alone).
+     The ⭐ challenges are in the 🗺️ Explore tab of challenges.js.
+   - 🦁 Safari Round-up: the same game from the 🦒 Safari Zoo, with four safari runaways (Ziggy the zebra, Kito the okapi, Twiga the baby
+     giraffe and Tembo the baby elephant, in SAFARI_LIST). They live in the zoo with the others (hidden copies until a Safari Round-up starts),
+     and you walk them back to the zoo. Only one Round-up runs at a time (RU.grp is 'barn' or 'zoo').
+   - The models are the barn's and the zoo's (FarmAnimal in 24d-barn.js). Each one hides when it's far from you (iPhone memory). */
+const ROAM_LIST=[
+  {k:'duck',nm:'Waddles',food:[['🌽','corn'],['🍉','melon']],streets:[330,0],say:['Quack quack! 🦆','*waddle waddle*','I\'m exploring! 🗺️']},
+  {k:'goat',nm:'Billy',food:[['🍎','apple'],['🌾','hay']],streets:[30,90],say:['Meeeh! 🐐','*hop hop*','Catch me if you can!']},
+  {k:'pig',nm:'Truffle',food:[['🍎','apple'],['🥔','potato']],streets:[150,180],say:['Oink oink! 🐷','*sniff sniff*','Smells like snacks! 💗']},
+  {k:'lamb',nm:'Woolly',food:[['🍀','clover'],['🥕','carrot']],streets:[240,270],say:['Baaa! 🐑','*fluffy wiggle*','Hello, friend! 💖']}].map(o=>({...o,grp:'barn'}));
+// the safari runaways (sc = size: the giraffe and elephant are babies, so they fit on the streets)
+const SAFARI_LIST=[
+  {k:'zebra',nm:'Ziggy',e:'🦓',sc:.85,food:[['🥕','carrot'],['🌾','hay']],streets:[330,0],say:['*happy snort* 🦓','Look at my stripes!','Catch me! 💨']},
+  {k:'okapi',nm:'Kito',e:'🦌',sc:.9,food:[['🍌','banana'],['🍃','leaves']],streets:[30,90],say:['*soft huff*','Shh, I\'m shy! 🌿','*long tongue lick* 👅']},
+  {k:'giraffe',nm:'Twiga',e:'🦒',sc:.5,food:[['🥬','lettuce'],['🌿','acacia leaves']],streets:[150,180],say:['Hello down there! 🦒','*long lick* 👅','Mmm, leaves! 🌿']},
+  {k:'elephant',nm:'Tembo',e:'🐘',sc:.45,food:[['🍉','watermelon'],['🍎','apple']],streets:[240,270],say:['*happy trumpet* 🎺','*splashy trunk wave*','Peanuts? 🥜']}].map(o=>({...o,grp:'zoo'}));
+const RU_ZONE={barn:BZ,zoo:Z.zoo},RU_NAME={barn:'🐴 Happy Barn',zoo:'🦒 Safari Zoo'};
+const ROAM_RING=7.15,ROAM_REACH=2.6,ROAM_SPD=.85,RU_SPD=1.35,RU_HOME=6;// RU_HOME: how close to the barn's fence counts as home
+SAVE.roam||={};const RS=SAVE.roam;RS.fed||={};
+// where each street stops: just in front of the first place along it
+function roamEnd(ang){const z=ZONES.filter(z=>z.d&&!z.nopath&&Math.abs(z.ang-ang)<.5).sort((a,b)=>a.d-b.d)[0];return z?z.d-z.r-1.5:24;}
+// a spot on the street at angle ang (degrees), d out from the middle, side steps to the left or right of the middle of the street
+function roamSpot(ang,d,side=0){const a=deg(ang);return {x:Math.sin(a)*d+Math.cos(a)*side,z:Math.cos(a)*d-Math.sin(a)*side};}
+// a spot in the meadow round the barn: outside its fence, on the island, clear of other places and of trees and posts.
+// near = the angle round the barn to stay close to, so the walk there doesn't cut through the paddock
+function meadowSpot(near){for(let i=0;i<80;i++){const a=near==null?Math.random()*Math.PI*2:near+(Math.random()-.5)*2,r=BZ.fence+2+Math.random()*9,
+    x=BZ.x+Math.sin(a)*r,z=BZ.z+Math.cos(a)*r;
+    if(Math.hypot(x,z)>R-3)continue;if(ZONES.some(o=>o!==BZ&&o.d&&Math.hypot(x-o.x,z-o.z)<o.r+2))continue;if(obs.some(o=>o.r>0&&Math.hypot(x-o.x,z-o.z)<o.r+.6))continue;
+    return {x,z};}
+  return {x:BZ.x+BZ.fence+3,z:BZ.z};}
+const meadowAng=c=>Math.atan2(c.pos.x-BZ.x,c.pos.z-BZ.z);
+const ROAM=ROAM_LIST.concat(SAFARI_LIST).map(o=>{const a=new FarmAnimal(o.k),j=obs.indexOf(a.ob);if(j>=0)obs.splice(j,1);a.ob.r=0;a.dust.forEach(d=>d.visible=false);
+  const sc=o.sc||1,tag=sprite(labelTex(o.nm,{size:58,fg:'#8a5a3b',bg:'rgba(255,255,255,.88)',border:null}),.8/sc,.2/sc);tag.position.y=a.h+.15/sc;a.g.add(tag);
+  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}
+  const c={...o,a,F:FK[o.k],e:o.e||FK[o.k].e,pos:new THREE.Vector3(),face:Math.random()*6,mode:o.grp==='zoo'?'zoo':'meadow',tgt:null,wp:[],wait:Math.random()*3,street:o.streets[0],lookT:0,happy:0,owner:''};
+  const s=o.grp==='zoo'?{x:Z.zoo.x,z:Z.zoo.z}:meadowSpot();c.pos.set(s.x,0,s.z);a.pos.copy(c.pos);a.g.visible=o.grp!=='zoo';scene.add(a.g);return c;});
+// the animals in the Round-up that's on (or the last one)
+const ruSet=()=>ROAM.filter(c=>c.grp===RU.grp);
+const roamByName=nm=>ROAM.find(c=>c.nm===nm);
+// a walk along its street during a Round-up: out to the end, a sniff around, back to the plaza, round the ring to the next street
+function roamPlan(c,from){const wp=c.wp,end=roamEnd(c.street),side=()=>(Math.random()-.5)*.9;
+  for(let d=(from!=null?from+5:10);d<end;d+=5)wp.push({...roamSpot(c.street,d,side()),w:Math.random()<.2?1.5+Math.random()*2:0});
+  wp.push({...roamSpot(c.street,end,side()),w:3+Math.random()*4});
+  for(let d=end-5;d>9;d-=5)wp.push({...roamSpot(c.street,d,side()),w:0});
+  const next=Math.random()<.75?c.streets.find(s=>s!==c.street)??c.street:c.street;
+  const diff=((next-c.street+540)%360)-180,n=Math.max(1,Math.ceil(Math.abs(diff)/12));
+  for(let i=0;i<=n;i++)wp.push({...roamSpot(c.street+diff*i/n,ROAM_RING+(Math.random()-.5)*.6),w:i===n?1+Math.random()*2:0});
+  c.next=next;}
+// back on its street from wherever it is (after it's let go): the nearer of its two streets, at about the same distance out
+function roamToStreet(c){const P=c.pos,d0=Math.hypot(P.x,P.z),ang=Math.atan2(P.x,P.z)*180/Math.PI;
+  c.street=c.streets.reduce((b,s)=>Math.abs(((s-ang+540)%360)-180)<Math.abs(((b-ang+540)%360)-180)?s:b);c.next=c.street;
+  const d=Math.max(9,Math.min(roamEnd(c.street)-1,d0));c.wp=[{...roamSpot(c.street,d),w:0}];roamPlan(c,d);}
+
+/* ---------- 🚨 the Round-up ---------- */
+const RU={on:false,grp:'barn',r:'',seed:0,home:{},sc:{},names:{},stT:0,endT:0,done:{}};
+const ruNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
+const ruMe=()=>{const n=window.__net;return (n&&n.id&&n.id())||'me';};
+const ruEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+function ruSend(d){const n=ruNet();if(n)try{n.send(Object.assign({t:'roam',r:RU.r},d));}catch(e){}}
+const ruRand=seed=>{let s=(Math.abs(Math.floor(seed))%2147483646)+1;return ()=>((s=(s*16807)%2147483647)-1)/2147483646;};
+// everyone starts the same Round-up from the same seed, so the animals break out to the same spots on every phone
+function ruStart(r,seed,who,whoName,grp='barn'){if(RU.on||!RU_ZONE[grp]||PE.on)return;// one at a time: not during a ❄️ Polar escape (24m2-arctic-escape.js)
+  Object.assign(RU,{on:true,grp,r,seed,home:{},sc:{},names:{},stT:0,endT:0});
+  RU.names[ruMe()]=SAVE.name||'You';if(who&&who!==ruMe())RU.names[who]=String(whoName||'Friend').slice(0,16);
+  const rr=ruRand(seed);
+  for(const c of ruSet()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',16,1.4);
+    c.mode='street';c.owner='';c.wait=0;c.lookT=0;c.street=c.streets[Math.floor(rr()*2)];const d=12+rr()*(roamEnd(c.street)-15),s=roamSpot(c.street,d,(rr()-.5)*.8);
+    c.pos.set(s.x,0,s.z);c.wp=[];roamPlan(c,d);c.face=deg(c.street);c.a.g.visible=true;}
+  const home=RU_NAME[grp],n=ruSet().length;
+  sfx('tada');banner(grp==='zoo'?'🚨 Safari Round-up! The zoo animals broke out!':'🚨 Round-up! The barn animals broke out!');
+  setTimeout(()=>toast(who&&who!==ruMe()?`👭 ${whoName||'A friend'} started a Round-up! Catch the runaways 🪢 and bring them back to the ${home}`:`Catch all ${n} runaways 🪢 and bring them back to the ${home}. Look on the minimap!`),1900);
+  did('roundstart');ruBar();roamBtnKey='?';}
+function ruBegin(grp){if(RU.on)return;const r=ruMe().slice(0,8)+'-'+Date.now().toString(36),seed=1+Math.floor(Math.random()*2e9);ruStart(r,seed,null,null,grp);ruSend({a:'go',seed,g:grp});}
+function ruCatch(c){if(!RU.on||!c||c.mode!=='street'||ROAM.some(o=>o.mode==='rope'))return;c.mode='rope';c.owner=ruMe();c.wp=[];c.wait=0;c.a.speak(rnd(c.say));sfx('pop');
+  toast(`🪢 You caught ${c.nm}! Walk ${c.nm} back to the ${RU_NAME[c.grp]}`);did('roamcatch',c.nm);ruSend({a:'catch',nm:c.nm});ruBar();roamBtnKey='?';}
+function ruLetGo(c,quiet){if(!c||(c.mode!=='rope'&&c.mode!=='friend'))return;const mine=c.mode==='rope';c.mode='street';c.owner='';roamToStreet(c);
+  if(mine&&!quiet){sfx('pop');toast(`${c.e} ${c.nm} runs off again!`);ruSend({a:'let',nm:c.nm});}ruBar();roamBtnKey='?';}
+// brought home (by you or a friend): a barn animal trots back into the meadow, a safari one goes back into the zoo
+function ruHome(c,who,quiet){if(!RU.on||RU.home[c.nm])return;RU.home[c.nm]=who;RU.sc[who]=(RU.sc[who]||0)+1;c.owner='';c.wait=0;
+  if(c.grp==='zoo'){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',20,1.5);c.mode='zoo';c.a.g.visible=false;}else{c.mode='meadow';c.tgt=meadowSpot(meadowAng(c));}
+  if(who===ruMe()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.4,0)),'#ffd23f',24,1.6);floaties(c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0)),'🏠',5);sfx('tada');
+    did('roamhome',c.nm);ruSend({a:'home',nm:c.nm});const left=ruSet().length-Object.keys(RU.home).length;
+    if(left)toast(`🏠 ${c.nm} is back home! ${left} still out`);}
+  else if(!quiet)toast(`🏠 ${RU.names[who]||'A friend'} brought ${c.nm} home`);
+  ruBar();roamBtnKey='?';if(Object.keys(RU.home).length>=ruSet().length)ruEnd();}
+function ruEnd(){const me=ruMe(),ids=Object.keys(RU.names),friends=ids.filter(id=>id!==me),mine=RU.sc[me]||0;
+  const best=Math.max(0,...ids.map(id=>RU.sc[id]||0)),place=friends.length?ids.filter(id=>(RU.sc[id]||0)>mine).length:-1;
+  RU.on=false;RU.done[RU.r]=1;RU.endT=roamT||1e-3;RU.last={sc:{...RU.sc},names:{...RU.names}};
+  if(!friends.length){banner('🏠 Round-up done! Everyone is home');setTimeout(()=>earn(40,'Round-up'),900);}
+  else if(place===0&&mine===best&&mine>0){banner(`🏆 You won the Round-up! ${mine} caught`);setTimeout(()=>earn(40,'Won the Round-up'),900);}
+  else{banner(`🏠 Round-up done! You caught ${mine}`);setTimeout(()=>earn(15,'Round-up'),900);}
+  sfx('tada');did('roundup',place);did('roundgrp',RU.grp);ruBar();roamBtnKey='?';}
+// what friends send
+function ruFromNet(id,name,d){if(!d||typeof d.a!=='string'||typeof d.r!=='string')return;id=String(id).slice(0,40);const r=d.r.slice(0,40),c=typeof d.nm==='string'?roamByName(d.nm):null;
+  if(d.a==='go'||d.a==='st'){if(!RU.on&&started&&!RU.done[r]){const sd=+d.seed;if(Number.isFinite(sd))ruStart(r,sd,id,name,d.g==='zoo'?'zoo':'barn');}
+    if(!RU.on||r!==RU.r)return;RU.names[id]=String(name||'Friend').slice(0,16);
+    if(d.a==='st'){for(const [nm,w] of Object.entries(d.h||{})){const a=roamByName(nm);if(a&&a.grp===RU.grp&&typeof w==='string'&&!RU.home[nm])ruHome(a,w.slice(0,40),true);}
+      for(const [nm,w] of Object.entries(d.c||{})){const a=roamByName(nm);if(a&&a.grp===RU.grp&&w===id&&a.mode==='street'){a.mode='friend';a.owner=id;}}
+      ruBar();}
+    return;}
+  if(!RU.on||r!==RU.r||!c||c.grp!==RU.grp)return;RU.names[id]=String(name||'Friend').slice(0,16);
+  if(d.a==='catch'){if(c.mode==='rope'){if(id<ruMe()){toast(`😮 ${RU.names[id]} caught ${c.nm} first!`);c.mode='friend';c.owner=id;}}
+    else if(c.mode==='street'||c.mode==='friend'){c.mode='friend';c.owner=id;}ruBar();roamBtnKey='?';}
+  else if(d.a==='let'){if(c.mode==='friend'&&c.owner===id)ruLetGo(c,true);}
+  else if(d.a==='home')ruHome(c,id);}
+addEventListener('load',()=>{if(window.__net)window.__net.on((id,name,d)=>{if(d&&d.t==='roam')ruFromNet(id,name,d);});});
+
+/* ---------- moving them ---------- */
+let roamNear=null,roamBtnKey='',roamT=0;
+const nearHome=(g,P,extra)=>{const z=RU_ZONE[g];return Math.hypot(P.x-z.x,P.z-z.z)<(z.fence||z.r)+extra;};
+const ruFriend=id=>{const n=window.__net;return (n&&n.friends&&n.friends().get(id))||(RU.fake&&RU.fake[id])||null;};// fake: friends made up by the tests
+function roamFollow(c,P,face,dt){const back=face+Math.PI+.6,r=1.2+c.a.rad,tx=P.x+Math.sin(back)*r,tz=P.z+Math.cos(back)*r,dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
+  if(d>14){c.pos.set(tx,0,tz);return 0;}if(d>.2){const sp=Math.min(7,1+d*3),st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*6));return sp;}
+  c.face=angDamp(c.face,face,Math.min(1,dt*3));return 0;}
+function roamStep(dt){if(!started)return;roamT+=dt;const P=player.pos;
+  for(const c of ROAM){const a=c.a,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(c.mode==='zoo'){a.g.visible=false;continue;}const vis=dP<70;a.g.visible=vis;let sp=0;
+    if(c.mode==='rope'){sp=roamFollow(c,P,player.face,dt);a.graze=0;if(nearHome(c.grp,P,RU_HOME))ruHome(c,ruMe());}
+    else if(c.mode==='friend'){const o=ruFriend(c.owner);if(!o)ruLetGo(c,true);else{sp=roamFollow(c,o.pos,o.cur??o.face??0,dt);a.graze=0;}}
+    else{// on its own: when you walk up it stops and looks at you for a few seconds, then goes on its own way (it never comes after you)
+      const look=dP<2.4&&c.lookT<(RU.on?2:4);if(dP<2.4)c.lookT+=dt;else if(dP>4)c.lookT=0;
+      if(look){c.wait=0;c.face=angDamp(c.face,Math.atan2(P.x-c.pos.x,P.z-c.pos.z),Math.min(1,dt*4));a.graze+=(0-a.graze)*Math.min(1,dt*3);}
+      else if(c.wait>0){c.wait-=dt;a.graze+=(1-a.graze)*Math.min(1,dt*2);}// sniffing around
+      else if(c.mode==='street'){if(!c.wp.length){c.street=c.next;roamPlan(c);}
+        const w=c.wp[0],dx=w.x-c.pos.x,dz=w.z-c.pos.z,d=Math.hypot(dx,dz);
+        if(d<.12){c.wp.shift();c.wait=w.w||0;}
+        else{sp=RU_SPD;const st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*4));}
+        a.graze+=(0-a.graze)*Math.min(1,dt*3);}
+      else{// the meadow round the barn: amble to a spot, graze a while, amble on
+        if(!c.tgt)c.tgt=meadowSpot(meadowAng(c));const dx=c.tgt.x-c.pos.x,dz=c.tgt.z-c.pos.z,d=Math.hypot(dx,dz);
+        if(d<.15){c.tgt=null;c.wait=2+Math.random()*5;}
+        else{sp=ROAM_SPD;const st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;collide(c.pos,.25);c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*4));
+          if(Math.hypot(c.pos.x-BZ.x,c.pos.z-BZ.z)<BZ.fence+.8){c.tgt=null;c.wait=.5;}}
+        a.graze+=(0-a.graze)*Math.min(1,dt*3);}}
+    if(c.happy>0){c.happy-=dt;if(a.y<=0&&Math.random()<dt*2)a.vy=2;}
+    a.vy-=12*dt;a.y=Math.max(0,a.y+a.vy*dt);if(a.y<=0)a.vy=0;
+    if(!vis)continue;
+    c.pos.y=groundAt(c.pos.x,c.pos.z);a.pos.copy(c.pos);a.g.position.set(c.pos.x,c.pos.y+a.y,c.pos.z);a.g.rotation.y=c.face;a.update(dt,sp);}
+  // the ropes: from your hand (or a friend's) to the animal on it
+  ROAM.forEach((c,i)=>{const R0=ROPES[i];let h=null;
+    if(c.mode==='rope')h=av.g.position;else if(c.mode==='friend'){const o=ruFriend(c.owner);if(o)h=o.pos;}
+    if(!h||!c.a.g.visible){R0.visible=false;return;}
+    const hv=h.clone().add(new THREE.Vector3(0,.9,0)),b=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h*.7,0));
+    R0.visible=true;R0.position.copy(hv).add(b).multiplyScalar(.5);R0.scale.set(1,hv.distanceTo(b),1);R0.quaternion.setFromUnitVectors(LIMB_UP,b.sub(hv).normalize());});
+  // the whole state for friends, every few seconds
+  if(RU.on&&(RU.stT-=dt)<0){RU.stT=3;const cc={};for(const c of ROAM)if(c.mode==='rope')cc[c.nm]=ruMe();ruSend({a:'st',seed:RU.seed,g:RU.grp,h:RU.home,c:cc});}
+  if(!RU.on&&RU.endT&&roamT-RU.endT>9){RU.endT=0;ruBar();}
+  roamButton();}
+onTick.push(roamStep);
+const ropeMat=std('#c8a46a',{roughness:.9}),ROPES=ROAM.map(()=>{const m=M(cyl(.012,.012,1,6),ropeMat,0,0,0,scene,false,false);m.visible=false;return m;});
+
+/* ---------- buttons and the Round-up bar ---------- */
+{const st=document.createElement('style');st.textContent=`
+#roamBtn,#roamCatch{position:fixed;left:50%;transform:translateX(-50%);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5}
+#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 310px);background:linear-gradient(90deg,#f6b93b,#e58e26);box-shadow:0 6px 18px rgba(229,142,38,.45)}
+#roamCatch{bottom:calc(env(safe-area-inset-bottom) + 370px);background:linear-gradient(90deg,#a1887f,#6d4c41);box-shadow:0 6px 18px rgba(109,76,65,.4)}
+#roamCatch.go{background:linear-gradient(90deg,#ff6a3d,#e8336d);box-shadow:0 6px 18px rgba(232,51,109,.45)}
+#roamBtn:active,#roamCatch:active{transform:translateX(-50%) scale(.94)}
+body.dressing #roamBtn,body.talking #roamBtn,body.shopping #roamBtn,body.sp-on #roamBtn,body.dressing #roamCatch,body.talking #roamCatch,body.shopping #roamCatch,body.sp-on #roamCatch,
+body.dressing #ruBar,body.shopping #ruBar,body.sp-on #ruBar{display:none!important}
+#ruBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 156px);z-index:8;display:none;flex-direction:column;align-items:center;gap:5px;width:max-content;max-width:calc(100vw - 32px);pointer-events:none}
+#ruBar.show{display:flex}
+#ruBar b{background:#e8336d;color:#fff;border-radius:999px;padding:4px 12px;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
+#ruBar div{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+#ruBar span{background:rgba(255,255,255,.92);color:#3b2357;border-radius:999px;padding:4px 10px;font-weight:700;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
+#ruBar span.home{opacity:.6}#ruBar span.rope{background:#ffe2b8}#ruBar span.me{background:#ffd23f}
+#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}
+@media (max-height:520px){#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 185px)}#roamCatch{bottom:calc(env(safe-area-inset-bottom) + 240px)}#ruBar{top:calc(env(safe-area-inset-top) + 52px)}}`;
+  document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<button class="hud" id="roamBtn"></button><button class="hud" id="roamCatch"></button><div id="ruBar"></div>');}
+// the bar at the top: the Round-up is on, every animal and where it is (still out, on someone's rope, home), and the catches so far
+function ruBar(){const el=$('#ruBar');if(!RU.on&&!RU.endT){el.classList.remove('show');el.innerHTML='';return;}
+  const me=ruMe(),nm=id=>id===me?'You':ruEsc(RU.names[id]||'Friend'),src=RU.on?RU:RU.last;
+  const set=ruSet(),out=set.filter(c=>!RU.home[c.nm]).length;
+  const what=RU.grp==='zoo'?'Safari Round-up':'Round-up';
+  let h=RU.on?`<b>🚨 ${what} is on! ${out} of ${set.length} still out</b>`:`<b>🏁 ${what} done!</b>`;
+  h+='<div>'+set.map(c=>{const hm=RU.home[c.nm];if(hm)return `<span class="home">🏠 ${c.nm}<small>${nm(hm)}</small></span>`;
+    if(c.mode==='rope'||c.mode==='friend')return `<span class="rope">🪢 ${c.e} ${c.nm}<small>${nm(c.owner)}</small></span>`;
+    return `<span>${c.e} ${c.nm}</span>`;}).join('')+'</div>';
+  const ids=Object.keys(src.names||{});
+  if(ids.length>1)h+='<div>'+ids.sort((a,b)=>(src.sc[b]||0)-(src.sc[a]||0)).map(id=>`<span class="${id===me?'me':''}">${nm(id)} <small>🏠 ${src.sc[id]||0}</small></span>`).join('')+'</div>';
+  el.innerHTML=h;el.classList.add('show');}
+function roamButton(){const P=player.pos;let best=null,bd=ROAM_REACH;
+  if(!closetOpen&&!(typeof SW!=='undefined'&&SW.k>.3))for(const c of ROAM){if(c.mode==='friend'||c.mode==='zoo')continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(d<bd){bd=d;best=c;}}
+  roamNear=best;const rope=ROAM.find(c=>c.mode==='rope'),atBarn=!RU.on&&!RU.endT&&!closetOpen?(nearHome('barn',P,14)?'barn':nearHome('zoo',P,10)?'zoo':''):'';
+  const key=(best?best.nm:'')+'|'+(rope?rope.nm:'')+'|'+(RU.on?1:0)+'|'+atBarn;if(key===roamBtnKey)return;roamBtnKey=key;const b=$('#roamBtn'),k=$('#roamCatch');
+  if(best&&best!==rope){b.textContent=`${best.food[0][0]} Feed ${best.nm}`;b.style.display='block';}else b.style.display='none';
+  k.classList.remove('go');
+  if(rope){k.textContent=`🪢 Let go of ${rope.nm}`;k.style.display='block';}
+  else if(RU.on&&best&&best.mode==='street'){k.textContent=`🪢 Catch ${best.nm}`;k.style.display='block';}
+  else if(atBarn){k.textContent=atBarn==='zoo'?'🚨 Start a Safari Round-up!':'🚨 Start a Round-up!';k.dataset.g=atBarn;k.classList.add('go');k.style.display='block';}
+  else k.style.display='none';}
+function roamFeed(c){if(!c)return;const fd=rnd(c.food),top=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0));
+  floaties(top,fd[0],4);setTimeout(()=>floaties(top,'💖',5),350);sfx('munch');c.happy=1.6;c.a.happy=2;c.a.wig=1;c.a.speak(rnd(c.say));
+  RS.fed[c.nm]=1;persist();toast(`${c.e} ${c.nm} loves the ${fd[1]}!`);did('roamfeed',c.nm);}
+$('#roamBtn').onclick=()=>roamFeed(roamNear);
+$('#roamCatch').onclick=()=>{const rope=ROAM.find(c=>c.mode==='rope');if(rope)ruLetGo(rope);else if(RU.on)ruCatch(roamNear);else ruBegin($('#roamCatch').dataset.g||'barn');};
+
+// the animals on the minimap (during a Round-up only the ones still out), so you can go looking for them (heading-up, like drawMini in 26-map.js)
+onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=cv.getContext('2d'),S=cv.width,h=S/2,k=S/54,p=player.pos,
+  fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.08)}px serif`;x.textAlign='center';x.textBaseline='middle';
+  for(const c of ROAM){if(c.mode==='zoo'||(RU.on&&c.mode!=='street'))continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
+  x.restore();});
+
+// for challenges.js and the tests
+function roamState(){return {fed:Object.keys(RS.fed).length,n:ROAM.length,on:RU.on,grp:RU.grp,home:Object.keys(RU.home).length,sc:{...RU.sc},
+  rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,ruCatch,ruLetGo,ruFromNet,ruMe,BZ});});

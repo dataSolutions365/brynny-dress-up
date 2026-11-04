@@ -47,7 +47,8 @@ function peOut(c){const a=c.a;if(zooOpen&&zooSel===a)closeZoo();a.esc=true;a.ob.
 function peIn(c){const a=c.a;a.esc=false;c.tag.visible=false;c.mode='home';c.owner='';
   let [lx,lz]=IZ.toLocal(c.pos.x,c.pos.z);if(!iceOk(lx,lz,a.rad))[lx,lz]=a.spot(a.rad);a.lx=lx;a.lz=lz;a.y=0;a.wait=1;a.tgt=a.spot(a.rad,a);a.face=Math.atan2(-lx,-lz);placeFarm(a);}
 // everyone starts the same escape from the same seed, so the animals run to the same spots on every phone
-function peStart(r,seed,who,whoName){if(PE.on)return;Object.assign(PE,{on:true,r,seed,home:{},sc:{},names:{},stT:0,endT:0});
+function peStart(r,seed,who,whoName){if(PE.on||RU.on)return;// one at a time: not during a barn or safari Round-up (26g-town-animals.js)
+  Object.assign(PE,{on:true,r,seed,home:{},sc:{},names:{},stT:0,endT:0});
   PE.names[peMe()]=SAVE.name||'You';if(who&&who!==peMe())PE.names[who]=String(whoName||'Friend').slice(0,16);
   const rr=peRand(seed);if(ICS.on)iceSkateOff();if(ICF.on)iceFishStop();
   for(const c of PE_ANI){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#bfe8ff',16,1.4);peOut(c);

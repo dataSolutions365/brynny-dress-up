@@ -33,7 +33,10 @@ try {
   await page.route(/gstatic\.com\/firebasejs|firestore\.googleapis\.com/, r => r.abort());
   // a few challenges already done, so the picture shows both kinds
   await page.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1);
-    localStorage.setItem('brynny3d.v1', JSON.stringify({ chal: { done: { pose: true, runTwirl: true, pose5: true, wish: true }, n: { cake: 0 }, u: {}, found: 0, stars: 9, day: null, intro: 1 } })); });
+    // today's 3 daily challenges are fixed too (none at the Runway), so the finished Runway card doesn't depend on the date
+    const d = new Date(), k = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    localStorage.setItem('brynny3d.v1', JSON.stringify({ chal: { done: { pose: true, runTwirl: true, pose5: true, wish: true }, n: { cake: 0 }, u: {}, found: 0, stars: 9,
+      day: { k, ids: ['d_feed', 'd_moves', 'd_stars'], n: {}, u: {}, done: {}, bonus: false }, intro: 1 } })); });
   await page.goto(url, { waitUntil: 'load', timeout: 120_000 });
   await page.waitForFunction(() => window.__game && window.__chal && document.querySelector('#welcome.show') && !document.querySelector('#loading:not(.done)'), null, { timeout: 120_000 });
   await page.evaluate(() => document.querySelector('#play').click());

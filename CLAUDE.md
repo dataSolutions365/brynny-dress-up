@@ -76,6 +76,15 @@
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
+- 🐾 Barn animals and the 🚨 Round-up (`3d/src/26g-town-animals.js`): four barn animals (Waddles, Billy, Truffle, Woolly, in `ROAM_LIST`)
+  wander the meadow round the Happy Barn and never follow you (walking up makes one stop and look at you, then it carries on).
+  "Start a Round-up" near the barn sends them out onto their own two streets each (street = the `ang` of a place with a path) until
+  they're caught: 🪢 Catch puts one on a rope behind you until you reach the barn. A bar at the top lists who's still out.
+  Friends online in the room join in through `{t:'roam'}` messages (online.js passes them on); whoever brings the most home wins
+  (`did('roundup', 0)`, which also counts as a win for the 🏆 rides). Challenges are in the 🗺️ Explore tab of `3d/challenges.js`.
+  🦁 A Safari Round-up starts at the Safari Zoo the same way, with the safari runaways in `SAFARI_LIST` (hidden copies until it starts,
+  walked back to the zoo). Only one Round-up runs at a time (`RU.grp`).
+  Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - ❄️ Polar Ice (`arctic` zone): the place is `3d/src/12h-place-arctic.js` (`ICE` has where the rink, lake and its fishing holes, and the igloo spot are,
   and `onRink()`), the animals are `3d/src/24c9g-arctic-animals.js` (polar bear, walrus, penguin and chick, arctic fox and wolf, snowy owl, all built
   to look real, not cartoony; added to the zoo animals through `ZOOA` with `arctic:1`), and the 🐻‍❄️ Nanuq, 🦭 Tusk (swims), 🦉 Ukpik (flies) and
