@@ -2,7 +2,7 @@
 const R=72;// island radius (was 44.5; grown so places have room to breathe)
 M(new THREE.CylinderGeometry(R+1.6,R+3.2,3,96),std('#f1d9a6',{map:TEX.sand,roughness:1}),0,-1.5,0,scene,false,true);
 const grass=M(new THREE.CircleGeometry(R,96),groundMat,0,.005,0,scene,false,true);grass.rotation.x=-Math.PI/2;
-const waterGeo=new THREE.PlaneGeometry(520,520,110,110);waterGeo.rotateX(-Math.PI/2);
+const waterGeo=new THREE.PlaneGeometry(640,640,110,110);waterGeo.rotateX(-Math.PI/2);
 const water=M(waterGeo,phys('#2ab0d4',{roughness:.06,metalness:.05,clearcoat:1,clearcoatRoughness:.05}),0,-.35,0,scene,false,true);
 const wpos=waterGeo.attributes.position;const wbase=Float32Array.from(wpos.array);let wTick=0;
 anims.push(t=>{if(++wTick%2)return;for(let i=0;i<wpos.count;i++){const x=wbase[i*3],z=wbase[i*3+2];wpos.array[i*3+1]=Math.sin(x*.35+t*1.3)*.07+Math.sin(z*.27+t*1.05)*.07+Math.sin((x+z)*.8+t*2.2)*.02;}wpos.needsUpdate=true;waterGeo.computeVertexNormals();});

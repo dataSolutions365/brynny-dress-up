@@ -45,6 +45,8 @@ jobs:
         run: node 3d/tests/restaurant.mjs
       - name: Lookout Mountain and the Treetop Adventure (footbridge, ladder, rope bridges, rock wall, trail, zip lines) work
         run: node 3d/tests/adventure.mjs
+      - name: The big world past the canal is there and blocked off, open land works, and the map shows it all
+        run: node 3d/tests/big-world.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
       - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)
