@@ -10340,7 +10340,7 @@ function mapZoom(i,fx,fy){const S=mapCv.width;i=Math.max(0,Math.min(MAPZ.length-
 function mapCenterOn(wx,wz){const k=mapK();mv.ox=-wx*k;mv.oy=-wz*k;mapClamp();}
 let mapOpen=false;
 function openMap(){if(closetOpen)return;mapOpen=true;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#mapStop').style.display=mapDest?'inline-block':'none';
-  $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:'Tap a place and a sparkly arrow will show you the way!';
+  $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:hasFastPass()?'Tap a place to 🎟️ zip there, or follow a sparkly arrow!':'Tap a place and a sparkly arrow will show you the way!';
   if(mv.zi>0)mapCenterOn(player.pos.x,player.pos.z);
   $('#map').classList.add('show');sfx('pop');(function loop(){if(!mapOpen)return;drawMap();requestAnimationFrame(loop);})();}
 function closeMap(){mapOpen=false;$('#map').classList.remove('show');}
@@ -10371,6 +10371,7 @@ mapCv.addEventListener('click',e=>{if(mdrag>mapCv.width*.02)return;// that was a
   for(const it of lay){const b=it.lb;if(sx>=b.x0-4&&sx<=b.x1+4&&sy>=b.y0-4&&sy<=b.y1+4){best=it.z;bd=0;break;}}
   if(!best)for(const it of lay){const d=Math.hypot(sx-it.px,sy-it.py);if(d<Math.max(it.z.r*k,S*.06)&&d<bd){bd=d;best=it.z;}}
   if(!best)return;if(curZone===best){toast(`You're already at ${zLabel(best)}! ✨`);return;}
+  if(fastPassAsk(best))return;// 🎟️ Fast Pass: zip there or follow the arrow (26i-fast-pass.js)
   setDest(best);sfx('star');closeMap();toast(`Follow the pink arrow on the map to ${zLabel(best)} 💗`);});
 $('#mini').addEventListener('click',openMap);
 $('#mapClose').onclick=closeMap;
@@ -11992,6 +11993,48 @@ ADV={plat:null,trailGo:false,onTop:false};
 // for the test (3d/tests/adventure.mjs)
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{adv:()=>({mode:ADS.mode,up:HIGH.on,plat:ADV.plat,s:ADS.s,btn:advKey,t:clock.elapsedTime,harness:!!(advH&&advH.parent)}),
   ADV_PARTS:{RC,RB,RLAD,ZIPS,WALL,MT,TRAIL,FB,MZ,TZ},advGo:{ladderUp,ladderDown,wallClimb,zipGo},upSurf,mtH,fbDeck});});
+// ---- src/26i-fast-pass.js ----
+/* ================= 🎟️ FAST PASS: zip to any place in town ================= */
+// A power you buy once in the shop's ⚡ Powers tab (with coins) and keep forever, like a fast pass at a theme park.
+// Once it's yours, tapping a place on the 🗺️ map, or 📍 Go in the ⭐ Star Challenges (Places tab and every challenge), asks:
+// 🎟️ Zip there now (you pop up at the front of that place in a puff of sparkles) or 🗺️ Show me the way (the pink arrow, as before).
+// Your barn ride comes with you; a bike or skateboard does too, except into the water at 🐬 Dolphin Bay, where you swim.
+// It's off during a 🛵 delivery rush, a 🚨 Round-up and while you're on a ladder, wall or zip line, so those stay fair.
+// Friends online just see you pop up somewhere else (they get your position as usual).
+SHOP.push({k:'power:fastpass',tab:'powers',e:'🎟️',n:'Fast Pass',p:250,
+  d:'Zip to any place in town in a puff of sparkles! Tap a place on the 🗺️ map (or 📍 Go on a challenge) and pick 🎟️ Zip there now. Buy it once, use it forever.'});
+STABS.splice(1,0,['powers','⚡','Powers']);// right after Outfits, so it's easy to find
+SHINT.powers='Powers are yours forever once you buy them.';
+const hasFastPass=()=>owns('power:fastpass');
+// where you pop up: the edge of the place on the side facing the plaza, where you'd walk in, so you're not inside a
+// building or standing on one of its glowing pads (that would open the barn, the bakery and so on by itself)
+function fpSpot(z){if(!z.d)return [0,z.r-1.2];// the Sparkle Studio is in the middle: stand south of the closet pad
+  if(z.id==='bay')return [z.x,z.z];// right in the water with the dolphins
+  const f=z.r-.4,ux=-z.x/z.d,uz=-z.z/z.d;return [z.x+ux*f,z.z+uz*f];}
+// why the pass can't be used right now (or '' when it can)
+function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 Ride it there!';
+  if(RU.on)return 'No fast pass during a Round-up! 🚨 Catch them the fun way!';
+  if(ADS.mode)return 'Hold on tight until you get off! 🦺';
+  if(handsBusy()||ct.on)return 'Finish what you are doing first ✨';return '';}
+function fastTravel(z){const why=fpBlocked();if(why){toast(why);return false;}
+  const p=player.pos;burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ffd23f',40,3);sfx('star');
+  if(FLY.on)flyEnd(true);// a flying ride comes down at the other end
+  if(z.id==='bay'){if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);if(barnRide&&!barnRide.F.swim)stopRide(true);}
+  const [x,w]=fpSpot(z);p.x=x;p.z=w;collide(p);HIGH.on=false;p.y=groundAt(p.x,p.z);player.vy=0;player.onGround=true;player.speed=0;
+  player.face=z.d?Math.atan2(z.x,z.z):Math.PI;cam.yaw=player.face+Math.PI;cam.fv=null;// facing into the place
+  setDest(null);did('fastpass',z.id);
+  setTimeout(()=>{burst(player.pos.clone().add(new THREE.Vector3(0,1,0)),'#ff8fc8',50,3);sfx('tada');},60);
+  return true;}
+// the choice card: zip there, or follow the arrow
+let fpZone=null;
+function fastPassAsk(z){if(!hasFastPass())return false;fpZone=z;closeMap();
+  $('#fpCard').innerHTML=`<div class="bigE">🎟️</div><h2>${z.name}</h2><p>Use your Fast Pass to zip there right now?</p>
+    <button class="btn" data-fp="zip">🎟️ Zip there now!</button><button class="btn ghost" data-fp="walk">🗺️ Show me the way</button>`;
+  $('#fp').classList.add('show');sfx('pop');return true;}
+$('#fp').onclick=e=>{const b=e.target.closest('[data-fp]');if(e.target.id!=='fp'&&!b)return;$('#fp').classList.remove('show');const z=fpZone;fpZone=null;if(!b||!z)return;
+  if(b.dataset.fp==='zip')fastTravel(z);
+  else{setDest(z);sfx('star');toast(`Follow the pink arrow on the map to ${zLabel(z)} 💗`);}};
+Object.assign(window.__game,{hasFastPass,fastPassAsk,fastTravel,mapW2s,mapLayout});
 // ---- src/27-daddy-powers.js ----
 /* ================= 🦸 SECRET DADDY POWERS (temporary, for the family demo) =================
    Type your name as " Daddy" (with a SPACE in front) on the welcome screen or in Settings. The space is trimmed off, so

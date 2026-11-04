@@ -477,7 +477,7 @@ $('#chal').addEventListener('click', e => {
   if (e.target.id === 'chal') return closePanel();
   const t = e.target.closest('[data-tab]'); if (t) { tab = t.dataset.tab; G.sfx('pop'); render(); $('#chalList').scrollTop = 0; return; }
   const g = e.target.closest('[data-go]');
-  if (g) { const z = Z[g.dataset.go]; G.setDest(z); G.sfx('star'); closePanel(); G.toast(`Follow the pink arrow on the map to ${z.name} 💗`); }
+  if (g) { const z = Z[g.dataset.go]; if (G.fastPassAsk && G.fastPassAsk(z)) { closePanel(); return; } G.setDest(z); G.sfx('star'); closePanel(); G.toast(`Follow the pink arrow on the map to ${z.name} 💗`); }
 });
 addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.code === 'Escape' && panelOpen) closePanel(); });
 

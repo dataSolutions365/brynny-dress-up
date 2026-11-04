@@ -58,6 +58,10 @@
 - 📍 The Places tab of ⭐ Star Challenges (`placesHTML()` in `3d/challenges.js`) is a legend of every place in town with the challenges
   you do there, grouped by each challenge's `go` place (no `go` puts it under "Anywhere in town"). Give a new challenge a `go` and it shows up
   under that place by itself. `3d/tests/challenge-places.mjs` (run on every PR) checks every challenge is listed once.
+- 🎟️ Fast Pass (`3d/src/26i-fast-pass.js`): a power bought once with coins in the shop's ⚡ Powers tab (`power:fastpass`). Once owned,
+  tapping a place on the map or 📍 Go in the Star Challenges asks "Zip there now" or "Show me the way" (`fastPassAsk`), and `fastTravel(z)`
+  drops you at the edge of that place facing the plaza (`fpSpot`, never on a pad). It's off during a delivery rush, a Round-up and on the ropes.
+  When you add a place to ZONES, `3d/tests/fast-pass.mjs` (run on every PR) checks you land in it and can walk off.
 - 🤸 Jump Park (behind Christmas Village): the building is `3d/src/12e-place-jump-park.js`, the bouncing, flips, slam dunks and
   foam pit are `3d/src/26e-jump-park.js` (25-game-loop.js asks `jpLand()` on every landing; the Jump button calls `jpJump()`).
   `3d/tests/jump-park.mjs` (run on every PR) checks you bounce, go higher and flip when tapping Jump, dunk, and sink into the pit.
