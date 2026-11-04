@@ -445,6 +445,8 @@ class Avatar{
     if(this.biking)bikePose(this,tgt,sp,air,t);
     // ramps, grinds and tricks at the skate park (24k-skate-park.js)
     if(this.parkPose)this.parkPose(this,tgt,sp,air,t);
+    // sitting in a tube, lying on a waterslide or standing on a surfboard at the waterpark (26w-waterpark.js)
+    if(this.wpPose)this.wpPose(this,tgt,sp,air,t);
     // dribbling, kicking and passing a ball (24g-ball-play.js)
     if(this.ballMove)ballPose(this,tgt,sp,t);
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);

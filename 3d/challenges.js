@@ -233,6 +233,18 @@ const ALL_LIST = [
   { id: 'xs_santa', tab: 'xmas', hol: 'christmas', e: '👋', t: 'Say hi to Santa (he walks round the big tree)', r: 1, go: 'studio', ev: { k: 'santa' } },
   { id: 'xs_gift', tab: 'xmas', hol: 'christmas', e: '🎁', t: 'Get a present from Santa', r: 1, go: 'studio', ev: { k: 'santagift' } },
   { id: 'xs_treeDance', tab: 'xmas', hol: 'christmas', e: '🎄', t: 'Dance under the big Christmas tree', r: 1, go: 'studio', ev: { k: 'act', a: a => a === 'dance', z: 'studio' } },
+  // 💦 Splash Waterpark across the bridge behind the Runway (3d/src/26w-waterpark.js): slides, the wave pool, the lazy river and the floating playground
+  { id: 'wp_twister', tab: 'water', e: '🌀', t: 'Ride the Twister tube slide', r: 1, go: 'water', ev: { k: 'wpslide', a: a => a === 'twister' } },
+  { id: 'wp_racer', tab: 'water', e: '💨', t: 'Zoom down the Racer body slide', r: 1, go: 'water', ev: { k: 'wpslide', a: a => a === 'racer' } },
+  { id: 'wp_slides10', tab: 'water', e: '🎢', t: 'Go down the waterslides 10 times', r: 2, goal: 10, go: 'water', ev: { k: 'wpslide' } },
+  { id: 'wp_lazy', tab: 'water', e: '🛟', t: 'Float all the way round the lazy river', r: 1, go: 'water', ev: { k: 'wplazy' } },
+  { id: 'wp_waves', tab: 'water', e: '🌊', t: 'Swim in the wave pool when the waves roll in', r: 1, go: 'water', ev: { k: 'wpwave' } },
+  { id: 'wp_surf', tab: 'water', e: '🏄', t: 'Catch a wave on a surfboard', r: 1, go: 'water', ev: { k: 'wpsurf' } },
+  { id: 'wp_surfBig', tab: 'water', e: '🤙', t: 'Surf a wave all the way to the beach', r: 2, go: 'water', ev: { k: 'wpsurf', a: d => d >= 8 } },
+  { id: 'wp_surf5', tab: 'water', e: '🏆', t: 'Ride 5 waves', r: 3, goal: 5, go: 'water', ev: { k: 'wpsurf' } },
+  { id: 'wp_playSlide', tab: 'water', e: '🎈', t: 'Slide down the big inflatable slide in the lagoon', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'slide' } },
+  { id: 'wp_bounce', tab: 'water', e: '🤸', t: 'Bounce off the yellow bouncer into the water', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'bounce' } },
+  { id: 'wp_jump', tab: 'water', e: '💦', t: 'Jump off the top of the step tower', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'jump' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 // the list in play: everything except holiday challenges when it isn't their holiday (the same array, so window.__chal.list stays current)
@@ -259,8 +271,9 @@ const DAILY = [
   { id: 'd_icefish', e: '🎣', t: 'Catch 2 fish ice fishing', goal: 2, go: 'arctic', ev: { k: 'icefish' } },
   { id: 'd_icespin', e: '⛸️', t: 'Do 3 spins on the ice rink', goal: 3, go: 'arctic', ev: { k: 'icespin' } },
   { id: 'd_icehome', e: '🪢', t: 'Bring 2 runaways home in a Polar escape', goal: 2, go: 'arctic', ev: { k: 'icehome' } },
+  { id: 'd_slide', e: '🌀', t: 'Go down a waterslide 2 times', goal: 2, go: 'water', ev: { k: 'wpslide' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
