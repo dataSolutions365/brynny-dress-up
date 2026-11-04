@@ -7,6 +7,7 @@ const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=m
 function drawWorld(x,w2s,k,size){
   x.fillStyle='#2ab0d4';x.fillRect(0,0,size,size);
   const [cx,cy]=w2s(0,0);
+  worldMap(x,w2s,k);// the big world past the canal, blocked off for now (26z-big-world.js)
   canalBank(x,cx,cy,k);// the grassy far bank of the canal (26f-ocean.js)
   advMap(x,w2s,k);// the footbridge over to Lookout Mountain and the ropes course (26h-adventure.js)
   x.beginPath();x.arc(cx,cy,(R+2.4)*k,0,Math.PI*2);x.fillStyle='#f1d9a6';x.fill();
@@ -42,18 +43,19 @@ function drawMini(){const S=miniCv.width,h=S/2,k=S/54;// ~54 world units across
   drawArrow(x,h,h,pa,15,'#8e6cff');x.restore();}
 // full map is fixed (start view: the plaza is "up"), so places never move around.
 // It can zoom in (➕ / pinch) and be dragged around, so names stay big enough to read on a phone.
-const MAPW=R+36,MAPZ=[1,1.6,2.4];
+// 26z-big-world.js grows MAPW to the whole world, with one more zoom step out to see it all (the map opens on step 1, the island)
+let MAPW=R+36,MAPZ=[1,1.6,2.4],MAPZ0=1;// MAPZ0: the zoom that shows the island
 const mv={zi:0,z:1,ox:0,oy:0};// zoom step, zoom, and how far the view is dragged (canvas px)
 const mapK=()=>mapCv.width/(MAPW*2)*mv.z;
 // world (x,z) -> canvas px; lay=true gives the un-dragged spot used for laying out tags
 const mapW2s=(wx,wz,lay)=>{const S=mapCv.width,k=mapK();return [S/2+(lay?0:mv.ox)+wx*k,S/2+(lay?0:mv.oy)+wz*k];};
-const mapTS=()=>Math.min(1.35,Math.pow(mv.z,.45));// tags grow a little when zoomed in
+const mapTS=()=>Math.min(1.35,Math.pow(mv.z/MAPZ0,.45));// tags grow a little when zoomed in
 const mapFont=S=>`700 ${Math.round(S*.03*mapTS())}px system-ui,-apple-system,sans-serif`;
 // Where each place's emoji and name tag go. Tags try below, above, then beside the place and take the first
 // spot that doesn't cover another tag or emoji, so names never sit on top of each other.
 let mapLay=null;
 function mapLayout(){const S=mapCv.width;if(mapLay&&mapLay.S===S&&mapLay.n===ZONES.length&&mapLay.zm===mv.z)return mapLay.z;
-  const x=mapX,k=mapK(),ts=mapTS(),h=Math.round(S*.046*ts),pad=S*.008,c=S/2,rIn=MAPW*k-S*.01;x.font=mapFont(S);
+  const x=mapX,k=mapK(),ts=mapTS(),h=Math.round(S*.046*ts),pad=S*.008,c=S/2,VW=Math.min(MAPW,R+36),rIn=VW*k-S*.01;x.font=mapFont(S);// VW: keep tags round the island
   const items=ZONES.map(z=>{const [px,py]=mapW2s(z.x,z.z,true),e=Math.round(Math.min(S*.06*ts,Math.max(S*.042*ts,z.r*k*1.05)));
     return {z,px,py,e,t:zLabel(z),w:x.measureText(zLabel(z)).width+S*.028*ts,eb:{x0:px-e*.55,y0:py-e*.62,x1:px+e*.55,y1:py+e*.48}};});
   const hit=(a,b,p=pad)=>a.x0<b.x1+p&&b.x0<a.x1+p&&a.y0<b.y1+p&&b.y0<a.y1+p;
@@ -69,7 +71,7 @@ function mapLayout(){const S=mapCv.width;if(mapLay&&mapLay.S===S&&mapLay.n===ZON
         const cands=[[px,dn],[px,up],[px+sx,dn],[px-sx,dn],[px+sx,up],[px-sx,up],[px+e*.55+w*.5+4,py],[px-e*.55-w*.5-4,py]];
         for(let [ci,[cx,cy]] of cands.entries()){
           // keep tags over the map; poking a little past the shore onto the water is fine
-          cx=Math.max(c-MAPW*k+w/2+4,Math.min(c+MAPW*k-w/2-4,cx));
+          cx=Math.max(c-VW*k+w/2+4,Math.min(c+VW*k-w/2-4,cx));
           const b={x0:cx-w/2,y0:cy-hh/2,x1:cx+w/2,y1:cy+hh/2,lines:v.lines};
           const sc=(inside(b)?0:.5)+placed.filter(o=>hit(b,o)).length*100+items.filter(o=>o!==it&&hit(b,o.eb)).length*100+(hit(b,it.eb,-2)?100:0)+[0,.1,.3,.3,.4,.4,.7,.7][ci]+(v.lines.length>1?.25:0);
           if(sc<bs){bs=sc;best=b;}if(sc<.05)break;}}
@@ -86,10 +88,12 @@ function drawMap(){const S=mapCv.width,k=mapK(),x=mapX,ts=mapTS();drawWorld(x,ma
   x.save();x.translate(mv.ox,mv.oy);
   x.textAlign='center';x.textBaseline='middle';const lay=mapLayout(),h=S*.046*ts;
   for(const it of lay){const z=it.z;x.font=`${it.e}px serif`;x.fillText(zEmoji(z),it.px,it.py-it.e*.07);}
-  for(const it of lay){const z=it.z,b=it.lb,cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;x.font=mapFont(S);
+  // zoomed all the way out (the whole world) the places are too small for names: just their emojis
+  if(mv.zi>0)for(const it of lay){const z=it.z,b=it.lb,cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;x.font=mapFont(S);
     x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.86)';x.beginPath();x.roundRect?x.roundRect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0,h/2):x.rect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0);x.fill();
     x.fillStyle='#fff';b.lines.forEach((t,i)=>x.fillText(t,cx,cy+1+(i-(b.lines.length-1)/2)*h*.72));
     if(window.__chal&&window.__chal.left(z.id)){x.font=`${Math.round(S*.04*ts)}px serif`;x.fillText('⭐',it.px+it.e*.6,it.py-it.e*.6);}}
+  worldMapTags(x,S,ts);// 🔒 the blocked-off regions (26z-big-world.js)
   x.restore();x.textAlign='center';x.textBaseline='middle';
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=mapW2s(o.pos.x,o.pos.z);x.beginPath();x.arc(ox,oy,S*.016,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
   const [px,py]=mapW2s(player.pos.x,player.pos.z);
@@ -108,7 +112,7 @@ function mapCenterOn(wx,wz){const k=mapK();mv.ox=-wx*k;mv.oy=-wz*k;mapClamp();}
 let mapOpen=false;
 function openMap(){if(closetOpen)return;mapOpen=true;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#mapStop').style.display=mapDest?'inline-block':'none';
   $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:hasFastPass()?'Tap a place to 🎟️ zip there, or follow a sparkly arrow!':'Tap a place and a sparkly arrow will show you the way!';
-  if(mv.zi>0)mapCenterOn(player.pos.x,player.pos.z);
+  if(mv.zi>1)mapCenterOn(player.pos.x,player.pos.z);else if(mv.zi===1)mapCenterOn(0,0);
   $('#map').classList.add('show');sfx('pop');(function loop(){if(!mapOpen)return;drawMap();requestAnimationFrame(loop);})();}
 function closeMap(){mapOpen=false;$('#map').classList.remove('show');}
 // 3D guide beam over the place you're going to
@@ -137,7 +141,7 @@ mapCv.addEventListener('click',e=>{if(mdrag>mapCv.width*.02)return;// that was a
   const S=mapCv.width,k=mapK(),lay=mapLayout();let best=null,bd=1e9;
   for(const it of lay){const b=it.lb;if(sx>=b.x0-4&&sx<=b.x1+4&&sy>=b.y0-4&&sy<=b.y1+4){best=it.z;bd=0;break;}}
   if(!best)for(const it of lay){const d=Math.hypot(sx-it.px,sy-it.py);if(d<Math.max(it.z.r*k,S*.06)&&d<bd){bd=d;best=it.z;}}
-  if(!best)return;if(curZone===best){toast(`You're already at ${zLabel(best)}! ✨`);return;}
+  if(!best){worldMapTap(sx,sy);return;}if(curZone===best){toast(`You're already at ${zLabel(best)}! ✨`);return;}
   if(fastPassAsk(best))return;// 🎟️ Fast Pass: zip there or follow the arrow (26i-fast-pass.js)
   setDest(best);sfx('star');closeMap();toast(`Follow the pink arrow on the map to ${zLabel(best)} 💗`);});
 $('#mini').addEventListener('click',openMap);
