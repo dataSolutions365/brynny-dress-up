@@ -68,6 +68,13 @@
   and the 🛵 delivery rush (3 customers at places around town, a time limit, the food box on your back; `did('deliver', 0)` is a win
   and counts toward the 🏆 earned rides). Add a food by adding it to `FOOD_MAIN`/`FOOD_SWEET` and a builder in `FOOD_BUILD`
   (and its id to `FOOD_MAINS`/`FOOD_SWEETS` in `3d/challenges.js`). `3d/tests/restaurant.mjs` (run on every PR) eats a meal and wins a rush.
+- ⛰️ Lookout Mountain and 🌲 Treetop Adventure: `3d/src/26h-adventure.js`, on the canal's far bank (angles 92 to 136), over a wooden footbridge.
+  Places on the far bank push their own walkable sector into `BANK_LAND` and their footbridges into `BANK_BRIDGES` (both in `3d/src/26f-ocean.js`);
+  `collide()` asks `bankLand()` first. Raised walkways (the footbridge deck, platforms, rope bridges) are `SURF` entries: they only count as ground
+  once you're up on them (`HIGH.on`), so swimmers go under the footbridge and people walk under the platforms. The mountain's shape is one function,
+  `mtH()`, used for both the rock you see and the ground you walk on; `advBlock()` stops walking up the steep rock (only the `TRAIL` and the climbing
+  `WALL` go up) and stops you stepping off the ropes course (the harness). `advStep()` moves you on the ladder, the wall and the `ZIPS`; friends see
+  it through the 'adv' entry in `SHOW`. `3d/tests/adventure.mjs` (run on every PR) does the whole thing.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
