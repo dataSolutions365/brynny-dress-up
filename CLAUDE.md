@@ -113,6 +113,9 @@
   (`did('roundup', 0)`, which also counts as a win for the 🏆 rides). Challenges are in the 🗺️ Explore tab of `3d/challenges.js`.
   🦁 A Safari Round-up starts at the Safari Zoo the same way, with the safari runaways in `SAFARI_LIST` (hidden copies until it starts,
   walked back to the zoo). Only one Round-up runs at a time (`RU.grp`).
+  🌪️ The All-Animal Round-up (`RU.grp` 'all') starts by the Sparkle Studio: every runaway (barn, safari, and the polar ones in `POLAR_LIST`
+  once Polar Ice is in town) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
+  close and then stops for a breather; you can hold 3 on ropes (`ropeMax`) and each goes to its own home.
   Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
