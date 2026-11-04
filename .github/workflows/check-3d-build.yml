@@ -53,6 +53,8 @@ jobs:
         run: node 3d/tests/waterpark.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
+      - name: The Fast Pass from the shop zips you to every place in town
+        run: node 3d/tests/fast-pass.mjs
       - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)
         run: node 3d/tests/townspeople.mjs
       - name: Christmas in town - the big tree, lights, Santa, snowball fights and snowmen

@@ -8414,7 +8414,7 @@ for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rh
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}a.dust.forEach(d=>d.visible=false);ZA.push(a);scene.add(a.g);[a.lx,a.lz]=a.spot(a.rad);placeFarm(a);}
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
-  let best=null,bd=1e9;for(const a of ZA){const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
+  let best=null,bd=1e9;for(const a of ZA){if(a.esc)continue;const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
   if(best!==zooNear){zooNear=best;const b=$('#zooBtn');if(best){b.textContent=`${best.F.e} Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`;b.style.display='block';}else b.style.display='none';}}
 $('#zooBtn').onclick=()=>{if(zooNear)openZoo(zooNear);};
 function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpen=true;zooSel=a;$('#zooBtn').style.display='none';zooNear=null;
@@ -8436,7 +8436,7 @@ $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;i
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
-function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA){stepFarm(a,dt);if(a.F.swim)swimSink(a,null,a.pos,dt);}zooButton(p);
+function zooStep(p,dt){if(Math.hypot(p.x-ZZ.x,p.z-ZZ.z)<40||zooOpen)for(const a of ZA){if(a.esc)continue;stepFarm(a,dt);if(a.F.swim)swimSink(a,null,a.pos,dt);}zooButton(p);
   if(zooOpen&&zooSel&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>8)closeZoo();}
 
 /* ---------- the animal book: every animal in the game, where to find it and what it costs ---------- */
@@ -11179,7 +11179,7 @@ function mapZoom(i,fx,fy){const S=mapCv.width;i=Math.max(0,Math.min(MAPZ.length-
 function mapCenterOn(wx,wz){const k=mapK();mv.ox=-wx*k;mv.oy=-wz*k;mapClamp();}
 let mapOpen=false;
 function openMap(){if(closetOpen)return;mapOpen=true;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#mapStop').style.display=mapDest?'inline-block':'none';
-  $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:'Tap a place and a sparkly arrow will show you the way!';
+  $('#mapTip').textContent=mapDest?`Going to ${zLabel(mapDest)}. Tap another place to change.`:hasFastPass()?'Tap a place to 🎟️ zip there, or follow a sparkly arrow!':'Tap a place and a sparkly arrow will show you the way!';
   if(mv.zi>1)mapCenterOn(player.pos.x,player.pos.z);else if(mv.zi===1)mapCenterOn(0,0);
   $('#map').classList.add('show');sfx('pop');(function loop(){if(!mapOpen)return;drawMap();requestAnimationFrame(loop);})();}
 function closeMap(){mapOpen=false;$('#map').classList.remove('show');}
@@ -11210,6 +11210,7 @@ mapCv.addEventListener('click',e=>{if(mdrag>mapCv.width*.02)return;// that was a
   for(const it of lay){const b=it.lb;if(sx>=b.x0-4&&sx<=b.x1+4&&sy>=b.y0-4&&sy<=b.y1+4){best=it.z;bd=0;break;}}
   if(!best)for(const it of lay){const d=Math.hypot(sx-it.px,sy-it.py);if(d<Math.max(it.z.r*k,S*.06)&&d<bd){bd=d;best=it.z;}}
   if(!best){worldMapTap(sx,sy);return;}if(curZone===best){toast(`You're already at ${zLabel(best)}! ✨`);return;}
+  if(fastPassAsk(best))return;// 🎟️ Fast Pass: zip there or follow the arrow (26i-fast-pass.js)
   setDest(best);sfx('star');closeMap();toast(`Follow the pink arrow on the map to ${zLabel(best)} 💗`);});
 $('#mini').addEventListener('click',openMap);
 $('#mapClose').onclick=closeMap;
@@ -12265,28 +12266,28 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{water
      giraffe and Tembo the baby elephant, in SAFARI_LIST). They live in the zoo with the others (hidden copies until a Safari Round-up starts),
      and you walk them back to the zoo. Only one Round-up runs at a time (RU.grp is 'barn' or 'zoo').
    - 🌪️ The All-Animal Round-up (Preston's idea): tap "Start the All-Animal Round-up!" by the ✨ Sparkle Studio in the middle of town and
-     EVERY runaway breaks out at once (the barn four, the safari four, and the polar four when ❄️ Polar Ice is there, POLAR_LIST), right
+     EVERY animal breaks out at once (the barn four, every animal in the Safari Zoo, and every polar one when ❄️ Polar Ice is there), right
      round you so you see lots of them. They don't keep to the streets: they run all over town (mode 'loose', any grass or path you could
      walk on, looseSpot), and when you get close they dash away (flee), then stop for a breather (tired) and that's your chance. You can walk
      up to 3 on ropes at once (ropeMax), and each one goes home to its own place (barn, zoo or Polar Ice). A timer runs; RS.allBest is your best.
-   - The models are the barn's and the zoo's (FarmAnimal in 24d-barn.js). Each one hides when it's far from you (iPhone memory). */
+   - The safari and polar runaways are the zoo's and Polar Ice's own animals (ZA, IA), not copies: while one is out (a.esc) its pen is
+     empty and its own place stops moving it; back home it goes into its pen again (penOut/penIn). The barn four live in the meadow. */
 const ROAM_LIST=[
   {k:'duck',nm:'Waddles',food:[['🌽','corn'],['🍉','melon']],streets:[330,0],say:['Quack quack! 🦆','*waddle waddle*','I\'m exploring! 🗺️']},
   {k:'goat',nm:'Billy',food:[['🍎','apple'],['🌾','hay']],streets:[30,90],say:['Meeeh! 🐐','*hop hop*','Catch me if you can!']},
   {k:'pig',nm:'Truffle',food:[['🍎','apple'],['🥔','potato']],streets:[150,180],say:['Oink oink! 🐷','*sniff sniff*','Smells like snacks! 💗']},
   {k:'lamb',nm:'Woolly',food:[['🍀','clover'],['🥕','carrot']],streets:[240,270],say:['Baaa! 🐑','*fluffy wiggle*','Hello, friend! 💖']}].map(o=>({...o,grp:'barn'}));
-// the safari runaways (sc = size: the giraffe and elephant are babies, so they fit on the streets)
-const SAFARI_LIST=[
-  {k:'zebra',nm:'Ziggy',e:'🦓',sc:.85,food:[['🥕','carrot'],['🌾','hay']],streets:[330,0],say:['*happy snort* 🦓','Look at my stripes!','Catch me! 💨']},
-  {k:'okapi',nm:'Kito',e:'🦌',sc:.9,food:[['🍌','banana'],['🍃','leaves']],streets:[30,90],say:['*soft huff*','Shh, I\'m shy! 🌿','*long tongue lick* 👅']},
-  {k:'giraffe',nm:'Twiga',e:'🦒',sc:.5,food:[['🥬','lettuce'],['🌿','acacia leaves']],streets:[150,180],say:['Hello down there! 🦒','*long lick* 👅','Mmm, leaves! 🌿']},
-  {k:'elephant',nm:'Tembo',e:'🐘',sc:.45,food:[['🍉','watermelon'],['🍎','apple']],streets:[240,270],say:['*happy trumpet* 🎺','*splashy trunk wave*','Peanuts? 🥜']}].map(o=>({...o,grp:'zoo'}));
-// ❄️ the polar runaways, only once Polar Ice and its animals are in town (24c9g-arctic-animals.js, 12h-place-arctic.js)
-const POLAR_LIST=(FK.polarbear&&Z.arctic)?[
-  {k:'polarbear',nm:'Nanook',e:'🐻‍❄️',sc:.6,food:[['🐟','fish'],['🫐','berries']],streets:[150,195],say:['*big bear huff*','*sniff sniff* Fish?','*rolls in the grass*']},
-  {k:'walrus',nm:'Wally',e:'🦭',sc:.6,food:[['🐟','fish'],['🦪','clams']],streets:[180,240],say:['*loud bellow*','*whisker wiggle*','*flop flop flop*']},
-  {k:'penguin',nm:'Pebble',e:'🐧',food:[['🐟','fish'],['🦐','shrimp']],streets:[90,30],say:['*trumpet call*','*waddle waddle*','*slides on its belly*']},
-  {k:'arcticfox',nm:'Frost',e:'🦊',food:[['🐟','fish'],['🫐','berries']],streets:[270,330],say:['*yip yip!*','*pounce!*','*fluffy tail swish*']}].filter(o=>FK[o.k]).map(o=>({...o,grp:'arctic'})):[];
+// 🦁 the zoo's own animals are the safari runaways (ZA in 24d-barn.js): the very same ones, no copies, so the pen really empties.
+// Each gets a name (the same on every phone, for friends online). sec: the four that break out in a Safari Round-up.
+const ZOO_NAMES={zebra:['Ziggy','Zuri'],giraffe:['Jengo','Twiga'],rhino:['Kifaru','Rocky'],okapi:['Kito'],elephant:['Ella','Tembo'],lion:['Leo'],gorilla:['Bongo'],
+  hippo:['Hugo'],cheetah:['Dash'],tiger:['Sher'],gator:['Chomp']},SAFARI_SEC=['Ziggy','Kito','Twiga','Tembo'];
+const POLAR_NAMES={polarbear:['Nanook','Kiki'],walrus:['Wally'],penguin:['Pebble','Waddle','Flipper','Tux'],arcticfox:['Frost'],arcticwolf:['Tundra'],snowyowl:['Hoot']};
+const realList=(list,grp,names)=>{const n={};return list.map((a,i)=>{const F=FK[a.k],k=(n[a.k]=(n[a.k]||0)+1)-1,
+  nm=(names[a.k]||[])[k]||`${F.n}${k?' '+(k+1):''}`;
+  return {k:a.k,nm,e:F.e,grp,real:a,sec:grp==='zoo'?SAFARI_SEC.includes(nm):true,food:F.food,say:F.say,streets:[[330,0],[30,90],[150,180],[240,270]][i%4]};});};
+const SAFARI_LIST=realList(ZA,'zoo',ZOO_NAMES);
+// ❄️ the polar animals (IA in 24m-arctic.js), once Polar Ice is in town
+const POLAR_LIST=typeof IA!=='undefined'&&Z.arctic?realList(IA,'arctic',POLAR_NAMES):[];
 const RU_ZONE={barn:BZ,zoo:Z.zoo},RU_NAME={barn:'🐴 Happy Barn',zoo:'🦒 Safari Zoo'};
 if(POLAR_LIST.length){RU_ZONE.arctic=Z.arctic;RU_NAME.arctic='❄️ Polar Ice';}
 const ROAM_RING=7.15,ROAM_REACH=2.6,ROAM_SPD=.85,RU_SPD=1.35,RU_HOME=6;// RU_HOME: how close to the barn's fence counts as home
@@ -12303,14 +12304,20 @@ function meadowSpot(near){for(let i=0;i<80;i++){const a=near==null?Math.random()
     return {x,z};}
   return {x:BZ.x+BZ.fence+3,z:BZ.z};}
 const meadowAng=c=>Math.atan2(c.pos.x-BZ.x,c.pos.z-BZ.z);
-const ROAM=ROAM_LIST.concat(SAFARI_LIST,POLAR_LIST).map(o=>{const a=new FarmAnimal(o.k),j=obs.indexOf(a.ob);if(j>=0)obs.splice(j,1);a.ob.r=0;a.dust.forEach(d=>d.visible=false);
+const ROAM=ROAM_LIST.concat(SAFARI_LIST,POLAR_LIST).map(o=>{let a;
+  if(o.real){a=o.real;const sc=a.g.scale.y||1,tag=sprite(labelTex(o.nm,{size:58,fg:'#8a5a3b',bg:'rgba(255,255,255,.88)',border:null}),.8/sc,.2/sc);tag.position.y=a.h/sc+.15/sc;tag.visible=false;a.g.add(tag);
+    return {...o,a,tag,F:FK[o.k],pos:a.pos.clone(),face:0,mode:'pen',flee:0,tired:0,cool:0,stuck:0,cT:0,tgt:null,wp:[],wait:0,street:o.streets[0],lookT:0,happy:0,owner:''};}
+  a=new FarmAnimal(o.k);const j=obs.indexOf(a.ob);if(j>=0)obs.splice(j,1);a.ob.r=0;a.dust.forEach(d=>d.visible=false);
   const sc=o.sc||1,tag=sprite(labelTex(o.nm,{size:58,fg:'#8a5a3b',bg:'rgba(255,255,255,.88)',border:null}),.8/sc,.2/sc);tag.position.y=a.h+.15/sc;a.g.add(tag);
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}
-  const c={...o,a,F:FK[o.k],e:o.e||FK[o.k].e,pos:new THREE.Vector3(),face:Math.random()*6,mode:o.grp!=='barn'?'zoo':'meadow',flee:0,tired:0,cool:0,stuck:0,cT:0,tgt:null,wp:[],wait:Math.random()*3,street:o.streets[0],lookT:0,happy:0,owner:''};
-  const s=o.grp!=='barn'?{x:RU_ZONE[o.grp].x,z:RU_ZONE[o.grp].z}:meadowSpot();c.pos.set(s.x,0,s.z);a.pos.copy(c.pos);a.g.visible=o.grp==='barn';scene.add(a.g);return c;});
+  const c={...o,a,F:FK[o.k],e:o.e||FK[o.k].e,pos:new THREE.Vector3(),face:Math.random()*6,mode:'meadow',flee:0,tired:0,cool:0,stuck:0,cT:0,tgt:null,wp:[],wait:Math.random()*3,street:o.streets[0],lookT:0,happy:0,owner:''};
+  const s=meadowSpot();c.pos.set(s.x,0,s.z);a.pos.copy(c.pos);scene.add(a.g);return c;});
+// a real zoo or polar animal leaves its pen (esc: its own place stops moving it) or goes back in
+function penOut(c){const a=c.a;if(!c.real||a.esc)return;a.esc=true;a.ob.r=0;a.g.visible=true;c.tag.visible=true;c.pos.set(a.g.position.x,0,a.g.position.z);if(c.real.sw&&c.real.sw.rip)c.real.sw.rip.visible=false;}
+function penIn(c){const a=c.a;if(!c.real)return;a.esc=false;c.tag.visible=false;c.mode='pen';a.vy=a.y=0;[a.lx,a.lz]=a.perch&&typeof ICE!=='undefined'?[ICE.perch[0],ICE.perch[1]]:a.spot(a.rad);placeFarm(a);/* the snowy owl goes back up on her rock */a.g.visible=true;}
 // the animals in the Round-up that's on (or the last one): in the All-Animal one, every one of them
-const ruSet=()=>RU.grp==='all'?ROAM:ROAM.filter(c=>c.grp===RU.grp);
-const ruIn=c=>RU.grp==='all'||c.grp===RU.grp;
+const ruSet=()=>RU.grp==='all'?ROAM:ROAM.filter(c=>c.grp===RU.grp&&c.sec!==false);
+const ruIn=c=>RU.grp==='all'||(c.grp===RU.grp&&c.sec!==false);
 // 🌪️ All-Animal Round-up: anywhere you could walk counts (on the island, not in the water, not inside a tree, post or wall)
 const looseOk=(x,z)=>Math.hypot(x,z)<R-2.5&&!obs.some(o=>o.r>0&&Math.hypot(x-o.x,z-o.z)<o.r+.7);
 function looseSpot(c,rr=Math.random){for(let i=0;i<40;i++){const a=rr()*Math.PI*2,d=6+rr()*16,x=c.pos.x+Math.sin(a)*d,z=c.pos.z+Math.cos(a)*d;if(looseOk(x,z))return {x,z};}
@@ -12351,9 +12358,9 @@ function ruStart(r,seed,who,whoName,grp='barn',at=null){if(RU.on||(!RU_ZONE[grp]
   const ax=at?at.x:0,az=at?at.z:Z.studio.r+3;RU.at={x:ax,z:az};
   if(grp==='all')set.forEach((c,i)=>{
     let s=null;for(let k=0;k<30&&!s;k++){const a=(i+rr()*.8)/set.length*Math.PI*2,d=2.5+rr()*5+k*.2,x=ax+Math.sin(a)*d,z=az+Math.cos(a)*d;if(looseOk(x,z)&&Math.hypot(x,z)>Z.studio.r+.5)s={x,z};}
-    s||=looseSpot({pos:{x:ax,z:az}},rr);c.pos.set(s.x,0,s.z);c.mode='loose';c.owner='';c.wait=rr()*.6;c.lookT=0;c.flee=c.tired=c.cool=c.stuck=0;
+    s||=looseSpot({pos:{x:ax,z:az}},rr);penOut(c);c.pos.set(s.x,0,s.z);c.mode='loose';c.owner='';c.wait=rr()*.6;c.lookT=0;c.flee=c.tired=c.cool=c.stuck=0;
     c.cool=1+rr()*2;c.tgt=looseSpot(c,rr);c.face=Math.atan2(c.tgt.x-s.x,c.tgt.z-s.z);c.a.g.visible=true;burst(new THREE.Vector3(s.x,.5,s.z),'#ffd23f',16,1.4);});
-  else for(const c of set){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',16,1.4);
+  else for(const c of set){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',16,1.4);penOut(c);
     c.mode='street';c.owner='';c.wait=0;c.lookT=0;c.street=c.streets[Math.floor(rr()*2)];const d=12+rr()*(roamEnd(c.street)-15),s=roamSpot(c.street,d,(rr()-.5)*.8);
     c.pos.set(s.x,0,s.z);c.wp=[];roamPlan(c,d);c.face=deg(c.street);c.a.g.visible=true;}
   const home=RU_NAME[grp],n=ruSet().length;
@@ -12375,7 +12382,7 @@ function ruLetGo(c,quiet){if(!c||(c.mode!=='rope'&&c.mode!=='friend'))return;con
   if(mine&&!quiet){sfx('pop');toast(`${c.e} ${c.nm} runs off again!`);ruSend({a:'let',nm:c.nm});}ruBar();roamBtnKey='?';}
 // brought home (by you or a friend): a barn animal trots back into the meadow, a safari one goes back into the zoo
 function ruHome(c,who,quiet){if(!RU.on||RU.home[c.nm])return;RU.home[c.nm]=who;RU.sc[who]=(RU.sc[who]||0)+1;c.owner='';c.wait=0;
-  if(c.grp!=='barn'){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',20,1.5);c.mode='zoo';c.a.g.visible=false;}else{c.mode='meadow';c.tgt=meadowSpot(meadowAng(c));}
+  if(c.real){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',20,1.5);penIn(c);}else{c.mode='meadow';c.tgt=meadowSpot(meadowAng(c));}
   if(who===ruMe()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.4,0)),'#ffd23f',24,1.6);floaties(c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0)),'🏠',5);sfx('tada');
     did('roamhome',c.nm);ruSend({a:'home',nm:c.nm});const left=ruSet().length-Object.keys(RU.home).length;
     if(left)toast(`🏠 ${c.nm} is back home! ${left} still out`);}
@@ -12418,7 +12425,7 @@ function roamFollow(c,P,face,dt,k=0){const back=face+Math.PI+.6-k*1.2,r=1.2+c.a.
   if(d>14){c.pos.set(tx,0,tz);return 0;}if(d>.2){const sp=Math.min(7,1+d*3),st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*6));return sp;}
   c.face=angDamp(c.face,face,Math.min(1,dt*3));return 0;}
 function roamStep(dt){if(!started)return;roamT+=dt;const P=player.pos,slot={};
-  for(const c of ROAM){const a=c.a,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(c.mode==='zoo'){a.g.visible=false;continue;}const vis=dP<70;a.g.visible=vis;let sp=0;
+  for(const c of ROAM){const a=c.a,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(c.mode==='pen')continue;/* at home in the zoo or at Polar Ice: its own place moves it */const vis=dP<70;a.g.visible=vis;let sp=0;
     const k=(c.mode==='rope'||c.mode==='friend')?(slot[c.owner]=(slot[c.owner]??-1)+1):0;
     if(c.mode==='rope'){sp=roamFollow(c,P,player.face,dt,k);a.graze=0;if(nearHome(c.grp,P,RU_HOME))ruHome(c,ruMe());}
     else if(c.mode==='friend'){const o=ruFriend(c.owner);if(!o)ruLetGo(c,true);else{sp=roamFollow(c,o.pos,o.cur??o.face??0,dt,k);a.graze=0;}}
@@ -12511,7 +12518,7 @@ function ruBar(){const el=$('#ruBar');if(!RU.on&&!RU.endT){el.classList.remove('
 // the list of animals stays folded away so it isn't in the way: tap the bar to open or close it
 let ruOpen=false;$('#ruBar').addEventListener('click',e=>{if(!e.target.closest('b'))return;ruOpen=!ruOpen;sfx('pop');ruBar();});
 function roamButton(){const P=player.pos;let best=null,bd=ROAM_REACH;
-  if(!closetOpen&&!(typeof SW!=='undefined'&&SW.k>.3))for(const c of ROAM){if(c.mode==='friend'||c.mode==='zoo')continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(d<bd){bd=d;best=c;}}
+  if(!closetOpen&&!(typeof SW!=='undefined'&&SW.k>.3))for(const c of ROAM){if(c.mode==='friend'||c.mode==='pen')continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z)-(c.real?c.a.rad*.6:0);if(d<bd){bd=d;best=c;}}
   roamNear=best;const ropes=myRopes(),rope=ropes[ropes.length-1],
     atBarn=!RU.on&&!RU.endT&&!closetOpen&&!allOn()?(nearHome('barn',P,14)?'barn':nearHome('zoo',P,10)?'zoo':Math.hypot(P.x,P.z)<Z.studio.r+8?'all':''):'';
   const grab=RU.on&&canCatch(best)&&ruIn(best)&&ropes.length<ropeMax();
@@ -12532,13 +12539,13 @@ $('#roamCatch').onclick=()=>{const ropes=myRopes(),c=roamNear;if(RU.on&&canCatch
 // the animals on the minimap (during a Round-up only the ones still out), so you can go looking for them (heading-up, like drawMini in 26-map.js)
 onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=cv.getContext('2d'),S=cv.width,h=S/2,k=S/54,p=player.pos,
   fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.08)}px serif`;x.textAlign='center';x.textBaseline='middle';
-  for(const c of ROAM){if(c.mode==='zoo'||(RU.on&&!canCatch(c)))continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
+  for(const c of ROAM){if(c.mode==='pen'||(RU.on&&!canCatch(c)))continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
   x.restore();});
 
 // for challenges.js and the tests
 function roamState(){return {fed:Object.keys(RS.fed).length,n:ROAM.length,on:RU.on,grp:RU.grp,home:Object.keys(RU.home).length,sc:{...RU.sc},
   rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,ropes:myRopes().map(c=>c.nm),best:RS.allBest||0,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,looseOk,POLAR_LIST,ruCatch,ruLetGo,ruFromNet,ruMe,BZ});});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,ZA,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,looseOk,POLAR_LIST,ruCatch,ruLetGo,ruFromNet,ruMe,BZ});});
 // ---- src/26h-adventure.js ----
 /* ================= ⛰️ LOOKOUT MOUNTAIN and 🌲 TREETOP ADVENTURE, across the canal =================
    On the grassy far bank of the canal, between angles 92 and 136 (BANK_LAND in 26f-ocean.js), over a wooden footbridge at 114.
@@ -13311,6 +13318,57 @@ Object.assign(window.__game,{heli:()=>HELI,heliModel:()=>HM,heliBoard,heliOut,he
 /* ❄️ Polar Ice for friends online (after 26c-friends-see.js, which makes SHOW): friends see the ice skates on your feet
    while you skate (iceBlades in 24m-arctic.js; the skating stride comes from the rollerPose they already use). */
 SHOW.push({k:'ice',mine(){return ICS.on?{on:1}:null;},on(f){iceBlades(f.a,true);return {};},step(f){if(f.a&&!f.a.iceB)iceBlades(f.a,true);},off(f){iceBlades(f.a,false);}});
+// ---- src/26i-fast-pass.js ----
+/* ================= 🎟️ FAST PASS: zip to any place in town ================= */
+// A power you buy once in the shop's ⚡ Powers tab (with coins) and keep forever, like a fast pass at a theme park.
+// Once it's yours, tapping a place on the 🗺️ map, or 📍 Go in the ⭐ Star Challenges (Places tab and every challenge), asks:
+// 🎟️ Zip there now (you pop up at the front of that place in a puff of sparkles) or 🗺️ Show me the way (the pink arrow, as before).
+// Your barn ride comes with you; a bike or skateboard does too, except into the water at 🐬 Dolphin Bay, where you swim.
+// It's off during a 🛵 delivery rush, a 🚨 Round-up and while you're on a ladder, wall or zip line, so those stay fair,
+// a ❄️ Polar escape, ice fishing, and in the 🚁 helicopter (you fly that yourself).
+// Friends online just see you pop up somewhere else (they get your position as usual).
+SHOP.push({k:'power:fastpass',tab:'powers',e:'🎟️',n:'Fast Pass',p:250,
+  d:'Zip to any place in town in a puff of sparkles! Tap a place on the 🗺️ map (or 📍 Go on a challenge) and pick 🎟️ Zip there now. Buy it once, use it forever.'});
+STABS.splice(1,0,['powers','⚡','Powers']);// right after Outfits, so it's easy to find
+SHINT.powers='Powers are yours forever once you buy them.';
+const hasFastPass=()=>owns('power:fastpass');
+// where you pop up: the edge of the place on the side facing the plaza, where you'd walk in, so you're not inside a
+// building or standing on one of its glowing pads (that would open the barn, the bakery and so on by itself)
+function fpSpot(z){if(!z.d)return [0,z.r-1.2];// the Sparkle Studio is in the middle: stand south of the closet pad
+  if(z.id==='bay')return [z.x,z.z];// right in the water with the dolphins
+  const ux=-z.x/z.d,uz=-z.z/z.d;
+  // places across the canal can reach out over the water: step in until you're on dry land
+  for(let f=z.r-.4;f>0;f-=1){const x=z.x+ux*f,w=z.z+uz*f;if(seaDepth(x,w,0)<.3)return [x,w];}
+  return [z.x,z.z];}
+// why the pass can't be used right now (or '' when it can)
+function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 Ride it there!';
+  if(RU.on)return 'No fast pass during a Round-up! 🚨 Catch them the fun way!';
+  if(ADS.mode)return 'Hold on tight until you get off! 🦺';
+  if(HELI.on||HELI.ride)return 'Land the helicopter and hop out first! 🚁';
+  if(PE.on)return 'No fast pass during a Polar escape! ❄️ Catch them the fun way!';
+  if(ICF.on)return 'Reel in your line first! 🎣';
+  if(WP.ride)return 'Finish your water ride first! 💦';
+  if(handsBusy()||ct.on)return 'Finish what you are doing first ✨';return '';}
+function fastTravel(z){const why=fpBlocked();if(why){toast(why);return false;}
+  const p=player.pos;burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ffd23f',40,3);sfx('star');
+  if(FLY.on)flyEnd(true);// a flying ride comes down at the other end
+  iceSkateOff();// skates come off when you leave the ice
+  if(z.id==='bay'){if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);if(barnRide&&!barnRide.F.swim)stopRide(true);}
+  const [x,w]=fpSpot(z);p.x=x;p.z=w;collide(p);HIGH.on=false;p.y=groundAt(p.x,p.z);player.vy=0;player.onGround=true;player.speed=0;
+  player.face=z.d?Math.atan2(z.x,z.z):Math.PI;cam.yaw=player.face+Math.PI;cam.fv=null;// facing into the place
+  setDest(null);did('fastpass',z.id);
+  setTimeout(()=>{burst(player.pos.clone().add(new THREE.Vector3(0,1,0)),'#ff8fc8',50,3);sfx('tada');},60);
+  return true;}
+// the choice card: zip there, or follow the arrow
+let fpZone=null;
+function fastPassAsk(z){if(!hasFastPass())return false;fpZone=z;closeMap();
+  $('#fpCard').innerHTML=`<div class="bigE">🎟️</div><h2>${z.name}</h2><p>Use your Fast Pass to zip there right now?</p>
+    <button class="btn" data-fp="zip">🎟️ Zip there now!</button><button class="btn ghost" data-fp="walk">🗺️ Show me the way</button>`;
+  $('#fp').classList.add('show');sfx('pop');return true;}
+$('#fp').onclick=e=>{const b=e.target.closest('[data-fp]');if(e.target.id!=='fp'&&!b)return;$('#fp').classList.remove('show');const z=fpZone;fpZone=null;if(!b||!z)return;
+  if(b.dataset.fp==='zip')fastTravel(z);
+  else{setDest(z);sfx('star');toast(`Follow the pink arrow on the map to ${zLabel(z)} 💗`);}};
+Object.assign(window.__game,{hasFastPass,fastPassAsk,fastTravel,mapW2s,mapLayout});
 // ---- src/26i-sky-sports.js ----
 /* ================= 🪂 HANG GLIDING off Lookout Mountain and ✈️ SKYDIVING from the Airfield =================
    🪂 HANG GLIDING: on the flat top of ⛰️ Lookout Mountain (26h-adventure.js) a wooden launch ramp sticks out over the slope
