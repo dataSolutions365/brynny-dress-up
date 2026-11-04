@@ -50,6 +50,10 @@ const ZONES=[
   {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
   // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
   {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
+  // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one
+  // side and a rock climbing wall up the other, and a treetop ropes course, with zip lines down from both
+  {id:'mountain',name:'⛰️ Lookout Mountain',ang:101,d:R+26.5,r:9,music:'spring-birds',nopath:true},
+  {id:'ropes',name:'🌲 Treetop Adventure',ang:127,d:R+26,r:9,music:'city-park',nopath:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
