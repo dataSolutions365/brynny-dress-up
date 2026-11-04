@@ -36,6 +36,6 @@ function groundAt(x,z){let h=0;if(x*x+z*z<6.2*6.2)h=.15;
   const ag=Z.agency;if(ag.rw){const [lx,lz]=ag.toLocal(x,z);if(Math.abs(lx)<ag.rw.w&&lz>ag.rw.z0&&lz<ag.rw.z1)h=ag.rw.h;}
   const b=Z.beach;if(b.dock){const [lx,lz]=b.toLocal(x,z);if(Math.abs(lx-b.dock.lx)<1&&lz<b.dock.lz0+.2&&lz>b.dock.lz1)h=b.dock.h;}
   const sk=skateH(x,z);if(sk>h)h=sk;// the ramps, stairs and ledges at the 🛹 Skate Park
-  return jpGround(x,z,h);}
+  return advGround(x,z,jpGround(x,z,h));}// advGround: the mountain, the footbridge and the ropes course (26h-adventure.js)
 function onDock(x,z){const b=Z.beach;const [lx,lz]=b.toLocal(x,z);return Math.abs(lx-b.dock.lx)<1&&lz<b.dock.lz0+.3&&lz>b.dock.lz1;}
 

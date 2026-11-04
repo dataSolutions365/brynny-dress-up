@@ -52,6 +52,10 @@ const ZONES=[
   {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
   // out on the open grass between the Basketball Court and the Jump Park, near the shore (12h-place-helipad.js, 26h-helicopter.js)
   {id:'heli',name:'🚁 Helipad',ang:105,d:62,r:6.5,music:'city-park'},
+  // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one
+  // side and a rock climbing wall up the other, and a treetop ropes course, with zip lines down from both
+  {id:'mountain',name:'⛰️ Lookout Mountain',ang:101,d:R+26.5,r:9,music:'spring-birds',nopath:true},
+  {id:'ropes',name:'🌲 Treetop Adventure',ang:127,d:R+26,r:9,music:'city-park',nopath:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
