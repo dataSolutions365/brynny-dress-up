@@ -188,4 +188,4 @@ function worldMapTags(x,S,ts){ts=Math.max(1,ts);x.save();x.font=`700 ${Math.roun
 // a tap on the map that isn't on a place: is it on a blocked-off region?
 function worldMapTap(sx,sy){const k=mapK(),S=mapCv.width,wx=(sx-S/2)/k,wz=(sy-S/2)/k,d=Math.hypot(wx,wz);
   if(d<WORLD.in||d>WORLD.out+4||openLand(wx,wz))return false;toast(`🚧 ${zLabel(regionAt(bankAng(wx,wz)))} is blocked off for now. Coming soon!`);return true;}
-Object.assign(window.__game,{WORLD,REGIONS,worldH,groundH,WFENCE,regionAt,BANK_LAND,openLandAt:openLand});
+Object.assign(window.__game,{R,WORLD,REGIONS,worldH,groundH,WFENCE,regionAt,BANK_LAND,openLandAt:openLand});

@@ -38,6 +38,7 @@ try {
   await page.waitForFunction(() => window.__game && document.querySelector('#welcome.show') && !document.querySelector('#loading:not(.done)'), null, { timeout: 120_000 });
   await page.evaluate(() => document.querySelector('#play').click());
   await page.waitForTimeout(1500);
+  const IR = await page.evaluate(() => window.__game.R);// how far out the island goes
   // Test computers have no graphics card, so the world isn't drawn while the test runs. SHOTS draws it again for each picture.
 
   // Test computers have no graphics card, so the world isn't drawn while the test runs. SHOTS draws it again for each picture.
@@ -54,6 +55,8 @@ try {
   const gameWait = async sec => { const t0 = await page.evaluate(() => window.__game.roamT());
     await page.waitForFunction(([t0, sec]) => window.__game.roamT() - t0 >= sec, [t0, sec], { timeout: 600_000, polling: 100 }); };
   const me = () => page.evaluate(() => { const p = window.__game.player.pos; return [p.x, p.z]; });
+  // a spot d steps in front of a place, toward the middle of the island (the same spot whatever size the island is)
+  const inFront = (P, d) => { const k = 1 - d / Math.hypot(P.x, P.z); return [P.x * k, P.z * k]; };
   const setMe = (x, z) => page.evaluate(([x, z]) => window.__game.player.pos.set(x, 0, z), [x, z]);
   const btn = sel => page.evaluate(sel => { const b = document.querySelector(sel); return b && b.style.display === 'block' ? b.textContent : ''; }, sel);
   const fence = await page.evaluate(() => window.__game.BZ.fence);
@@ -90,7 +93,7 @@ try {
   if (SHOTS) await shot('meadow');
 
   // 2. start a Round-up at the barn: they break out onto their streets and stay out
-  await setMe(B0.x * .82, B0.z * .82); await gameWait(.3);
+  await setMe(...inFront(B0, 10.2)); await gameWait(.3);
   const startTxt = await btn('#roamCatch');
   if (!startTxt.includes('Round-up')) fail(`Near the barn there should be a Start a Round-up button (it says "${startTxt}").`);
   await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.5);
@@ -134,11 +137,11 @@ try {
   if (tr > 3) fail(`A caught animal should walk along with you (Truffle is ${tr.toFixed(1)} away).`);
   if (SHOTS) { await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + 1.1; G.cam.cy = G.cam.yaw; }); await shot('caught-on-rope'); }
   // swim out into the canal: Truffle waits on the shore on his rope, he never walks on the water
-  await page.evaluate(() => { const G = window.__game, p = G.player.pos, a = Math.atan2(p.x, p.z); p.set(Math.sin(a) * 77, 0, Math.cos(a) * 77); }); await gameWait(3);
+  await page.evaluate(() => { const G = window.__game, p = G.player.pos, a = Math.atan2(p.x, p.z); p.set(Math.sin(a) * (G.R + 5), 0, Math.cos(a) * (G.R + 5)); }); await gameWait(3);
   const swim = await page.evaluate(() => { const G = window.__game, c = G.ROAM.find(c => c.nm === 'Truffle'); return [Math.hypot(c.pos.x, c.pos.z), G.roamState().rope]; });
-  console.log(`swimming with Truffle on the rope: he is ${swim[0].toFixed(1)} from the middle (island edge 72), rope: ${swim[1]}`);
-  if (swim[0] > 72 || swim[1] !== 'Truffle') fail(`While you swim, a caught animal should wait on the shore, still on its rope (Truffle is ${swim[0].toFixed(1)} out).`);
-  await setMe(B0.x * .82, B0.z * .82); await gameWait(.6);
+  console.log(`swimming with Truffle on the rope: he is ${swim[0].toFixed(1)} from the middle (island edge ${IR}), rope: ${swim[1]}`);
+  if (swim[0] > IR || swim[1] !== 'Truffle') fail(`While you swim, a caught animal should wait on the shore, still on its rope (Truffle is ${swim[0].toFixed(1)} out).`);
+  await setMe(...inFront(B0, 10.2)); await gameWait(.6);
   s = await page.evaluate(() => window.__game.roamState());
   if (s.home !== 1 || s.rope) fail(`Walking Truffle to the barn should bring him home (home ${s.home}, rope ${s.rope}).`);
 
@@ -152,7 +155,7 @@ try {
   await page.evaluate(() => { const G = window.__game; G.ruFromNet('f1', 'Ava', { t: 'roam', a: 'home', r: G.RU.r, nm: 'Waddles' }); });
   const coins0 = await page.evaluate(() => window.__game.SAVE.coins || 0);
   for (const nm of ['Billy', 'Woolly']) { await goTo(nm); await gameWait(.3); await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.2);
-    await setMe(B0.x * .82, B0.z * .82); await gameWait(.6); }
+    await setMe(...inFront(B0, 10.2)); await gameWait(.6); }
   if (SHOTS) await shot('round-up-done');
   await page.waitForTimeout(1500);
   s = await page.evaluate(() => window.__game.roamState());
@@ -167,7 +170,7 @@ try {
   // 5. the 🦁 Safari Round-up starts at the Safari Zoo: Ziggy, Kito, Twiga and Tembo break out, and go back to the zoo
   await gameWait(10);// the barn Round-up's results go away first
   const Zo = await page.evaluate(() => { const z = window.__game.Z.zoo; return { x: z.x, z: z.z, f: z.fence || z.r }; });
-  await setMe(Zo.x * .85, Zo.z * .85); await gameWait(.4);
+  await setMe(...inFront(Zo, 8.8)); await gameWait(.4);
   const zt = await btn('#roamCatch');
   if (!zt.includes('Safari Round-up')) fail(`Near the Safari Zoo there should be a Start a Safari Round-up button (it says "${zt}").`);
   await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.5);
@@ -181,7 +184,7 @@ try {
   if (!SAF.every(n => zbar.includes(n))) fail('The bar should list the safari runaways.');
   if (SHOTS) { await goTo('Twiga'); await gameWait(.3); await shot('safari-round-up'); }
   for (const nm of SAF) { await goTo(nm); await gameWait(.3); await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.2);
-    await setMe(Zo.x * .85, Zo.z * .85); await gameWait(.6); }
+    await setMe(...inFront(Zo, 8.8)); await gameWait(.6); }
   s = await page.evaluate(() => window.__game.roamState());
   const done3 = await page.evaluate(() => window.__game.SAVE.chal.done);
   console.log(`safari round-up: ${s.on ? 'still on' : 'done'}, safariRound ${done3.safariRound ? 'done' : 'not done'}`);
@@ -213,7 +216,7 @@ try {
   await setMe(60, 0);// out of their way, so none of them bolts while we watch them run
   moved = 0; let offMax = {}, wet = 0, farOut = 0;
   for (let i = 0; i < 12; i++) { await gameWait(1); const B = await stAll();
-    B.forEach((c, j) => { moved += Math.hypot(c.x - A[j].x, c.z - A[j].z); offMax[c.nm] = Math.max(offMax[c.nm] || 0, offStreet(c)); if (c.d > 70) wet++; farOut = Math.max(farOut, c.d); }); A = B; }
+    B.forEach((c, j) => { moved += Math.hypot(c.x - A[j].x, c.z - A[j].z); offMax[c.nm] = Math.max(offMax[c.nm] || 0, offStreet(c)); if (c.d > IR - 2) wet++; farOut = Math.max(farOut, c.d); }); A = B; }
   const offs = Object.values(offMax).filter(v => v > 2).length;
   console.log(`loose: ran ${moved.toFixed(0)} steps between them, ${offs} of ${N} went well off the streets, farthest out ${farOut.toFixed(1)}`);
   if (moved < N * 12) fail(`In the All-Animal Round-up they should run all over (only ${moved.toFixed(0)} steps).`);
@@ -246,7 +249,7 @@ try {
   if (trail.some(d => d > 4)) fail('All 3 on ropes should walk along with you.');
   if (SHOTS) { await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + 1.1; G.cam.cy = G.cam.yaw; }); await shot('all-three-ropes'); }
   // every one of them goes back to its own home
-  const homes = await page.evaluate(() => { const G = window.__game, o = {}; for (const c of G.ROAM) { const z = c.grp === 'barn' ? G.BZ : c.grp === 'zoo' ? G.Z.zoo : G.Z.arctic; o[c.nm] = [z.x * .82, z.z * .82]; } return o; });
+  const homes = await page.evaluate(() => { const G = window.__game, o = {}; for (const c of G.ROAM) { const z = c.grp === 'barn' ? G.BZ : c.grp === 'zoo' ? G.Z.zoo : G.Z.arctic; const k = 1 - 10 / Math.hypot(z.x, z.z); o[c.nm] = [z.x * k, z.z * k]; } return o; });
   const deliver = async () => { const rs = (await page.evaluate(() => window.__game.roamState())).ropes; for (const nm of rs) { await setMe(...homes[nm]); await gameWait(.6); } };
   await deliver();
   const coinsA = await page.evaluate(() => window.__game.SAVE.coins || 0);
