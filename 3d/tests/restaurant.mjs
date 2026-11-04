@@ -58,7 +58,7 @@ try {
   await stepOn('spad');
   let s = await until('the menu to open on the 🍽️ pad', s => s.open && s.phase === 'menu');
   await shot('1-menu');
-  const seat = await page.evaluate(() => { const G = window.__game, z = G.ZONES.find(z => z.id === 'diner'), S = G.restaurant.RST.seat, [x, w] = z.toWorld(S.lx, S.lz);
+  const seat = await page.evaluate(() => { const G = window.__game, z = G.ZONES.find(z => z.id === 'diner'), S = G.restaurant.RST.seats[0], [x, w] = z.toWorld(S.lx, S.lz);
     return { d: Math.hypot(G.player.pos.x - x, G.player.pos.z - w), emote: G.av().emote && G.av().emote.id }; });
   if (seat.d > .05) fail(`She should sit on the chair, she is ${seat.d.toFixed(2)} away from it.`);
   if (seat.emote !== 'chair') fail(`She should be sitting, her pose is "${seat.emote}".`);
@@ -91,6 +91,36 @@ try {
   if (s.open) fail('Done should close the restaurant.');
   const stood = await page.evaluate(() => { const e = window.__game.av().emote; return !e || e.id !== 'chair'; });
   if (!stood) fail('She should stand up after eating.');
+
+  // 🪑 nobody sits on anyone: a friend online is already eating in the first chair, so you take the next free one,
+  // and a townsperson who wanders into a chair gets nudged out of it
+  await page.evaluate(() => { const G = window.__game, z = G.ZONES.find(z => z.id === 'diner');
+    const a = new G.Avatar(G.av().look || {}, 'Bunny', '#2fb8a5'), [x, w] = z.toWorld(G.restaurant.RST.seats[0].lx, G.restaurant.RST.seats[0].lz);
+    const o = { a, g: a.g, name: 'Bunny', pos: new G.THREE.Vector3(x, 0, w), face: 0 }; o.tgt = o.pos.clone(); a.g.position.copy(o.pos); G.scene.add(a.g);
+    window.__bunny = o; G.setMapOthers(new Map([['bunny', o]])); G.friendShow(o, { dine: { s: 0 }, doing: { w: "🍝 Eating at Rosie's" } });
+    G.onTick.push(dt => { if (!window.__bunny) return; o.a.update(dt, 0, false); G.friendShowStep(o, dt); }); });
+  await page.evaluate(() => { const G = window.__game, z = G.ZONES.find(z => z.id === 'diner'); const [x, w] = z.toWorld(0, 8); G.player.pos.set(x, 0, w); });
+  await page.waitForTimeout(1000);
+  await stepOn('spad');
+  s = await until('the menu to open with a friend already eating', s => s.open && s.phase === 'menu');
+  await page.waitForTimeout(800);
+  const two = await page.evaluate(() => { const G = window.__game, o = window.__bunny, P = G.player.pos, RP = G.restaurant.RP;
+    const sitters = [o.a.g.position, ...[RP.d1, RP.d2].map(d => d.pos)];
+    return { seat: G.restaurant.state().seat, near: Math.min(...sitters.map(q => Math.hypot(q.x - P.x, q.z - P.z))), fe: o.a.emote && o.a.emote.id }; });
+  if (two.seat === 0) fail('You sat down in the chair your friend is already sitting in.');
+  if (two.near < .9) fail(`You are sitting ${two.near.toFixed(2)} from someone else: on top of them.`);
+  if (two.fe !== 'chair') fail(`Your friend eating at Rosie's should be sitting down on your phone too, their pose is "${two.fe}".`);
+  await page.evaluate(() => document.querySelector('#rcontent [data-food="burger"]').click());
+  s = await until('the burger at the second table', s => s.phase === 'eat');
+  const onT2 = await page.evaluate(() => { const r = window.__game.restaurant; return r.meal.food.g.parent === r.meal.seat.t.g; });
+  if (!onT2) fail('The burger should be on the table you are sitting at.');
+  await shot('3b-two-diners');
+  await page.evaluate(() => document.querySelector('#rdone').click());
+  await page.evaluate(() => { const G = window.__game, o = window.__bunny; window.__bunny = null; G.friendShowClear(o); G.scene.remove(o.a.g); G.setMapOthers(null); });
+  const pushed = await page.evaluate(async () => { const G = window.__game, z = G.ZONES.find(z => z.id === 'diner'), f = G.FRIENDS[0], S = G.restaurant.RST.seats;
+    const [x, w] = z.toWorld(S[2].lx, S[2].lz); f.pos.set(x, 0, w); f.tgt = null; f.wait = 9; await new Promise(r => setTimeout(r, 600));
+    return Math.min(...S.map(s => { const [a, b] = z.toWorld(s.lx, s.lz); return Math.hypot(f.pos.x - a, f.pos.z - b); })); });
+  if (pushed < .65) fail(`A townsperson is standing in a restaurant chair (${pushed.toFixed(2)} from it).`);
 
   // 🛵 the delivery rush
   await page.evaluate(() => { const G = window.__game, z = G.ZONES.find(z => z.id === 'diner'); const [x, w] = z.toWorld(-3.4, 7); G.player.pos.set(x, 0, w); });

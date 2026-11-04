@@ -158,6 +158,17 @@ SHOW.push({k:'dbox',
   step(f,d,dt,h){if(h&&f.a&&f.a.spine!==h.sp){h.sp.remove(h.b);h.sp=f.a.spine;h.sp.add(h.b);}},
   off(f,h){if(h&&h.sp)h.sp.remove(h.b);}});
 
+// 🍝 sitting at a table in Rosie's Restaurant: friends see you in YOUR chair, sitting down (24l-restaurant.js picks a free one)
+SHOW.push({k:'dine',
+  mine(){return restOpen&&meal.mode==='eat'&&meal.seat?{s:RST.seats.indexOf(meal.seat)}:null;},
+  on(f,d){const s=RST.seats[d.s|0];if(!Number.isInteger(d.s)||!s||s.npc)return null;return {s:d.s};},
+  step(f,d,dt,h){const A=f.a;if(!A||!h)return;let s=RST.seats[h.s];
+    // you both sat down at the same moment in the same chair: on your phone they move to the next free one
+    if(restOpen&&meal.mode==='eat'&&meal.seat===s)s=RST.seats.find(x=>x!==s&&!seatTaken(x,true))||s;
+    A.g.position.copy(seatSpot(s));A.g.rotation.y=zFace(RZ,-s.side,0);
+    if(!A.emote||!['chair','cheer','wave','clap'].includes(A.emote.id))A.play('chair');},
+  off(f){if(f.a&&f.a.emote&&f.a.emote.id==='chair')f.a.emote=null;}});
+
 /* ---------- what online.js calls ---------- */
 // everything about you, for friends
 function myShow(){const r={};for(const s of SHOW){try{const d=s.mine();if(d!=null)r[s.k]=d;}catch(e){}}return r;}

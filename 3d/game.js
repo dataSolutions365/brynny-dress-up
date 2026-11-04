@@ -305,6 +305,8 @@ const ZONES=[
   {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
   // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
   {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
+  // out on the open grass between the Basketball Court and the Jump Park, near the shore (12h-place-helipad.js, 26h-helicopter.js)
+  {id:'heli',name:'🚁 Helipad',ang:105,d:62,r:6.5,music:'city-park'},
   // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one
   // side and a rock climbing wall up the other, and a treetop ropes course, with zip lines down from both
   {id:'mountain',name:'⛰️ Lookout Mountain',ang:101,d:R+26.5,r:9,music:'spring-birds',nopath:true},
@@ -1703,6 +1705,10 @@ function deliveryBox(){const g=new THREE.Group();
  anims.push(t=>{if(curZone!==z)return;for(const tb of TB){const k=1+Math.sin(t*11+tb.lx*3)*.15+Math.sin(t*7.3+tb.lz)*.1;tb.flame.scale.set(k,1.6*k,k);}});
  // the table you sit at is the front right one (on the outside chair, facing the kitchen side of the table)
  RST.myT=TB[3];RST.seat={lx:TB[3].lx+.8,lz:TB[3].lz};
+ // every chair a diner can take, best first (the two left outside chairs belong to the people already having dinner).
+ // Each person who sits down takes the first one nobody is in (24l-restaurant.js), so nobody sits on anyone.
+ RST.seats=[[3,1],[1,1],[3,-1],[1,-1],[2,1],[0,1]].map(([i,side])=>({t:TB[i],side,lx:TB[i].lx+side*.8,lz:TB[i].lz}));
+ RST.seats.push(...[[0,-1],[2,-1]].map(([i,side])=>({t:TB[i],side,lx:TB[i].lx+side*.8,lz:TB[i].lz,npc:1})));
 
  // ---- string lights over the patio, on four iron poles ----
  {const bulbM=glow('#ffd590',1.7),wire=std('#1d1d1d',{roughness:.8});const poles=[[-5.3,-1.8],[5.3,-1.8],[5.3,5.2],[-5.3,5.2]];
@@ -1748,6 +1754,75 @@ function deliveryBox(){const g=new THREE.Group();
   z.ob(-4.75,3.7,.6);}
  signpost(z);}
 
+// ---- src/12h-place-helipad.js ----
+/* ===== 🚁 Helipad: a real-looking helicopter landing pad on the open grass between the Basketball Court and the Jump Park =====
+   The helicopter itself (the model, flying it, buying or winning it, and friends riding along) is in 26h-helicopter.js.
+   Like a real heliport: a square concrete apron, a dark touchdown circle with a yellow ring and a big white H,
+   green edge lights around the circle, a windsock that swings in the breeze, a fuel cart and a little operations hut.
+   Local space: +z points toward the middle of town (the path in), so the helicopter parks facing it.
+   Everything in the middle is flat on purpose: flyGrid (24h-flying.js) sees no obstacle there, so anything can land on it. */
+const HPAD={r:4.3,lights:[],sock:null};
+{const z=Z.heli,g=z.g,H=HPAD;
+ // ---- the apron and the touchdown circle (one picture, so it stays crisp from up high) ----
+ const S=11,px=1024;
+ const tex=canvasTex(px,px,(x,w,h)=>{const k=w/S,c=w/2;
+   // concrete slabs with a little speckle and seams
+   x.fillStyle='#b9b8b2';x.fillRect(0,0,w,h);
+   for(let i=0;i<26000;i++){const v=150+Math.random()*70|0;x.fillStyle=`rgba(${v},${v},${v-6},.22)`;x.fillRect(Math.random()*w,Math.random()*h,2,2);}
+   x.strokeStyle='rgba(70,70,66,.35)';x.lineWidth=3;for(let i=1;i<4;i++){const p=i*w/4;x.beginPath();x.moveTo(p,0);x.lineTo(p,h);x.stroke();x.beginPath();x.moveTo(0,p);x.lineTo(w,p);x.stroke();}
+   // oil stains and tyre scuffs, like a pad that gets used
+   for(let i=0;i<7;i++){const gx=c+(Math.random()-.5)*w*.6,gy=c+(Math.random()-.5)*h*.6,r=10+Math.random()*30,gr=x.createRadialGradient(gx,gy,0,gx,gy,r);gr.addColorStop(0,'rgba(40,38,34,.18)');gr.addColorStop(1,'rgba(40,38,34,0)');x.fillStyle=gr;x.fillRect(gx-r,gy-r,r*2,r*2);}
+   // the dark asphalt touchdown circle
+   x.fillStyle='#3b3d40';x.beginPath();x.arc(c,c,H.r*k,0,Math.PI*2);x.fill();
+   for(let i=0;i<9000;i++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*H.r*k,v=50+Math.random()*40|0;x.fillStyle=`rgba(${v},${v},${v+4},.35)`;x.fillRect(c+Math.cos(a)*r,c+Math.sin(a)*r,2,2);}
+   // the yellow ring, and a white dashed edge around the apron
+   x.strokeStyle='#e8c53a';x.lineWidth=.32*k;x.beginPath();x.arc(c,c,(H.r-.45)*k,0,Math.PI*2);x.stroke();
+   x.strokeStyle='#f2f2ee';x.lineWidth=.18*k;x.setLineDash([.9*k,.6*k]);x.strokeRect(.35*k,.35*k,w-.7*k,h-.7*k);x.setLineDash([]);
+   // the big white H (its crossbar points the way the helicopter parks)
+   x.fillStyle='#f4f4f0';const hw=.5*k,hh=3.4*k,hs=1.15*k;
+   x.fillRect(c-hs-hw/2,c-hh/2,hw,hh);x.fillRect(c+hs-hw/2,c-hh/2,hw,hh);x.fillRect(c-hs,c-hw/2,hs*2,hw);
+   // the weight limit, painted like on a real pad
+   x.font=`bold ${.75*k|0}px Arial, sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#f4f4f0';x.fillText('2.5',c,c+(H.r-1.35)*k);
+   x.font=`bold ${.42*k|0}px Arial, sans-serif`;x.fillText('BRYNNY HELIPORT',c,c-(H.r+.45)*k);});
+ const pad=M(new THREE.PlaneGeometry(S,S),std('#ffffff',{map:tex,roughness:.92}),0,.03,0,g,false,true);pad.rotation.x=-Math.PI/2;
+ pad.material.polygonOffset=true;pad.material.polygonOffsetFactor=-2;pad.material.polygonOffsetUnits=-2;
+ // a low concrete kerb around the apron
+ const kerb=std('#a3a29c',{roughness:.9});
+ for(const [x,zz,w,d] of [[0,-S/2,S+.3,.15],[0,S/2,S+.3,.15],[-S/2,0,.15,S],[S/2,0,.15,S]]){if(zz===S/2){for(const sx of [-1,1])M(box(S/2-1.5,.08,d),kerb,sx*(S/4+.75),.04,zz,g,false,true);continue;}M(box(w,.08,d),kerb,x,.04,zz,g,false,true);}
+ // ---- green edge lights round the circle (short, so nothing trips on them; seasons.js makes the town glow at night) ----
+ const lightM=glow('#5dff8a',1.4),capM=std('#2f3236',{roughness:.5,metalness:.4});
+ for(let i=0;i<16;i++){const a=i/16*Math.PI*2,lx=Math.sin(a)*(H.r+.25),lz=Math.cos(a)*(H.r+.25);
+   M(cyl(.045,.06,.1,10),capM,lx,.08,lz,g,false,false);H.lights.push(M(sph(.04,10,8),lightM,lx,.17,lz,g,false,false));}
+ // floodlights on the two back corners
+ for(const sx of [-1,1]){const lg=new THREE.Group();lg.position.set(sx*(S/2-.35),0,-S/2+.35);g.add(lg);
+   M(cyl(.05,.07,2.8,10),std('#5a5d62',{metalness:.6,roughness:.4}),0,1.4,0,lg);
+   const head=M(box(.42,.22,.18),std('#33363a',{metalness:.5,roughness:.4}),0,2.85,.05,lg);head.rotation.x=.5;
+   M(new THREE.PlaneGeometry(.36,.16),glow('#fff4d6',1.3),0,2.8,.15,lg,false,false).rotation.x=.5-Math.PI/2+Math.PI/2;
+   z.ob(sx*(S/2-.35),-S/2+.35,.15);}
+ // ---- the windsock: a striped orange and white sock on a pole, swinging with the breeze ----
+ {const wg=new THREE.Group();wg.position.set(S/2-.4,0,S/2-.6);g.add(wg);const pole=std('#c8cbd0',{metalness:.7,roughness:.35});
+   M(cyl(.04,.06,3.6,10),pole,0,1.8,0,wg);M(cyl(.16,.2,.12,14),std('#585b60',{roughness:.6}),0,.06,0,wg);
+   const piv=new THREE.Group();piv.position.y=3.55;wg.add(piv);M(new THREE.TorusGeometry(.17,.015,6,20),pole,0,0,0,piv).rotation.y=Math.PI/2;
+   const stripes=canvasTex(256,64,(x,w,h)=>{for(let i=0;i<5;i++){x.fillStyle=i%2?'#f4f1ea':'#ee5f1d';x.fillRect(i*w/5,0,w/5+1,h);}});
+   const sock=M(new THREE.CylinderGeometry(.17,.07,1.1,16,6,true),std('#ffffff',{map:stripes,roughness:.85,side:THREE.DoubleSide}),0,0,.58,piv,true,false);sock.rotation.x=Math.PI/2;
+   stripes.rotation=Math.PI/2;stripes.center.set(.5,.5);
+   H.sock=piv;z.ob(S/2-.4,S/2-.6,.12);
+   anims.push(t=>{piv.rotation.y=.9+Math.sin(t*.23)*.5+Math.sin(t*1.1)*.08;sock.rotation.z=Math.sin(t*3.1)*.05;sock.scale.y=.92+Math.sin(t*.7)*.08;});}
+ // ---- a little operations hut with a window and a door, and a fuel cart next to it ----
+ {const hg=new THREE.Group();hg.position.set(-S/2-.6,0,-2.6);hg.rotation.y=Math.PI/2;g.add(hg);
+   const wall=std('#e4e1da',{roughness:.85}),trim=std('#2f4a66',{roughness:.6});
+   M(box(2.6,2.3,1.8),wall,0,1.15,0,hg);M(box(2.8,.12,2),trim,0,2.36,0,hg);
+   M(box(.8,1.7,.04),trim,-.65,.85,.91,hg);M(sph(.035,8,6),std('#d8d8d8',{metalness:.8,roughness:.2}),-.38,.9,.94,hg,false,false);
+   M(box(1,.6,.04),phys('#8fb4cc',{roughness:.05,metalness:.2,clearcoat:1}),.55,1.4,.91,hg,false,false);
+   M(new THREE.PlaneGeometry(1.9,.42),new THREE.MeshBasicMaterial({map:labelTex('HELI OPS',{size:62,fg:'#ffffff',bg:'#2f4a66',border:null}),transparent:true}),0,2.05,.92,hg,false,false);
+   for(let i=-1;i<=1;i++)z.ob(-S/2-.6,-2.6+i*.9,.75);}
+ {const fg=new THREE.Group();fg.position.set(-S/2-.5,0,.9);fg.rotation.y=.3;g.add(fg);const red=phys('#b8261f',{roughness:.45,clearcoat:.4}),blk=std('#222',{roughness:.8});
+   M(new THREE.CapsuleGeometry(.36,.9,6,16),red,0,.7,0,fg).rotation.z=Math.PI/2;
+   for(const sx of [-1,1])for(const sz of [-1,1])M(cyl(.14,.14,.08,14),blk,sx*.45,.14,sz*.32,fg).rotation.x=Math.PI/2;
+   M(box(1.1,.06,.7),std('#3a3a3a',{metalness:.5}),0,.3,0,fg);
+   M(new THREE.PlaneGeometry(.7,.2),new THREE.MeshBasicMaterial({map:labelTex('JET A-1',{size:60,fg:'#ffffff',bg:null,border:null}),transparent:true}),0,.72,.37,fg,false,false);
+   z.ob(-S/2-.5,.9,.7);}
+ signpost(z);}
 // ---- src/13-park-and-stars.js ----
 /* ---------- park trees ---------- */
 {const trunkM=std('#7a5236',{roughness:.9});const leafs=['#3f8f3a','#4fa645','#2f7a34','#5cb04a'].map(c=>phys(c,{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')}));
@@ -4127,7 +4202,8 @@ canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercanc
 canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 $('#jump').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
-function jump(){if(closetOpen)return;if(flyJump())return;// on a flying ride: take off (24h-flying.js)
+function jump(){if(closetOpen)return;if(heliJump())return;// in the helicopter: lift off (26h-helicopter.js)
+  if(flyJump())return;// on a flying ride: take off (24h-flying.js)
   if(window.__daddy?.jump())return;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   if(jpJump())return;// bouncing on a trampoline: bounce higher next time (26e-jump-park.js)
   if(skateParkJump())return;// on wheels at the skate park: an ollie, or hop off a rail (24k-skate-park.js)
@@ -4501,6 +4577,7 @@ function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
   if(id==='skate'){toggleSkate();return;}
   if(id==='bike'){toggleBike();return;}
   if(id==='horse'){toggleHorse();return;}
+  if(id==='heli'){heliCall();return;}// 🚁 26h-helicopter.js
   if(SK.on)stopSkate(true);
   if(BIKE.on)stopBike(true);
   if(id==='dance'&&!picked){openDances();return;}
@@ -9348,7 +9425,7 @@ const isFlyer=a=>!!(a&&a.F&&a.F.fly);
 /* ---------- what's below you: a height map of every building, tree and lamp on the island (made once) ---------- */
 const FG={o:Math.ceil(R+4),h:null};
 function flyGrid(){if(FG.h)return;const o=FG.o,n=o*2+1,h=new Float32Array(n*n);
-  const skip=new Set([av.g,...FRIENDS.map(f=>f.g),...PETS.map(p=>p.g),...Object.values(FA).map(a=>a.g),...STARS.map(s=>s.m)]);
+  const skip=new Set([av.g,...FRIENDS.map(f=>f.g),...PETS.map(p=>p.g),...Object.values(FA).map(a=>a.g),...STARS.map(s=>s.m),...heliSkip()]);// (helicopters are never in the way: 26h-helicopter.js)
   const box=new THREE.Box3();scene.updateMatrixWorld(true);
   const walk=ob=>{if(skip.has(ob))return;
     if(ob.isMesh&&!ob.isInstancedMesh&&!ob.isSkinnedMesh&&ob.geometry){const gm=ob.geometry;if(!gm.boundingBox)gm.computeBoundingBox();box.copy(gm.boundingBox).applyMatrix4(ob.matrixWorld);
@@ -9907,9 +9984,18 @@ function rStep(o,dt){if(o.path&&o.path.length){const tg=o.path[0];tmpV.subVector
 /* ---------- 🍽️ sitting down to eat ---------- */
 const meal={phase:'menu',main:'pizza',drink:'lemonade',sweet:null,food:null,drk:null,bites:0,sips:0,bite:0,biteDid:false,fork:null,cam:{p:new THREE.Vector3(),t:new THREE.Vector3()}};
 const BITES=4,SIPS=3;
-const TBL=()=>RST.myT;
+const TBL=()=>(meal.seat||RST.seats[0]).t;
+// 🪑 every person eating here gets their own chair: a friend online who is eating sends which chair (the 'dine' entry in
+// 26c-friends-see.js), and townspeople standing next to a chair count too, so you take the first chair nobody is in
+function seatSpot(s){return zW(RZ,s.lx,0,s.lz);}
+function seatTaken(s,skipMe){if(s.npc)return true;const w=seatSpot(s),i=RST.seats.indexOf(s);
+  if(!skipMe&&restOpen&&meal.mode==='eat'&&meal.seat===s)return true;
+  if(typeof mapOthers!=='undefined'&&mapOthers)for(const o of mapOthers.values()){const dn=o.shows&&o.shows.dine;if(dn&&dn.h&&dn.h.s===i)return true;if(o.pos&&Math.hypot(o.pos.x-w.x,o.pos.z-w.z)<.6)return true;}
+  for(const f of FRIENDS)if(Math.hypot(f.pos.x-w.x,f.pos.z-w.z)<.6)return true;
+  return false;}
+function pickSeat(){return RST.seats.find(s=>!seatTaken(s,true))||RST.seats[0];}
 function clearTable(){for(const k of ['food','drk']){const f=meal[k];if(f){f.g.parent&&f.g.parent.remove(f.g);freeObj(f.g);meal[k]=null;}}}
-function sitDown(){const s=RST.seat,p=zW(RZ,s.lx,0,s.lz);player.pos.copy(p);player.vy=0;player.speed=0;player.face=zFace(RZ,-1,0);av.play('chair');}
+function sitDown(){const s=meal.seat=pickSeat(),p=seatSpot(s);player.pos.copy(p);player.vy=0;player.speed=0;player.face=zFace(RZ,-s.side,0);av.play('chair');}
 function openRest(mode){if(closetOpen||!started)return;closeTalk();buildRest();restOpen=closetOpen=true;meal.mode=mode;RST.spad.parts.forEach(v=>v.visible=false);RST.dpad.lbl.visible=false;
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
   meal.cam.p.copy(camera.position);meal.cam.t.copy(cam.fv||player.pos);
@@ -9937,8 +10023,8 @@ function order(kind,drinkKind){if(meal.phase!=='menu'&&meal.phase!=='dessert')re
       const f=makeFood(kind);f.g.position.set(-.04,.008,0);r.tray.add(f.g);let d=null;if(drinkKind){d=makeFood(drinkKind);d.g.position.set(.11,.008,.06);r.tray.add(d.g);}
       r.tray.visible=true;r.want=null;
       rosieGo(rosieThere().slice(1),()=>{if(!restOpen||meal.phase!=='wait'){r.tray.visible=false;return;}r.want=zFace(RZ,0,1);
-        const tb=TBL().g;f.g.position.set(.3,.76,0);f.g.rotation.y=Math.PI/2;tb.add(f.g);meal.food=f;
-        if(d){if(meal.drk){tb.remove(meal.drk.g);freeObj(meal.drk.g);}d.g.position.set(.24,.76,.24);tb.add(d.g);meal.drk=d;meal.sips=0;}
+        const tb=TBL().g,sd=meal.seat.side;f.g.position.set(sd*.3,.76,0);f.g.rotation.y=sd*Math.PI/2;tb.add(f.g);meal.food=f;
+        if(d){if(meal.drk){tb.remove(meal.drk.g);freeObj(meal.drk.g);}d.g.position.set(sd*.24,.76,sd*.24);tb.add(d.g);meal.drk=d;meal.sips=0;}
         r.tray.visible=false;meal.bites=0;meal.phase=sweet?'eatSweet':'eat';handFork(true);renderRest();tone(660,.08,'triangle',.1);
         rSay(r,rnd(['Enjoy your meal! 😊','Bon appétit! ✨','Buon appetito! 🇮🇹']));
         setTimeout(()=>rosieGo(rosieBack(),()=>{r.want=zFace(RZ,0,1);}),1400);});},900);},700);});}
@@ -9992,7 +10078,9 @@ $('#rcontent').addEventListener('click',e=>{const b=e.target.closest('button');i
 
 // the camera looks at your table from the front, so you see Rosie coming over
 function restCam(dt){if(!restOpen)return;const land=innerWidth>innerHeight*1.25;
-  const want=meal.mode==='rush'?zW(RZ,-1.4,1.9,7.6):zW(RZ,land?.4:-.1,land?2:2.15,land?5.6:6.5),tgt=meal.mode==='rush'?zW(RZ,-4,.6,4.2):zW(RZ,land?2.2:2.25,.85,land?1.2:1.15);
+  // eating: from in front of your table, off to the side you're not on, so you see your face and Rosie coming over
+  const T=TBL(),sd=(meal.seat||RST.seats[0]).side;
+  const want=meal.mode==='rush'?zW(RZ,-1.4,1.9,7.6):zW(RZ,T.lx-sd*(land?2.1:2.6),land?2:2.15,T.lz+(land?3.2:4.1)),tgt=meal.mode==='rush'?zW(RZ,-4,.6,4.2):zW(RZ,T.lx-sd*(land?.3:.25),.85,T.lz-(land?1.2:1.25));
   const a=Math.min(1,dt*4);meal.cam.p.lerp(want,a);meal.cam.t.lerp(tgt,a);camera.position.copy(meal.cam.p);camera.lookAt(meal.cam.t);}
 
 /* ---------- 🛵 the delivery rush ---------- */
@@ -10059,7 +10147,10 @@ drawBoard();
 /* ---------- every frame ---------- */
 anims.push((t,dt)=>{if(!started)return;const p=player.pos;
   const near=curZone===RZ||restOpen||Math.hypot(p.x-RZ.x,p.z-RZ.z)<RZ.r+14;
-  if(near){buildRest();for(const o of RP.all)rStep(o,dt);}
+  if(near){buildRest();for(const o of RP.all)rStep(o,dt);
+    // townspeople walking through never stand in a chair (or on someone sitting in it)
+    for(const f of FRIENDS){if(Math.hypot(f.pos.x-RZ.x,f.pos.z-RZ.z)>RZ.r+1)continue;for(const s of RST.seats){const w=seatSpot(s),dx=f.pos.x-w.x,dz=f.pos.z-w.z,d=Math.hypot(dx,dz);
+      if(d<.7){const k=d>.001?(.7-d)/d:0;if(k){f.pos.x+=dx*k;f.pos.z+=dz*k;}else f.pos.z+=.7;f.g.position.copy(f.pos);if(f.tgt&&Math.hypot(f.tgt.x-w.x,f.tgt.z-w.z)<.7)f.tgt=null;}}}}
   if(restOpen&&meal.mode==='eat'){if(!av.emote||av.emote.id!=='chair'&&av.emote.id!=='cheer')av.play('chair');handFork(meal.phase==='eat'||meal.phase==='eatSweet');biteAnim(dt);}
   rushStep(dt);custStep(dt);
   if(curZone!==restZone){restZone=curZone;if(curZone===RZ&&!closetOpen&&!DL.on)setTimeout(()=>toast('Step on the 🍽️ pad to eat, or the 🛵 pad for a delivery rush!'),1600);}
@@ -10067,8 +10158,8 @@ anims.push((t,dt)=>{if(!started)return;const p=player.pos;
   {const [lx,lz]=RZ.toLocal(p.x,p.z),P=RST.spad,d=Math.hypot(lx-P.lx,lz-P.lz);if(d<P.r&&player.onGround&&!closetOpen){if(!onRSPad){onRSPad=true;openRest('eat');}}else if(d>1.3)onRSPad=false;}
   {const [lx,lz]=RZ.toLocal(p.x,p.z),P=RST.dpad,d=Math.hypot(lx-P.lx,lz-P.lz);if(d<P.r&&player.onGround&&!closetOpen){if(!onRDPad){onRDPad=true;openRest('rush');}}else if(d>1.3)onRDPad=false;}});
 
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{restaurant:{RST,meal,DL,RP,RD,openRest,closeRest,order,takeBite,takeSip,startRush,endRush,
-  state:()=>({open:restOpen,phase:meal.phase,bites:meal.bites,food:meal.food&&meal.food.g.userData.kind,rosie:RP.rosie&&{x:RP.rosie.pos.x,z:RP.rosie.pos.z,tray:RP.rosie.tray.visible,walking:!!(RP.rosie.path&&RP.rosie.path.length)},
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{restaurant:{RST,meal,DL,RP,RD,seatTaken,pickSeat,openRest,closeRest,order,takeBite,takeSip,startRush,endRush,
+  state:()=>({open:restOpen,phase:meal.phase,seat:RST.seats.indexOf(meal.seat),bites:meal.bites,food:meal.food&&meal.food.g.userData.kind,rosie:RP.rosie&&{x:RP.rosie.pos.x,z:RP.rosie.pos.z,tray:RP.rosie.tray.visible,walking:!!(RP.rosie.path&&RP.rosie.path.length)},
     rush:{on:DL.on,i:DL.i,t:DL.t,limit:DL.limit,box:!!(DL.box&&DL.box.parent),orders:DL.orders.map(o=>({id:o.z.id,x:o.p.x,z:o.p.z})),cust:DL.cust&&{x:DL.cust.pos.x,z:DL.cust.pos.z}},best:RD.best||null})}});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
@@ -10122,7 +10213,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||window.__daddy?.frozen())mag=0;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   const p=player.pos;
-  if(!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!advStep(dt)){// advStep (26h-adventure.js): climbing a ladder or the rock wall, or on a zip line// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
+  if(!heliStep(dt,ix,iy,mag)&&!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!advStep(dt)){// advStep (26h-adventure.js): climbing a ladder or the rock wall, or on a zip line// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
   // ^ DADDY POWERS: window.__daddy?.fly is Daddy flying, swinging or in the robot (27-daddy-powers.js); does nothing once that file is gone
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
@@ -10171,7 +10262,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   const playMode=!closetOpen;
   const ZM={eyes:[.012,.3],lips:[-.058,.26],face:[-.01,.55]}[closetOpen?czoom:'']||null;
   if(ZM)player.face=angDamp(player.face,cam.closetYaw,Math.min(1,dt*8));
-  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist+flyCamBack():ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
+  const tPitch=playMode?cam.pitch:ZM?.02:.1,tDist=playMode?cam.dist+flyCamBack()+heliCamBack():ZM?ZM[1]:3.1,tYaw=playMode?cam.yaw:cam.closetYaw;
   if(!started){cam.yaw+=dt*.12;}
   cam.cy=angDamp(cam.cy,tYaw,Math.min(1,dt*(playMode?14:6)));cam.cp+=(tPitch-cam.cp)*Math.min(1,dt*6);cam.cd+=(tDist-cam.cd)*Math.min(1,dt*5);
   const want=ZM?av.head.localToWorld(tmpV.set(0,ZM[0],.1)):tmpV.set(p.x,jpCamY(p.y,dt)+(playMode?1.15:.82),p.z);
@@ -10232,7 +10323,7 @@ function preUpload(){if(LITE)return;const off=[],near=isTouch?40:Infinity,v=new 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(warmUp,0),{once:true});else setTimeout(warmUp,0);
 // ---- src/26-map.js ----
 /* ================= MAP ================= */
-const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
+const MAPC={heli:'#c9d3de',studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -10573,6 +10664,17 @@ SHOW.push({k:'dbox',
   on(f){const sp=f.a&&f.a.spine;if(!sp)return null;const b=deliveryBox();b.position.set(0,.2,-.25);sp.add(b);return {b,sp};},
   step(f,d,dt,h){if(h&&f.a&&f.a.spine!==h.sp){h.sp.remove(h.b);h.sp=f.a.spine;h.sp.add(h.b);}},
   off(f,h){if(h&&h.sp)h.sp.remove(h.b);}});
+
+// 🍝 sitting at a table in Rosie's Restaurant: friends see you in YOUR chair, sitting down (24l-restaurant.js picks a free one)
+SHOW.push({k:'dine',
+  mine(){return restOpen&&meal.mode==='eat'&&meal.seat?{s:RST.seats.indexOf(meal.seat)}:null;},
+  on(f,d){const s=RST.seats[d.s|0];if(!Number.isInteger(d.s)||!s||s.npc)return null;return {s:d.s};},
+  step(f,d,dt,h){const A=f.a;if(!A||!h)return;let s=RST.seats[h.s];
+    // you both sat down at the same moment in the same chair: on your phone they move to the next free one
+    if(restOpen&&meal.mode==='eat'&&meal.seat===s)s=RST.seats.find(x=>x!==s&&!seatTaken(x,true))||s;
+    A.g.position.copy(seatSpot(s));A.g.rotation.y=zFace(RZ,-s.side,0);
+    if(!A.emote||!['chair','cheer','wave','clap'].includes(A.emote.id))A.play('chair');},
+  off(f){if(f.a&&f.a.emote&&f.a.emote.id==='chair')f.a.emote=null;}});
 
 /* ---------- what online.js calls ---------- */
 // everything about you, for friends
@@ -11367,6 +11469,11 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{water
    - 🦁 Safari Round-up: the same game from the 🦒 Safari Zoo, with four safari runaways (Ziggy the zebra, Kito the okapi, Twiga the baby
      giraffe and Tembo the baby elephant, in SAFARI_LIST). They live in the zoo with the others (hidden copies until a Safari Round-up starts),
      and you walk them back to the zoo. Only one Round-up runs at a time (RU.grp is 'barn' or 'zoo').
+   - 🌪️ The All-Animal Round-up (Preston's idea): tap "Start the All-Animal Round-up!" by the ✨ Sparkle Studio in the middle of town and
+     EVERY runaway breaks out at once (the barn four, the safari four, and the polar four when ❄️ Polar Ice is there, POLAR_LIST), right
+     round you so you see lots of them. They don't keep to the streets: they run all over town (mode 'loose', any grass or path you could
+     walk on, looseSpot), and when you get close they dash away (flee), then stop for a breather (tired) and that's your chance. You can walk
+     up to 3 on ropes at once (ropeMax), and each one goes home to its own place (barn, zoo or Polar Ice). A timer runs; RS.allBest is your best.
    - The models are the barn's and the zoo's (FarmAnimal in 24d-barn.js). Each one hides when it's far from you (iPhone memory). */
 const ROAM_LIST=[
   {k:'duck',nm:'Waddles',food:[['🌽','corn'],['🍉','melon']],streets:[330,0],say:['Quack quack! 🦆','*waddle waddle*','I\'m exploring! 🗺️']},
@@ -11379,7 +11486,14 @@ const SAFARI_LIST=[
   {k:'okapi',nm:'Kito',e:'🦌',sc:.9,food:[['🍌','banana'],['🍃','leaves']],streets:[30,90],say:['*soft huff*','Shh, I\'m shy! 🌿','*long tongue lick* 👅']},
   {k:'giraffe',nm:'Twiga',e:'🦒',sc:.5,food:[['🥬','lettuce'],['🌿','acacia leaves']],streets:[150,180],say:['Hello down there! 🦒','*long lick* 👅','Mmm, leaves! 🌿']},
   {k:'elephant',nm:'Tembo',e:'🐘',sc:.45,food:[['🍉','watermelon'],['🍎','apple']],streets:[240,270],say:['*happy trumpet* 🎺','*splashy trunk wave*','Peanuts? 🥜']}].map(o=>({...o,grp:'zoo'}));
+// ❄️ the polar runaways, only once Polar Ice and its animals are in town (24c9g-arctic-animals.js, 12h-place-arctic.js)
+const POLAR_LIST=(FK.polarbear&&Z.arctic)?[
+  {k:'polarbear',nm:'Nanook',e:'🐻‍❄️',sc:.6,food:[['🐟','fish'],['🫐','berries']],streets:[150,195],say:['*big bear huff*','*sniff sniff* Fish?','*rolls in the grass*']},
+  {k:'walrus',nm:'Wally',e:'🦭',sc:.6,food:[['🐟','fish'],['🦪','clams']],streets:[180,240],say:['*loud bellow*','*whisker wiggle*','*flop flop flop*']},
+  {k:'penguin',nm:'Pebble',e:'🐧',food:[['🐟','fish'],['🦐','shrimp']],streets:[90,30],say:['*trumpet call*','*waddle waddle*','*slides on its belly*']},
+  {k:'arcticfox',nm:'Frost',e:'🦊',food:[['🐟','fish'],['🫐','berries']],streets:[270,330],say:['*yip yip!*','*pounce!*','*fluffy tail swish*']}].filter(o=>FK[o.k]).map(o=>({...o,grp:'arctic'})):[];
 const RU_ZONE={barn:BZ,zoo:Z.zoo},RU_NAME={barn:'🐴 Happy Barn',zoo:'🦒 Safari Zoo'};
+if(POLAR_LIST.length){RU_ZONE.arctic=Z.arctic;RU_NAME.arctic='❄️ Polar Ice';}
 const ROAM_RING=7.15,ROAM_REACH=2.6,ROAM_SPD=.85,RU_SPD=1.35,RU_HOME=6;// RU_HOME: how close to the barn's fence counts as home
 SAVE.roam||={};const RS=SAVE.roam;RS.fed||={};
 // where each street stops: just in front of the first place along it
@@ -11394,13 +11508,24 @@ function meadowSpot(near){for(let i=0;i<80;i++){const a=near==null?Math.random()
     return {x,z};}
   return {x:BZ.x+BZ.fence+3,z:BZ.z};}
 const meadowAng=c=>Math.atan2(c.pos.x-BZ.x,c.pos.z-BZ.z);
-const ROAM=ROAM_LIST.concat(SAFARI_LIST).map(o=>{const a=new FarmAnimal(o.k),j=obs.indexOf(a.ob);if(j>=0)obs.splice(j,1);a.ob.r=0;a.dust.forEach(d=>d.visible=false);
+const ROAM=ROAM_LIST.concat(SAFARI_LIST,POLAR_LIST).map(o=>{const a=new FarmAnimal(o.k),j=obs.indexOf(a.ob);if(j>=0)obs.splice(j,1);a.ob.r=0;a.dust.forEach(d=>d.visible=false);
   const sc=o.sc||1,tag=sprite(labelTex(o.nm,{size:58,fg:'#8a5a3b',bg:'rgba(255,255,255,.88)',border:null}),.8/sc,.2/sc);tag.position.y=a.h+.15/sc;a.g.add(tag);
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}
-  const c={...o,a,F:FK[o.k],e:o.e||FK[o.k].e,pos:new THREE.Vector3(),face:Math.random()*6,mode:o.grp==='zoo'?'zoo':'meadow',tgt:null,wp:[],wait:Math.random()*3,street:o.streets[0],lookT:0,happy:0,owner:''};
-  const s=o.grp==='zoo'?{x:Z.zoo.x,z:Z.zoo.z}:meadowSpot();c.pos.set(s.x,0,s.z);a.pos.copy(c.pos);a.g.visible=o.grp!=='zoo';scene.add(a.g);return c;});
-// the animals in the Round-up that's on (or the last one)
-const ruSet=()=>ROAM.filter(c=>c.grp===RU.grp);
+  const c={...o,a,F:FK[o.k],e:o.e||FK[o.k].e,pos:new THREE.Vector3(),face:Math.random()*6,mode:o.grp!=='barn'?'zoo':'meadow',flee:0,tired:0,cool:0,stuck:0,cT:0,tgt:null,wp:[],wait:Math.random()*3,street:o.streets[0],lookT:0,happy:0,owner:''};
+  const s=o.grp!=='barn'?{x:RU_ZONE[o.grp].x,z:RU_ZONE[o.grp].z}:meadowSpot();c.pos.set(s.x,0,s.z);a.pos.copy(c.pos);a.g.visible=o.grp==='barn';scene.add(a.g);return c;});
+// the animals in the Round-up that's on (or the last one): in the All-Animal one, every one of them
+const ruSet=()=>RU.grp==='all'?ROAM:ROAM.filter(c=>c.grp===RU.grp);
+const ruIn=c=>RU.grp==='all'||c.grp===RU.grp;
+// 🌪️ All-Animal Round-up: anywhere you could walk counts (on the island, not in the water, not inside a tree, post or wall)
+const looseOk=(x,z)=>Math.hypot(x,z)<R-2.5&&!obs.some(o=>o.r>0&&Math.hypot(x-o.x,z-o.z)<o.r+.7);
+function looseSpot(c,rr=Math.random){for(let i=0;i<40;i++){const a=rr()*Math.PI*2,d=6+rr()*16,x=c.pos.x+Math.sin(a)*d,z=c.pos.z+Math.cos(a)*d;if(looseOk(x,z))return {x,z};}
+  const a=rr()*Math.PI*2,d=10+rr()*25;return {x:Math.sin(a)*d,z:Math.cos(a)*d};}
+const RU_ALL_SPD=2.3,RU_FLEE_SPD=4.2,RU_FLEE_R=4.5;
+const myRopes=()=>ROAM.filter(c=>c.mode==='rope').sort((a,b)=>a.cT-b.cT);
+const ropeMax=()=>RU.grp==='all'?3:1;
+const canCatch=c=>c&&(c.mode==='street'||c.mode==='loose');
+const allOn=()=>typeof PE!=='undefined'&&PE.on;// ❄️ a Polar escape is on (24m2-arctic-escape.js): one chase at a time
+const mmss=t=>{t=Math.max(0,Math.floor(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
 const roamByName=nm=>ROAM.find(c=>c.nm===nm);
 // a walk along its street during a Round-up: out to the end, a sniff around, back to the plaza, round the ring to the next street
 function roamPlan(c,from){const wp=c.wp,end=roamEnd(c.street),side=()=>(Math.random()-.5)*.9;
@@ -11424,24 +11549,38 @@ const ruEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&l
 function ruSend(d){const n=ruNet();if(n)try{n.send(Object.assign({t:'roam',r:RU.r},d));}catch(e){}}
 const ruRand=seed=>{let s=(Math.abs(Math.floor(seed))%2147483646)+1;return ()=>((s=(s*16807)%2147483647)-1)/2147483646;};
 // everyone starts the same Round-up from the same seed, so the animals break out to the same spots on every phone
-function ruStart(r,seed,who,whoName,grp='barn'){if(RU.on||!RU_ZONE[grp])return;Object.assign(RU,{on:true,grp,r,seed,home:{},sc:{},names:{},stT:0,endT:0});
+function ruStart(r,seed,who,whoName,grp='barn',at=null){if(RU.on||(!RU_ZONE[grp]&&grp!=='all')||allOn())return;Object.assign(RU,{on:true,grp,r,seed,home:{},sc:{},names:{},stT:0,endT:0,t0:roamT,secT:0});
   RU.names[ruMe()]=SAVE.name||'You';if(who&&who!==ruMe())RU.names[who]=String(whoName||'Friend').slice(0,16);
-  const rr=ruRand(seed);
-  for(const c of ruSet()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',16,1.4);
+  const rr=ruRand(seed),set=ruSet();
+  // they burst out all round whoever started it (at), so you see a whole crowd of them, then they scatter every which way
+  const ax=at?at.x:0,az=at?at.z:Z.studio.r+3;RU.at={x:ax,z:az};
+  if(grp==='all')set.forEach((c,i)=>{
+    let s=null;for(let k=0;k<30&&!s;k++){const a=(i+rr()*.8)/set.length*Math.PI*2,d=2.5+rr()*5+k*.2,x=ax+Math.sin(a)*d,z=az+Math.cos(a)*d;if(looseOk(x,z)&&Math.hypot(x,z)>Z.studio.r+.5)s={x,z};}
+    s||=looseSpot({pos:{x:ax,z:az}},rr);c.pos.set(s.x,0,s.z);c.mode='loose';c.owner='';c.wait=rr()*.6;c.lookT=0;c.flee=c.tired=c.cool=c.stuck=0;
+    c.cool=1+rr()*2;c.tgt=looseSpot(c,rr);c.face=Math.atan2(c.tgt.x-s.x,c.tgt.z-s.z);c.a.g.visible=true;burst(new THREE.Vector3(s.x,.5,s.z),'#ffd23f',16,1.4);});
+  else for(const c of set){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',16,1.4);
     c.mode='street';c.owner='';c.wait=0;c.lookT=0;c.street=c.streets[Math.floor(rr()*2)];const d=12+rr()*(roamEnd(c.street)-15),s=roamSpot(c.street,d,(rr()-.5)*.8);
     c.pos.set(s.x,0,s.z);c.wp=[];roamPlan(c,d);c.face=deg(c.street);c.a.g.visible=true;}
   const home=RU_NAME[grp],n=ruSet().length;
+  if(grp==='all'){sfx('tada');banner('🌪️ All-Animal Round-up! EVERYONE broke out!');
+    setTimeout(()=>toast(who&&who!==ruMe()?`👭 ${whoName||'A friend'} let all ${n} animals out! Catch them 🪢 and walk each one to its home`:`All ${n} animals are loose! Sneak up, catch them 🪢 (up to 3 at once) and walk each one to its home`),1900);
+    did('roundstart');ruBar();roamBtnKey='?';return;}
   sfx('tada');banner(grp==='zoo'?'🚨 Safari Round-up! The zoo animals broke out!':'🚨 Round-up! The barn animals broke out!');
   setTimeout(()=>toast(who&&who!==ruMe()?`👭 ${whoName||'A friend'} started a Round-up! Catch the runaways 🪢 and bring them back to the ${home}`:`Catch all ${n} runaways 🪢 and bring them back to the ${home}. Look on the minimap!`),1900);
   did('roundstart');ruBar();roamBtnKey='?';}
-function ruBegin(grp){if(RU.on)return;const r=ruMe().slice(0,8)+'-'+Date.now().toString(36),seed=1+Math.floor(Math.random()*2e9);ruStart(r,seed,null,null,grp);ruSend({a:'go',seed,g:grp});}
-function ruCatch(c){if(!RU.on||!c||c.mode!=='street'||ROAM.some(o=>o.mode==='rope'))return;c.mode='rope';c.owner=ruMe();c.wp=[];c.wait=0;c.a.speak(rnd(c.say));sfx('pop');
-  toast(`🪢 You caught ${c.nm}! Walk ${c.nm} back to the ${RU_NAME[c.grp]}`);did('roamcatch',c.nm);ruSend({a:'catch',nm:c.nm});ruBar();roamBtnKey='?';}
-function ruLetGo(c,quiet){if(!c||(c.mode!=='rope'&&c.mode!=='friend'))return;const mine=c.mode==='rope';c.mode='street';c.owner='';roamToStreet(c);
+function ruBegin(grp){if(RU.on)return;const r=ruMe().slice(0,8)+'-'+Date.now().toString(36),seed=1+Math.floor(Math.random()*2e9),P=player.pos;
+  // they burst out just in front of you (the way the camera looks), so the screen fills up with them
+  let fx=P.x-Math.sin(cam.yaw)*6,fz=P.z-Math.cos(cam.yaw)*6;if(Math.hypot(fx,fz)<Z.studio.r+3||!looseOk(fx,fz)){fx=P.x;fz=P.z;}
+  const at={x:+fx.toFixed(1),z:+fz.toFixed(1)};
+  ruStart(r,seed,null,null,grp,at);ruSend({a:'go',seed,g:grp,...at});}
+function ruCatch(c){if(!RU.on||!canCatch(c)||!ruIn(c)||myRopes().length>=ropeMax())return;c.mode='rope';c.owner=ruMe();c.cT=roamT;c.wp=[];c.wait=0;c.flee=c.tired=0;c.a.speak(rnd(c.say));sfx('pop');
+  const n=myRopes().length;toast(`🪢 You caught ${c.nm}! Walk ${c.nm} back to the ${RU_NAME[c.grp]}`+(RU.grp==='all'&&n<3?` (you can hold ${3-n} more)`:''));did('roamcatch',c.nm);if(n>=3)did('roamtrio',n);ruSend({a:'catch',nm:c.nm});ruBar();roamBtnKey='?';}
+function ruLetGo(c,quiet){if(!c||(c.mode!=='rope'&&c.mode!=='friend'))return;const mine=c.mode==='rope';c.owner='';
+  if(RU.grp==='all'){c.mode='loose';c.tgt=looseSpot(c);c.flee=1;c.cool=0;}else{c.mode='street';roamToStreet(c);}
   if(mine&&!quiet){sfx('pop');toast(`${c.e} ${c.nm} runs off again!`);ruSend({a:'let',nm:c.nm});}ruBar();roamBtnKey='?';}
 // brought home (by you or a friend): a barn animal trots back into the meadow, a safari one goes back into the zoo
 function ruHome(c,who,quiet){if(!RU.on||RU.home[c.nm])return;RU.home[c.nm]=who;RU.sc[who]=(RU.sc[who]||0)+1;c.owner='';c.wait=0;
-  if(c.grp==='zoo'){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',20,1.5);c.mode='zoo';c.a.g.visible=false;}else{c.mode='meadow';c.tgt=meadowSpot(meadowAng(c));}
+  if(c.grp!=='barn'){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',20,1.5);c.mode='zoo';c.a.g.visible=false;}else{c.mode='meadow';c.tgt=meadowSpot(meadowAng(c));}
   if(who===ruMe()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.4,0)),'#ffd23f',24,1.6);floaties(c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0)),'🏠',5);sfx('tada');
     did('roamhome',c.nm);ruSend({a:'home',nm:c.nm});const left=ruSet().length-Object.keys(RU.home).length;
     if(left)toast(`🏠 ${c.nm} is back home! ${left} still out`);}
@@ -11449,22 +11588,26 @@ function ruHome(c,who,quiet){if(!RU.on||RU.home[c.nm])return;RU.home[c.nm]=who;R
   ruBar();roamBtnKey='?';if(Object.keys(RU.home).length>=ruSet().length)ruEnd();}
 function ruEnd(){const me=ruMe(),ids=Object.keys(RU.names),friends=ids.filter(id=>id!==me),mine=RU.sc[me]||0;
   const best=Math.max(0,...ids.map(id=>RU.sc[id]||0)),place=friends.length?ids.filter(id=>(RU.sc[id]||0)>mine).length:-1;
-  RU.on=false;RU.done[RU.r]=1;RU.endT=roamT||1e-3;RU.last={sc:{...RU.sc},names:{...RU.names}};
-  if(!friends.length){banner('🏠 Round-up done! Everyone is home');setTimeout(()=>earn(40,'Round-up'),900);}
+  RU.on=false;RU.done[RU.r]=1;RU.endT=roamT||1e-3;RU.last={sc:{...RU.sc},names:{...RU.names},t:roamT-RU.t0};
+  if(RU.grp==='all'){const t=RU.last.t,rec=!RS.allBest||t<RS.allBest;if(rec){RS.allBest=t;persist();}
+    const won=!friends.length||(place===0&&mine===best&&mine>0);
+    banner(won?(friends.length?`🏆 You won the All-Animal Round-up! ${mine} caught`:`🌪️ Everyone is home! Done in ${mmss(t)}${rec?' · new best!':''}`):`🌪️ Everyone is home! You caught ${mine}`);
+    setTimeout(()=>earn(won?100:30,'All-Animal Round-up'),900);}
+  else if(!friends.length){banner('🏠 Round-up done! Everyone is home');setTimeout(()=>earn(40,'Round-up'),900);}
   else if(place===0&&mine===best&&mine>0){banner(`🏆 You won the Round-up! ${mine} caught`);setTimeout(()=>earn(40,'Won the Round-up'),900);}
   else{banner(`🏠 Round-up done! You caught ${mine}`);setTimeout(()=>earn(15,'Round-up'),900);}
   sfx('tada');did('roundup',place);did('roundgrp',RU.grp);ruBar();roamBtnKey='?';}
 // what friends send
 function ruFromNet(id,name,d){if(!d||typeof d.a!=='string'||typeof d.r!=='string')return;id=String(id).slice(0,40);const r=d.r.slice(0,40),c=typeof d.nm==='string'?roamByName(d.nm):null;
-  if(d.a==='go'||d.a==='st'){if(!RU.on&&started&&!RU.done[r]){const sd=+d.seed;if(Number.isFinite(sd))ruStart(r,sd,id,name,d.g==='zoo'?'zoo':'barn');}
+  if(d.a==='go'||d.a==='st'){if(!RU.on&&started&&!RU.done[r]){const sd=+d.seed;if(Number.isFinite(sd))ruStart(r,sd,id,name,d.g==='zoo'||d.g==='all'||(d.g==='arctic'&&RU_ZONE.arctic)?d.g:'barn',Number.isFinite(+d.x)&&Number.isFinite(+d.z)?{x:+d.x,z:+d.z}:null);}
     if(!RU.on||r!==RU.r)return;RU.names[id]=String(name||'Friend').slice(0,16);
-    if(d.a==='st'){for(const [nm,w] of Object.entries(d.h||{})){const a=roamByName(nm);if(a&&a.grp===RU.grp&&typeof w==='string'&&!RU.home[nm])ruHome(a,w.slice(0,40),true);}
-      for(const [nm,w] of Object.entries(d.c||{})){const a=roamByName(nm);if(a&&a.grp===RU.grp&&w===id&&a.mode==='street'){a.mode='friend';a.owner=id;}}
+    if(d.a==='st'){for(const [nm,w] of Object.entries(d.h||{})){const a=roamByName(nm);if(a&&ruIn(a)&&typeof w==='string'&&!RU.home[nm])ruHome(a,w.slice(0,40),true);}
+      for(const [nm,w] of Object.entries(d.c||{})){const a=roamByName(nm);if(a&&ruIn(a)&&w===id&&canCatch(a)){a.mode='friend';a.owner=id;}}
       ruBar();}
     return;}
-  if(!RU.on||r!==RU.r||!c||c.grp!==RU.grp)return;RU.names[id]=String(name||'Friend').slice(0,16);
+  if(!RU.on||r!==RU.r||!c||!ruIn(c))return;RU.names[id]=String(name||'Friend').slice(0,16);
   if(d.a==='catch'){if(c.mode==='rope'){if(id<ruMe()){toast(`😮 ${RU.names[id]} caught ${c.nm} first!`);c.mode='friend';c.owner=id;}}
-    else if(c.mode==='street'||c.mode==='friend'){c.mode='friend';c.owner=id;}ruBar();roamBtnKey='?';}
+    else if(canCatch(c)||c.mode==='friend'){c.mode='friend';c.owner=id;}ruBar();roamBtnKey='?';}
   else if(d.a==='let'){if(c.mode==='friend'&&c.owner===id)ruLetGo(c,true);}
   else if(d.a==='home')ruHome(c,id);}
 addEventListener('load',()=>{if(window.__net)window.__net.on((id,name,d)=>{if(d&&d.t==='roam')ruFromNet(id,name,d);});});
@@ -11473,13 +11616,18 @@ addEventListener('load',()=>{if(window.__net)window.__net.on((id,name,d)=>{if(d&
 let roamNear=null,roamBtnKey='',roamT=0;
 const nearHome=(g,P,extra)=>{const z=RU_ZONE[g];return Math.hypot(P.x-z.x,P.z-z.z)<(z.fence||z.r)+extra;};
 const ruFriend=id=>{const n=window.__net;return (n&&n.friends&&n.friends().get(id))||(RU.fake&&RU.fake[id])||null;};// fake: friends made up by the tests
-function roamFollow(c,P,face,dt){const back=face+Math.PI+.6,r=1.2+c.a.rad,tx=P.x+Math.sin(back)*r,tz=P.z+Math.cos(back)*r,dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
+function roamFollow(c,P,face,dt,k=0){const back=face+Math.PI+.6-k*1.2,r=1.2+c.a.rad+k*.45;let tx=P.x+Math.sin(back)*r,tz=P.z+Math.cos(back)*r;
+  // it won't go in the water: while you swim in the canal it waits for you on the shore, still on its rope
+  const td=Math.hypot(tx,tz),shore=R-.6;if(td>shore){tx*=shore/td;tz*=shore/td;}
+  const dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
   if(d>14){c.pos.set(tx,0,tz);return 0;}if(d>.2){const sp=Math.min(7,1+d*3),st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*6));return sp;}
   c.face=angDamp(c.face,face,Math.min(1,dt*3));return 0;}
-function roamStep(dt){if(!started)return;roamT+=dt;const P=player.pos;
+function roamStep(dt){if(!started)return;roamT+=dt;const P=player.pos,slot={};
   for(const c of ROAM){const a=c.a,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(c.mode==='zoo'){a.g.visible=false;continue;}const vis=dP<70;a.g.visible=vis;let sp=0;
-    if(c.mode==='rope'){sp=roamFollow(c,P,player.face,dt);a.graze=0;if(nearHome(c.grp,P,RU_HOME))ruHome(c,ruMe());}
-    else if(c.mode==='friend'){const o=ruFriend(c.owner);if(!o)ruLetGo(c,true);else{sp=roamFollow(c,o.pos,o.cur??o.face??0,dt);a.graze=0;}}
+    const k=(c.mode==='rope'||c.mode==='friend')?(slot[c.owner]=(slot[c.owner]??-1)+1):0;
+    if(c.mode==='rope'){sp=roamFollow(c,P,player.face,dt,k);a.graze=0;if(nearHome(c.grp,P,RU_HOME))ruHome(c,ruMe());}
+    else if(c.mode==='friend'){const o=ruFriend(c.owner);if(!o)ruLetGo(c,true);else{sp=roamFollow(c,o.pos,o.cur??o.face??0,dt,k);a.graze=0;}}
+    else if(c.mode==='loose')sp=looseStep(c,P,dP,dt);
     else{// on its own: when you walk up it stops and looks at you for a few seconds, then goes on its own way (it never comes after you)
       const look=dP<2.4&&c.lookT<(RU.on?2:4);if(dP<2.4)c.lookT+=dt;else if(dP>4)c.lookT=0;
       if(look){c.wait=0;c.face=angDamp(c.face,Math.atan2(P.x-c.pos.x,P.z-c.pos.z),Math.min(1,dt*4));a.graze+=(0-a.graze)*Math.min(1,dt*3);}
@@ -11506,9 +11654,28 @@ function roamStep(dt){if(!started)return;roamT+=dt;const P=player.pos;
     const hv=h.clone().add(new THREE.Vector3(0,.9,0)),b=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h*.7,0));
     R0.visible=true;R0.position.copy(hv).add(b).multiplyScalar(.5);R0.scale.set(1,hv.distanceTo(b),1);R0.quaternion.setFromUnitVectors(LIMB_UP,b.sub(hv).normalize());});
   // the whole state for friends, every few seconds
-  if(RU.on&&(RU.stT-=dt)<0){RU.stT=3;const cc={};for(const c of ROAM)if(c.mode==='rope')cc[c.nm]=ruMe();ruSend({a:'st',seed:RU.seed,g:RU.grp,h:RU.home,c:cc});}
+  if(RU.on&&RU.grp==='all'&&(RU.secT-=dt)<0){RU.secT=1;ruBar();}// the timer
+  if(RU.on&&(RU.stT-=dt)<0){RU.stT=3;const cc={};for(const c of ROAM)if(c.mode==='rope')cc[c.nm]=ruMe();ruSend({a:'st',seed:RU.seed,g:RU.grp,h:RU.home,c:cc,...(RU.at||{})});}
   if(!RU.on&&RU.endT&&roamT-RU.endT>9){RU.endT=0;ruBar();}
   roamButton();}
+// 🌪️ running loose in the All-Animal Round-up: dash from spot to spot anywhere in town; get close and it bolts away from you,
+// then it has to stop for a breather (that's when you can catch it), and for a little while after it won't bolt again
+function looseStep(c,P,dP,dt){const a=c.a;c.cool-=dt;
+  if(c.tired>0){c.tired-=dt;c.face=angDamp(c.face,Math.atan2(P.x-c.pos.x,P.z-c.pos.z),Math.min(1,dt*3));a.graze+=(.6-a.graze)*Math.min(1,dt*3);if(c.tired<=0)c.cool=2.5;return 0;}
+  a.graze+=(0-a.graze)*Math.min(1,dt*4);
+  if(c.flee<=0&&c.cool<=0&&dP<RU_FLEE_R){c.flee=1.2+Math.random()*.6;if(dP<12)sfx('pop');}
+  let tx,tz,sp;
+  if(c.flee>0){c.flee-=dt;const ang=Math.atan2(c.pos.x-P.x,c.pos.z-P.z)+Math.sin(roamT*3+c.nm.length)*.5;tx=c.pos.x+Math.sin(ang)*4;tz=c.pos.z+Math.cos(ang)*4;sp=RU_FLEE_SPD;
+    if(c.flee<=0){c.tired=2.6+Math.random()*1.2;c.tgt=null;floaties(c.a.g.position.clone().add(new THREE.Vector3(0,a.h+.2,0)),'💦',3);return 0;}}
+  else{if(c.wait>0){c.wait-=dt;return 0;}
+    if(!c.tgt)c.tgt=looseSpot(c);tx=c.tgt.x;tz=c.tgt.z;sp=RU_ALL_SPD;}
+  const dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
+  if(d<.3){c.tgt=null;c.wait=Math.random()<.4?.4+Math.random()*1.4:0;return 0;}
+  const ox=c.pos.x,oz=c.pos.z,st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;collide(c.pos,.3);
+  if(!looseOk(c.pos.x,c.pos.z)&&Math.hypot(c.pos.x,c.pos.z)>=R-2.5){const m=(R-2.5)/Math.hypot(c.pos.x,c.pos.z);c.pos.x*=m;c.pos.z*=m;}// never into the water
+  const moved=Math.hypot(c.pos.x-ox,c.pos.z-oz);
+  if(moved<st*.3){if((c.stuck+=dt)>.4){c.stuck=0;c.tgt=looseSpot(c);}}else c.stuck=0;// bumped into a wall or a tree: off somewhere else
+  c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*6));return sp;}
 onTick.push(roamStep);
 const ropeMat=std('#c8a46a',{roughness:.9}),ROPES=ROAM.map(()=>{const m=M(cyl(.012,.012,1,6),ropeMat,0,0,0,scene,false,false);m.visible=false;return m;});
 
@@ -11522,52 +11689,61 @@ const ropeMat=std('#c8a46a',{roughness:.9}),ROPES=ROAM.map(()=>{const m=M(cyl(.0
 body.dressing #roamBtn,body.talking #roamBtn,body.shopping #roamBtn,body.sp-on #roamBtn,body.dressing #roamCatch,body.talking #roamCatch,body.shopping #roamCatch,body.sp-on #roamCatch,
 body.dressing #ruBar,body.shopping #ruBar,body.sp-on #ruBar{display:none!important}
 #ruBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 156px);z-index:8;display:none;flex-direction:column;align-items:center;gap:5px;width:max-content;max-width:calc(100vw - 32px);pointer-events:none}
+#ruBar b{pointer-events:auto;cursor:pointer}#ruBar:not(.open) div{display:none!important}
 #ruBar.show{display:flex}
 #ruBar b{background:#e8336d;color:#fff;border-radius:999px;padding:4px 12px;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
 #ruBar div{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
 #ruBar span{background:rgba(255,255,255,.92);color:#3b2357;border-radius:999px;padding:4px 10px;font-weight:700;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
 #ruBar span.home{opacity:.6}#ruBar span.rope{background:#ffe2b8}#ruBar span.me{background:#ffd23f}
-#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}
+#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}#ruBar i{font-style:normal;opacity:.85;margin-left:2px}
+#ruBar.all span{font-size:11px;padding:3px 7px}#ruBar.all b{background:linear-gradient(90deg,#ff6a3d,#e8336d)}
 @media (max-height:520px){#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 185px)}#roamCatch{bottom:calc(env(safe-area-inset-bottom) + 240px)}#ruBar{top:calc(env(safe-area-inset-top) + 52px)}}`;
   document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<button class="hud" id="roamBtn"></button><button class="hud" id="roamCatch"></button><div id="ruBar"></div>');}
 // the bar at the top: the Round-up is on, every animal and where it is (still out, on someone's rope, home), and the catches so far
 function ruBar(){const el=$('#ruBar');if(!RU.on&&!RU.endT){el.classList.remove('show');el.innerHTML='';return;}
   const me=ruMe(),nm=id=>id===me?'You':ruEsc(RU.names[id]||'Friend'),src=RU.on?RU:RU.last;
   const set=ruSet(),out=set.filter(c=>!RU.home[c.nm]).length;
-  const what=RU.grp==='zoo'?'Safari Round-up':'Round-up';
-  let h=RU.on?`<b>🚨 ${what} is on! ${out} of ${set.length} still out</b>`:`<b>🏁 ${what} done!</b>`;
-  h+='<div>'+set.map(c=>{const hm=RU.home[c.nm];if(hm)return `<span class="home">🏠 ${c.nm}<small>${nm(hm)}</small></span>`;
+  const all=RU.grp==='all',what=all?'All-Animal Round-up':RU.grp==='zoo'?'Safari Round-up':'Round-up';el.classList.toggle('all',all);
+  const tg=`<i>${ruOpen?'▴':'▾'}</i>`;
+  let h=RU.on?(all?`<b>🌪️ ${what}! ${out} of ${set.length} still out · ⏱ ${mmss(roamT-RU.t0)} ${tg}</b>`:`<b>🚨 ${what} is on! ${out} of ${set.length} still out ${tg}</b>`)
+    :`<b>🏁 ${what} done!${all&&RU.last?` ⏱ ${mmss(RU.last.t)}`:''} ${tg}</b>`;
+  h+='<div>'+set.map(c=>{const hm=RU.home[c.nm];if(hm)return all?'': `<span class="home">🏠 ${c.nm}<small>${nm(hm)}</small></span>`;
     if(c.mode==='rope'||c.mode==='friend')return `<span class="rope">🪢 ${c.e} ${c.nm}<small>${nm(c.owner)}</small></span>`;
     return `<span>${c.e} ${c.nm}</span>`;}).join('')+'</div>';
   const ids=Object.keys(src.names||{});
   if(ids.length>1)h+='<div>'+ids.sort((a,b)=>(src.sc[b]||0)-(src.sc[a]||0)).map(id=>`<span class="${id===me?'me':''}">${nm(id)} <small>🏠 ${src.sc[id]||0}</small></span>`).join('')+'</div>';
-  el.innerHTML=h;el.classList.add('show');}
+  el.innerHTML=h;el.classList.add('show');el.classList.toggle('open',ruOpen);}
+// the list of animals stays folded away so it isn't in the way: tap the bar to open or close it
+let ruOpen=false;$('#ruBar').addEventListener('click',e=>{if(!e.target.closest('b'))return;ruOpen=!ruOpen;sfx('pop');ruBar();});
 function roamButton(){const P=player.pos;let best=null,bd=ROAM_REACH;
   if(!closetOpen&&!(typeof SW!=='undefined'&&SW.k>.3))for(const c of ROAM){if(c.mode==='friend'||c.mode==='zoo')continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(d<bd){bd=d;best=c;}}
-  roamNear=best;const rope=ROAM.find(c=>c.mode==='rope'),atBarn=!RU.on&&!RU.endT&&!closetOpen?(nearHome('barn',P,14)?'barn':nearHome('zoo',P,10)?'zoo':''):'';
-  const key=(best?best.nm:'')+'|'+(rope?rope.nm:'')+'|'+(RU.on?1:0)+'|'+atBarn;if(key===roamBtnKey)return;roamBtnKey=key;const b=$('#roamBtn'),k=$('#roamCatch');
-  if(best&&best!==rope){b.textContent=`${best.food[0][0]} Feed ${best.nm}`;b.style.display='block';}else b.style.display='none';
+  roamNear=best;const ropes=myRopes(),rope=ropes[ropes.length-1],
+    atBarn=!RU.on&&!RU.endT&&!closetOpen&&!allOn()?(nearHome('barn',P,14)?'barn':nearHome('zoo',P,10)?'zoo':Math.hypot(P.x,P.z)<Z.studio.r+8?'all':''):'';
+  const grab=RU.on&&canCatch(best)&&ruIn(best)&&ropes.length<ropeMax();
+  const key=(best?best.nm+best.mode:'')+'|'+ropes.map(c=>c.nm).join()+'|'+(RU.on?1:0)+'|'+atBarn;if(key===roamBtnKey)return;roamBtnKey=key;const b=$('#roamBtn'),k=$('#roamCatch');
+  if(best&&best.mode!=='rope'&&!grab){b.textContent=`${best.food[0][0]} Feed ${best.nm}`;b.style.display='block';}else b.style.display='none';
   k.classList.remove('go');
-  if(rope){k.textContent=`🪢 Let go of ${rope.nm}`;k.style.display='block';}
-  else if(RU.on&&best&&best.mode==='street'){k.textContent=`🪢 Catch ${best.nm}`;k.style.display='block';}
-  else if(atBarn){k.textContent=atBarn==='zoo'?'🚨 Start a Safari Round-up!':'🚨 Start a Round-up!';k.dataset.g=atBarn;k.classList.add('go');k.style.display='block';}
+  if(grab){k.textContent=`🪢 Catch ${best.nm}`;k.style.display='block';}
+  else if(rope){k.textContent=`🪢 Let go of ${rope.nm}`;k.style.display='block';}
+  else if(atBarn){k.textContent=atBarn==='all'?'🌪️ Start the All-Animal Round-up!':atBarn==='zoo'?'🚨 Start a Safari Round-up!':'🚨 Start a Round-up!';k.dataset.g=atBarn;k.classList.add('go');k.style.display='block';}
   else k.style.display='none';}
 function roamFeed(c){if(!c)return;const fd=rnd(c.food),top=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0));
   floaties(top,fd[0],4);setTimeout(()=>floaties(top,'💖',5),350);sfx('munch');c.happy=1.6;c.a.happy=2;c.a.wig=1;c.a.speak(rnd(c.say));
   RS.fed[c.nm]=1;persist();toast(`${c.e} ${c.nm} loves the ${fd[1]}!`);did('roamfeed',c.nm);}
 $('#roamBtn').onclick=()=>roamFeed(roamNear);
-$('#roamCatch').onclick=()=>{const rope=ROAM.find(c=>c.mode==='rope');if(rope)ruLetGo(rope);else if(RU.on)ruCatch(roamNear);else ruBegin($('#roamCatch').dataset.g||'barn');};
+$('#roamCatch').onclick=()=>{const ropes=myRopes(),c=roamNear;if(RU.on&&canCatch(c)&&ruIn(c)&&ropes.length<ropeMax())ruCatch(c);else if(ropes.length)ruLetGo(ropes[ropes.length-1]);
+  else if(!RU.on)ruBegin($('#roamCatch').dataset.g||'barn');};
 
 // the animals on the minimap (during a Round-up only the ones still out), so you can go looking for them (heading-up, like drawMini in 26-map.js)
 onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=cv.getContext('2d'),S=cv.width,h=S/2,k=S/54,p=player.pos,
   fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.08)}px serif`;x.textAlign='center';x.textBaseline='middle';
-  for(const c of ROAM){if(c.mode==='zoo'||(RU.on&&c.mode!=='street'))continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
+  for(const c of ROAM){if(c.mode==='zoo'||(RU.on&&!canCatch(c)))continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
   x.restore();});
 
 // for challenges.js and the tests
 function roamState(){return {fed:Object.keys(RS.fed).length,n:ROAM.length,on:RU.on,grp:RU.grp,home:Object.keys(RU.home).length,sc:{...RU.sc},
-  rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,ruCatch,ruLetGo,ruFromNet,ruMe,BZ});});
+  rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,ropes:myRopes().map(c=>c.nm),best:RS.allBest||0,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,looseOk,POLAR_LIST,ruCatch,ruLetGo,ruFromNet,ruMe,BZ});});
 // ---- src/26h-adventure.js ----
 /* ================= ⛰️ LOOKOUT MOUNTAIN and 🌲 TREETOP ADVENTURE, across the canal =================
    On the grassy far bank of the canal, between angles 92 and 136 (BANK_LAND in 26f-ocean.js), over a wooden footbridge at 114.
@@ -11993,6 +12169,333 @@ ADV={plat:null,trailGo:false,onTop:false};
 // for the test (3d/tests/adventure.mjs)
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{adv:()=>({mode:ADS.mode,up:HIGH.on,plat:ADV.plat,s:ADS.s,btn:advKey,t:clock.elapsedTime,harness:!!(advH&&advH.parent)}),
   ADV_PARTS:{RC,RB,RLAD,ZIPS,WALL,MT,TRAIL,FB,MZ,TZ},advGo:{ladderUp,ladderDown,wallClimb,zipGo},upSurf,mtH,fbDeck});});
+// ---- src/26h-helicopter.js ----
+/* ================= 🚁 THE HELICOPTER: buy it or win it, fly it, and take your friends along =================
+   - It lives at the 🚁 Helipad (12h-place-helipad.js), between the Basketball Court and the Jump Park.
+   - Get it two ways: buy it in the shop's 🦖 Rides tab for HELI_PRICE 🪙 coins, or win it for free by finishing the
+     4 helicopter challenges in ⭐🏆 (ids in HELI_EARN, in the 🗺️ Explore tab of challenges.js).
+   - Walk up to it and tap 🚁 Get in. The rotor spins up, then hold ⬆️ UP (Space) to lift straight off.
+     Steer with the joystick (W A S D): the nose dips when you speed up, it banks into turns and slows to a hover when you let go.
+     Hold ⬇️ (Shift) to come down, and it touches down by itself on open ground. 🛬 Land picks a clear spot (the Helipad if
+     it's close) and sets you down gently. It never flies into trees or roofs: it climbs over them (flyFloor in 24h-flying.js).
+   - 🚪 Get out on the ground parks it right there. 🚁 Heli in the moves wheel calls it to you from wherever it's parked.
+   - 👭 Friends online (online.js) see it parked or flying through the 'heli' entry in SHOW (26c-friends-see.js is the list).
+     When your helicopter is on the ground with you in it, a friend standing next to it gets 🙋 Ride along: they sit in one
+     of the 3 passenger seats and fly with you, and the 'hseat' entry shows them in their seat on every phone.
+     The pilot's phone hands out the seats: messages {t:'heli', a:'ask'|'ok'|'full'|'out', to} go through the room (online.js).
+     Passengers can only hop out once you've landed. If you get out, everyone gets out with you.
+   - Real-looking on purpose (not a cartoon): a light four-seat helicopter with a tinted bubble canopy, two-blade main rotor,
+     tail rotor, skids, navigation lights and a flashing red beacon. Keep it that way. */
+const HELI_PRICE=500,HELI_K='heli:skyhawk';
+const HELI_EARN=['heli_visit','heli_places','heli_wins','heli_stars'];// the challenges that win it (challenges.js)
+const HELI_SPD=15,HELI_UP=4.5,HELI_DOWN=3.6,HELI_MAX=32,HELI_EDGE=R+9;// top speed, climb and sink rates, ceiling, how far out over the water
+// where people sit: the spot their feet go (the 'chair' pose sits them on the seat). 0 = the pilot, front right like a real one
+const HELI_SEATS=[[-.36,.6,.4],[.36,.6,.4],[-.36,.6,-.42],[.36,.6,-.42]].map(a=>new THREE.Vector3(...a));
+const HELI_SEAT_Y=.52;// how high the seats' feet spot is above the skids (in HELI_SEATS)
+SHOP.push({k:HELI_K,tab:'rides',e:'🚁',n:'Helicopter',p:HELI_PRICE,
+  d:`Skyhawk, your own real helicopter! It's parked at the 🚁 Helipad. Fly it anywhere over town, and friends online can ride along. Or win it for free: finish the 4 🚁 helicopter challenges in ⭐🏆.`});
+
+/* ---------- the model ---------- */
+function makeHeli(){const g=new THREE.Group();scene.add(g);
+  const paint=phys('#f2f3f5',{roughness:.28,clearcoat:1,clearcoatRoughness:.08,metalness:.05}),navy=phys('#1f3557',{roughness:.3,clearcoat:1,clearcoatRoughness:.1}),
+    alu=std('#b9bec5',{metalness:.85,roughness:.32}),dark=std('#2a2d32',{metalness:.5,roughness:.45}),blade=std('#34373c',{metalness:.35,roughness:.5}),
+    glass=phys('#22323f',{roughness:.04,metalness:.15,clearcoat:1,transparent:true,opacity:.34,side:THREE.DoubleSide,depthWrite:false}),
+    seatM=std('#3d3f44',{roughness:.9}),panelM=std('#1b1c1f',{roughness:.6});
+  // the cabin: an egg shape, with the front and top as a tinted glass bubble
+  const C=new THREE.Vector3(0,1.22,.22),RX=.82,RY=.8,RZ=1.22,F=Math.PI/2,W=1.2,T0=.34,T1=1.72;
+  const part=(m,a,b,c,d)=>{const s=M(new THREE.SphereGeometry(1,40,24,a,b,c,d),m,C.x,C.y,C.z,g,m!==glass,m!==glass);s.scale.set(RX,RY,RZ);return s;};
+  part(paint,F+W,Math.PI*2-W*2,0,Math.PI);// the back and sides
+  part(glass,F-W,W*2,T0,T1-T0);// the bubble
+  part(paint,F-W,W*2,0,T0);// the roof just over it
+  part(navy,F-W,W*2,T1,Math.PI-T1);// the chin under the windows
+  // the belly: a flat-bottomed pan under the cabin floor (it also hides the bottom of a long skirt when you sit)
+  M(new THREE.SphereGeometry(1,36,12,0,Math.PI*2,Math.PI/2,Math.PI/2),navy,0,.62,.18,g).scale.set(.76,.42,1.12);
+  // a navy stripe down each side and a door line
+  for(const sx of [-1,1]){const st=M(box(.02,.12,1.6),navy,sx*(RX-.035),.98,-.25,g,false,false);st.rotation.y=0;
+    M(box(.015,.95,.02),dark,sx*(RX-.03),1.25,-.2,g,false,false);}
+  // inside: floor, four seats, the instrument panel with glowing screens, and the sticks
+  M(box(1.36,.06,1.7),panelM,0,.52,.1,g,false,true);
+  for(const s of HELI_SEATS){M(box(.46,.1,.46),seatM,s.x,s.y+.42,s.z-.02,g,false,true);M(box(.46,.62,.1),seatM,s.x,s.y+.76,s.z-.27,g,false,true);M(box(.26,.18,.08),seatM,s.x,s.y+1.17,s.z-.29,g,false,false);}
+  M(box(1.1,.26,.3),panelM,0,1.2,1.0,g,false,false).rotation.x=-.5;
+  const scr=glow('#2ee0a0',.75);for(const x of [-.32,0,.32])M(new THREE.PlaneGeometry(.2,.13),scr,x,1.27,1.03,g,false,false).rotation.x=-.5-Math.PI/2+Math.PI/2;
+  for(const x of [-.36,.36]){M(cyl(.015,.02,.42,8),dark,x,.75,.78,g,false,false).rotation.x=-.15;}
+  // engine cowling, mast and the rotor head on top
+  const cowl=M(new THREE.CapsuleGeometry(.3,.7,8,20),paint,0,1.93,-.5,g);cowl.rotation.x=Math.PI/2;cowl.scale.set(1,.62,1);
+  for(const sx of [-1,1])M(box(.02,.1,.4),dark,sx*.29,1.93,-.75,g,false,false);// engine air vents
+  M(cyl(.05,.07,.42,12),alu,0,2.37,-.2,g);
+  const rotor=new THREE.Group();rotor.position.set(0,2.6,-.2);g.add(rotor);
+  M(cyl(.14,.14,.12,16),dark,0,0,0,rotor);M(sph(.09,12,8),alu,0,.08,0,rotor);
+  const blades=[];for(const s of [-1,1]){const b=M(box(4,.035,.24),blade,s*2.05,0,0,rotor,true,false);b.rotation.z=s*-.025;blades.push(b);
+    M(box(.22,.036,.245),std('#d8b23a',{roughness:.5}),s*3.95,-.05*s*0+0,0,rotor,false,false).position.y=-.05;}
+  // the spinning blur you see when the rotor is going fast (a soft disc, darker at the tips like a real one)
+  const discTex=canvasTex(256,256,(x,w,h)=>{const gr=x.createRadialGradient(w/2,h/2,8,w/2,h/2,w/2);gr.addColorStop(0,'rgba(40,42,46,0)');gr.addColorStop(.35,'rgba(40,42,46,.18)');gr.addColorStop(.92,'rgba(40,42,46,.3)');gr.addColorStop(.97,'rgba(216,178,58,.35)');gr.addColorStop(1,'rgba(40,42,46,0)');x.fillStyle=gr;x.fillRect(0,0,w,h);});
+  const discM=new THREE.MeshBasicMaterial({map:discTex,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
+  const disc=M(new THREE.CircleGeometry(4.05,48),discM,0,2.6,-.2,g,false,false);disc.rotation.x=-Math.PI/2;
+  // the tail boom, fins and tail rotor
+  const tb=M(new THREE.CylinderGeometry(.08,.2,3.5,16),paint,0,1.5,-2.95,g);tb.rotation.x=-Math.PI/2-.04;// thin end at the back, rising a little
+  const tbs=M(new THREE.CylinderGeometry(.165,.205,1.0,16,1,true),navy,0,1.49,-1.75,g,false,false);tbs.rotation.x=-Math.PI/2-.04;tbs.scale.set(1.02,1,1.02);
+  M(new THREE.CylinderGeometry(.2,.52,.75,20),paint,0,1.42,-1.08,g).rotation.x=-Math.PI/2;// where the cabin narrows into the boom
+  const fin=M(box(.05,.9,.5),navy,0,1.85,-4.5,g);fin.rotation.x=-.5;
+  const fin2=M(box(.05,.4,.35),navy,0,1.2,-4.5,g);fin2.rotation.x=.45;
+  M(box(1.0,.04,.28),navy,0,1.42,-4.05,g);for(const sx of [-1,1])M(box(.04,.22,.26),navy,sx*.5,1.47,-4.05,g);
+  const tail=new THREE.Group();tail.position.set(.1,1.85,-4.62);g.add(tail);
+  M(cyl(.05,.05,.08,10),dark,0,0,0,tail).rotation.z=Math.PI/2;
+  for(const s of [-1,1]){const b=M(box(.03,.62,.09),blade,.04,s*.31,0,tail,false,false);b.userData.tail=1;}
+  const tdM=discM.clone();const tdisc=M(new THREE.CircleGeometry(.63,32),tdM,.06,1.85,-4.62,g,false,false);tdisc.rotation.y=Math.PI/2;
+  // the registration on the boom, like a real one
+  const reg=labelTex('N-BRYN',{size:70,fg:'#1f3557',bg:null,border:null});
+  for(const sx of [-1,1]){const p=M(new THREE.PlaneGeometry(.95,.24),new THREE.MeshBasicMaterial({map:reg,transparent:true,depthWrite:false}),sx*.2,1.5,-2.6,g,false,false);p.rotation.y=sx*Math.PI/2;p.rotation.x=0;}
+  // skids: two aluminium tubes on curved struts, turned up at the front
+  for(const sx of [-1,1]){const x=sx*.86;M(cyl(.045,.045,2.5,10),alu,x,.06,-.05,g).rotation.x=Math.PI/2;
+    const tip=M(cyl(.045,.045,.4,10),alu,x,.14,1.33,g);tip.rotation.x=Math.PI/2-.6;
+    for(const zz of [.62,-.6]){const st=M(cyl(.04,.04,.68,8),alu,sx*.68,.32,zz,g);st.rotation.z=sx*.62;}}
+  for(const zz of [.62,-.6])M(cyl(.035,.035,1.0,8),alu,0,.55,zz,g).rotation.z=Math.PI/2;
+  // lights: red on the left, green on the right, white on the tail, and a red beacon that flashes on top
+  const navR=glow('#ff2a2a',1.6),navG=glow('#2aff5a',1.6),navW=glow('#ffffff',1.4);
+  M(sph(.045,8,6),navR,.82,1.05,-.9,g,false,false);M(sph(.045,8,6),navG,-.82,1.05,-.9,g,false,false);M(sph(.045,8,6),navW,0,1.4,-4.85,g,false,false);
+  const beaconM=glow('#ff2020',2),beacon=M(sph(.06,10,8),beaconM,0,2.3,-1.15,g,false,false);
+  const lightM=glow('#fff8e0',1.2);M(sph(.07,10,8),lightM,0,.5,1.33,g,false,false);// a landing light under the nose
+  return {g,rotor,blades,disc,tail,tdisc,beacon,spin:0,tspin:0,rpm:0};}
+
+// spin the rotors and fade the blades into a blur as they speed up (for your helicopter and friends')
+function heliSpin(h,dt,t){const r=h.rpm;h.spin+=r*r*dt*28;h.tspin+=r*dt*60;h.rotor.rotation.y=h.spin;h.tail.rotation.x=h.tspin;
+  const blur=Math.max(0,Math.min(1,(r-.35)/.45));h.disc.material.opacity=blur*.85;h.tdisc.material.opacity=blur*.8;
+  for(const b of h.blades)b.visible=blur<.97;for(const c of h.tail.children)if(c.userData.tail)c.visible=blur<.95;
+  h.beacon.visible=r>.02&&(t*1.1)%1<.12;}
+const HV={v:new THREE.Vector3(),e:new THREE.Euler(0,0,0,'YXZ'),m:new THREE.Matrix4(),q:new THREE.Quaternion()};
+// put helicopter model h at origin P (skids on the ground), facing yaw, with its nose pitch and its bank
+function heliPlace(h,P,yaw,pitch,bank){h.g.position.copy(P);h.g.rotation.order='YXZ';h.g.rotation.set(-pitch,yaw,-bank);}
+// where seat i is in the world, for a helicopter at P (out: a Vector3)
+function heliSeatAt(P,yaw,pitch,bank,i,out){HV.e.set(-pitch,yaw,-bank);return out.copy(HELI_SEATS[i]).applyEuler(HV.e).add(P);}
+// and the other way round: the helicopter's origin when seat i is at S
+function heliFromSeat(S,yaw,pitch,bank,i,out){HV.e.set(-pitch,yaw,-bank);return out.copy(HELI_SEATS[i]).applyEuler(HV.e).negate().add(S);}
+// someone sitting in a seat: the chair pose, tilted with the helicopter
+function heliSit(a,P,yaw,pitch,bank,i){if(!a)return;if(!a.emote||a.emote.id!=='chair')a.play('chair');a.emote.t=Math.min(a.emote.t,1);
+  heliSeatAt(P,yaw,pitch,bank,i,a.g.position);const r=a.g.rotation;r.order='YXZ';r.set(-pitch,yaw,-bank);}
+function heliUnsit(a){if(!a)return;a.g.rotation.set(0,a.g.rotation.y,0);if(a.emote&&a.emote.id==='chair')a.emote=null;}
+
+/* ---------- your helicopter ---------- */
+const HM=makeHeli();
+const HELI={pos:new THREE.Vector3(),hd:0,vx:0,vz:0,vy:0,pitch:0,bank:0,turn:0,on:false,mode:'park',spot:null,ride:null,seats:[null,null,null,null],
+  auto:null,chopT:0,dustT:0,edgeT:0,highT:0,ob:{x:0,z:0,r:0},hide:false,t:0,gone:0,liftWarn:0};
+const heliOwn=()=>owns(HELI_K);
+// the jump button while you're in it: ⬆️ UP is held down (FLY.upBtn, 24h-flying.js), so a tap does nothing else
+function heliJump(){return HELI.on||!!HELI.ride;}
+SAVE.heli||={};
+// where it's parked (the Helipad until you park it somewhere else)
+{const s=SAVE.heli,z=Z.heli;if(Number.isFinite(s.x)&&Number.isFinite(s.z)&&Math.hypot(s.x,s.z)<R){HELI.pos.set(s.x,0,s.z);HELI.hd=+s.hd||0;}
+  else{HELI.pos.set(z.x,0,z.z);HELI.hd=z.rot;}}
+obs.push(HELI.ob);
+function heliSave(){SAVE.heli.x=+HELI.pos.x.toFixed(2);SAVE.heli.z=+HELI.pos.z.toFixed(2);SAVE.heli.hd=+HELI.hd.toFixed(2);persist();}
+// the helicopters are never "in the way" for the flying rides' height map (24h-flying.js)
+function heliSkip(){const l=[HM.g];try{for(const o of (window.__net?window.__net.friends().values():[]))if(o.shows&&o.shows.heli&&o.shows.heli.h&&o.shows.heli.h.H)l.push(o.shows.heli.h.H.g);}catch(e){}return l;}
+// is the ground here clear for the rotor (no trees, roofs or lamp posts close by)?
+function heliOpen(x,z){flyGrid();if(Math.hypot(x,z)>R-2)return false;const g=groundAt(x,z);if(flyFloor(x,z,3)>g+.5)return false;return !obs.some(o=>o!==HELI.ob&&o.r>0&&Math.hypot(o.x-x,o.z-z)<o.r+1.6);}
+function heliSpot(x,z){if(heliOpen(x,z))return [x,z];for(let r=1.5;r<40;r+=1.5)for(let i=0;i<20;i++){const a=i/20*Math.PI*2+r,sx=x+Math.sin(a)*r,sz=z+Math.cos(a)*r;if(heliOpen(sx,sz))return [sx,sz];}return [x,z];}
+const heliOnPad=(x,z)=>Math.hypot(x-Z.heli.x,z-Z.heli.z)<HPAD.r;
+const heliBusy=()=>closetOpen||!started||handsBusy()||!!barnRide||DL.on||restOpen;
+function heliBtnShow(txt,fn){const b=$('#heliBtn');if(!txt){if(b.style.display!=='none'){b.style.display='none';b.textContent='';}b._fn=null;return;}if(b.textContent!==txt)b.textContent=txt;if(b.style.display!=='block')b.style.display='block';b._fn=fn;}
+$('#heliBtn').addEventListener('click',()=>{const f=$('#heliBtn')._fn;if(f){sfx('pop');f();}});
+
+// it's yours: bought in the shop, or won with the challenges
+function heliGet(won){if(SAVE.heli.got)return;SAVE.owned[HELI_K]=true;SAVE.heli.got=1;persist();renderActions();
+  setTimeout(()=>{banner(won?'🏆 You won the helicopter!':'🚁 The helicopter is yours!');toast('It\'s at the 🚁 Helipad. Walk up to it and tap 🚁 Get in, or tap 🚁 Heli with your moves!');},won?0:1900);
+  if(won){sfx('tada');burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize','heli');}}
+addEventListener('brynny:did',e=>{const d=e.detail||{};if(d.k==='buy'&&d.a===HELI_K)heliGet(false);});
+const heliEarned=()=>HELI_EARN.filter(id=>SAVE.chal&&SAVE.chal.done&&SAVE.chal.done[id]).length;
+setInterval(()=>{if(!started)return;if(owns(HELI_K)&&!SAVE.heli.got){SAVE.heli.got=1;persist();}
+  if(!owns(HELI_K)&&heliEarned()>=HELI_EARN.length)heliGet(true);},1500);
+// 🚁 Heli in the moves wheel
+RIDE_ACTS.push(()=>heliOwn()&&!HELI.on&&!HELI.ride?[['heli','🚁','Heli']]:[]);
+
+/* ---------- getting in and out ---------- */
+function heliBoard(){if(!heliOwn()||HELI.on||HELI.ride||HELI.auto)return;flyGrid();if(heliBusy()){toast('Finish what you are doing first! 🚁');return;}
+  if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);
+  Object.assign(HELI,{on:true,mode:'ground',vx:0,vz:0,vy:0,pitch:0,bank:0,turn:0,spot:null,t:0});HELI.ob.r=0;
+  player.face=HELI.hd;player.vy=0;player.speed=0;sfx('pop');tone(220,.5,'sawtooth',.03,0,90);renderActions();heliHud(true);
+  if(!SAVE.heliTip){SAVE.heliTip=1;persist();setTimeout(()=>toast(isTouch?'Wait for the rotor to spin up, then hold ⬆️ UP to lift off! Steer with the joystick, hold ⬇️ to come down.':'Wait for the rotor to spin up, then hold Space to lift off! Steer with W A S D, hold Shift to come down, L to land.'),700);}}
+function heliOut(){if(!HELI.on||HELI.mode!=='ground')return;const P=HELI.pos;HELI.on=false;HELI.mode='park';HELI.seats.fill(null);
+  const door=heliSeatAt(P,HELI.hd,0,0,0,new THREE.Vector3()),side=new THREE.Vector3(-1.25,0,0).applyAxisAngle(new THREE.Vector3(0,1,0),HELI.hd);
+  player.pos.set(door.x+side.x,groundAt(door.x+side.x,door.z+side.z),door.z+side.z);collide(player.pos);player.onGround=true;player.vy=0;player.face=HELI.hd-Math.PI/2;
+  heliUnsit(av);heliSave();renderActions();heliHud(true);}
+// 🚁 Heli in the moves wheel: hop in if it's close by, or it flies over to you by itself and lands nearby
+function heliCall(){if(!heliOwn()){setDest(Z.heli);toast('Get the helicopter at the 🚁 Helipad! 💗');return;}
+  if(HELI.on||HELI.ride)return;const P=player.pos;
+  if(Math.hypot(P.x-HELI.pos.x,P.z-HELI.pos.z)<6&&!HELI.auto){heliBoard();return;}
+  if(HELI.auto)return;const f=player.face,[sx,sz]=heliSpot(P.x+Math.sin(f)*7,P.z+Math.cos(f)*7);
+  HELI.auto={x:sx,z:sz,from:HELI.pos.clone(),t:0};HELI.ob.r=0;toast('🚁 Your helicopter is on its way!');sfx('star');}
+
+/* ---------- flying it (from the game loop instead of walking; true = it moved you) ---------- */
+function heliStep(dt,ix,iy,mag){if(HELI.ride)return heliRideStep(dt);if(!HELI.on)return false;
+  const H=HELI,P=H.pos,up=FLY.upBtn||keys.Space,down=FLY.downBtn||keys.ShiftLeft||keys.ShiftRight||keys.KeyC;H.t+=dt;
+  if(keys.KeyL&&H.mode==='air')heliLand();
+  const g=groundAt(P.x,P.z);
+  // the joystick: which way you want to go, the same as walking
+  let wx=0,wz=0;if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx,n=Math.hypot(ix,iy)||1;wx=(fx*-iy+rx*ix)/n*HELI_SPD*mag;wz=(fz*-iy+rz*ix)/n*HELI_SPD*mag;}
+  if(H.mode==='ground'){H.vx=H.vy=H.vz=0;P.y=g;
+    if(up&&HM.rpm>.85){H.mode='air';H.vy=1.5;did('heli','takeoff');if(H.seats.some(Boolean))did('heli','friend');sfx('jump');}
+    else if(up&&performance.now()-H.liftWarn>2500){H.liftWarn=performance.now();toast('⏳ Wait for the rotor to spin up…');}}
+  else{
+    // 🛬 landing by itself: fly over to the spot, slow down, and come straight down onto it
+    let wantVy=up?HELI_UP:down?-HELI_DOWN:0;
+    if(H.mode==='land'){if(mag>.08||up){H.mode='air';}else{const dx=H.spot[0]-P.x,dz=H.spot[1]-P.z,d=Math.hypot(dx,dz),sp=Math.min(9,d*.9);
+      if(d>.05){wx=dx/d*sp;wz=dz/d*sp;}const hg=P.y-g;const cl=flyFloor(P.x,P.z,3);wantVy=d<1.5?-Math.max(.5,Math.min(3,hg*.9)):d<8&&P.y>cl+1.2?-Math.min(1.5,hg*.3):0;}}
+    // speed builds up and dies down gently, like a real helicopter
+    const k=Math.min(1,dt*(Math.hypot(wx,wz)>Math.hypot(H.vx,H.vz)?.9:.7));const ax=(wx-H.vx)*k,az=(wz-H.vz)*k;H.vx+=ax;H.vz+=az;
+    H.vy+=(wantVy-H.vy)*Math.min(1,dt*2.5);
+    // stay over the island and the water round it
+    const rr=Math.hypot(P.x,P.z);if(rr>HELI_EDGE-8){const nx=-P.x/rr,nz=-P.z/rr,out=-(H.vx*nx+H.vz*nz);if(out>0){const s=Math.min(1,(rr-(HELI_EDGE-8))/8);H.vx+=nx*out*s*dt*4;H.vz+=nz*out*s*dt*4;}
+      if(rr>HELI_EDGE-2&&performance.now()-H.edgeT>6000){H.edgeT=performance.now();toast('🌊 That\'s as far as the helicopter goes! Turning back ✨');}}
+    // never into trees and buildings: climb over them before you get there
+    let nx=P.x+H.vx*dt,nz=P.z+H.vz*dt;const nr=Math.hypot(nx,nz);if(nr>HELI_EDGE){nx*=HELI_EDGE/nr;nz*=HELI_EDGE/nr;}
+    const below=flyFloor(nx,nz,3),ahead=Math.max(below,flyFloor(nx+H.vx*.7,nz+H.vz*.7,3));
+    if(P.y>=below-.1){P.x=nx;P.z=nz;}else{H.vx*=.5;H.vz*=.5;}
+    const gg=groundAt(P.x,P.z),clear=ahead>gg+.1?ahead+.4:gg;
+    if(P.y<clear&&H.vy<(clear-P.y)*3+.5)H.vy+=((clear-P.y)*3+.5-H.vy)*Math.min(1,dt*6);
+    P.y+=H.vy*dt;{const fl=flyFloor(P.x,P.z,3);if(fl>gg+.1&&P.y<fl+.05){P.y=fl+.05;if(H.vy<0)H.vy=0;}}// never down into a tree or onto a roof
+    if(P.y>HELI_MAX){P.y=HELI_MAX;H.vy=Math.min(0,H.vy);}
+    if(P.y>=HELI_MAX-.5){H.highT+=dt;if(H.highT>1.5&&!H.wentHigh){H.wentHigh=1;did('heli','high');toast('☁️ Up with the clouds!');}}else H.highT=0;
+    // touching down: only on open ground, softly
+    if(P.y<=gg+.02&&H.vy<=0){P.y=gg;if(heliOpen(P.x,P.z)||clear<=gg+.01){H.mode='ground';H.vx=H.vz=H.vy=0;burst(new THREE.Vector3(P.x,gg+.05,P.z),'#e6dcc4',24,2);tone(140,.18,'sine',.08,0,80);
+      did('heli','land');if(heliOnPad(P.x,P.z))did('heli','pad');}else P.y=gg+.02;}
+    // the nose points where you're going; it dips as you speed up and banks into turns
+    const sp=Math.hypot(H.vx,H.vz);let turn=0;
+    if(sp>1.2){const want=Math.atan2(H.vx,H.vz),d=angDamp(0,want-H.hd,1),rate=1.5*dt,st=Math.max(-rate,Math.min(rate,d))*Math.min(1,sp/4);H.hd+=st;turn=st/dt;}
+    H.turn+=(turn-H.turn)*Math.min(1,dt*4);
+    const fwd=H.vx*Math.sin(H.hd)+H.vz*Math.cos(H.hd),side=H.vx*Math.cos(H.hd)-H.vz*Math.sin(H.hd),aF=(ax*Math.sin(H.hd)+az*Math.cos(H.hd))/Math.max(dt,.001);
+    const wantP=Math.max(-.32,Math.min(.2,-fwd/HELI_SPD*.2-aF*.025)),wantB=Math.max(-.42,Math.min(.42,H.turn*sp*.045+side/HELI_SPD*.15));
+    H.pitch+=(wantP-H.pitch)*Math.min(1,dt*2.5);H.bank+=(wantB-H.bank)*Math.min(1,dt*2.5);}
+  if(H.mode==='ground'){H.pitch*=Math.max(0,1-dt*6);H.bank*=Math.max(0,1-dt*6);}
+  // you're in the pilot's seat
+  heliSeatAt(P,H.hd,H.pitch,H.bank,0,player.pos);player.face=H.hd;player.speed=0;player.vy=0;player.onGround=false;
+  heliHud();return true;}
+function heliLand(){const H=HELI;if(!H.on||H.mode!=='air')return;const P=H.pos,pz=Z.heli;
+  // the Helipad if it's close and nobody's on it, or else the nearest open patch a little ahead
+  if(Math.hypot(P.x-pz.x,P.z-pz.z)<30&&heliOpen(pz.x,pz.z))H.spot=[pz.x,pz.z];
+  else H.spot=heliSpot(P.x+H.vx*.8,P.z+H.vz*.8);H.mode='land';}
+
+/* ---------- riding along in a friend's helicopter ---------- */
+const heliNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
+const heliMe=()=>(window.__net&&window.__net.id())||'me';
+// a friend's helicopter as you see it (built by the 'heli' entry in SHOW)
+function heliOf(id){const n=window.__net;if(!n)return null;const o=n.friends().get(id);const c=o&&o.shows&&o.shows.heli;return c&&c.h?{o,d:c.d,h:c.h}:null;}
+function heliRideStep(dt){const r=HELI.ride,f=heliOf(r.pid);r.t+=dt;
+  if(!f||!heliNet()){r.lost=(r.lost||0)+dt;if(r.lost>2.5)heliDrop('Your friend\'s helicopter is gone 👋');return true;}r.lost=0;
+  // the pilot's phone says who's in the seats: if you're not in one any more, you're out
+  if(r.t>3&&!(Array.isArray(f.d.s)&&f.d.s.includes(heliMe()))){heliDrop();return true;}
+  const h=f.h;heliSeatAt(h.P,h.yaw,h.pitch,h.bank,r.i,player.pos);player.face=h.yaw;player.speed=0;player.vy=0;player.onGround=false;
+  heliHud();return true;}
+function heliAsk(pid){const n=heliNet();if(!n||HELI.on||HELI.ride||HELI.asking)return;if(heliBusy()){toast('Finish what you are doing first! 🚁');return;}
+  HELI.asking=pid;n.send({t:'heli',a:'ask',to:pid});setTimeout(()=>{if(HELI.asking===pid){HELI.asking=null;toast('No answer from the pilot. Try again!');}},5000);}
+function heliDrop(msg){const r=HELI.ride;if(!r)return;HELI.ride=null;const n=heliNet();if(n)try{n.send({t:'heli',a:'out',to:r.pid});}catch(e){}
+  const f=heliOf(r.pid),P=player.pos,side=new THREE.Vector3(r.i%2?1.3:-1.3,0,0).applyAxisAngle(new THREE.Vector3(0,1,0),f?f.h.yaw:player.face);
+  P.x+=side.x;P.z+=side.z;P.y=groundAt(P.x,P.z);collide(P);player.onGround=true;player.vy=0;heliUnsit(av);heliHud(true);renderActions();if(msg)toast(msg);}
+// messages through the room: the pilot hands out the seats
+addEventListener('load',()=>{if(window.__net)window.__net.on((id,name,d)=>{if(d.t!=='heli'||d.to!==heliMe())return;const H=HELI;
+  if(d.a==='ask'){const n=heliNet();if(!n)return;
+    if(!H.on||H.mode!=='ground'){n.send({t:'heli',a:'full',to:id,why:'air'});return;}
+    let i=H.seats.indexOf(id);if(i<0){i=H.seats.findIndex((s,k)=>k>0&&!s);if(i<0){n.send({t:'heli',a:'full',to:id});return;}H.seats[i]=id;}
+    n.send({t:'heli',a:'ok',to:id,i});toast(`🚁 ${name} hopped in! Hold ⬆️ to take off together`);sfx('pop');}
+  else if(d.a==='out'){const i=H.seats.indexOf(id);if(i>0){H.seats[i]=null;if(H.on)toast(`${name} hopped out 👋`);}}
+  else if(d.a==='ok'&&H.asking===id){H.asking=null;if(HELI.on)return;if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);if(barnRide)stopRide(true);
+    H.ride={pid:id,i:Math.max(1,Math.min(3,d.i|0)),t:0};renderActions();heliHud(true);did('heli','ride');toast(`🚁 You're riding with ${name}! Enjoy the flight ✨`);}
+  else if(d.a==='full'&&H.asking===id){H.asking=null;toast(d.why==='air'?`${name} is already flying. Wait for them to land!`:`${name}'s helicopter is full!`);}});});
+
+/* ---------- buttons ---------- */
+let heliHudS='';
+function heliHud(force){const H=HELI,s=H.ride?'P'+((heliOf(H.ride.pid)||{}).d||{}).m:H.on?H.mode:'';if(s===heliHudS&&!force)return;heliHudS=s;
+  document.body.classList.toggle('heli-on',!!s);document.body.classList.toggle('heli-pass',!!H.ride);document.body.classList.toggle('flying',!!s||(!!barnRide&&FLY.on));
+  if(H.on){$('#jump').textContent='⬆️ UP';$('#jump').classList.add('fly');$('#flyDown').style.display=H.mode==='ground'?'none':'grid';}
+  else{$('#flyDown').style.display='none';$('#jump').classList.remove('fly');$('#jump').textContent='JUMP';flyHudS='?';}}// flyHud and skLabel put their own words back next time
+// the floating button: get in, land, get out, ride along, or see how to get one
+function heliButtons(){if(!started||closetOpen){heliBtnShow('');return;}const H=HELI,P=player.pos;
+  if(H.ride){const f=heliOf(H.ride.pid);heliBtnShow(f&&f.d.m==='g'?'🚪 Get out':'',()=>{const f=heliOf(H.ride.pid);if(f&&f.d.m==='g')heliDrop();else toast('Wait until you land to hop out! 🚁');});return;}
+  if(H.on){heliBtnShow(H.mode==='ground'?'🚪 Get out':H.mode==='land'?'🛬 Landing…':'🛬 Land',H.mode==='ground'?heliOut:heliLand);return;}
+  if(heliBusy()||SKP.on){heliBtnShow('');return;}
+  // a friend's helicopter on the ground with them in it: ride along
+  const n=heliNet();if(n)for(const [id,o] of n.friends()){const c=o.shows&&o.shows.heli;if(!c||!c.h||!c.d.on||c.d.m!=='g')continue;const h=c.h;
+    if(Math.hypot(P.x-h.P.x,P.z-h.P.z)<3.6){heliBtnShow(H.asking?'🙋 Asking…':`🙋 Ride with ${o.name}`,()=>heliAsk(id));return;}}
+  if(!HM.g.visible||H.auto){heliBtnShow('');return;}
+  if(Math.hypot(P.x-H.pos.x,P.z-H.pos.z)<3.6)heliBtnShow(heliOwn()?'🚁 Get in':'🚁 Get the helicopter',()=>{if(heliOwn())heliBoard();else askBuy(HELI_K);});
+  else heliBtnShow('');}
+function heliCamBack(){if(!HELI.on&&!HELI.ride)return 0;const P=player.pos;return 3.2+2.5*Math.max(0,Math.min(1,(P.y-groundAt(P.x,P.z))/10));}
+
+/* ---------- every frame: the model, the rotor, the sound, the dust, and you in your seat ---------- */
+const heliTmp=new THREE.Vector3();
+function heliNoise(h,P,dt,mine){if(h.rpm<.08)return;const d=mine?0:Math.hypot(P.x-player.pos.x,P.z-player.pos.z),vol=Math.max(0,1-d/40)*h.rpm;if(vol<.03)return;
+  h.chopT=(h.chopT||0)-dt;if(h.chopT<=0){h.chopT=1/(4+h.rpm*7);tone(58+h.rpm*14,.09,'triangle',.07*vol);tone(1500+h.rpm*600,.12,'sine',.006*vol);}
+  // rotor wash: dust blowing out from under it when it's close to the ground
+  const hg=P.y-groundAt(P.x,P.z);h.dustT=(h.dustT||0)-dt;if(h.rpm>.6&&hg<5&&h.dustT<=0){h.dustT=.18;const a=Math.random()*Math.PI*2;burst(heliTmp.set(P.x+Math.sin(a)*1.5,groundAt(P.x,P.z)+.05,P.z+Math.cos(a)*1.5),'#e6dcc4',8,2.4*(1-hg/6),.18);}}
+anims.push((t,dt)=>{const H=HELI;
+  // flying over to you when you call it
+  if(H.auto){const A=H.auto;A.t+=dt;const T=6;HM.rpm=Math.min(1,HM.rpm+dt);const k=Math.min(1,A.t/T),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    const gy=groundAt(A.x,A.z);H.pos.set(A.from.x+(A.x-A.from.x)*e,0,A.from.z+(A.z-A.from.z)*e);H.pos.y=Math.max(gy,A.from.y+(gy-A.from.y)*k+Math.sin(k*Math.PI)*14);
+    const dx=A.x-A.from.x,dz=A.z-A.from.z;if(k<.85&&Math.hypot(dx,dz)>1)H.hd=angDamp(H.hd,Math.atan2(dx,dz),Math.min(1,dt*2));H.pitch=-Math.sin(k*Math.PI)*.18;H.bank=0;
+    if(k>=1){H.auto=null;H.pos.y=gy;H.pitch=0;heliSave();burst(new THREE.Vector3(H.pos.x,gy+.05,H.pos.z),'#e6dcc4',24,2);toast('🚁 Here it is! Tap 🚁 Get in');}}
+  // the rotor spins up while someone's in it (or it's flying itself over), and slowly winds down after
+  const run=H.on||!!H.auto;HM.rpm=run?Math.min(1,HM.rpm+dt*.3):Math.max(0,HM.rpm-dt*.09);
+  // a friend's helicopter parked right on top of yours: yours steps aside for now
+  let hide=false;if(!run&&heliNet())for(const o of window.__net.friends().values()){const c=o.shows&&o.shows.heli;if(c&&c.h&&Math.hypot(c.h.P.x-H.pos.x,c.h.P.z-H.pos.z)<4){hide=true;break;}}
+  HM.g.visible=!hide;H.ob.r=run||hide?0:1.35;H.ob.x=H.ob.r?H.pos.x:1e4;H.ob.z=H.pos.z;
+  if(!run&&!H.on){H.pitch*=.9;H.bank*=.9;H.pos.y=groundAt(H.pos.x,H.pos.z);}
+  heliPlace(HM,H.pos,H.hd,H.pitch,H.bank);heliSpin(HM,dt,t);if(HM.g.visible)heliNoise(HM,H.pos,dt,H.on);
+  // you in your seat (after the game loop has posed you, so this wins)
+  if(H.on)heliSit(av,H.pos,H.hd,H.pitch,H.bank,0);
+  // seats of friends who left the room are free again
+  if(H.on){const n=window.__net,fr=n&&n.friends();for(let i=1;i<4;i++)if(H.seats[i]&&!(fr&&fr.has(H.seats[i])))H.seats[i]=null;}
+  heliButtons();});
+// a game or the closet opening while you're in it: you're set down where you are (the helicopter lands itself first if it's up)
+anims.push(()=>{const H=HELI;if(!H.on||!(handsBusy()||closetOpen))return;
+  if(H.mode!=='ground'){const [x,z]=heliSpot(H.pos.x,H.pos.z);H.pos.set(x,groundAt(x,z),z);H.mode='ground';H.vx=H.vz=H.vy=0;}heliOut();});
+
+/* ---------- 👭 what friends see (26c-friends-see.js) ---------- */
+// your helicopter: parked (where it is) or flying with you in it (they work out the tilt from how you move), and who's in the seats
+SHOW.push({k:'heli',
+  mine(){if(!heliOwn())return null;const H=HELI;
+    if(H.on)return {on:1,m:H.mode==='ground'?'g':'a',s:H.seats.map(s=>s||'')};
+    if(H.auto)return null;// flying itself over to you: friends see it once it's parked
+    return {p:[+H.pos.x.toFixed(1),+H.pos.y.toFixed(2),+H.pos.z.toFixed(1)],h:+H.hd.toFixed(2)};},
+  on(f,d){const k=f._heliKeep;if(k){f._heliKeep=null;k.H.g.visible=true;if(!d.on&&Array.isArray(d.p)){k.P.set(+d.p[0]||0,+d.p[1]||0,+d.p[2]||0);k.yaw=+d.h||0;}return k;}
+    const H=makeHeli(),h={H,P:new THREE.Vector3(),yaw:0,pitch:0,bank:0,vx:0,vz:0,turn:0,last:null,ob:{x:1e4,z:0,r:0},a:null};obs.push(h.ob);
+    if(!d.on&&Array.isArray(d.p)){h.P.set(+d.p[0]||0,+d.p[1]||0,+d.p[2]||0);h.yaw=+d.h||0;}else{h.yaw=f.cur??f.face;heliFromSeat(f.pos,h.yaw,0,0,0,h.P);h.last=f.pos.clone();}
+    H.rpm=d.on?.9:0;heliPlace(H,h.P,h.yaw,0,0);return h;},
+  step(f,d,dt,h){const H=h.H;
+    if(d.on){const yaw=f.cur??f.face,pos=f.pos;
+      // how they're moving: speed up = nose down, turning = bank, the same as on your own phone
+      if(!h.last)h.last=pos.clone();const vx=(pos.x-h.last.x)/Math.max(dt,.001),vz=(pos.z-h.last.z)/Math.max(dt,.001);h.last.copy(pos);
+      const ax=(vx-h.vx)/Math.max(dt,.001),az=(vz-h.vz)/Math.max(dt,.001);h.vx+=(vx-h.vx)*Math.min(1,dt*4);h.vz+=(vz-h.vz)*Math.min(1,dt*4);
+      const tr=angDamp(0,yaw-h.yaw,1)/Math.max(dt,.001);h.turn+=(tr-h.turn)*Math.min(1,dt*4);h.yaw=yaw;
+      const sp=Math.hypot(h.vx,h.vz),fwd=h.vx*Math.sin(yaw)+h.vz*Math.cos(yaw),aF=(ax*Math.sin(yaw)+az*Math.cos(yaw))*.02;
+      const air=d.m!=='g',wantP=air?Math.max(-.32,Math.min(.2,-fwd/HELI_SPD*.2-aF*.025)):0,wantB=air?Math.max(-.42,Math.min(.42,h.turn*sp*.045)):0;
+      h.pitch+=(wantP-h.pitch)*Math.min(1,dt*2.5);h.bank+=(wantB-h.bank)*Math.min(1,dt*2.5);
+      heliFromSeat(pos,yaw,h.pitch,h.bank,0,h.P);if(!air){const gy=groundAt(h.P.x,h.P.z);if(Math.abs(h.P.y-gy)<.4)h.P.y=gy;}
+      H.rpm=Math.min(1,H.rpm+dt*.3);h.ob.r=0;h.ob.x=1e4;
+      heliSit(f.a,h.P,yaw,h.pitch,h.bank,0);h.a=f.a;}
+    else{H.rpm=Math.max(0,H.rpm-dt*.09);h.pitch*=.9;h.bank*=.9;h.ob.r=1.35;h.ob.x=h.P.x;h.P.y=groundAt(h.P.x,h.P.z);h.ob.z=h.P.z;h.last=null;if(h.a){heliUnsit(h.a);h.a=null;}}
+    heliPlace(H,h.P,h.yaw,h.pitch,h.bank);heliSpin(H,dt,performance.now()/1000);heliNoise(H,h.P,dt,false);},
+  // (kept for a moment: when only the data changed, on() takes it straight back instead of building a new one)
+  off(f,h){if(!h)return;h.H.g.visible=false;f._heliKeep=h;setTimeout(()=>{if(f._heliKeep!==h)return;f._heliKeep=null;
+    scene.remove(h.H.g);freeObj(h.H.g);const i=obs.indexOf(h.ob);if(i>=0)obs.splice(i,1);if(h.a)heliUnsit(h.a);},0);}});
+// you riding along: friends see you sitting in your seat in the pilot's helicopter (on the pilot's phone too)
+SHOW.push({k:'hseat',
+  mine(){const r=HELI.ride;return r?{p:String(r.pid).slice(0,64),i:r.i}:null;},
+  on(f){return {a:null};},
+  step(f,d,dt,h){const i=Math.max(1,Math.min(3,d.i|0));let P,yaw,pitch,bank;
+    if(d.p===heliMe()){if(!HELI.on)return;P=HELI.pos;yaw=HELI.hd;pitch=HELI.pitch;bank=HELI.bank;}
+    else{const o=heliOf(d.p);if(!o)return;P=o.h.P;yaw=o.h.yaw;pitch=o.h.pitch;bank=o.h.bank;}
+    heliSit(f.a,P,yaw,pitch,bank,i);h.a=f.a;},
+  off(f,h){if(h&&h.a)heliUnsit(h.a);}});
+
+// riding along: sit in your seat after online.js has moved your friend's helicopter this frame (or you'd lag behind it)
+function heliRideSit(){const r=HELI.ride;if(!r)return;const f=heliOf(r.pid);if(!f)return;const h=f.h;
+  heliSeatAt(h.P,h.yaw,h.pitch,h.bank,r.i,player.pos);heliSit(av,h.P,h.yaw,h.pitch,h.bank,r.i);}
+addEventListener('load',()=>onTick.push(heliRideSit));
+// for the ⭐🏆 challenges' Rewards tab (challenges.js), and for tests
+addEventListener('load',()=>{const G=window.__game;if(!G)return;const er=G.earnedRides;
+  G.earnedRides=()=>(er?er():[]).concat([{k:'heli',e:'🚁',pic:null,n:'Helicopter',nm:'Skyhawk',by:'chal',goal:HELI_EARN.length,have:Math.min(HELI_EARN.length,heliEarned()),own:heliOwn(),fly:false,
+    what:`Finish the ${HELI_EARN.length} 🚁 helicopter challenges, or buy it for ${HELI_PRICE} 🪙`,ownTxt:'Yours! It\'s parked at the 🚁 Helipad'}]);
+});
+Object.assign(window.__game,{heli:()=>HELI,heliModel:()=>HM,heliBoard,heliOut,heliLand,heliCall,heliGet,heliAsk,heliDrop,heliOpen,HELI_SEATS,HELI_K});
 // ---- src/26i-fast-pass.js ----
 /* ================= 🎟️ FAST PASS: zip to any place in town ================= */
 // A power you buy once in the shop's ⚡ Powers tab (with coins) and keep forever, like a fast pass at a theme park.

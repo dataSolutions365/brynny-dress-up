@@ -153,6 +153,10 @@ function deliveryBox(){const g=new THREE.Group();
  anims.push(t=>{if(curZone!==z)return;for(const tb of TB){const k=1+Math.sin(t*11+tb.lx*3)*.15+Math.sin(t*7.3+tb.lz)*.1;tb.flame.scale.set(k,1.6*k,k);}});
  // the table you sit at is the front right one (on the outside chair, facing the kitchen side of the table)
  RST.myT=TB[3];RST.seat={lx:TB[3].lx+.8,lz:TB[3].lz};
+ // every chair a diner can take, best first (the two left outside chairs belong to the people already having dinner).
+ // Each person who sits down takes the first one nobody is in (24l-restaurant.js), so nobody sits on anyone.
+ RST.seats=[[3,1],[1,1],[3,-1],[1,-1],[2,1],[0,1]].map(([i,side])=>({t:TB[i],side,lx:TB[i].lx+side*.8,lz:TB[i].lz}));
+ RST.seats.push(...[[0,-1],[2,-1]].map(([i,side])=>({t:TB[i],side,lx:TB[i].lx+side*.8,lz:TB[i].lz,npc:1})));
 
  // ---- string lights over the patio, on four iron poles ----
  {const bulbM=glow('#ffd590',1.7),wire=std('#1d1d1d',{roughness:.8});const poles=[[-5.3,-1.8],[5.3,-1.8],[5.3,5.2],[-5.3,5.2]];
