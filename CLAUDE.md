@@ -122,7 +122,7 @@
   🦁 A Safari Round-up starts at the Safari Zoo the same way, with four of the zoo's own animals (`SAFARI_LIST` wraps the real `ZA`
   animals, no copies: `penOut` sets `a.esc` so the zoo stops moving it and its pen empties, `penIn` puts it back), walked back to the zoo. Only one Round-up runs at a time (`RU.grp`).
   🌪️ The All-Animal Round-up (`RU.grp` 'all') starts by the Sparkle Studio: EVERY animal (the barn four, all of the zoo's `ZA`, and
-  all of Polar Ice's `IA` once it's in town, `POLAR_LIST`) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
+  all of Polar Ice's `IA`, `POLAR_LIST`) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
   close and then stops for a breather; you can hold 3 on ropes (`ropeMax`) and each goes to its own home.
   Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - ❄️ Polar Ice (`arctic` zone): the place is `3d/src/12h-place-arctic.js` (`ICE` has where the rink, lake and its fishing holes, and the igloo spot are,

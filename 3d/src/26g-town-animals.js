@@ -33,13 +33,13 @@ const ROAM_LIST=[
 // Each gets a name (the same on every phone, for friends online). sec: the four that break out in a Safari Round-up.
 const ZOO_NAMES={zebra:['Ziggy','Zuri'],giraffe:['Jengo','Twiga'],rhino:['Kifaru','Rocky'],okapi:['Kito'],elephant:['Ella','Tembo'],lion:['Leo'],gorilla:['Bongo'],
   hippo:['Hugo'],cheetah:['Dash'],tiger:['Sher'],gator:['Chomp']},SAFARI_SEC=['Ziggy','Kito','Twiga','Tembo'];
-const POLAR_NAMES=['Nanook','Wally','Pebble','Frost','Snowy','Blizzard','Icicle','Aurora','Tundra','Mitten','Flurry','Glacier'];
+const POLAR_NAMES={polarbear:['Nanook','Kiki'],walrus:['Wally'],penguin:['Pebble','Waddle','Flipper','Tux'],arcticfox:['Frost'],arcticwolf:['Tundra'],snowyowl:['Hoot']};
 const realList=(list,grp,names)=>{const n={};return list.map((a,i)=>{const F=FK[a.k],k=(n[a.k]=(n[a.k]||0)+1)-1,
-  nm=names?(names[a.k]||[])[k]||`${F.n}${k?' '+(k+1):''}`:POLAR_NAMES[i]||`${F.n} ${i+1}`;
+  nm=(names[a.k]||[])[k]||`${F.n}${k?' '+(k+1):''}`;
   return {k:a.k,nm,e:F.e,grp,real:a,sec:grp==='zoo'?SAFARI_SEC.includes(nm):true,food:F.food,say:F.say,streets:[[330,0],[30,90],[150,180],[240,270]][i%4]};});};
 const SAFARI_LIST=realList(ZA,'zoo',ZOO_NAMES);
 // ❄️ the polar animals (IA in 24m-arctic.js), once Polar Ice is in town
-const POLAR_LIST=typeof IA!=='undefined'&&Z.arctic?realList(IA,'arctic',null):[];
+const POLAR_LIST=typeof IA!=='undefined'&&Z.arctic?realList(IA,'arctic',POLAR_NAMES):[];
 const RU_ZONE={barn:BZ,zoo:Z.zoo},RU_NAME={barn:'🐴 Happy Barn',zoo:'🦒 Safari Zoo'};
 if(POLAR_LIST.length){RU_ZONE.arctic=Z.arctic;RU_NAME.arctic='❄️ Polar Ice';}
 const ROAM_RING=7.15,ROAM_REACH=2.6,ROAM_SPD=.85,RU_SPD=1.35,RU_HOME=6;// RU_HOME: how close to the barn's fence counts as home
@@ -66,7 +66,7 @@ const ROAM=ROAM_LIST.concat(SAFARI_LIST,POLAR_LIST).map(o=>{let a;
   const s=meadowSpot();c.pos.set(s.x,0,s.z);a.pos.copy(c.pos);scene.add(a.g);return c;});
 // a real zoo or polar animal leaves its pen (esc: its own place stops moving it) or goes back in
 function penOut(c){const a=c.a;if(!c.real||a.esc)return;a.esc=true;a.ob.r=0;a.g.visible=true;c.tag.visible=true;c.pos.set(a.g.position.x,0,a.g.position.z);if(c.real.sw&&c.real.sw.rip)c.real.sw.rip.visible=false;}
-function penIn(c){const a=c.a;if(!c.real)return;a.esc=false;c.tag.visible=false;c.mode='pen';a.vy=a.y=0;[a.lx,a.lz]=a.spot(a.rad);placeFarm(a);a.g.visible=true;}
+function penIn(c){const a=c.a;if(!c.real)return;a.esc=false;c.tag.visible=false;c.mode='pen';a.vy=a.y=0;[a.lx,a.lz]=a.perch&&typeof ICE!=='undefined'?[ICE.perch[0],ICE.perch[1]]:a.spot(a.rad);placeFarm(a);/* the snowy owl goes back up on her rock */a.g.visible=true;}
 // the animals in the Round-up that's on (or the last one): in the All-Animal one, every one of them
 const ruSet=()=>RU.grp==='all'?ROAM:ROAM.filter(c=>c.grp===RU.grp&&c.sec!==false);
 const ruIn=c=>RU.grp==='all'||(c.grp===RU.grp&&c.sec!==false);

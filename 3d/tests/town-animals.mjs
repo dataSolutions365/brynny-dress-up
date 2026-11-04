@@ -239,7 +239,11 @@ try {
   if (fd.me < 5) fail(`Walking up to a runaway it should dash off (${fl} only got ${fd.me.toFixed(1)} away).`);
   if (!(tired > 0)) fail('After a dash a runaway should stop for a breather.');
   // a tired one can be caught with the button; then two more, and they all walk with you
-  const grab = async (nm, button) => { await page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm); c.tired = 3; G.player.pos.set(c.pos.x + 1.2, 0, c.pos.z); }, nm);
+  const grab = async (nm, button) => {
+    // for the button, wait until no other runaway is right next to this one (so the button is for this one)
+    if (button) for (let i = 0; i < 20; i++) { if (await page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm), p = c.pos; c.tired = 3;
+      return G.ROAM.every(o => o === c || o.mode === 'pen' || Math.hypot(o.pos.x - p.x, o.pos.z - p.z) > 4 + o.a.rad); }, nm)) break; await gameWait(.5); }
+    await page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm); c.tired = 3; G.player.pos.set(c.pos.x + 1.2, 0, c.pos.z); }, nm);
     if (button) { await gameWait(.3); const t = await btn('#roamCatch'); if (!t.includes('Catch ' + nm)) fail(`Next to a tired ${nm} there should be a Catch button (it says "${t}").`);
       await page.evaluate(() => document.querySelector('#roamCatch').click()); }
     else await page.evaluate(nm => { const G = window.__game; G.ruCatch(G.ROAM.find(c => c.nm === nm)); }, nm); await gameWait(.2); };
