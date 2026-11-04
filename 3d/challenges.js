@@ -128,6 +128,9 @@ const ALL_LIST = [
   { id: 'roundup', tab: 'explore', e: '🚨', t: 'Finish a Round-up: catch all 4 runaways and bring them home', r: 3, go: 'barn', ev: { k: 'roundup' } },
   { id: 'safariRound', tab: 'explore', e: '🦒', t: 'Finish a Safari Round-up: bring Ziggy, Kito, Twiga and Tembo back to the Safari Zoo', r: 3, go: 'zoo', ev: { k: 'roundgrp', a: g => g === 'zoo' } },
   { id: 'roundCatch', tab: 'explore', e: '🪢', t: 'Bring 10 runaways back to the Happy Barn', r: 2, goal: 10, go: 'barn', ev: { k: 'roamhome' } },
+  // 🌪️ All-Animal Round-up: start it by the Sparkle Studio and every runaway (barn, safari and polar) breaks out at once, running all over town
+  { id: 'allRound', tab: 'explore', e: '🌪️', t: 'Finish the All-Animal Round-up: every runaway from the barn, the zoo and Polar Ice back home', r: 5, go: 'studio', ev: { k: 'roundgrp', a: g => g === 'all' } },
+  { id: 'allTrio', tab: 'explore', e: '🪢', t: 'Walk 3 runaways on ropes at once in the All-Animal Round-up', r: 2, go: 'studio', ev: { k: 'roamtrio' } },
   { id: 'roundWin', tab: 'explore', e: '🏆', t: 'Win a Round-up against friends online (bring the most home)', r: 2, go: 'barn', ev: { k: 'roundup', a: p => p === 0 } },
   { id: 'gardenBow', tab: 'explore', e: '🌷', t: 'Curtsy in the Spring Garden', r: 1, go: 'spring', ev: { k: 'act', a: a => a === 'bow', z: 'spring' } },
   // 🦁 Safari: super hard challenges. Finish all of one animal's challenges (grp) and you can ride it (3d/src/24i-earned-rides.js)
