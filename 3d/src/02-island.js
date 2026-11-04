@@ -50,6 +50,8 @@ const ZONES=[
   {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
   // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
   {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
+  // in the open grass between the Beach path and the Car Garage (12h-place-arctic.js, 24m-arctic.js): snow, ice and polar animals
+  {id:'arctic',name:'❄️ Polar Ice',ang:165,d:45,r:9,music:'winter-days'},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;

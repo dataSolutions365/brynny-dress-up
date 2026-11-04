@@ -76,6 +76,14 @@
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
+- ❄️ Polar Ice (`arctic` zone): the place is `3d/src/12h-place-arctic.js` (`ICE` has where the rink, lake and its fishing holes, and the igloo spot are,
+  and `onRink()`), the animals are `3d/src/24c9g-arctic-animals.js` (polar bear, walrus, penguin and chick, arctic fox and wolf, snowy owl, all built
+  to look real, not cartoony; added to the zoo animals through `ZOOA` with `arctic:1`), and the 🐻‍❄️ Nanuq, 🦭 Tusk (swims), 🦉 Ukpik (flies) and
+  🐺 Amaruq rides are earned like the safari rides from the ❄️ Polar tab of `3d/challenges.js` (ids starting `ice_`). `3d/src/24m-arctic.js` does
+  the animals there, ⛸️ skating on the rink (`iceSkateStep`, in the movement chain in 25-game-loop.js; friends see the skates through the 'ice' entry
+  in `SHOW`, `3d/src/26i-arctic-see.js`), 🎣 ice fishing and 🧊 igloo building. `3d/src/24m2-arctic-escape.js` is the 🚨 Polar escape: four of the
+  animals run off into town, you catch them and walk them home on a rope (online with friends too, `{t:'icerun'}` in online.js).
+  `3d/tests/arctic.mjs` (run on every PR) checks all of it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

@@ -415,7 +415,7 @@ class Avatar{
     // walking the runway in the model contest: girls do a catwalk, guys a confident stride (24-model-agency.js sets runwayT)
     if(this.runwayT>0){this.runwayT-=dt;if(sp>.03)runwayWalk(this,tgt,sp);}
     // wearing roller skates or inline skates (14f-roller-skates.js): a skating stride with swinging arms
-    if(this.rollers&&!air&&!this.emote&&!this.skating&&!this.biking&&!this.ballMove&&!(this.runwayT>0))rollerPose(this,tgt,sp,dt);else this.rollOn=false;
+    if((this.rollers||this.iceSk)&&!air&&!this.emote&&!this.skating&&!this.biking&&!this.ballMove&&!(this.runwayT>0))rollerPose(this,tgt,sp,dt);else this.rollOn=false;
     const e=this.emote;let ext=0;
     if(e){e.t+=dt;const k=e.t;
       if(e.id==='wave'){tgt.a0z=-2.7;tgt.e0=0;tgt.a0x=0;ext=Math.sin(k*12)*.5;tgt.hd=.12;if(k>2)this.emote=null;}

@@ -49,7 +49,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||window.__daddy?.frozen())mag=0;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   const p=player.pos;
-  if(!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
+  if(!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!iceSkateStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js); on the ice at ❄️ Polar Ice, iceSkateStep (24m-arctic.js)
   // ^ DADDY POWERS: window.__daddy?.fly is Daddy flying, swinging or in the robot (27-daddy-powers.js); does nothing once that file is gone
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
