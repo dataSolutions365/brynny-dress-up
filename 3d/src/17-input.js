@@ -37,7 +37,8 @@ canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercanc
 canvas.addEventListener('wheel',e=>{zoomBy(Math.exp(Math.max(-60,Math.min(60,e.deltaY))*.004));e.preventDefault();},{passive:false});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 $('#jump').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
-function jump(){if(closetOpen)return;if(heliJump())return;// in the helicopter: lift off (26h-helicopter.js)
+function jump(){if(closetOpen)return;if(skyJump())return;// hang gliding or skydiving: jump out of the plane, or pull (26i-sky-sports.js)
+  if(heliJump())return;// in the helicopter: lift off (26h-helicopter.js)
   if(flyJump())return;// on a flying ride: take off (24h-flying.js)
   if(window.__daddy?.jump())return;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   if(jpJump())return;// bouncing on a trampoline: bounce higher next time (26e-jump-park.js)

@@ -56,6 +56,8 @@ const ZONES=[
   // side and a rock climbing wall up the other, and a treetop ropes course, with zip lines down from both
   {id:'mountain',name:'⛰️ Lookout Mountain',ang:101,d:R+26.5,r:9,music:'spring-birds',nopath:true},
   {id:'ropes',name:'🌲 Treetop Adventure',ang:127,d:R+26,r:9,music:'city-park',nopath:true},
+  // past the canal to the north-east, over its own footbridge at 70 (26i-sky-sports.js): the runway, the jump plane, the hangar and the landing target
+  {id:'airfield',name:'✈️ Sunny Skies Airfield',ang:64,d:R+61,r:15,music:'city-park',nopath:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;

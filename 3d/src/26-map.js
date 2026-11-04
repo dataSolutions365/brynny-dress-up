@@ -1,5 +1,5 @@
 /* ================= MAP ================= */
-const MAPC={heli:'#c9d3de',studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
+const MAPC={heli:'#c9d3de',studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a',airfield:'#cfe6b4'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -10,6 +10,7 @@ function drawWorld(x,w2s,k,size){
   worldMap(x,w2s,k);// the big world past the canal, blocked off for now (26z-big-world.js)
   canalBank(x,cx,cy,k);// the grassy far bank of the canal (26f-ocean.js)
   advMap(x,w2s,k);// the footbridge over to Lookout Mountain and the ropes course (26h-adventure.js)
+  skyMap(x,w2s,k);// the footbridge over to the airfield (26i-sky-sports.js)
   x.beginPath();x.arc(cx,cy,(R+2.4)*k,0,Math.PI*2);x.fillStyle='#f1d9a6';x.fill();
   x.beginPath();x.arc(cx,cy,R*k,0,Math.PI*2);x.fillStyle='#8fd36f';x.fill();
   // beach dock
@@ -21,6 +22,7 @@ function drawWorld(x,w2s,k,size){
   // zones
   for(const z of ZONES){const [px,py]=w2s(z.x,z.z);x.beginPath();x.arc(px,py,z.r*k,0,Math.PI*2);x.fillStyle=MAPC[z.id]||'#fff3b0';x.fill();
     x.lineWidth=Math.max(1.5,.35*k);x.strokeStyle=mapDest===z?'#ff4d8d':'rgba(255,255,255,.9)';x.stroke();}
+  skyMapTop(x,w2s,k);// the airfield's runway and landing target (26i-sky-sports.js)
 }
 function drawArrow(x,px,py,ang,s,fill){x.save();x.translate(px,py);x.rotate(ang);x.beginPath();x.moveTo(0,-s);x.lineTo(s*.72,s*.7);x.lineTo(0,s*.32);x.lineTo(-s*.72,s*.7);x.closePath();
   x.fillStyle=fill;x.fill();x.lineWidth=s*.22;x.strokeStyle='#fff';x.lineJoin='round';x.stroke();x.restore();}

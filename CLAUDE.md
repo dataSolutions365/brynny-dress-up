@@ -89,6 +89,15 @@
   relative to `R`, `BANK` and `WORLD`, never raw numbers, so the world can keep growing. The ground is one shape (`WG`, `groundH(x,z)` reads it)
   and every tree/rock kind is one instanced shape, to stay cheap on phones. The big map opens on the island (zoom step 1); ➖ zooms out to the
   whole world with each region striped and 🔒 named. `3d/tests/big-world.mjs` (run on every PR) checks it.
+- 🪂 Hang gliding and ✈️ skydiving: `3d/src/26i-sky-sports.js`. The hang glider launches off a ramp on top of Lookout Mountain (`RAMP`),
+  you lie prone in the harness under a real-looking glider (`hgBuild`, `hgPlace` puts glider and pilot together), steer with the joystick,
+  ride the thermals in `THERM` (a hawk circles in each) and ridge lift off the mountain (`skyLift`), and flare to land. ✈️ Sunny Skies Airfield
+  (`AIRF`, zone 'airfield') sits past the canal at angle 64 (its own `BANK_LAND` sector 52 to 76, with `own:1` because it draws its own ground,
+  and a footbridge at 70). The jump plane (`planeBuild`, flown by `planeStep`) takes off, climbs to `PL_ALT`, opens its door for the jump,
+  then lands and taxis back. Free fall, the auto-opening square canopy (`canBuild`, `canPlace`) and the 🎯 target landing are in `skyStep()`,
+  which 25-game-loop.js asks first. `skyFloor()` is what's under you (never land on a roof, a tree or steep rock: it lifts you over them) and
+  `skyLandable()` where you may come down (island, walkable bank, or the canal to swim). Write positions relative to `R`, `BANK` (and `WORLD`
+  when it exists), never raw numbers. Friends see it through the 'sky' entry in `SHOW`. `3d/tests/sky.mjs` (run on every PR) does a glide and a jump.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
