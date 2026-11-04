@@ -228,7 +228,7 @@ AIRF.floor=(x,z)=>{const [t,s]=AIRF.loc(x,z),H=AIRF.hangar;let f=0;
     for(let y=150;y<h-150;y+=56)x.fillRect(w/2-2,y,4,30);
     for(const end of [0,1]){x.save();if(end){x.translate(w,h);x.rotate(Math.PI);}
       for(let i=0;i<8;i++)if(i!==3&&i!==4)x.fillRect(14+i*13,10,8,52);
-      x.font='700 46px sans-serif';x.textAlign='center';x.fillText(end?'24':'06',w/2,118);x.restore();}});
+      x.font='700 46px sans-serif';x.textAlign='center';x.fillText(end?'06':'24',w/2,118);x.restore();}});
   tex.anisotropy=8;
   const rwLen=AIRF.t1-AIRF.t0,rw=M(new THREE.PlaneGeometry(AIRF.w,rwLen),std('#ffffff',{map:tex,roughness:.9}),0,.03,0,g,false,true);
   rw.rotation.order='YXZ';rw.rotation.set(-Math.PI/2,AIRF.hdg,0);// the texture's top is the runway's far end
@@ -508,7 +508,7 @@ function sdJump(){if(SKY.mode!=='plane'||PL.mode!=='run')return;const P=PL,p=pla
   // out of the door: you keep the plane's speed for a moment, and get a little push away from it
   const rx=-Math.cos(P.hd),rz=Math.sin(P.hd);// the right side of the plane
   Object.assign(SKY,{mode:'ff',t:0,vx:Math.sin(P.hd)*P.sp+rx*1.6,vz:Math.cos(P.hd)*P.sp+rz*1.6,vy:0,hd:P.hd-Math.PI/2,pr:1,bank:0,turn:0,pulled:false});
-  p.x+=rx*.6;p.z+=rz*.6;P.with=false;planeAway();did('skydive','jump');skySave().jumps++;persist();
+  p.x+=rx*.6;p.z+=rz*.6;P.with=false;av.g.visible=true;planeAway();did('skydive','jump');skySave().jumps++;persist();
   tone(392,.25,'triangle',.1);tone(262,.4,'sine',.08,.1);toast('🙌 Arch your back and enjoy the view!');}
 function sdPull(auto){if(SKY.mode!=='ff')return;Object.assign(SKY,{mode:'open',t:0,k:0});skyCan.visible=true;
   tone(180,.15,'sawtooth',.06);tone(110,.3,'sine',.12,.25);if(auto)toast('🪂 Your parachute opened by itself at the safe height!');
@@ -518,7 +518,7 @@ function skyLandBtn(){if(SKY.mode==='hg'){SKY.land=true;SKY.spot=null;sfx('pop')
 function skyEnd(snap){const was=SKY.mode;SKY.mode=null;SKY.t=0;
   hgFly.visible=false;hgFly.userData.strap.visible=false;if(was&&was.startsWith('hg'))hgPark();
   skyCan.visible=false;skyGear(false,false);skyFog(0);skyWind(0);skyStreaks(false);
-  av.g.quaternion.identity();av.g.rotation.set(0,player.face,0);
+  av.g.quaternion.identity();av.g.rotation.set(0,player.face,0);av.g.visible=true;
   const p=player.pos;if(snap){if(PL.with){PL.with=false;const [x,z]=AIRF.at(AIRF.pad.t,AIRF.pad.s);p.set(x,0,z);}
     if(p.y>groundAt(p.x,p.z)+.05){const [x,z]=flyLandSpot(p.x,p.z);p.x=x;p.z=z;}p.y=groundAt(p.x,p.z);collide(p);}
   player.vy=0;player.onGround=true;player.speed=0;skyCamBackTo();skyHud();}
@@ -551,7 +551,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     const [lift,inT]=skyLift(p.x,p.z,p.y);
     if(inT){S.therm+=dt;if(S.therm>2&&!S.gotThermal){S.gotThermal=true;did('hglide','thermal');toast('🦅 You found a thermal! Circle in it to go up and up');tone(784,.12,'triangle',.08);tone(1047,.2,'triangle',.08,.1);}}else S.therm=0;
     const sink=flare?1.0:(S.land?(spotD<4?2.6:1.9):.85)+Math.abs(S.bank)*.6;
-    let wantVy=flare?-1.1:lift-sink;if(p.y>30)wantVy=Math.min(wantVy,0);
+    let wantVy=flare?-1.1:(S.land?0:lift)-sink;// landing: you fly out of the rising air and come downif(p.y>30)wantVy=Math.min(wantVy,0);
     S.vy+=(wantVy-S.vy)*Math.min(1,dt*(flare?3:1.4));
     // trees, roofs and the mountain coming up: the glider lifts over them (never into them)
     const vx=Math.sin(S.hd)*S.sp,vz=Math.cos(S.hd)*S.sp,ahead=Math.max(skyFloor(p.x+vx*.45,p.z+vz*.45),skyFloor(p.x+vx*1,p.z+vz*1));
@@ -648,6 +648,7 @@ onTick.push(dt=>{const S=SKY,p=player.pos;
     if(S.mode==='hgDown'&&S.t>.6){// set it down: nose on the ground, you step out from under it
       const u=Math.min(1,(S.t-.6)/.6);hgFly.position.y-=u*.25;hgFly.rotation.x+=u*.3;}}
   if(S.mode==='plane'||S.mode==='board'){skyGear(false,true);
+    av.g.visible=S.mode!=='plane'||PL.mode==='run';// inside the cabin you're hidden until the door opens
     if(S.mode==='plane'){const P=PL;av.g.quaternion.copy(P.g.quaternion).multiply(qSky.setFromAxisAngle(yAxis,-Math.PI/2));av.g.position.copy(p);skyPoseSet(av,SKYP.sit,SKYP.sit,0);
       if(P.mode==='run'){// legs out of the door, ready to go
         for(const l of av.legs){l.hp.rotation.x=-1.25;l.kn.rotation.x=1.1+Math.sin(clock.elapsedTime*2+l.sx)*.08;}av.g.position.add(tmpSky.set(-.32,0,0).applyQuaternion(P.g.quaternion));}}}
