@@ -35,6 +35,8 @@ jobs:
         run: node 3d/tests/safari-rides.mjs
       - name: You can swim in Dolphin Bay with the dolphins, the whale and the sea turtle, and ride them once earned
         run: node 3d/tests/ocean.mjs
+      - name: The barn animals wander their meadow, and a Round-up sends them round town until they are caught and walked home
+        run: node 3d/tests/town-animals.mjs
       - name: The Jump Park trampolines bounce, flip, slam dunk and splash into the foam pit
         run: node 3d/tests/jump-park.mjs
       - name: Every guy haircut looks like its name and hats sit on the hair

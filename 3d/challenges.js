@@ -112,6 +112,12 @@ const LIST = [
   { id: 'spookyFlip', tab: 'explore', e: '🎃', t: 'Do a flip in Halloween Hollow', r: 1, go: 'halloween', ev: { k: 'act', a: a => a === 'flip', z: 'halloween' } },
   { id: 'snowDance', tab: 'explore', e: '🎄', t: 'Dance in Christmas Village', r: 1, go: 'christmas', ev: { k: 'act', a: a => a === 'dance', z: 'christmas' } },
   { id: 'partyCheer', tab: 'explore', e: '🎂', t: 'Cheer at the Birthday Party', r: 1, go: 'birthday', ev: { k: 'act', a: a => a === 'cheer', z: 'birthday' } },
+  // 🚨 Round-up (3d/src/26g-town-animals.js): start it at the Happy Barn, the 4 barn animals break out all over town; catch them and walk them home
+  { id: 'roamFeed', tab: 'explore', e: '🌽', t: 'Give a snack to all 4 barn animals in the meadow: Waddles, Billy, Truffle and Woolly', r: 1, goal: 4, u: true, go: 'barn', ev: { k: 'roamfeed', a: n => ['Waddles', 'Billy', 'Truffle', 'Woolly'].includes(n) } },
+  { id: 'roundup', tab: 'explore', e: '🚨', t: 'Finish a Round-up: catch all 4 runaways and bring them home', r: 3, go: 'barn', ev: { k: 'roundup' } },
+  { id: 'safariRound', tab: 'explore', e: '🦒', t: 'Finish a Safari Round-up: bring Ziggy, Kito, Twiga and Tembo back to the Safari Zoo', r: 3, go: 'zoo', ev: { k: 'roundgrp', a: g => g === 'zoo' } },
+  { id: 'roundCatch', tab: 'explore', e: '🪢', t: 'Bring 10 runaways back to the Happy Barn', r: 2, goal: 10, go: 'barn', ev: { k: 'roamhome' } },
+  { id: 'roundWin', tab: 'explore', e: '🏆', t: 'Win a Round-up against friends online (bring the most home)', r: 2, go: 'barn', ev: { k: 'roundup', a: p => p === 0 } },
   { id: 'gardenBow', tab: 'explore', e: '🌷', t: 'Curtsy in the Spring Garden', r: 1, go: 'spring', ev: { k: 'act', a: a => a === 'bow', z: 'spring' } },
   // 🦁 Safari: super hard challenges. Finish all of one animal's challenges (grp) and you can ride it (3d/src/24i-earned-rides.js)
   { id: 'saf_feed5', tab: 'safari', grp: 'kivu', e: '🍃', t: 'Feed all 11 kinds of animals at the Safari Zoo', r: 3, goal: 11, u: true, go: 'zoo', ev: { k: 'zoofeed' } },
@@ -167,7 +173,12 @@ const LIST = [
   { id: 'sea_meet', tab: 'ocean', grp: 'pip', e: '🌊', t: 'Swim next to 5 different sea animals', r: 3, goal: 5, go: 'bay', poll: () => sea().kinds },
   { id: 'sea_manta', tab: 'ocean', grp: 'friends', e: '🐠', t: 'Swim next to Ray the manta ray for 30 seconds', r: 2, goal: 30, go: 'bay', poll: () => sea().manta },
   { id: 'sea_otter', tab: 'ocean', grp: 'friends', e: '🦦', t: 'Feed Ollie the sea otter 3 times', r: 2, goal: 3, go: 'bay', ev: { k: 'seafeed', a: a => a === 'otter' } },
-  { id: 'sea_shark', tab: 'ocean', grp: 'shark', e: '🦈', t: 'Get away from the great white 3 times', r: 3, goal: 3, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
+  // 🦈 Ghost the great white: really hard on purpose (you need all four other sea rides first)
+  { id: 'sea_shark', tab: 'ocean', grp: 'ghost', e: '🦈', t: 'Get away from the great white 3 times', r: 3, goal: 3, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
+  { id: 'sea_shark10', tab: 'ocean', grp: 'ghost', e: '🏊', t: 'Get away from Ghost the great white 10 times', r: 3, goal: 10, go: 'bay', ev: { k: 'shark', a: a => a === 'escape' } },
+  { id: 'sea_sharkrow', tab: 'ocean', grp: 'ghost', e: '🔥', t: 'Get away from Ghost 5 times in a row without being bumped', r: 3, goal: 5, go: 'bay', poll: () => sea().sharkRow },
+  { id: 'sea_rides4', tab: 'ocean', grp: 'ghost', e: '🏆', t: 'Ride all 4 sea rides: Shelly, Splash, Big Blue and Pip', r: 3, goal: 4, go: 'bay', poll: () => sea().rode },
+  { id: 'sea_swim5k', tab: 'ocean', grp: 'ghost', e: '🌊', t: 'Swim 5000 steps in the sea', r: 3, goal: 5000, go: 'bay', poll: () => sea().swum },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 const DAILY = [
@@ -183,6 +194,7 @@ const DAILY = [
   { id: 'd_quest', e: '🎁', t: 'Help someone in town', ev: { k: 'quest' } },
   { id: 'd_glam', get e() { return guy() ? '🪞' : '💄'; }, t: 'Sit at the glam mirror', go: 'agency', ev: { k: 'glam' } },
   { id: 'd_bath', e: '🛁', t: 'Give your pet a bath', go: 'parlor', ev: { k: 'bath' } },
+  { id: 'd_roam', e: '🪢', t: 'Bring 2 runaways home in a Round-up', goal: 2, go: 'barn', ev: { k: 'roamhome' } },
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
   { id: 'd_eat', e: '🍝', t: "Eat a meal at Rosie's Restaurant", go: 'diner', ev: { k: 'eat' } },
   { id: 'd_rush', e: '🛵', t: 'Do a delivery rush', go: 'diner', ev: { k: 'deliver' } },
@@ -383,11 +395,11 @@ function oceanHTML(list, here) {
   for (const r of rides) {
     const mine = list.filter(c => c.grp === r.k); if (!mine.length) continue;
     const n = mine.filter(isDone).length;
-    h += `<div class="csaf sea${r.own ? ' own' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}</strong><span>${r.own ? 'Yours! Swim up to them in the bay and tap Ride' : `${n} of ${mine.length} challenges done`}</span></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += `<div class="csaf sea${r.own ? ' own' : ''}"><b>${r.e}</b><div><strong>${r.nm} the ${r.n.toLowerCase()}</strong><span>${r.own ? 'Yours! Swim up to them and tap Ride' : `${n} of ${mine.length} challenges done`}</span></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
     h += mine.map(ch => chRow(ch, here)).join('');
   }
   // the other sea friends (no ride, just challenges)
-  for (const [k, e, nm, sub] of [['friends', '🦦', 'More sea friends', 'Ray the manta ray and Ollie the sea otter'], ['shark', '🦈', 'The great white', 'Sometimes he chases you when you swim. Get to the shore!']]) {
+  for (const [k, e, nm, sub] of [['friends', '🦦', 'More sea friends', 'Ray the manta ray and Ollie the sea otter']]) {
     const mine = list.filter(c => c.grp === k); if (!mine.length) continue;
     const n = mine.filter(isDone).length, fin = n === mine.length;
     h += `<div class="csaf sea${fin ? ' own' : ''}"><b>${e}</b><div><strong>${nm}</strong><span>${fin ? 'All done!' : sub}</span></div>${fin ? '<span class="own">✅ Done</span>' : ''}</div>`;

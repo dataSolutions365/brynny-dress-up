@@ -6749,7 +6749,7 @@ const ZOO_BUILD={
    Tembo the elephant, Kivu the okapi and Jabari the lion only come to players who finish their super hard
    🦁 Safari challenges (the list is in 24i-earned-rides.js, the challenges themselves in challenges.js).
    The elephant and okapi use the zoo's real-looking models (24c9-zoo-okapi-elephant.js) with a saddle on top;
-   the lion is built here the same way: true colors and shapes, no cartoon blush or crown (that's Goldie). */
+   the lion is built here the same way: true colors and shapes, no cartoon blush. Goldie the champion lion (24i-earned-rides.js) is this lion too, with a gold saddle. */
 
 // short tawny fur: lots of fine strokes in a few shades, so the coat isn't one flat color
 let LION_FUR=null;
@@ -6820,7 +6820,7 @@ ZOO_BUILD.lion=function(g,body,o){const r=.36,len=.78,hip=.74,by=.84;
 
 // a saddle for the safari rides (and a decorated blanket for the elephant), so you can tell they're yours and ready to ride
 // where the saddle sits on each ride: r = body radius under it, sx/sy = body shape, y/z = where on the body, col = blanket color, seatY = saddle height
-const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},
+const SADDLE={kivu:{r:.27,sx:.95,sy:1.03,y:.02,z:.02,col:'#3c6a3a',seatY:.27},jabari:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#2f4a7a',seatY:.33},goldlion:{r:.36,sx:.88,sy:.95,y:0,z:.06,col:'#c9961e',seatY:.33},
   punda:{r:.29,sx:.9,sy:1,y:.02,z:0,col:'#8a2f2a',seatY:.3},kifaru:{r:.46,sx:.92,sy:.95,y:0,z:-.04,col:'#2f5a6a',seatY:.44},
   neema:{r:.3,sx:.95,sy:.9,y:0,z:-.03,col:'#5a2f6a',seatY:.27},twiga:{r:.3,sx:.9,sy:1,y:.03,z:.05,col:'#2f6a4a',seatY:.31},
   zuri:{r:.36,sx:1.05,sy:.95,y:.12,z:-.08,col:'#6a4a2f',seatY:.3},kiboko:{r:.5,sx:1.14,sy:.94,y:0,z:.05,col:'#2f6a8a',seatY:.47},
@@ -7391,12 +7391,13 @@ const FARM=[
 ];
 FARM.push(...earnedRideList());// 🏆 rides you can only earn, not buy (24i-earned-rides.js)
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
+// model = which real-looking builder in ZOO_BUILD to use (the same one as the safari ride of that animal)
 const ZOOA=[
-  {k:'zebra',e:'🦓',n:'Zebra',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
+  {k:'zebra',e:'🦓',n:'Zebra',model:'zebraR',food:[['🌾','Hay'],['🥕','Carrot']],say:['*happy snort* 🦓','Hee-haw-hee!','Look at my stripes!'],
     facts:[['🥗','Diet','Herbivore. Mostly grass, plus some leaves, bark and shoots.'],['🌍','Habitat','Grasslands and savannas of eastern and southern Africa.'],['⏳','Lifespan','About 20 to 25 years in the wild, and up to 40 in zoos.'],['✨','Fun fact','No two zebras have the same stripes, just like fingerprints!']]},
-  {k:'giraffe',e:'🦒',n:'Giraffe',food:[['🥬','Lettuce'],['🌿','Acacia leaves']],say:['*long lick* 👅','Hello down there!','Mmm, leaves! 🌿'],
+  {k:'giraffe',e:'🦒',n:'Giraffe',model:'giraffeR',food:[['🥬','Lettuce'],['🌿','Acacia leaves']],say:['*long lick* 👅','Hello down there!','Mmm, leaves! 🌿'],
     facts:[['🥗','Diet','Herbivore. Leaves and twigs from tall trees, especially acacia. Up to 34 kg (75 lb) a day!'],['🌍','Habitat','Savannas and open woodlands of Africa.'],['⏳','Lifespan','About 25 years in the wild, and a bit longer in zoos.'],['✨','Fun fact','The tallest animal on Earth, up to 5.5 m (18 ft). Its tongue is about 50 cm (20 in) long!']]},
-  {k:'rhino',e:'🦏',n:'White rhino',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
+  {k:'rhino',e:'🦏',n:'White rhino',model:'rhinoR',food:[['🌾','Hay'],['🍎','Apple']],say:['*big happy huff*','Hrrumph! 🦏','Scratch behind my ears?'],
     facts:[['🥗','Diet','Herbivore. A grazer that eats short grass all day long.'],['🌍','Habitat','Grasslands and savannas of southern Africa.'],['⏳','Lifespan','About 40 to 50 years.'],['✨','Fun fact','Its horns are made of keratin, the same stuff as your fingernails. Adults can weigh over 2,000 kg!']]},
   {k:'okapi',e:'🌿',n:'Okapi',food:[['🍃','Leaves'],['🍌','Banana']],say:['*soft huff*','*long tongue lick* 👅','Shh, I\'m shy! 🌿'],
     facts:[['🥗','Diet','Herbivore. Leaves, buds, fruit and even mushrooms, which it pulls off with its long tongue.'],['🌍','Habitat','Only in the thick rainforests of the Democratic Republic of the Congo, in central Africa.'],['⏳','Lifespan','About 20 to 30 years.'],['✨','Fun fact','It has zebra stripes, but its closest relative is the giraffe! Its tongue is so long it can lick its own ears.']]},
@@ -7586,17 +7587,11 @@ class FarmAnimal{
       const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.3),fV(0,-.15,-.6)],q=>.2*(1-q*.85),skin,tail,16,12);
       for(const [x,y,z,a] of [[.08,-.1,-.5,.9],[-.08,-.1,-.5,-.9],[.07,-.13,-.6,.9],[-.07,-.13,-.6,-.9]]){const sp=M(new THREE.ConeGeometry(.035,.22,8),fShiny('#fff4dc'),x,y,z,tail);sp.rotation.z=-a;}
       Object.assign(o,{neck,head,tail,nTilt:1.3,size:1,h:by+.45,rad:.65,dustR:[r,r,len*.8]});}
-    if(k==='monkey'){const r=.22,len=.12,leg=.3,by=leg+r*.7,fur=fm('#8a5a3b'),face=fm('#f6dcc0');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,18),fur,0,0,0,body);t.rotation.x=Math.PI/2-.35;M(sph(r*.75,14,10),face,0,-r*.25,len*.25,body).scale.set(.85,.9,1.1);
-      fLegs(this,g,r*.55,len*.6+.04,leg+.04,leg+.04,.055,fur,face);
-      const neck=new THREE.Group();neck.position.set(0,by+r*.75,len/2+r*.35);neck.rotation.x=.3;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.12,0);head.rotation.x=-.3;neck.add(head);const H=.21;
-      M(sph(H,22,16),fur,0,0,0,head);const fc=M(sph(H*.82,18,14),face,0,-H*.05,H*.32,head);fc.scale.set(1,.95,.85);M(sph(H*.5,14,10),face,0,-H*.38,H*.72,head).scale.set(1.1,.7,.8);
-      for(const sx of [-1,1]){M(sph(H*.32,12,10),fur,sx*H*1,H*.1,0,head).scale.set(.5,1,1);M(sph(H*.2,10,8),face,sx*H*1.06,H*.1,.01,head).scale.set(.4,1,1);}
-      fEyes(this,head,H,.32,.12,.88,.25,.2);fBlush(head,H,.55,-.2,.78);
-      const tail=new THREE.Group();tail.position.set(0,by,-(len/2+r*.9));g.add(tail);const pts=[];for(let i=0;i<=12;i++){const q=i/12;pts.push(fV(0,q*.45+Math.sin(q*Math.PI*1.6)*.05,-.15*Math.sin(q*Math.PI)-(q>.7?(q-.7)*.5:0)));}
-      taperTube(pts,q=>.035-.012*q,fur,tail,20,8);
-      Object.assign(o,{neck,head,tail,nTilt:.3,size:1,h:by+.55,rad:.4,dustR:[r,r,r]});}
+    // 🐒 Coco: a real-looking little monkey, the same builder as the Pet Parlor's real pets (Pet.buildReal in 16-animals-pets.js), in brown
+    if(k==='monkey'){const p=new Pet('monkey','#7b5b43','',null,{real:1,light:'#d8c4a6',face:'#2b211c',paw:'#2b211c'}),S=1.6;
+      if(p.tag){p.g.remove(p.tag);p.tag.material.map.dispose();p.tag.material.dispose();p.tag=null;}
+      p.g.scale.setScalar(S);g.add(p.g);this.tick=(t,dt,run)=>{p.speed=run*2.4;p.happy=this.happy;p.update(dt);};
+      Object.assign(o,{size:1,h:p.tagH*S,rad:.4,dustR:[.17,.55,.3]});}
     if(k==='trex'||k==='raptor'){const rap=k==='raptor',by=.62,skin=fm(rap?'#5ec8c8':'#86c96a',{roughness:.7}),belly=fm(rap?'#e8fbff':'#e6f5c8',{roughness:.7}),spot=fm(rap?'#ff8fc8':'#5fa850');
       body.position.y=by;body.rotation.x=-.25;const t=M(new THREE.CapsuleGeometry(.25,.3,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(.2,14,10),belly,0,-.1,.12,body).scale.set(.95,.9,1.3);
       for(let i=0;i<5;i++)M(new THREE.ConeGeometry(.04,.09,6),spot,0,.25-i*.005,.15-i*.12,body);
@@ -7635,36 +7630,6 @@ class FarmAnimal{
       fEyes(this,head,H,.45,.22,.62,.45,.24,'#2a3a6a');fBlush(head,H,.62,-.12,.7);
       const tail=new THREE.Group();tail.position.set(0,by+.1,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.1,-.4),fV(.1,-.35,-.9),fV(.25,-.6,-1.3)],q=>.28*(1-q*.85),skin,tail,24,12);
       Object.assign(o,{neck,head,tail,nTilt:.38,size:1.6,h:by+nl+.4,rad:1,dustR:[r,r,len*.8]});}
-    if(k==='zebra'){const stripes=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#fbfbf6';x.fillRect(0,0,w,h);x.fillStyle='#1f1b24';for(let i=0;i<13;i++){const Y=i*20+4;x.beginPath();x.moveTo(0,Y);for(let X=0;X<=w;X+=16)x.lineTo(X,Y+Math.sin(X*.05+i)*5);for(let X=w;X>=0;X-=16)x.lineTo(X,Y+9+Math.sin(X*.05+i)*4-(Math.abs(X-w/2)/w)*6);x.fill();}});
-      const h=horseLike(1,'#ffffff','#1f1b24',{light:'#fbfbf6',hoof:'#2a2420'});h.fur.map=stripes;h.fur.needsUpdate=true;
-      const nose=M(sph(h.H*.62,14,10),fm('#2a2420'),0,-h.H*.42,h.H*1.15,h.head);nose.scale.set(.9,.7,.7);}
-    if(k==='giraffe'){const spots=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#fff1d6';x.fillRect(0,0,w,h);x.fillStyle='#c46a2a';for(let i=0;i<5;i++)for(let j=0;j<5;j++){const cx=i*52+(j%2)*26+8,cy=j*52+8;x.beginPath();
-        for(let q=0;q<7;q++){const a=q/7*Math.PI*2,rr=19+Math.sin(q*2.3+i+j)*4;q?x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):x.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.fill();}},2);
-      const r=.32,len=.55,leg=1.1,by=leg+r*.6,fur=fm('#ffffff',{map:spots}),light=fm('#fff1d6'),dark=fm('#7a4a2a');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),fur,0,0,0,body);t.rotation.x=Math.PI/2;t.rotation.z=.12;
-      fLegs(this,g,r*.5,len*.45,leg+.05,leg+.05,.06,fur,fShiny('#4a3a30'));
-      const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.2);neck.rotation.x=.22;g.add(neck);const nl=1.35;
-      taperTube([fV(0,0,0),fV(0,nl*.4,.02),fV(0,nl*.75,0),fV(0,nl,-.02)],q=>.16-.07*q,fur,neck,24,14);
-      for(let i=0;i<10;i++)M(sph(.045,8,6),dark,0,.1+i*nl*.095,-.11+i*.006,neck).scale.set(.6,1.6,1);
-      const head=new THREE.Group();head.position.set(0,nl+.06,0);head.rotation.x=-.22+.25;neck.add(head);const H=.17;
-      M(sph(H,20,14),light,0,0,0,head).scale.set(.85,.9,1.2);M(sph(H*.65,14,10),light,0,-H*.3,H*.9,head).scale.set(.95,.75,1.1);
-      for(const sx of [-1,1]){M(cyl(H*.08,H*.1,H*.6,8),light,sx*H*.3,H*.95,-H*.15,head);M(sph(H*.15,10,8),dark,sx*H*.3,H*1.28,-H*.15,head);
-        const e=M(sph(H*.25,10,8),light,sx*H*.85,H*.45,-H*.2,head);e.scale.set(1.5,.5,.7);e.rotation.z=sx*.3;}
-      fEyes(this,head,H,.5,.22,.65,.5,.24);fBlush(head,H,.6,-.1,.75);
-      const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.9));g.add(tail);taperTube([fV(0,0,0),fV(0,-.25,-.06),fV(0,-.55,-.05)],q=>.025,light,tail,10,6);M(sph(.06,10,8),dark,0,-.6,-.05,tail).scale.y=1.8;
-      Object.assign(o,{neck,head,tail,nTilt:.22,size:1.5,h:by+nl+.45,rad:.6,dustR:[r,r,len*.8]});}
-    if(k==='rhino'){const r=.42,len=.65,leg=.32,by=leg+r*.6,skin=fm('#a9a6ad',{roughness:.75}),light=fm('#c8c5cc'),horn=fShiny('#e9dfcf',{roughness:.45});
-      body.position.y=by;const t=M(fuzz(new THREE.CapsuleGeometry(r,len,10,24),.015,12),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),light,0,-r*.3,len*.1,body).scale.set(.95,.7,1.3);
-      for(const s of [-1,1])M(new THREE.TorusGeometry(r*.98,.025,6,24,Math.PI),skin,0,0,s*len*.22,body).rotation.y=Math.PI/2;
-      fLegs(this,g,r*.6,len*.45,leg+.06,leg+.06,.12,skin,fShiny('#8a8790'));
-      const neck=new THREE.Group();neck.position.set(0,by,len/2+r*.6);neck.rotation.x=1.35;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.06,0);head.rotation.x=-1.35-.1;neck.add(head);const H=.27;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.85,.85,1.25);M(sph(H*.7,16,12),light,0,-H*.25,H*.85,head).scale.set(1.05,.8,.9);
-      const h1=M(new THREE.ConeGeometry(H*.3,H*1.25,14),horn,0,H*.5,H*1.05,head);h1.rotation.x=.35;const h2=M(new THREE.ConeGeometry(H*.16,H*.45,12),horn,0,H*.6,H*.55,head);h2.rotation.x=.2;
-      for(const sx of [-1,1]){const e=M(new THREE.ConeGeometry(H*.18,H*.42,10),skin,sx*H*.45,H*.75,-H*.35,head);e.rotation.z=-sx*.3;e.scale.z=.6;}
-      fEyes(this,head,H,.52,.15,.55,.6,.16);fBlush(head,H,.62,-.15,.75);
-      const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.95));g.add(tail);taperTube([fV(0,0,0),fV(0,-.15,-.06),fV(0,-.3,-.05)],q=>.025,skin,tail,8,6);
-      Object.assign(o,{neck,head,tail,nTilt:1.35,size:1.2,h:by+.6,rad:.75,dustR:[r,r,len*.8]});}
     /* ---- rides from the shop (24g-mounts.js): all original designs ---- */
     // 🐱 a giant fluffy cat: round and soft, pointy ears, green eyes, a big curly tail
     if(k==='kitty'){const r=.36,len=.5,leg=.42,by=leg+r*.7,fur=fm('#fff3e4',{roughness:1}),peach=fm('#ffc999'),white=fm('#ffffff',{roughness:1}),pink=fShiny('#ffa3bf',{roughness:.45}),whisk=std('#b8a796');
@@ -9541,7 +9506,7 @@ function flyCamBack(){const a=barnRide;if(!FLY.on||!isFlyer(a))return 0;const p=
    (it adds the entries to FARM and builds the models from FarmAnimal.build). Friends online see them through the 'ride' entry. */
 function earnedRideList(){return [
   {k:'panda',e:'🐼',n:'Giant panda',nm:'Bamboo',earn:{by:'days',goal:3},ride:1.08,about:'A big cuddly panda who only comes to players who play 3 days in a row. Slow, soft and always munching bamboo!',food:[['🎋','Bamboo'],['🍎','Apple'],['🍠','Sweet potato']],say:['*munch munch* 🎋','Hug time! 🐼','*happy roly-poly*']},
-  {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',earn:{by:'wins',goal:3},ride:1.13,about:'A golden lion with a royal crown, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
+  {k:'goldlion',e:'🦁',n:'Champion lion',nm:'Goldie',model:'lion',gear:1,scale:1.15,earn:{by:'wins',goal:3},ride:1.38,about:'A real-looking golden lion with a champion\'s gold saddle, only for champions who win 3 contests or games!',food:[['🍖','Meat'],['🍗','Drumstick'],['🐟','Fish']],say:['ROAR! 👑','*proud mane shake*','Champions ride together! 🏆']},
   {k:'comet',e:'🦌',n:'Flying reindeer',nm:'Comet',earn:{by:'days',goal:7},fly:1,ride:1.15,about:'A magic reindeer with a glowing red nose who flies without wings! Only for players who play 7 days in a row.',food:[['🥕','Carrot'],['🍪','Cookie'],['🍎','Apple']],say:['*jingle jingle* 🔔','Up to the stars! ✨','*nose glows bright* ❤️']},
   // 🦁 safari rides: real-looking animals from the Safari Zoo, for players who finish every one of their super hard 🦁 Safari challenges
   // (challenges.js, ids in earn.ids). model = the zoo animal to build (zoo = which Safari Zoo animal it is, when that's different), gear = a saddle, seat = sit this far forward, wide = legs spread, boost = speed.
@@ -9583,29 +9548,6 @@ function earnedRideModel(k,{g,body,o,horseLike}){
     fBlush(head,H,.68,-.28,.72);
     const tail=new THREE.Group();tail.position.set(0,by+r*.2,-(len/2+r*.9));g.add(tail);M(sph(.1,10,8),wh,0,0,0,tail);
     Object.assign(o,{neck,head,tail,nTilt:.3,size:1.1,h:by+.85,rad:.7,dustR:[r,r,len*.8]});return true;}
-  // 🦁 a golden lion with a big fluffy mane and a little royal crown
-  if(k==='goldlion'){const r=.36,len=.62,leg=.5,by=leg+r*.65,fur=fm('#f2b54a'),light=fm('#ffe4ad'),mane=fm('#c8682a',{roughness:1}),mane2=fm('#e88a35',{roughness:1}),
-      gold=fShiny('#ffd23f',{metalness:.6,roughness:.25}),gem=phys('#ff4d8d',{roughness:.1,clearcoat:1,emissive:'#ff4d8d',emissiveIntensity:.3});
-    body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),fur,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.8,14,10),light,0,-r*.32,len*.1,body).scale.set(.92,.72,1.3);
-    fLegs(this,g,r*.55,len*.45,leg+.05,leg+.05,.1,fur,null);
-    for(const l of this.legs)M(sph(.12,12,10),light,0,-(leg+.05)+.06,.03,l.g).scale.set(1,.6,1.25);
-    const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.45);neck.rotation.x=.5;g.add(neck);
-    M(sph(.26,16,12),fur,0,.05,0,neck);fFluff(neck,mane2,.3,.3,.26,26,.12,.05,-.02);
-    const head=new THREE.Group();head.position.set(0,.24,.06);head.rotation.x=-.5+.1;neck.add(head);const H=.28;
-    M(sph(H,22,16),fur,0,0,0,head).scale.set(1.05,.95,1);
-    fFluff(head,mane,H*1.25,H*1.25,H*.6,48,H*.32,0,-H*.3);
-    for(const sx of [-1,1])M(sph(H*.25,12,10),fur,sx*H*.66,H*.8,-H*.02,head).scale.set(1,1,.5);
-    M(sph(H*.42,14,10),light,0,-H*.3,H*.78,head).scale.set(1.25,.75,.8);
-    M(sph(H*.12,10,8),std('#7a3a22'),0,-H*.1,H*1.06,head,false,false).scale.set(1.3,.8,.7);
-    fEyes(this,head,H,.42,.12,.82,.38,.22,'#8a5a12');fBlush(head,H,.64,-.18,.74);
-    const crown=new THREE.Group();crown.position.set(0,H*1.12,-H*.05);head.add(crown);
-    M(cyl(H*.36,H*.32,H*.2,18),gold,0,0,0,crown);
-    for(let i=0;i<5;i++){const a=i/5*Math.PI*2;M(new THREE.ConeGeometry(H*.08,H*.24,8),gold,Math.sin(a)*H*.34,H*.2,Math.cos(a)*H*.34,crown);}
-    M(sph(H*.075,10,8),gem,0,0,H*.35,crown,false,false);
-    const tail=new THREE.Group();tail.position.set(0,by+r*.3,-(len/2+r*.85));g.add(tail);
-    taperTube([fV(0,0,0),fV(0,-.12,-.3),fV(0,-.08,-.6),fV(0,.1,-.8)],q=>.05-.018*q,fur,tail,16,8);M(sph(.1,10,8),mane,0,.13,-.83,tail);
-    this.sparkle=true;
-    Object.assign(o,{neck,head,tail,nTilt:.5,size:1.05,h:by+.9,rad:.65,dustR:[r,r,len*.8]});return true;}
   // 🦌 a reindeer with big antlers, a glowing red nose and a jingle bell (she flies without wings, it's magic)
   if(k==='comet'){const h=horseLike(1,'#a8744a','#f4ede4',{light:'#f3e2cc',hoof:'#4a3324'}),H=h.H,antM=fShiny('#f6e7c8',{roughness:.5});
     for(const sx of [-1,1]){taperTube([fV(sx*H*.3,H*.7,-H*.1),fV(sx*H*.7,H*1.5,-H*.3),fV(sx*H*1,H*2.3,-H*.2),fV(sx*H*1.2,H*2.9,H*.1)],q=>H*(.1-.055*q),antM,h.head,16,8);
@@ -9671,7 +9613,7 @@ function erCheck(){if(!started)return;erPlayedToday();if(erLooks())return;
     burst(new THREE.Vector3(player.pos.x,player.pos.y+1.4,player.pos.z),'#ffd23f',60,3,.2);did('prize',f.k);break;}}
 setInterval(erCheck,1500);
 addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};
-  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win');if(!won)return;
+  const won=((k==='contest'||k==='cakect'||k==='petct'||k==='deliver')&&a===0)||(k==='sport'&&a==='v1win')||(k==='roundup'&&a===0);if(!won)return;
   ER.wins++;if(ER.kinds[k]!=null)ER.kinds[k]=1;if(ER.kn[k]!=null)ER.kn[k]++;persist();const nx=EARNED.find(f=>f.earn.by==='wins'&&!BS.own[f.k]&&ER.wins<f.earn.goal);
   if(nx)setTimeout(()=>toast(`🏆 That's win #${ER.wins}! ${nx.earn.goal-ER.wins} more to earn ${nx.e} ${nx.nm}`),3500);});
 // for the ⭐🏆 challenges screen (challenges.js): every ride you earn, with how close you are (Nova the star dragon too)
@@ -10931,7 +10873,8 @@ Object.assign(window.__game,{JP,jumpPark:()=>({on:JPS.on,trick:JPS.trick&&JPS.tr
      up next to one and swim along beside it. They show on the minimap. Tap 🐟 Feed when you're close.
    - 🌊 Ocean challenges (the Ocean tab in challenges.js, ids in SEA_RIDES[].ids): finish all of an animal's challenges and you can
      ride it (🐢 Shelly, 🐬 Splash, 🐋 Big Blue, 🦭 Pip: she slides off her rock for you and swims home after).
-   - 🦈 Now and then a great white chases you while you swim (sharkStep below). Harmless: reach the shore to get away, or he bumps you and leaves.
+   - 🦈 Ghost the great white swims round the canal by himself. Swim close to him and now and then he chases you (sharkStep below). Harmless:
+     reach the shore to get away, or he bumps you and swims on. Finish his really hard 🌊 Ocean challenges and you can ride him.
    - Friends online see you swimming, and on your sea ride, through the 'sea' entry in SHOW (26c-friends-see.js).
    Everything is low-poly with a few shared materials and no textures, and each animal hides when it's far from you (iPhone memory). */
 const BAY=Z.bay,WATER_Y=-.35,CANAL={inR:R+1.6,outR:R+17};
@@ -11087,17 +11030,21 @@ const SEA_KIND={
   turtle:{e:'🐢',food:[['🪼','jellyfish'],['🥬','sea grass']],reach:3,near:4,spd:1.2,ride:1.35,say:['*slow happy blink*','*paddle paddle* 🐢','*munch* 🌿']},
   seal:{e:'🦭',food:[['🐟','fish']],reach:3.6,near:4,spd:2.6,ride:1.9,say:['Ork ork! 👏','*flipper clap* 👏','*happy wiggle*']},
   manta:{e:'🐠',food:[['🦐','plankton']],reach:4,near:5.5,spd:2.6,say:['*glide glide*','*graceful flap* 🌊','*happy wiggle*']},
-  otter:{e:'🦦',food:[['🦀','crab'],['🐚','clam']],reach:3,near:4,spd:.7,say:['*squeak squeak* 🦦','*crack crack* 🐚','*happy roll*']}};
+  otter:{e:'🦦',food:[['🦀','crab'],['🐚','clam']],reach:3,near:4,spd:.7,say:['*squeak squeak* 🦦','*crack crack* 🐚','*happy roll*']},
+  shark:{e:'🦈',food:[['🐟','big fish']],reach:4,near:6,spd:2.8,ride:2.6,back:-.75,say:['*swish swish*','*glides past slowly*','*a calm, steady look*']}};
 // how each one floats: [height, bob, bob speed], how high it leaps, and where it sits when you ride it
 for(const [k,b,l,ry,w] of [['dolphin',[-.18,.06,2.6],1.7,-.15,.12],['whale',[-.55,.1,.5],0,-.5,.6],['turtle',[-.05,.03,1.8],0,-.05,.35],
-  ['seal',[-.05,.03,2],0,-.05,.3],['manta',[.06,.03,1.2],1.3],['otter',[.02,.04,1.6],0]])Object.assign(SEA_KIND[k],{bob:b,leap:l,rideY:ry,rideW:w});
+  ['seal',[-.05,.03,2],0,-.05,.3],['manta',[.06,.03,1.2],1.3],['otter',[.02,.04,1.6],0],['shark',[-.42,.04,.8],0,-.12,.45]])Object.assign(SEA_KIND[k],{bob:b,leap:l,rideY:ry,rideW:w});
+// how far the animal sits behind you when you ride it (you sit on the front of the whale's back, and in front of the shark's fin)
+for(const k in SEA_KIND)SEA_KIND[k].back??=k==='whale'?-1.4:k==='dolphin'?.35:0;
 // the rides you earn with 🌊 Ocean challenges (challenges.js has the same ids, grp = k)
 const SEA_RIDES=[
   {k:'shelly',kind:'turtle',nm:'Shelly',n:'Sea turtle',ids:['sea_swim','sea_turtle','sea_feedT']},
   {k:'splash',kind:'dolphin',nm:'Splash',n:'Dolphin',ids:['sea_dolph','sea_feedD','sea_feedAll']},
   {k:'bigblue',kind:'whale',nm:'Big Blue',n:'Humpback whale',ids:['sea_whale','sea_spout','sea_swim1k','sea_feedW']},
-  {k:'pip',kind:'seal',nm:'Pip',n:'Seal',ids:['sea_pip','sea_feedP','sea_meet']}];
-SAVE.sea||={swum:0,with:{},spouts:0,own:{}};const SEA=SAVE.sea;SEA.with||={};SEA.own||={};SEA.shark||={esc:0,tag:0};
+  {k:'pip',kind:'seal',nm:'Pip',n:'Seal',ids:['sea_pip','sea_feedP','sea_meet']},
+  {k:'ghost',kind:'shark',nm:'Ghost',n:'Great white shark',ids:['sea_shark','sea_shark10','sea_sharkrow','sea_rides4','sea_swim5k']}];
+SAVE.sea||={swum:0,with:{},spouts:0,own:{}};const SEA=SAVE.sea;SEA.with||={};SEA.own||={};SEA.shark||={esc:0,tag:0};SEA.shark.row??=0;SEA.shark.best??=0;
 
 const SEAS=[];
 function seaAdd(kind,nm,m,o={}){const c={kind,nm,K:SEA_KIND[kind],m,g:m.g,pos:new THREE.Vector3(),face:0,y:0,pitch:0,mode:'roam',t:Math.random()*9,a:o.a||0,
@@ -11166,7 +11113,6 @@ onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=
   fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.09)}px serif`;x.textAlign='center';x.textBaseline='middle';
   const seen={};for(const c of SEAS){if(c.fixed||SW.ride===c)continue;const key=c.kind==='dolphin'?'d'+Math.round(c.pos.x/6)+','+Math.round(c.pos.z/6):c.kind;if(seen[key])continue;seen[key]=1;
     const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.K.e,sx,sy);}
-  if(SHARK.mode==='chase'){const dx=SHARK.pos.x-p.x,dz=SHARK.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText('🦈',sx,sy);}
   x.restore();});
 
 function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
@@ -11177,8 +11123,9 @@ function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
     s.flip.forEach((f,i)=>{f.p.rotation.z=0;f.p.rotation.y=c.happy>0?(i?-1:1)*(.3+Math.sin(c.t*18)*.5):Math.sin(c.t*1.5+i)*.12;});
     s.g.position.y=.72+(c.happy>0?Math.abs(Math.sin(c.t*9))*.15:0);return;}
   const P=player.pos,K=c.K,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);
+  if(c===SHARK.c&&SHARK.mode&&SW.ride!==c)return;// chasing you: sharkStep moves him
   // ridden: right under you
-  if(SW.ride===c){c.mode='ride';const back=c.kind==='whale'?-1.4:c.kind==='dolphin'?.35:0;
+  if(SW.ride===c){c.mode='ride';const back=K.back;
     c.face=player.face;c.pos.set(P.x+Math.sin(c.face)*back,0,P.z+Math.cos(c.face)*back);
     const air=c.kind==='dolphin'?Math.max(0,P.y):0;c.y=air+K.rideY;
     c.pitch=c.kind==='dolphin'&&air>.05?Math.max(-.6,Math.min(.6,player.vy*.09)):0;
@@ -11201,7 +11148,8 @@ function seaAnimal(c,dt,t){c.t+=dt;c.happy=Math.max(0,c.happy-dt);
     if(c.happy>0){c.tailUp=Math.min(1,(c.tailUp||0)+dt*2);}else c.tailUp=Math.max(0,(c.tailUp||0)-dt);}
   seaMoveAnim(c,dt,Math.min(1,moving/4));seaPlace(c);}
 function seaMoveAnim(c,dt,mv){const m=c.m;
-  if(m.tail)m.tail.rotation.x=Math.sin(c.t*(c.kind==='whale'?1.4:5))*(c.kind==='whale'?.12:.3)*(.3+mv)-(c.tailUp||0)*.9;
+  if(m.tail){if(c.kind==='shark')m.tail.rotation.y=Math.sin(c.t*(3+mv*3))*(.2+mv*.2);
+    else m.tail.rotation.x=Math.sin(c.t*(c.kind==='whale'?1.4:5))*(c.kind==='whale'?.12:.3)*(.3+mv)-(c.tailUp||0)*.9;}
   if(m.flip)m.flip.forEach(f=>{const o=c.t*(2+mv*3)+(f.front?0:Math.PI);f.p.rotation.z=f.sx*Math.sin(o)*(f.front?.5:.25);f.p.rotation.y=-f.sx*(.3+Math.cos(o)*.25);});
   if(m.head&&c.kind==='turtle')m.head.rotation.y=Math.sin(c.t*.8)*.25;
   if(m.wing)m.wing.forEach(w=>{w.p.rotation.z=w.sx*(Math.sin(c.t*(1.6+mv*1.4))*.32+.05);});
@@ -11246,40 +11194,41 @@ function seaShark(){const g=new THREE.Group();
   // the tail swishes side to side (sharks swim like that; whales and dolphins go up and down)
   const tail=new THREE.Group();tail.name='tail';tail.position.z=-2.2;g.add(tail);
   sM(fin([[.05,0],[-.25,.4],[-.6,.95],[-.38,.45],[-.22,.03],[-.36,-.35],[-.5,-.72],[-.15,-.3],[.05,0]],.05),SEA_M.sharkF,0,0,0,tail).rotation.y=-Math.PI/2;
-  g.visible=false;return {g,tail};}
-const SHARK={m:null,on:false,mode:'',pos:new THREE.Vector3(),face:0,y:-1.2,t:0,next:40+Math.random()*50,beat:0,leave:0};
-SHARK.m=seaShark();SHARK.m.g.rotation.order='YXZ';scene.add(SHARK.m.g);
-// start a chase (the tests call this with force)
-function sharkStart(force){const p=player.pos;if(SHARK.on||(!force&&(SW.ride||!seaSwimming())))return false;
-  // come from behind you, out in the water
-  let best=null;for(const off of [0,.5,-.5,1,-1,Math.PI]){const a=player.face+Math.PI+off,x=p.x+Math.sin(a)*18,z=p.z+Math.cos(a)*18,d=Math.hypot(x,z);
-    const r=Math.max(CANAL.inR+2,Math.min(CANAL.outR-1.5,d)),sx=x*r/d,sz=z*r/d;if(Math.hypot(sx-p.x,sz-p.z)>9){best=[sx,sz];break;}}
-  if(!best)return false;
-  Object.assign(SHARK,{on:true,mode:'chase',t:0,y:-1.2,beat:0,leave:0});SHARK.pos.set(best[0],0,best[1]);SHARK.face=Math.atan2(p.x-best[0],p.z-best[1]);
-  SHARK.m.g.visible=true;toast('🦈 A great white! Swim for the shore!');banner('🦈 Swim for the shore!');return true;}
-function sharkEnd(how){if(SHARK.mode!=='chase')return;SHARK.mode='leave';SHARK.leave=0;
-  if(how==='escape'){SEA.shark.esc++;persist();sfx('tada');toast('🎉 You got away from the great white!');did('shark','escape');}
-  if(how==='tag'){SEA.shark.tag++;persist();const p=player.pos;burst(new THREE.Vector3(p.x,WATER_Y+.2,p.z),'#ffffff',40,3.2,.35);sfx('splash');
+  return {g,tail,seat:.52,len:4.7};}
+// 🦈 Ghost cruises round the canal by himself (far out in the middle), like the other sea animals. When you swim near him he may
+// come after you (not more than once every couple of minutes); after the chase he carries on round the canal.
+const SHARK={c:null,mode:'',t:0,next:20,beat:0,leave:0,splT:0};
+SHARK.c=seaAdd('shark','Ghost',seaShark(),{path:{dir:1,t:.5,ph:3,spd:2.8},a:deg(300)});SEA_BUILD.shark=seaShark;
+// start a chase. The tests call it with force: then he comes from behind you, wherever he was.
+function sharkStart(force){const p=player.pos,c=SHARK.c;if(SHARK.mode||SW.ride===c||(!force&&(SW.ride||!seaSwimming()||seaOwns(SEA_RIDES.find(r=>r.k==='ghost')))))return false;// once he's yours he's friendly
+  if(force){let best=null;for(const off of [0,.5,-.5,1,-1,Math.PI]){const a=player.face+Math.PI+off,x=p.x+Math.sin(a)*18,z=p.z+Math.cos(a)*18,d=Math.hypot(x,z);
+      const r=Math.max(CANAL.inR+2,Math.min(CANAL.outR-1.5,d)),sx=x*r/d,sz=z*r/d;if(Math.hypot(sx-p.x,sz-p.z)>9){best=[sx,sz];break;}}
+    if(!best)return false;c.pos.set(best[0],0,best[1]);c.face=Math.atan2(p.x-best[0],p.z-best[1]);}
+  Object.assign(SHARK,{mode:'chase',t:0,beat:0,leave:0});c.g.visible=true;toast('🦈 Ghost the great white is coming! Swim for the shore!');banner('🦈 Swim for the shore!');return true;}
+function sharkEnd(how){if(SHARK.mode!=='chase')return;SHARK.mode='leave';SHARK.leave=0;SHARK.next=90+Math.random()*60;const S=SEA.shark;
+  if(how==='escape'){S.esc++;S.row++;S.best=Math.max(S.best,S.row);persist();sfx('tada');toast(`🎉 You got away from Ghost!${S.row>1?` ${S.row} in a row!`:''}`);did('shark','escape');}
+  if(how==='tag'){S.tag++;S.row=0;persist();const p=player.pos,c=SHARK.c;burst(new THREE.Vector3(p.x,WATER_Y+.2,p.z),'#ffffff',40,3.2,.35);sfx('splash');
     // a nose bump that pushes you along a little; then he loses interest
-    p.x+=Math.sin(SHARK.face)*1.6;p.z+=Math.cos(SHARK.face)*1.6;collide(p);toast('🦈 Bump! He just wanted a look. He swims away');did('shark','tag');}}
-function sharkStep(dt){const p=player.pos,S=SHARK,m=S.m;
-  if(!S.on){if(started&&seaSwimming()&&!SW.ride&&!FLY.on&&(S.next-=dt)<0){S.next=120+Math.random()*120;sharkStart();}return;}
-  S.t+=dt;const dx=p.x-S.pos.x,dz=p.z-S.pos.z,d=Math.hypot(dx,dz);let spd;
+    p.x+=Math.sin(c.face)*1.6;p.z+=Math.cos(c.face)*1.6;collide(p);toast('🦈 Bump! He just wanted a look. He swims on');did('shark','tag');}}
+function sharkStep(dt){const p=player.pos,S=SHARK,c=S.c;
+  if(SW.ride===c){S.mode='';return;}
+  if(!S.mode){if(started&&seaSwimming()&&!SW.ride&&!FLY.on){S.next-=dt;
+      if(S.next<0&&Math.hypot(p.x-c.pos.x,p.z-c.pos.z)<24)sharkStart();}return;}
+  S.t+=dt;c.t+=dt;const dx=p.x-c.pos.x,dz=p.z-c.pos.z,d=Math.hypot(dx,dz);let spd;
   if(S.mode==='chase'){
     // you're safe on the shore, on a sea ride or when you've out-swum him for 25 seconds
     if(seaDepth(p.x,p.z,p.y)<.4||SW.ride||S.t>25)sharkEnd('escape');
     else if(d<1.9)sharkEnd('tag');
     // he gains on you when he's far and is just a little slower than you up close, so if you keep swimming you get away
-    spd=d>9?5.4:3.7;S.face=angDamp(S.face,Math.atan2(dx,dz),Math.min(1,dt*2.2));S.y+=(-.42-S.y)*Math.min(1,dt*.8);
+    spd=d>9?5.4:3.7;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*2.2));
     // the music: two low notes that speed up as he gets closer
     if((S.beat-=dt)<0){S.beat=Math.max(.28,Math.min(1.1,d/14));tone(82,.22,'sawtooth',.045);tone(87,.22,'sawtooth',.045,S.beat*.5);}}
-  else{// swims away and dives out of sight
-    S.leave+=dt;spd=4.5;S.face=angDamp(S.face,Math.atan2(-dx,-dz),Math.min(1,dt*1.5));S.y-=dt*.45;
-    if(S.leave>4){S.on=false;S.mode='';m.g.visible=false;return;}}
-  let nx=S.pos.x+Math.sin(S.face)*spd*dt,nz=S.pos.z+Math.cos(S.face)*spd*dt;const r=Math.hypot(nx,nz),lim=Math.max(CANAL.inR+1.2,Math.min(CANAL.outR-1.2,r));
-  S.pos.set(nx*lim/r,0,nz*lim/r);
-  m.g.position.set(S.pos.x,WATER_Y+S.y,S.pos.z);m.g.rotation.y=S.face;m.g.rotation.z=Math.sin(S.t*3)*.04;m.tail.rotation.y=Math.sin(S.t*(4+spd))*.35;
-  if(S.mode==='chase'&&(S.splT=(S.splT||0)-dt)<0){S.splT=.25;burst(new THREE.Vector3(S.pos.x+Math.sin(S.face)*.3,WATER_Y+.05,S.pos.z+Math.cos(S.face)*.3),'#ffffff',4,1,.14);}}
+  else{// swims away from you for a bit, then carries on round the canal
+    S.leave+=dt;spd=4.5;c.face=angDamp(c.face,Math.atan2(-dx,-dz),Math.min(1,dt*1.5));
+    if(S.leave>4){S.mode='';seaPathFrom(c);return;}}
+  let nx=c.pos.x+Math.sin(c.face)*spd*dt,nz=c.pos.z+Math.cos(c.face)*spd*dt;const r=Math.hypot(nx,nz),lim=Math.max(CANAL.inR+1.2,Math.min(CANAL.outR-1.2,r));
+  c.pos.set(nx*lim/r,0,nz*lim/r);c.y=c.K.bob[0];c.pitch=0;seaMoveAnim(c,dt,1);seaPlace(c);c.g.rotation.z=Math.sin(S.t*3)*.04;
+  if(S.mode==='chase'&&(S.splT-=dt)<0){S.splT=.25;burst(new THREE.Vector3(c.pos.x+Math.sin(c.face)*.3,WATER_Y+.05,c.pos.z+Math.cos(c.face)*.3),'#ffffff',4,1,.14);}}
 onTick.push(sharkStep);
 
 /* ---------- 🐟 feed and 🏇 ride buttons ---------- */
@@ -11295,7 +11244,7 @@ body.dressing #seaFeed,body.dressing #seaRide,body.talking #seaFeed,body.talking
   document.body.insertAdjacentHTML('beforeend','<button class="hud" id="seaFeed"></button><button class="hud" id="seaRide"></button>');}
 let seaNear=null,seaBtnKey='';
 function seaButtons(){const P=player.pos;let best=null,bd=1e9;
-  if(SW.k>.3&&!closetOpen)for(const c of SEAS){if(SW.ride===c)continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z)-c.K.reach;if(d<0&&d<bd){bd=d;best=c;}}
+  if(SW.k>.3&&!closetOpen)for(const c of SEAS){if(SW.ride===c||(c===SHARK.c&&SHARK.mode))continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z)-c.K.reach;if(d<0&&d<bd){bd=d;best=c;}}
   seaNear=best;const rideC=best&&!SW.ride?SEA_RIDES.find(r=>r.kind===best.kind&&r.nm===best.nm):null;
   const key=(best?best.nm:'')+'|'+(SW.ride?SW.ride.nm:'')+'|'+(rideC?(seaOwns(rideC)?1:0):'');if(key===seaBtnKey)return;seaBtnKey=key;
   const f=$('#seaFeed'),r=$('#seaRide');
@@ -11311,16 +11260,17 @@ function seaFeed(c){if(!c)return;const K=c.K,fd=rnd(K.food);c.happy=c.kind==='wh
   if(c.kind==='seal'){tone(330,.12,'square',.05);tone(300,.12,'square',.05,.18);}
   if(c.kind==='manta'){c.leap=.001;seaSplash(c,12);}
   if(c.kind==='otter'){tone(1200,.08,'sine',.07);tone(1400,.08,'sine',.07,.12);}
+  if(c.kind==='shark'){SHARK.next=Math.max(SHARK.next,40);}// a fed shark leaves you alone for a while
   friendBubbleSea(c,rnd(K.say));toast(`${K.e} ${c.nm} loves the ${fd[1]}!`);did('seafeed',c.kind);}
 // a little speech bubble over the animal (like the barn animals)
 function friendBubbleSea(c,txt){const s=sprite(labelTex(txt,{size:44}),1.9,.48);const top=c.fixed?1.9:c.kind==='whale'?2.6:1.5;s.position.set(0,top,0);
   if(c.fixed)SEAL.rock.add(s);else c.g.add(s);s.scale.multiplyScalar(1/c.g.scale.x);setTimeout(()=>{s.parent&&s.parent.remove(s);s.material.dispose();if(s.material.map)s.material.map.dispose();},2200);}
 $('#seaFeed').onclick=()=>{seaFeed(seaNear);};
 $('#seaRide').onclick=()=>{if(SW.ride){seaHopOff();return;}const c=seaNear;if(!c)return;const r=SEA_RIDES.find(x=>x.kind===c.kind&&x.nm===c.nm);if(!r)return;
-  if(!seaOwns(r)){sfx('pop');toast(`Finish all of ${r.nm}'s 🌊 Ocean challenges (in ⭐ challenges) to ride ${c.kind==='whale'?'him':'her'}!`);return;}
+  if(!seaOwns(r)){sfx('pop');toast(`Finish all of ${r.nm}'s 🌊 Ocean challenges (in ⭐ challenges) to ride ${c.kind==='whale'||c.kind==='shark'?'him':'her'}!`);return;}
   seaHopOn(c);};
 function seaHopOn(c){if(c.fixed)sealLeave();SW.ride=c;c.mode='ride';player.pos.x=c.pos.x;player.pos.z=c.pos.z;player.face=c.face;av.rideW=c.K.rideW;av.play('ride');
-  sfx('tada');friendBubbleSea(c,rnd(c.K.say));toast(`Ride ${c.nm} around the bay! Tap Jump to ${c.kind==='dolphin'?'leap 🐬':'hop'}`);did('searide',c.kind);seaBtnKey='';}
+  sfx('tada');friendBubbleSea(c,rnd(c.K.say));toast(`Ride ${c.nm} around the canal! Tap Jump to ${c.kind==='dolphin'?'leap 🐬':'hop'}`);did('searide',c.kind);(SEA.rode||={})[c.kind]=1;persist();seaBtnKey='';}
 function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam';if(c.path)seaPathFrom(c);else{sealHome();if(!quiet)toast('🦭 Pip swims home to her rock');}av.rideW=0;if(av.emote&&av.emote.id==='ride')av.emote=null;
   // you slide off beside it
   const s=c.kind==='whale'?2.6:1.2;player.pos.x+=Math.cos(player.face)*s;player.pos.z-=Math.sin(player.face)*s;collide(player.pos);if(!quiet)sfx('pop');seaBtnKey='';}
@@ -11328,12 +11278,13 @@ function seaHopOff(quiet){const c=SW.ride;if(!c)return;SW.ride=null;c.mode='roam
 /* ---------- earning the sea rides ---------- */
 const seaOwns=r=>!!(SAVE.chal&&SAVE.chal.done&&r.ids.every(id=>SAVE.chal.done[id]));
 setInterval(()=>{if(!started)return;for(const r of SEA_RIDES)if(!SEA.own[r.k]&&seaOwns(r)){SEA.own[r.k]=1;persist();
-  banner(`🎉 You can ride ${r.nm}!`);sfx('tada');did('prize',r.k);setTimeout(()=>toast(`Swim up to ${r.nm} in 🐬 Dolphin Bay and tap Ride`),1900);seaBtnKey='';break;}},1500);
+  banner(`🎉 You can ride ${r.nm}!`);sfx('tada');did('prize',r.k);setTimeout(()=>toast(`Swim up to ${r.nm} ${r.k==='ghost'?'in the canal':'in 🐬 Dolphin Bay'} and tap Ride`),1900);seaBtnKey='';break;}},1500);
 // a townsperson who'd live out in the bay lives on the Beach instead
 for(const f of FRIENDS)if(f.home===BAY)f.home=Z.beach;
 // for challenges.js (🌊 Ocean tab) and the tests
 function seaState(){const w=k=>Math.floor(SEA.with[k]||0);return {swum:Math.floor(SEA.swum),dolphin:w('dolphin'),whale:w('whale'),turtle:w('turtle'),seal:w('seal'),manta:w('manta'),otter:w('otter'),
-  kinds:Object.keys(SEA.with).filter(k=>SEA.with[k]>=1).length,spouts:SEA.spouts||0,sharkEsc:SEA.shark.esc,sharkTag:SEA.shark.tag};}
+  kinds:Object.keys(SEA.with).filter(k=>SEA.with[k]>=1).length,spouts:SEA.spouts||0,sharkEsc:SEA.shark.esc,sharkTag:SEA.shark.tag,sharkRow:SEA.shark.best,
+  rode:Object.keys(SEA.rode||{}).length};}
 function seaRides(){return SEA_RIDES.map(r=>({k:r.k,kind:r.kind,e:SEA_KIND[r.kind].e,nm:r.nm,n:r.n,ids:r.ids,own:seaOwns(r)}));}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{seaState,sharkStart,shark:()=>SHARK,seaRides,sea:()=>SW,SEAS,BAY,CANAL,inCanal,canalSpot,seaDepth,seaFeed,seaHopOn,seaHopOff,seaNear:()=>seaNear});});
 
@@ -11345,10 +11296,10 @@ SHOW.push({k:'sea',
   step(f,d,dt,h){const A=f.a;if(!A)return;const P=f.pos;
     h.k+=(seaDepth(P.x,P.z,P.y)-h.k)*Math.min(1,dt*6);
     const v=Math.hypot(P.x-h.lx,P.z-h.lz)/Math.max(dt,1e-3);h.lx=P.x;h.lz=P.z;h.mv+=(Math.min(1,v/5)-h.mv)*Math.min(1,dt*5);h.ph+=dt*(2.2+h.mv*4.2);
-    if(h.m){const m=h.m,fc=f.cur??f.face,k=m.kind,back=k==='whale'?-1.4:k==='dolphin'?.35:0,air=k==='dolphin'?Math.max(0,P.y):0;
+    if(h.m){const m=h.m,fc=f.cur??f.face,k=m.kind,back=SEA_KIND[k].back,air=k==='dolphin'?Math.max(0,P.y):0;
       const y=WATER_Y+air+SEA_KIND[k].rideY;
       m.g.position.set(P.x+Math.sin(fc)*back,y,P.z+Math.cos(fc)*back);m.g.rotation.y=fc;
-      if(m.tail)m.tail.rotation.x=Math.sin(h.ph*(k==='whale'?.4:1.4))*(k==='whale'?.12:.3);
+      if(m.tail){if(k==='shark')m.tail.rotation.y=Math.sin(h.ph*1.2)*.3;else m.tail.rotation.x=Math.sin(h.ph*(k==='whale'?.4:1.4))*(k==='whale'?.12:.3);}
       if(m.flip)m.flip.forEach(fl=>{const o=h.ph+(fl.front?0:Math.PI);fl.p.rotation.z=fl.sx*Math.sin(o)*(fl.front?.5:.25);});
       A.rideW=SEA_KIND[k].rideW;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
     else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph);}},
@@ -11386,6 +11337,227 @@ function hippoStep(dt){if(!started||!seaSwimming())return;const h=ZA.find(a=>a.k
     if((hipWithT+=dt)>5){hipWithT=0;persist();}if(!h.sayHi){h.sayHi=1;h.speak('*blub blub* 💦');toast('🦛 You\'re swimming with the hippo!');}}}
 onTick.push(hippoStep);
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{waterAt,hipWith:()=>SAVE.hipWith||0,HIPPO_WATER,ZOO_SHORE});});
+// ---- src/26g-town-animals.js ----
+/* ================= 🐾 THE BARN ANIMALS AND THE 🚨 ROUND-UP =================
+   - Four barn animals (🦆 Waddles, 🐐 Billy, 🐷 Truffle, 🐑 Woolly) live in the big meadow all round the 🐴 Happy Barn. Most of the
+     time they just wander about out there (not shut in the little paddock), sniff the grass and look at you when you walk up.
+     They never follow you (only the pet you adopt does). Tap 🌽 Feed next to one.
+   - 🚨 Round-up (Preston's idea): tap "Start a Round-up" near the barn and the animals break out all over town. Each one runs off to one
+     of its two streets (ROAM_LIST streets = the ang of a place with a path in 02-island.js, in different parts of town so they never
+     bunch up) and stays out until someone catches it. A bar at the top says the Round-up is on and lists who's still out.
+     Tap 🪢 Catch next to one and it walks behind you on a rope (only then, and only until the barn); walk it back to the Happy Barn.
+     When all four are home the Round-up ends.
+   - 👭 Friends online in your room join in by themselves: everyone hunts the same four animals, and whoever brings the most home wins
+     (+40 🪙 and it counts as a win for the 🏆 rides; everyone else +15 🪙). Playing alone works too (+40 🪙 when they're all home).
+     Messages go through the room as {t:'roam', a, r (which Round-up)}: go {seed}, catch {nm}, let {nm}, home {nm}, st (the whole state,
+     every few seconds, so a friend who joins late or missed a message catches up). Two people catching the same animal at once:
+     the lower id keeps it, on every phone.
+   - did('roamhome', name) for each one you bring home, did('roundup', place) at the end (place 0 = you won against friends, -1 alone).
+     The ⭐ challenges are in the 🗺️ Explore tab of challenges.js.
+   - 🦁 Safari Round-up: the same game from the 🦒 Safari Zoo, with four safari runaways (Ziggy the zebra, Kito the okapi, Twiga the baby
+     giraffe and Tembo the baby elephant, in SAFARI_LIST). They live in the zoo with the others (hidden copies until a Safari Round-up starts),
+     and you walk them back to the zoo. Only one Round-up runs at a time (RU.grp is 'barn' or 'zoo').
+   - The models are the barn's and the zoo's (FarmAnimal in 24d-barn.js). Each one hides when it's far from you (iPhone memory). */
+const ROAM_LIST=[
+  {k:'duck',nm:'Waddles',food:[['🌽','corn'],['🍉','melon']],streets:[330,0],say:['Quack quack! 🦆','*waddle waddle*','I\'m exploring! 🗺️']},
+  {k:'goat',nm:'Billy',food:[['🍎','apple'],['🌾','hay']],streets:[30,90],say:['Meeeh! 🐐','*hop hop*','Catch me if you can!']},
+  {k:'pig',nm:'Truffle',food:[['🍎','apple'],['🥔','potato']],streets:[150,180],say:['Oink oink! 🐷','*sniff sniff*','Smells like snacks! 💗']},
+  {k:'lamb',nm:'Woolly',food:[['🍀','clover'],['🥕','carrot']],streets:[240,270],say:['Baaa! 🐑','*fluffy wiggle*','Hello, friend! 💖']}].map(o=>({...o,grp:'barn'}));
+// the safari runaways (sc = size: the giraffe and elephant are babies, so they fit on the streets)
+const SAFARI_LIST=[
+  {k:'zebra',nm:'Ziggy',e:'🦓',sc:.85,food:[['🥕','carrot'],['🌾','hay']],streets:[330,0],say:['*happy snort* 🦓','Look at my stripes!','Catch me! 💨']},
+  {k:'okapi',nm:'Kito',e:'🦌',sc:.9,food:[['🍌','banana'],['🍃','leaves']],streets:[30,90],say:['*soft huff*','Shh, I\'m shy! 🌿','*long tongue lick* 👅']},
+  {k:'giraffe',nm:'Twiga',e:'🦒',sc:.5,food:[['🥬','lettuce'],['🌿','acacia leaves']],streets:[150,180],say:['Hello down there! 🦒','*long lick* 👅','Mmm, leaves! 🌿']},
+  {k:'elephant',nm:'Tembo',e:'🐘',sc:.45,food:[['🍉','watermelon'],['🍎','apple']],streets:[240,270],say:['*happy trumpet* 🎺','*splashy trunk wave*','Peanuts? 🥜']}].map(o=>({...o,grp:'zoo'}));
+const RU_ZONE={barn:BZ,zoo:Z.zoo},RU_NAME={barn:'🐴 Happy Barn',zoo:'🦒 Safari Zoo'};
+const ROAM_RING=7.15,ROAM_REACH=2.6,ROAM_SPD=.85,RU_SPD=1.35,RU_HOME=6;// RU_HOME: how close to the barn's fence counts as home
+SAVE.roam||={};const RS=SAVE.roam;RS.fed||={};
+// where each street stops: just in front of the first place along it
+function roamEnd(ang){const z=ZONES.filter(z=>z.d&&!z.nopath&&Math.abs(z.ang-ang)<.5).sort((a,b)=>a.d-b.d)[0];return z?z.d-z.r-1.5:24;}
+// a spot on the street at angle ang (degrees), d out from the middle, side steps to the left or right of the middle of the street
+function roamSpot(ang,d,side=0){const a=deg(ang);return {x:Math.sin(a)*d+Math.cos(a)*side,z:Math.cos(a)*d-Math.sin(a)*side};}
+// a spot in the meadow round the barn: outside its fence, on the island, clear of other places and of trees and posts.
+// near = the angle round the barn to stay close to, so the walk there doesn't cut through the paddock
+function meadowSpot(near){for(let i=0;i<80;i++){const a=near==null?Math.random()*Math.PI*2:near+(Math.random()-.5)*2,r=BZ.fence+2+Math.random()*9,
+    x=BZ.x+Math.sin(a)*r,z=BZ.z+Math.cos(a)*r;
+    if(Math.hypot(x,z)>R-3)continue;if(ZONES.some(o=>o!==BZ&&o.d&&Math.hypot(x-o.x,z-o.z)<o.r+2))continue;if(obs.some(o=>o.r>0&&Math.hypot(x-o.x,z-o.z)<o.r+.6))continue;
+    return {x,z};}
+  return {x:BZ.x+BZ.fence+3,z:BZ.z};}
+const meadowAng=c=>Math.atan2(c.pos.x-BZ.x,c.pos.z-BZ.z);
+const ROAM=ROAM_LIST.concat(SAFARI_LIST).map(o=>{const a=new FarmAnimal(o.k),j=obs.indexOf(a.ob);if(j>=0)obs.splice(j,1);a.ob.r=0;a.dust.forEach(d=>d.visible=false);
+  const sc=o.sc||1,tag=sprite(labelTex(o.nm,{size:58,fg:'#8a5a3b',bg:'rgba(255,255,255,.88)',border:null}),.8/sc,.2/sc);tag.position.y=a.h+.15/sc;a.g.add(tag);
+  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;a.baby=true;}
+  const c={...o,a,F:FK[o.k],e:o.e||FK[o.k].e,pos:new THREE.Vector3(),face:Math.random()*6,mode:o.grp==='zoo'?'zoo':'meadow',tgt:null,wp:[],wait:Math.random()*3,street:o.streets[0],lookT:0,happy:0,owner:''};
+  const s=o.grp==='zoo'?{x:Z.zoo.x,z:Z.zoo.z}:meadowSpot();c.pos.set(s.x,0,s.z);a.pos.copy(c.pos);a.g.visible=o.grp!=='zoo';scene.add(a.g);return c;});
+// the animals in the Round-up that's on (or the last one)
+const ruSet=()=>ROAM.filter(c=>c.grp===RU.grp);
+const roamByName=nm=>ROAM.find(c=>c.nm===nm);
+// a walk along its street during a Round-up: out to the end, a sniff around, back to the plaza, round the ring to the next street
+function roamPlan(c,from){const wp=c.wp,end=roamEnd(c.street),side=()=>(Math.random()-.5)*.9;
+  for(let d=(from!=null?from+5:10);d<end;d+=5)wp.push({...roamSpot(c.street,d,side()),w:Math.random()<.2?1.5+Math.random()*2:0});
+  wp.push({...roamSpot(c.street,end,side()),w:3+Math.random()*4});
+  for(let d=end-5;d>9;d-=5)wp.push({...roamSpot(c.street,d,side()),w:0});
+  const next=Math.random()<.75?c.streets.find(s=>s!==c.street)??c.street:c.street;
+  const diff=((next-c.street+540)%360)-180,n=Math.max(1,Math.ceil(Math.abs(diff)/12));
+  for(let i=0;i<=n;i++)wp.push({...roamSpot(c.street+diff*i/n,ROAM_RING+(Math.random()-.5)*.6),w:i===n?1+Math.random()*2:0});
+  c.next=next;}
+// back on its street from wherever it is (after it's let go): the nearer of its two streets, at about the same distance out
+function roamToStreet(c){const P=c.pos,d0=Math.hypot(P.x,P.z),ang=Math.atan2(P.x,P.z)*180/Math.PI;
+  c.street=c.streets.reduce((b,s)=>Math.abs(((s-ang+540)%360)-180)<Math.abs(((b-ang+540)%360)-180)?s:b);c.next=c.street;
+  const d=Math.max(9,Math.min(roamEnd(c.street)-1,d0));c.wp=[{...roamSpot(c.street,d),w:0}];roamPlan(c,d);}
+
+/* ---------- 🚨 the Round-up ---------- */
+const RU={on:false,grp:'barn',r:'',seed:0,home:{},sc:{},names:{},stT:0,endT:0,done:{}};
+const ruNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
+const ruMe=()=>{const n=window.__net;return (n&&n.id&&n.id())||'me';};
+const ruEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+function ruSend(d){const n=ruNet();if(n)try{n.send(Object.assign({t:'roam',r:RU.r},d));}catch(e){}}
+const ruRand=seed=>{let s=(Math.abs(Math.floor(seed))%2147483646)+1;return ()=>((s=(s*16807)%2147483647)-1)/2147483646;};
+// everyone starts the same Round-up from the same seed, so the animals break out to the same spots on every phone
+function ruStart(r,seed,who,whoName,grp='barn'){if(RU.on||!RU_ZONE[grp])return;Object.assign(RU,{on:true,grp,r,seed,home:{},sc:{},names:{},stT:0,endT:0});
+  RU.names[ruMe()]=SAVE.name||'You';if(who&&who!==ruMe())RU.names[who]=String(whoName||'Friend').slice(0,16);
+  const rr=ruRand(seed);
+  for(const c of ruSet()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',16,1.4);
+    c.mode='street';c.owner='';c.wait=0;c.lookT=0;c.street=c.streets[Math.floor(rr()*2)];const d=12+rr()*(roamEnd(c.street)-15),s=roamSpot(c.street,d,(rr()-.5)*.8);
+    c.pos.set(s.x,0,s.z);c.wp=[];roamPlan(c,d);c.face=deg(c.street);c.a.g.visible=true;}
+  const home=RU_NAME[grp],n=ruSet().length;
+  sfx('tada');banner(grp==='zoo'?'🚨 Safari Round-up! The zoo animals broke out!':'🚨 Round-up! The barn animals broke out!');
+  setTimeout(()=>toast(who&&who!==ruMe()?`👭 ${whoName||'A friend'} started a Round-up! Catch the runaways 🪢 and bring them back to the ${home}`:`Catch all ${n} runaways 🪢 and bring them back to the ${home}. Look on the minimap!`),1900);
+  did('roundstart');ruBar();roamBtnKey='?';}
+function ruBegin(grp){if(RU.on)return;const r=ruMe().slice(0,8)+'-'+Date.now().toString(36),seed=1+Math.floor(Math.random()*2e9);ruStart(r,seed,null,null,grp);ruSend({a:'go',seed,g:grp});}
+function ruCatch(c){if(!RU.on||!c||c.mode!=='street'||ROAM.some(o=>o.mode==='rope'))return;c.mode='rope';c.owner=ruMe();c.wp=[];c.wait=0;c.a.speak(rnd(c.say));sfx('pop');
+  toast(`🪢 You caught ${c.nm}! Walk ${c.nm} back to the ${RU_NAME[c.grp]}`);did('roamcatch',c.nm);ruSend({a:'catch',nm:c.nm});ruBar();roamBtnKey='?';}
+function ruLetGo(c,quiet){if(!c||(c.mode!=='rope'&&c.mode!=='friend'))return;const mine=c.mode==='rope';c.mode='street';c.owner='';roamToStreet(c);
+  if(mine&&!quiet){sfx('pop');toast(`${c.e} ${c.nm} runs off again!`);ruSend({a:'let',nm:c.nm});}ruBar();roamBtnKey='?';}
+// brought home (by you or a friend): a barn animal trots back into the meadow, a safari one goes back into the zoo
+function ruHome(c,who,quiet){if(!RU.on||RU.home[c.nm])return;RU.home[c.nm]=who;RU.sc[who]=(RU.sc[who]||0)+1;c.owner='';c.wait=0;
+  if(c.grp==='zoo'){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.5,0)),'#ffd23f',20,1.5);c.mode='zoo';c.a.g.visible=false;}else{c.mode='meadow';c.tgt=meadowSpot(meadowAng(c));}
+  if(who===ruMe()){burst(c.a.g.position.clone().add(new THREE.Vector3(0,.4,0)),'#ffd23f',24,1.6);floaties(c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0)),'🏠',5);sfx('tada');
+    did('roamhome',c.nm);ruSend({a:'home',nm:c.nm});const left=ruSet().length-Object.keys(RU.home).length;
+    if(left)toast(`🏠 ${c.nm} is back home! ${left} still out`);}
+  else if(!quiet)toast(`🏠 ${RU.names[who]||'A friend'} brought ${c.nm} home`);
+  ruBar();roamBtnKey='?';if(Object.keys(RU.home).length>=ruSet().length)ruEnd();}
+function ruEnd(){const me=ruMe(),ids=Object.keys(RU.names),friends=ids.filter(id=>id!==me),mine=RU.sc[me]||0;
+  const best=Math.max(0,...ids.map(id=>RU.sc[id]||0)),place=friends.length?ids.filter(id=>(RU.sc[id]||0)>mine).length:-1;
+  RU.on=false;RU.done[RU.r]=1;RU.endT=roamT||1e-3;RU.last={sc:{...RU.sc},names:{...RU.names}};
+  if(!friends.length){banner('🏠 Round-up done! Everyone is home');setTimeout(()=>earn(40,'Round-up'),900);}
+  else if(place===0&&mine===best&&mine>0){banner(`🏆 You won the Round-up! ${mine} caught`);setTimeout(()=>earn(40,'Won the Round-up'),900);}
+  else{banner(`🏠 Round-up done! You caught ${mine}`);setTimeout(()=>earn(15,'Round-up'),900);}
+  sfx('tada');did('roundup',place);did('roundgrp',RU.grp);ruBar();roamBtnKey='?';}
+// what friends send
+function ruFromNet(id,name,d){if(!d||typeof d.a!=='string'||typeof d.r!=='string')return;id=String(id).slice(0,40);const r=d.r.slice(0,40),c=typeof d.nm==='string'?roamByName(d.nm):null;
+  if(d.a==='go'||d.a==='st'){if(!RU.on&&started&&!RU.done[r]){const sd=+d.seed;if(Number.isFinite(sd))ruStart(r,sd,id,name,d.g==='zoo'?'zoo':'barn');}
+    if(!RU.on||r!==RU.r)return;RU.names[id]=String(name||'Friend').slice(0,16);
+    if(d.a==='st'){for(const [nm,w] of Object.entries(d.h||{})){const a=roamByName(nm);if(a&&a.grp===RU.grp&&typeof w==='string'&&!RU.home[nm])ruHome(a,w.slice(0,40),true);}
+      for(const [nm,w] of Object.entries(d.c||{})){const a=roamByName(nm);if(a&&a.grp===RU.grp&&w===id&&a.mode==='street'){a.mode='friend';a.owner=id;}}
+      ruBar();}
+    return;}
+  if(!RU.on||r!==RU.r||!c||c.grp!==RU.grp)return;RU.names[id]=String(name||'Friend').slice(0,16);
+  if(d.a==='catch'){if(c.mode==='rope'){if(id<ruMe()){toast(`😮 ${RU.names[id]} caught ${c.nm} first!`);c.mode='friend';c.owner=id;}}
+    else if(c.mode==='street'||c.mode==='friend'){c.mode='friend';c.owner=id;}ruBar();roamBtnKey='?';}
+  else if(d.a==='let'){if(c.mode==='friend'&&c.owner===id)ruLetGo(c,true);}
+  else if(d.a==='home')ruHome(c,id);}
+addEventListener('load',()=>{if(window.__net)window.__net.on((id,name,d)=>{if(d&&d.t==='roam')ruFromNet(id,name,d);});});
+
+/* ---------- moving them ---------- */
+let roamNear=null,roamBtnKey='',roamT=0;
+const nearHome=(g,P,extra)=>{const z=RU_ZONE[g];return Math.hypot(P.x-z.x,P.z-z.z)<(z.fence||z.r)+extra;};
+const ruFriend=id=>{const n=window.__net;return (n&&n.friends&&n.friends().get(id))||(RU.fake&&RU.fake[id])||null;};// fake: friends made up by the tests
+function roamFollow(c,P,face,dt){const back=face+Math.PI+.6,r=1.2+c.a.rad,tx=P.x+Math.sin(back)*r,tz=P.z+Math.cos(back)*r,dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
+  if(d>14){c.pos.set(tx,0,tz);return 0;}if(d>.2){const sp=Math.min(7,1+d*3),st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*6));return sp;}
+  c.face=angDamp(c.face,face,Math.min(1,dt*3));return 0;}
+function roamStep(dt){if(!started)return;roamT+=dt;const P=player.pos;
+  for(const c of ROAM){const a=c.a,dP=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(c.mode==='zoo'){a.g.visible=false;continue;}const vis=dP<70;a.g.visible=vis;let sp=0;
+    if(c.mode==='rope'){sp=roamFollow(c,P,player.face,dt);a.graze=0;if(nearHome(c.grp,P,RU_HOME))ruHome(c,ruMe());}
+    else if(c.mode==='friend'){const o=ruFriend(c.owner);if(!o)ruLetGo(c,true);else{sp=roamFollow(c,o.pos,o.cur??o.face??0,dt);a.graze=0;}}
+    else{// on its own: when you walk up it stops and looks at you for a few seconds, then goes on its own way (it never comes after you)
+      const look=dP<2.4&&c.lookT<(RU.on?2:4);if(dP<2.4)c.lookT+=dt;else if(dP>4)c.lookT=0;
+      if(look){c.wait=0;c.face=angDamp(c.face,Math.atan2(P.x-c.pos.x,P.z-c.pos.z),Math.min(1,dt*4));a.graze+=(0-a.graze)*Math.min(1,dt*3);}
+      else if(c.wait>0){c.wait-=dt;a.graze+=(1-a.graze)*Math.min(1,dt*2);}// sniffing around
+      else if(c.mode==='street'){if(!c.wp.length){c.street=c.next;roamPlan(c);}
+        const w=c.wp[0],dx=w.x-c.pos.x,dz=w.z-c.pos.z,d=Math.hypot(dx,dz);
+        if(d<.12){c.wp.shift();c.wait=w.w||0;}
+        else{sp=RU_SPD;const st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*4));}
+        a.graze+=(0-a.graze)*Math.min(1,dt*3);}
+      else{// the meadow round the barn: amble to a spot, graze a while, amble on
+        if(!c.tgt)c.tgt=meadowSpot(meadowAng(c));const dx=c.tgt.x-c.pos.x,dz=c.tgt.z-c.pos.z,d=Math.hypot(dx,dz);
+        if(d<.15){c.tgt=null;c.wait=2+Math.random()*5;}
+        else{sp=ROAM_SPD;const st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;collide(c.pos,.25);c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*4));
+          if(Math.hypot(c.pos.x-BZ.x,c.pos.z-BZ.z)<BZ.fence+.8){c.tgt=null;c.wait=.5;}}
+        a.graze+=(0-a.graze)*Math.min(1,dt*3);}}
+    if(c.happy>0){c.happy-=dt;if(a.y<=0&&Math.random()<dt*2)a.vy=2;}
+    a.vy-=12*dt;a.y=Math.max(0,a.y+a.vy*dt);if(a.y<=0)a.vy=0;
+    if(!vis)continue;
+    c.pos.y=groundAt(c.pos.x,c.pos.z);a.pos.copy(c.pos);a.g.position.set(c.pos.x,c.pos.y+a.y,c.pos.z);a.g.rotation.y=c.face;a.update(dt,sp);}
+  // the ropes: from your hand (or a friend's) to the animal on it
+  ROAM.forEach((c,i)=>{const R0=ROPES[i];let h=null;
+    if(c.mode==='rope')h=av.g.position;else if(c.mode==='friend'){const o=ruFriend(c.owner);if(o)h=o.pos;}
+    if(!h||!c.a.g.visible){R0.visible=false;return;}
+    const hv=h.clone().add(new THREE.Vector3(0,.9,0)),b=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h*.7,0));
+    R0.visible=true;R0.position.copy(hv).add(b).multiplyScalar(.5);R0.scale.set(1,hv.distanceTo(b),1);R0.quaternion.setFromUnitVectors(LIMB_UP,b.sub(hv).normalize());});
+  // the whole state for friends, every few seconds
+  if(RU.on&&(RU.stT-=dt)<0){RU.stT=3;const cc={};for(const c of ROAM)if(c.mode==='rope')cc[c.nm]=ruMe();ruSend({a:'st',seed:RU.seed,g:RU.grp,h:RU.home,c:cc});}
+  if(!RU.on&&RU.endT&&roamT-RU.endT>9){RU.endT=0;ruBar();}
+  roamButton();}
+onTick.push(roamStep);
+const ropeMat=std('#c8a46a',{roughness:.9}),ROPES=ROAM.map(()=>{const m=M(cyl(.012,.012,1,6),ropeMat,0,0,0,scene,false,false);m.visible=false;return m;});
+
+/* ---------- buttons and the Round-up bar ---------- */
+{const st=document.createElement('style');st.textContent=`
+#roamBtn,#roamCatch{position:fixed;left:50%;transform:translateX(-50%);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5}
+#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 310px);background:linear-gradient(90deg,#f6b93b,#e58e26);box-shadow:0 6px 18px rgba(229,142,38,.45)}
+#roamCatch{bottom:calc(env(safe-area-inset-bottom) + 370px);background:linear-gradient(90deg,#a1887f,#6d4c41);box-shadow:0 6px 18px rgba(109,76,65,.4)}
+#roamCatch.go{background:linear-gradient(90deg,#ff6a3d,#e8336d);box-shadow:0 6px 18px rgba(232,51,109,.45)}
+#roamBtn:active,#roamCatch:active{transform:translateX(-50%) scale(.94)}
+body.dressing #roamBtn,body.talking #roamBtn,body.shopping #roamBtn,body.sp-on #roamBtn,body.dressing #roamCatch,body.talking #roamCatch,body.shopping #roamCatch,body.sp-on #roamCatch,
+body.dressing #ruBar,body.shopping #ruBar,body.sp-on #ruBar{display:none!important}
+#ruBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 156px);z-index:8;display:none;flex-direction:column;align-items:center;gap:5px;width:max-content;max-width:calc(100vw - 32px);pointer-events:none}
+#ruBar.show{display:flex}
+#ruBar b{background:#e8336d;color:#fff;border-radius:999px;padding:4px 12px;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
+#ruBar div{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+#ruBar span{background:rgba(255,255,255,.92);color:#3b2357;border-radius:999px;padding:4px 10px;font-weight:700;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
+#ruBar span.home{opacity:.6}#ruBar span.rope{background:#ffe2b8}#ruBar span.me{background:#ffd23f}
+#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}
+@media (max-height:520px){#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 185px)}#roamCatch{bottom:calc(env(safe-area-inset-bottom) + 240px)}#ruBar{top:calc(env(safe-area-inset-top) + 52px)}}`;
+  document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<button class="hud" id="roamBtn"></button><button class="hud" id="roamCatch"></button><div id="ruBar"></div>');}
+// the bar at the top: the Round-up is on, every animal and where it is (still out, on someone's rope, home), and the catches so far
+function ruBar(){const el=$('#ruBar');if(!RU.on&&!RU.endT){el.classList.remove('show');el.innerHTML='';return;}
+  const me=ruMe(),nm=id=>id===me?'You':ruEsc(RU.names[id]||'Friend'),src=RU.on?RU:RU.last;
+  const set=ruSet(),out=set.filter(c=>!RU.home[c.nm]).length;
+  const what=RU.grp==='zoo'?'Safari Round-up':'Round-up';
+  let h=RU.on?`<b>🚨 ${what} is on! ${out} of ${set.length} still out</b>`:`<b>🏁 ${what} done!</b>`;
+  h+='<div>'+set.map(c=>{const hm=RU.home[c.nm];if(hm)return `<span class="home">🏠 ${c.nm}<small>${nm(hm)}</small></span>`;
+    if(c.mode==='rope'||c.mode==='friend')return `<span class="rope">🪢 ${c.e} ${c.nm}<small>${nm(c.owner)}</small></span>`;
+    return `<span>${c.e} ${c.nm}</span>`;}).join('')+'</div>';
+  const ids=Object.keys(src.names||{});
+  if(ids.length>1)h+='<div>'+ids.sort((a,b)=>(src.sc[b]||0)-(src.sc[a]||0)).map(id=>`<span class="${id===me?'me':''}">${nm(id)} <small>🏠 ${src.sc[id]||0}</small></span>`).join('')+'</div>';
+  el.innerHTML=h;el.classList.add('show');}
+function roamButton(){const P=player.pos;let best=null,bd=ROAM_REACH;
+  if(!closetOpen&&!(typeof SW!=='undefined'&&SW.k>.3))for(const c of ROAM){if(c.mode==='friend'||c.mode==='zoo')continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(d<bd){bd=d;best=c;}}
+  roamNear=best;const rope=ROAM.find(c=>c.mode==='rope'),atBarn=!RU.on&&!RU.endT&&!closetOpen?(nearHome('barn',P,14)?'barn':nearHome('zoo',P,10)?'zoo':''):'';
+  const key=(best?best.nm:'')+'|'+(rope?rope.nm:'')+'|'+(RU.on?1:0)+'|'+atBarn;if(key===roamBtnKey)return;roamBtnKey=key;const b=$('#roamBtn'),k=$('#roamCatch');
+  if(best&&best!==rope){b.textContent=`${best.food[0][0]} Feed ${best.nm}`;b.style.display='block';}else b.style.display='none';
+  k.classList.remove('go');
+  if(rope){k.textContent=`🪢 Let go of ${rope.nm}`;k.style.display='block';}
+  else if(RU.on&&best&&best.mode==='street'){k.textContent=`🪢 Catch ${best.nm}`;k.style.display='block';}
+  else if(atBarn){k.textContent=atBarn==='zoo'?'🚨 Start a Safari Round-up!':'🚨 Start a Round-up!';k.dataset.g=atBarn;k.classList.add('go');k.style.display='block';}
+  else k.style.display='none';}
+function roamFeed(c){if(!c)return;const fd=rnd(c.food),top=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0));
+  floaties(top,fd[0],4);setTimeout(()=>floaties(top,'💖',5),350);sfx('munch');c.happy=1.6;c.a.happy=2;c.a.wig=1;c.a.speak(rnd(c.say));
+  RS.fed[c.nm]=1;persist();toast(`${c.e} ${c.nm} loves the ${fd[1]}!`);did('roamfeed',c.nm);}
+$('#roamBtn').onclick=()=>roamFeed(roamNear);
+$('#roamCatch').onclick=()=>{const rope=ROAM.find(c=>c.mode==='rope');if(rope)ruLetGo(rope);else if(RU.on)ruCatch(roamNear);else ruBegin($('#roamCatch').dataset.g||'barn');};
+
+// the animals on the minimap (during a Round-up only the ones still out), so you can go looking for them (heading-up, like drawMini in 26-map.js)
+onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=cv.getContext('2d'),S=cv.width,h=S/2,k=S/54,p=player.pos,
+  fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.08)}px serif`;x.textAlign='center';x.textBaseline='middle';
+  for(const c of ROAM){if(c.mode==='zoo'||(RU.on&&c.mode!=='street'))continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
+  x.restore();});
+
+// for challenges.js and the tests
+function roamState(){return {fed:Object.keys(RS.fed).length,n:ROAM.length,on:RU.on,grp:RU.grp,home:Object.keys(RU.home).length,sc:{...RU.sc},
+  rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,ruCatch,ruLetGo,ruFromNet,ruMe,BZ});});
 // ---- src/26h-adventure.js ----
 /* ================= ⛰️ LOOKOUT MOUNTAIN and 🌲 TREETOP ADVENTURE, across the canal =================
    On the grassy far bank of the canal, between angles 92 and 136 (BANK_LAND in 26f-ocean.js), over a wooden footbridge at 114.
