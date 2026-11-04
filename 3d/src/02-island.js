@@ -50,6 +50,8 @@ const ZONES=[
   {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
   // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
   {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
+  // in the open grass between the Beach path and the Car Garage (12h-place-arctic.js, 24m-arctic.js): snow, ice and polar animals
+  {id:'arctic',name:'❄️ Polar Ice',ang:165,d:45,r:9,music:'winter-days'},
   // out on the open grass between the Basketball Court and the Jump Park, near the shore (12h-place-helipad.js, 26h-helicopter.js)
   {id:'heli',name:'🚁 Helipad',ang:105,d:62,r:6.5,music:'city-park'},
   // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one

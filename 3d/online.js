@@ -303,7 +303,7 @@ function handle(id, d) {
   else if (d.t === 'emo' && typeof d.id === 'string') { o.a.play(d.id); if (d.id === 'magic' || d.id === 'cheer') G.burst(o.pos.clone().add(new G.THREE.Vector3(0, 1.2, 0)), '#ffd23f', 30, 2.5, .18); }
   else if (d.t === 'show' && d.show && typeof d.show === 'object') { o.show = d.show; if (G.friendShow) G.friendShow(o, d.show); }
   else if (d.t === 'say' && SAY.includes(d.text)) G.friendBubble(o, d.text);
-  else if (d.t === 'cake' || d.t === 'ball' || d.t === 'sport' || d.t === 'roam' || d.t === 'heli') for (const f of netFns) try { f(id, o.name, d); } catch (e) { }
+  else if (d.t === 'cake' || d.t === 'ball' || d.t === 'sport' || d.t === 'roam' || d.t === 'heli' || d.t === 'icerun') for (const f of netFns) try { f(id, o.name, d); } catch (e) { }
 }
 
 G.onTick.push(dt => {

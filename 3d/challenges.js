@@ -24,6 +24,8 @@ const guy = () => !!SAVE.look && SAVE.look.body === 'guy';
 // wins, days in a row and more, from 3d/src/24i-earned-rides.js (for the 🦁 Safari challenges)
 // how much you've swum, and with whom, from 3d/src/26f-ocean.js (for the 🌊 Ocean challenges)
 const sea = () => (G.seaState && G.seaState()) || { swum: 0, dolphin: 0, whale: 0, turtle: 0, spouts: 0 };
+// fish caught, igloos built, time skating and more, from 3d/src/24m-arctic.js (for the ❄️ Polar challenges)
+const ice = () => (G.iceState && G.iceState()) || { fish: 0, gold: 0, skate: 0, spins: 0, igloos: 0, seen: 0 };
 const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0, kn: {} };
 // the foods on Rosie's menu (FOOD_MAIN and FOOD_SWEET in 3d/src/12g-place-restaurant.js)
 const FOOD_MAINS = ['pizza', 'burger', 'pasta', 'pancakes', 'sushi', 'salad'], FOOD_SWEETS = ['sundae', 'cake', 'cookies'];
@@ -202,6 +204,29 @@ const ALL_LIST = [
   { id: 'sea_sharkrow', tab: 'ocean', grp: 'ghost', e: '🔥', t: 'Get away from Ghost 5 times in a row without being bumped', r: 3, goal: 5, go: 'bay', poll: () => sea().sharkRow },
   { id: 'sea_rides4', tab: 'ocean', grp: 'ghost', e: '🏆', t: 'Ride all 4 sea rides: Shelly, Splash, Big Blue and Pip', r: 3, goal: 4, go: 'bay', poll: () => sea().rode },
   { id: 'sea_swim5k', tab: 'ocean', grp: 'ghost', e: '🌊', t: 'Swim 5000 steps in the sea', r: 3, goal: 5000, go: 'bay', poll: () => sea().swum },
+  // ❄️ Polar: the snowy place between the Beach path and the Car Garage (3d/src/24m-arctic.js, 24m2-arctic-escape.js).
+  // Finish all of a polar animal's challenges (grp) and you can ride it (the rides are in arcticRideList, 3d/src/24c9g-arctic-animals.js)
+  { id: 'ice_feedB', tab: 'polar', grp: 'nanuq', e: '🐟', t: 'Feed the polar bear at Polar Ice 10 times', r: 3, goal: 10, go: 'arctic', ev: { k: 'icefeed', a: a => a === 'polarbear' } },
+  { id: 'ice_fish10', tab: 'polar', grp: 'nanuq', e: '🎣', t: 'Catch 10 fish ice fishing', r: 3, goal: 10, go: 'arctic', poll: () => ice().fish },
+  { id: 'ice_escape3', tab: 'polar', grp: 'nanuq', e: '🚨', t: 'Finish 3 Polar escapes (catch every runaway and bring them home)', r: 3, goal: 3, go: 'arctic', ev: { k: 'iceescape' } },
+  { id: 'ice_feedW', tab: 'polar', grp: 'tusk', e: '🦪', t: 'Feed the walrus 10 times', r: 3, goal: 10, go: 'arctic', ev: { k: 'icefeed', a: a => a === 'walrus' } },
+  { id: 'ice_fish20', tab: 'polar', grp: 'tusk', e: '🐟', t: 'Catch 20 fish ice fishing', r: 3, goal: 20, go: 'arctic', poll: () => ice().fish },
+  { id: 'ice_swim', tab: 'polar', grp: 'tusk', e: '🌊', t: 'Swim 400 steps in the water round the city', r: 3, goal: 400, poll: () => Math.floor(sea().swum || 0) },
+  { id: 'ice_meetAll', tab: 'polar', grp: 'ukpik', e: '🔎', t: 'Meet all 6 kinds of polar animals', r: 3, goal: 6, go: 'arctic', poll: () => ice().seen },
+  { id: 'ice_igloo', tab: 'polar', grp: 'ukpik', e: '🧊', t: 'Build 3 igloos', r: 3, goal: 3, go: 'arctic', poll: () => ice().igloos },
+  { id: 'ice_spins', tab: 'polar', grp: 'ukpik', e: '🌀', t: 'Do 25 spins on the ice rink', r: 3, goal: 25, go: 'arctic', poll: () => ice().spins },
+  { id: 'ice_home12', tab: 'polar', grp: 'amaruq', e: '🪢', t: 'Bring 12 runaways home in Polar escapes', r: 3, goal: 12, go: 'arctic', ev: { k: 'icehome' } },
+  { id: 'ice_gold', tab: 'polar', grp: 'amaruq', e: '🌟', t: 'Catch the rare golden char ice fishing', r: 3, go: 'arctic', poll: () => ice().gold },
+  { id: 'ice_skate', tab: 'polar', grp: 'amaruq', e: '⛸️', t: 'Ice skate for 3 minutes', r: 3, goal: 180, go: 'arctic', poll: () => ice().skate },
+  // more to do at Polar Ice (no ride, just stars)
+  { id: 'ice_feed1', tab: 'polar', grp: 'fun', e: '🐧', t: 'Feed a polar animal', r: 1, go: 'arctic', ev: { k: 'icefeed' } },
+  { id: 'ice_skate1', tab: 'polar', grp: 'fun', e: '⛸️', t: 'Go ice skating on the frozen pond', r: 1, go: 'arctic', ev: { k: 'iceskate' } },
+  { id: 'ice_spin1', tab: 'polar', grp: 'fun', e: '🌀', t: 'Do a spin on the ice', r: 1, go: 'arctic', ev: { k: 'icespin' } },
+  { id: 'ice_fish1', tab: 'polar', grp: 'fun', e: '🎣', t: 'Catch a fish ice fishing', r: 1, go: 'arctic', ev: { k: 'icefish' } },
+  { id: 'ice_kinds', tab: 'polar', grp: 'fun', e: '🐠', t: 'Catch 4 different kinds of fish', r: 2, goal: 4, u: true, go: 'arctic', ev: { k: 'icefish' } },
+  { id: 'ice_igloo1', tab: 'polar', grp: 'fun', e: '🧱', t: 'Build an igloo', r: 2, go: 'arctic', ev: { k: 'igloo' } },
+  { id: 'ice_start', tab: 'polar', grp: 'fun', e: '🚨', t: 'Start a Polar escape', r: 1, go: 'arctic', ev: { k: 'icestart' } },
+  { id: 'ice_win', tab: 'polar', grp: 'fun', e: '🏆', t: 'Win a Polar escape against friends online (bring the most home)', r: 2, go: 'arctic', ev: { k: 'iceescape', a: p => p === 0 } },
   // 🎄 Christmas (3d/christmas.js): snowball fights, snowmen and Santa, only while it's Christmas in town
   { id: 'xs_throw', tab: 'xmas', hol: 'christmas', e: '❄️', t: 'Throw a snowball', r: 1, ev: { k: 'snowball', a: a => a === 'throw' } },
   { id: 'xs_hit', tab: 'xmas', hol: 'christmas', e: '🎯', t: 'Hit someone with a snowball', r: 1, ev: { k: 'snowball', a: a => a === 'hit' } },
@@ -240,8 +265,11 @@ const DAILY = [
   { id: 'd_dress', e: '👗', t: 'Change your outfit 2 times', goal: 2, ev: { k: 'dress' } },
   { id: 'd_eat', e: '🍝', t: "Eat a meal at Rosie's Restaurant", go: 'diner', ev: { k: 'eat' } },
   { id: 'd_rush', e: '🛵', t: 'Do a delivery rush', go: 'diner', ev: { k: 'deliver' } },
+  { id: 'd_icefish', e: '🎣', t: 'Catch 2 fish ice fishing', goal: 2, go: 'arctic', ev: { k: 'icefish' } },
+  { id: 'd_icespin', e: '⛸️', t: 'Do 3 spins on the ice rink', goal: 3, go: 'arctic', ev: { k: 'icespin' } },
+  { id: 'd_icehome', e: '🪢', t: 'Bring 2 runaways home in a Polar escape', goal: 2, go: 'arctic', ev: { k: 'icehome' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
@@ -404,6 +432,7 @@ function render() {
   if (tab === 'today') { const st = G.earnState ? G.earnState() : null; h += `<div class="cnote">${st && st.streak > 1 ? `🔥 Day ${st.streak} in a row! ` : ''}New challenges every day! Finish all 3 for +${DAY_BONUS} bonus ⭐</div>`; }
   if (tab === 'safari') { $('#chalList').innerHTML = safariHTML(list, here); return; }
   if (tab === 'ocean') { $('#chalList').innerHTML = oceanHTML(list, here); return; }
+  if (tab === 'polar') { $('#chalList').innerHTML = polarHTML(list, here); return; }
   if (tab === 'places') { $('#chalList').innerHTML = placesHTML(here); return; }
   const sorted = list.slice().sort((a, b) => isDone(a) - isDone(b));
   h += sorted.map(ch => {
@@ -450,6 +479,21 @@ function oceanHTML(list, here) {
   }
   return h;
 }
+// ❄️ the Polar tab: each polar animal you can ride, with its challenges (finish them all to ride it), then more to do at Polar Ice
+function polarHTML(list, here) {
+  const rides = G.earnedRides ? G.earnedRides() : [];
+  let h = '<div class="cnote">❄️ Polar Ice is by the Beach path! Skate, fish, build an igloo and meet the polar animals. Finish every challenge for an animal and you can ride it.</div>';
+  for (const k of ['nanuq', 'tusk', 'ukpik', 'amaruq']) {
+    const r = rides.find(x => x.k === k), mine = list.filter(c => c.grp === k); if (!mine.length) continue;
+    const n = mine.filter(isDone).length;
+    h += `<div class="csaf sea${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '❄️'}</b><div><strong>${r ? `${r.nm} the ${r.n.toLowerCase()}${r.fly ? ' 🪽' : ''}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += mine.map(ch => chRow(ch, here)).join('');
+  }
+  const mine = list.filter(c => c.grp === 'fun'), n = mine.filter(isDone).length, fin = n === mine.length;
+  h += `<div class="csaf sea${fin ? ' own' : ''}"><b>⛸️</b><div><strong>More fun on the ice</strong><span>${fin ? 'All done!' : 'Skating, fishing, igloos and Polar escapes'}</span></div>${fin ? '<span class="own">✅ Done</span>' : ''}</div>`;
+  h += mine.slice().sort((a, b) => isDone(a) - isDone(b)).map(ch => chRow(ch, here)).join('');
+  return h;
+}
 // 📍 the Places tab: a legend of every place in town with the challenges you do there (like the 🦁 Safari tab does for animals).
 // The place you're standing in comes first, then places with challenges left, in map order. Challenges you can do anywhere go last.
 function placesHTML(here) {
@@ -482,7 +526,7 @@ function ridesHTML() {
     const bar = r.own ? `Yours! It's in your closet's ${r.where}` : `<u><q style="width:${Math.round(r.have / r.goal * 100)}%"></q></u>${r.have} / ${r.goal}`;
     return `<div class="cq${r.own ? ' done' : ''}"><b>${r.e}</b><div><strong>${r.n}</strong><i>${r.own ? '' : r.what + ' · '}${bar}</i></div>${r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
   }).join('') + '</div>';
-  h += '<div class="cnote">🏆 Wins: 1st place in the model, cake or pet contest, or beating Kai 1-on-1 at basketball.<br>🦁 Safari rides: finish all of their challenges in the 🦁 Safari tab.<br>🔥 A day counts as soon as you start playing. Miss a day and the streak starts over, but what you earned stays yours.</div>';
+  h += '<div class="cnote">🏆 Wins: 1st place in the model, cake or pet contest, or beating Kai 1-on-1 at basketball.<br>🦁 Safari rides: finish all of their challenges in the 🦁 Safari tab.<br>❄️ Polar rides: finish all of their challenges in the ❄️ Polar tab.<br>🔥 A day counts as soon as you start playing. Miss a day and the streak starts over, but what you earned stays yours.</div>';
   return h;
 }
 function openPanel() {
