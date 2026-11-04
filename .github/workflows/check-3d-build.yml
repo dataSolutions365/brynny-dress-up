@@ -43,6 +43,8 @@ jobs:
         run: node 3d/tests/guy-hair.mjs
       - name: Rosie serves your food at the restaurant, and the delivery rush works
         run: node 3d/tests/restaurant.mjs
+      - name: Lookout Mountain and the Treetop Adventure (footbridge, ladder, rope bridges, rock wall, trail, zip lines) work
+        run: node 3d/tests/adventure.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
       - name: Townspeople don't follow you around or copy your moves (only your adopted pet follows)
