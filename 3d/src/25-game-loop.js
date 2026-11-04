@@ -25,9 +25,9 @@ function stepPushables(p,dt){
     for(const b of PUSH){if(b===o||b.z!==z)continue;const bq=b.m.position,bx=q.x-bq.x,bz=q.z-bq.z,bd=Math.hypot(bx,bz),mm=o.r+b.r;
       if(bd<mm&&bd>1e-4){const ux=bx/bd,uz=bz/bd,push=(mm-bd)/2;q.x+=ux*push;q.z+=uz*push;bq.x-=ux*push;bq.z-=uz*push;
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
-// past the island's edge you may only be out swimming in the 🌊 canal (seaKeep in 26f-ocean.js)
+// past the island's edge you may only be out swimming in the 🌊 canal (seaKeep in 26f-ocean.js), or on the far bank's land and footbridges (bankLand)
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
-  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!(p===player.pos&&seaKeep(p,lim))){p.x*=lim/d;p.z*=lim/d;}}
+  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!bankLand(p)&&!(p===player.pos&&seaKeep(p,lim))){p.x*=lim/d;p.z*=lim/d;}}// bankLand (26f-ocean.js): the bits of the far bank you can walk on, and the footbridges to them
 // "tried to walk but didn't move": a bug like this throws no error, so watch for it and report it once per visit
 const walkW={t0:0,d:0,sent:false};// t0: when this push on the joystick started (real time, so slow phones count the same)
 function walkWatch(mag,step){if(walkW.sent)return;if(mag<.5){walkW.t0=0;walkW.d=0;return;}const now=performance.now();if(!walkW.t0)walkW.t0=now;walkW.d+=step;
@@ -49,12 +49,12 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   let ix=joy.x,iy=joy.y;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyW||keys.ArrowUp)iy-=1;if(keys.KeyS||keys.ArrowDown)iy+=1;
   let mag=Math.min(1,Math.hypot(ix,iy));if(closetOpen||!started||spLock()||window.__daddy?.frozen())mag=0;// DADDY POWERS (27-daddy-powers.js): does nothing once that file is gone
   const p=player.pos;
-  if(!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)){// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
+  if(!flyStep(dt,ix,iy,mag)&&!window.__daddy?.fly(dt,ix,iy,mag)&&!skateParkStep(dt,ix,iy,mag)&&!advStep(dt)){// advStep (26h-adventure.js): climbing a ladder or the rock wall, or on a zip line// up in the air on a flying ride, flyStep (24h-flying.js) moves you instead; on wheels at the skate park, skateParkStep (24k-skate-park.js)
   // ^ DADDY POWERS: window.__daddy?.fly is Daddy flying, swinging or in the robot (27-daddy-powers.js); does nothing once that file is gone
   if(mag>.08){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;const n=Math.hypot(ix,iy)||1;const mx=(fx*-iy+rx*ix)/n,mz=(fz*-iy+rz*ix)/n;
     const spd=(curZone===PARK?6.5:5)*mag*rideBoost()*skateBoost()*bikeBoost()*rollerBoost();// a bit quicker on the open grass between places, normal speed inside them
     const old=p.clone();p.x+=mx*spd*dt;p.z+=mz*spd*dt;collide(p);
-    const g=groundAt(p.x,p.z);if(g-p.y>.45){p.x=old.x;p.z=old.z;}
+    const g=groundAt(p.x,p.z);if(g-p.y>.45||advBlock(old,p)){p.x=old.x;p.z=old.z;}// advBlock: your harness keeps you on the ropes course, and the mountain's rock is too steep to walk up
     player.face=angDamp(player.face,Math.atan2(mx,mz),Math.min(1,dt*12));player.speed=spd;
     walkWatch(mag,Math.hypot(p.x-old.x,p.z-old.z));}else{player.speed*=.8;walkWatch(0,0);}
   // vertical
@@ -72,9 +72,9 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
       setTimeout(()=>{STARS.forEach(s=>{s.got=false;s.m.visible=true;});SAVE.stars=[];persist();updateStars();toast('The stars are back! Find them again ⭐');},9000);}
     else toast(`⭐ ${n} of ${STARS.length}!`);questEvent('star');}}
   // zones
-  let z=null;for(const zz of ZONES){if(Math.hypot(p.x-zz.x,p.z-zz.z)<zz.r+(zz.d?1:1.4)){z=zz;break;}}z=z||(seaDepth(p.x,p.z)>.5?CANAL_ZONE:PARK);
+  let z=null;for(const zz of ZONES){if(Math.hypot(p.x-zz.x,p.z-zz.z)<zz.r+(zz.d?1:1.4)){z=zz;break;}}z=z||(seaDepth(p.x,p.z,p.y)>.5?CANAL_ZONE:PARK);
   if(z!==curZone){curZone=z;$('#place').textContent=z.name;if(started)questEvent('zone',z.id);if(started){if(z!==PARK)banner(z.name);setTrack(z.music);if(z.id==='parlor'&&!closetOpen)setTimeout(()=>toast(myPet()?'Step on the glowing paw pad to start pet care 🐾':'Adopt a pet first, then bring them here! 🐾'),1600);if(z.id==='bakery'&&!closetOpen)setTimeout(()=>toast('Step on the glowing cupcake pad to design a cake 🎂'),1600);if(z.id==='garage'&&!closetOpen)setTimeout(()=>toast('Step on the glowing wrench pad to fix up your car 🔧'),1600);if(z.id==='beach'&&!closetOpen)setTimeout(()=>toast('Step on the glowing bucket pad to build a sandcastle 🏰'),1600);if(z.id==='agency'&&!closetOpen)setTimeout(()=>toast('Step on 🏆 for the model contest, or 💄 to sit at the glam mirror!'),1600);}}
-  const padD=Math.hypot(p.x,p.z);if(padD<Z.studio.pad.r&&player.onGround){if(!onPad&&started){onPad=true;openCloset();}}else if(padD>1.6)onPad=false;
+  const padD=Math.hypot(p.x-Z.studio.pad.x,p.z-Z.studio.pad.z);if(padD<Z.studio.pad.r&&player.onGround){if(!onPad&&started){onPad=true;openCloset();}}else if(padD>1.6)onPad=false;
   {const pz=Z.parlor,[lx,lz]=pz.toLocal(p.x,p.z),d=Math.hypot(lx-pz.ppad.lx,lz-pz.ppad.lz);if(d<pz.ppad.r&&player.onGround&&!closetOpen){if(!onPPad&&started){onPPad=true;tryParlor();}}else if(d>1.3)onPPad=false;}
   {const bz=Z.bakery,[lx,lz]=bz.toLocal(p.x,p.z),d=Math.hypot(lx-bz.bpad.lx,lz-bz.bpad.lz);if(d<bz.bpad.r&&player.onGround&&!closetOpen){if(!onBPad&&started){onBPad=true;openBakery();}}else if(d>1.3)onBPad=false;}
   {const wz=Z.garage,[lx,lz]=wz.toLocal(p.x,p.z),d=Math.hypot(lx-wz.gpad.lx,lz-wz.gpad.lz);if(d<wz.gpad.r&&player.onGround&&!closetOpen){if(!onWPad&&started){onWPad=true;openGarage();}}else if(d>1.3)onWPad=false;}

@@ -16,6 +16,10 @@
 //   contest: a holiday round for the model contest (same fields as CT_THEMES in index.html).
 //
 // For testing: ?holiday=christmas (or any id, or none) and ?time=night or ?time=day in the address.
+//
+// 🔁 THE SEASON SWITCH: normally the town follows the calendar. To choose the theme yourself, set TOWN_THEME (just below
+// HOLIDAYS) to a holiday id and the last day it stays on. After that day the calendar takes over again by itself.
+// Set it to null to always follow the calendar. Things you bought for a holiday stay yours whatever the season is.
 const G = window.__game;
 if (G) start();
 
@@ -263,8 +267,8 @@ const HOLIDAYS = [
       extras: ['scarf', 'purse'], fams: ['orange', 'brown', 'red', 'yellow'] },
     npc: { when: 'always', looks: [{ hat: { id: 'leafcrown', c: '#ff8a1f' } }, { dress: null, top: { id: 'flannel', c: '#c0392b' }, bottom: { id: 'jeans', c: '#3a5bd9' } }, { hat: { id: 'turkeyhat', c: '#8a5a3b' } }, { extras: { scarf: '#ff8a1f' } }] },
     talk: { e: '🦃', label: 'Thankful?', act: (f, T) => T.once(f, rnd(['I am thankful for my friends, like YOU! 💖', 'I am thankful for pumpkin pie! 🥧', 'I am thankful for cozy sweaters and hot cocoa ☕', 'I am thankful for my pets! 🐾', 'I am thankful for sunny days and fall leaves 🍂']) + '\n\nWhat are you thankful for? 😊', '🍂', 3, true) } },
-  { id: 'christmas', n: 'Christmas', e: '🎄', when: () => [md(12, 1), md(12, 30)],
-    hello: 'Merry Christmas! 🎄 It is snowing! Give the townspeople presents!',
+  { id: 'christmas', n: 'Christmas', e: '🎄', greet: 'Merry Christmas', when: () => [md(12, 1), md(12, 30)],
+    hello: 'Merry Christmas! 🎄 It is snowing! Find Santa by the big tree, have a ❄️ snowball fight and build a ⛄ snowman!',
     items: [
       { id: 'elf', slot: 'dresses', e: '🧝', n: 'Elf dress', c: '#2e9e4f', p: 80, d: "A jolly green elf dress. Find it in Dresses." },
       { id: 'antlers', slot: 'hats', e: '🦌', n: 'Reindeer antlers', c: '#8a5a3b', p: 50, d: 'Antlers AND a shiny red nose! Find them in Hats.' },
@@ -277,14 +281,25 @@ const HOLIDAYS = [
     talk: { e: '🎁', label: 'Give a gift', act: (f, T) => T.once(f, rnd(['A present for me?! 🎁 Thank you! Merry Christmas! 🎄', 'Oh wow, I love it! 😍 Here, a cookie for you! 🍪', 'You are so kind! ❄️ Merry Christmas!']), '🎁', 5, true) } },
 ];
 
-// which holiday is it today? (the first one in the list whose dates match)
+// 🔁 the season switch (see the top of this file): Christmas in town from now until December 30, then the calendar again
+const TOWN_THEME = { id: 'christmas', until: '2026-12-30' };
+// which holiday is it today? (the switch first, then the first one in the list whose dates match)
 function holidayFor(date) {
+  if (TOWN_THEME) { const [y, m, d] = TOWN_THEME.until.split('-').map(Number); if (date <= new Date(y, m - 1, d, 23, 59, 59)) return HOLIDAYS.find(h => h.id === TOWN_THEME.id) || null; }
   const v = mdOf(date);
   for (const h of HOLIDAYS) { const [a, b] = h.when(date.getFullYear()); if (a <= b ? v >= a && v <= b : v >= a || v <= b) return h; }
   return null;
 }
 const forced = q.get('holiday');
 const HOL = forced ? (HOLIDAYS.find(h => h.id === forced) || null) : holidayFor(new Date());
+// 🎃 Halloween Hollow keeps its haunted house and bare trees all year, but the pumpkins, ghosts, gravestones and purple glow
+// (Z.halloween.spooky, from 3d/src/05-place-halloween.js) only come out for Halloween
+{ const hz = G.Z && G.Z.halloween;
+  if (hz && hz.spooky && !(HOL && HOL.id === 'halloween')) {
+    for (const p of hz.spooky.parts) p.visible = false;
+    for (const o of hz.spooky.obs) { const i = G.obs.indexOf(o); if (i >= 0) G.obs.splice(i, 1); }
+    if (HOL && HOL.id === 'christmas') hz.music = 'winter-days';
+  } }
 window.__season = { now: () => HOL, on: id => !!HOL && HOL.id === id, list: HOLIDAYS, holidayFor, night: () => nightK };
 
 // every holiday's things go in the catalog and the shop (the shop and closet only show them during their holiday, or once you own them)
@@ -426,15 +441,21 @@ const KIT = {
       G.obs.push({ x: p.x, z: p.z, r: .6 }); });
   },
   xmasTrees() {
-    const green = std('#1f6f3a', { roughness: .8 }), trunk = std('#6b4a2b'), cols = ['#ff3b6b', '#ffd23f', '#4fb6ff', '#ffffff', '#7ee081'];
+    // little fir trees: layers of branches with ragged, drooping tips (not smooth cones), so they look like real ones
+    const green = std('#21492f', { roughness: .9, side: THREE.DoubleSide }), trunk = std('#4a3324'), cols = ['#ffd7a0', '#ff3b3b', '#ffd7a0', '#3fd06b', '#ffb02e'];
+    const firTier = (r, h, k) => { const g = new THREE.CylinderGeometry(r * .12, r, h, 28, 3, true), p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), a = Math.atan2(x, z), v = (y + h / 2) / h, tip = (1 - v) * (1 - v), j = 1 + tip * (.18 * Math.sin(a * 9 + k) + .08 * Math.sin(a * 21 + k * 2));
+        p.setXYZ(i, x * j, y - tip * .12 * (1 + Math.sin(a * 9 + k)), z * j); }
+      g.computeVertexNormals(); return g; };
+    const tiers = [[.78, .9, .6], [.62, .8, 1.0], [.46, .7, 1.38], [.3, .6, 1.72]].map(([r, h, y], k) => ({ g: firTier(r, h, k * 1.7), y: y + h / 2 }));
     const bulbMats = cols.map(c => new THREE.MeshBasicMaterial({ color: C(c).multiplyScalar(1.6), toneMapped: false }));
     const starM = new THREE.MeshStandardMaterial({ color: '#ffd23f', metalness: .9, roughness: .2, emissive: '#ffaa00', emissiveIntensity: 1 });
     LAMP_SPOTS.forEach((w, i) => { if (i % 2) return; const p = spotNear(w, i % 4 ? 1 : -1, 1.1), g = new THREE.Group(); g.position.set(p.x, ground(p.x, p.z), p.z); deco.add(g);
       add(cyl(.1, .12, .4, 8), trunk, 0, .2, 0, g);
-      for (let j = 0; j < 3; j++) add(new THREE.ConeGeometry(.75 - j * .2, .8, 16), green, 0, .7 + j * .45, 0, g);
+      for (const t of tiers) add(t.g, green, 0, t.y, 0, g).rotation.y = i * .7;
       for (let j = 0; j < 14; j++) { const y = .45 + Math.random() * 1.3, r = (.78 - (y - .3) * .35) * .95, a = Math.random() * Math.PI * 2;
-        const b = new THREE.Mesh(new THREE.SphereGeometry(.05, 8, 6), bulbMats[j % 5]); b.position.set(Math.sin(a) * r, y, Math.cos(a) * r); g.add(b); }
-      const st = add(G.starGeo, starM, 0, 2.05, 0, g); st.scale.setScalar(.7); G.obs.push({ x: p.x, z: p.z, r: .7 }); });
+        const b = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), bulbMats[j % 5]); b.position.set(Math.sin(a) * r, y, Math.cos(a) * r); g.add(b); }
+      const st = add(G.starGeo, starM, 0, 2.08, 0, g); st.scale.setScalar(.55); G.obs.push({ x: p.x, z: p.z, r: .7 }); });
     nightHooks.push(n => { bulbMats.forEach((m, i) => m.color.copy(C(cols[i])).multiplyScalar(lerp(1.6, 3, n))); });
   },
   balloons(cols) {
@@ -581,6 +602,6 @@ G.onTick.push(dt => {
       if (isNight && HOL && HOL.id === 'halloween') setTimeout(() => G.toast("🎃 It's dark! Put on a costume and trick-or-treat with the townspeople!"), 2500);
       else if (isNight && HOL && HOL.decor && /fireworks/.test(HOL.decor.toString())) setTimeout(() => G.toast('🎆 Look up! Fireworks!'), 2500); }
     if (HOL && HOL.npc && HOL.npc.when === 'night') dressTown(isNight); }
-  if (!greeted && G.started()) { greeted = true; if (HOL) setTimeout(() => { G.banner(`${HOL.e} Happy ${HOL.n.replace(/^the /, '')}!`); setTimeout(() => G.toast(`${HOL.hello} New ${HOL.n.replace(/^the /, '')} things are in the 🪙 shop.`), 2600); }, 6000); }
+  if (!greeted && G.started()) { greeted = true; if (HOL) setTimeout(() => { G.banner(`${HOL.e} ${HOL.greet || 'Happy ' + HOL.n.replace(/^the /, '')}!`); setTimeout(() => G.toast(`${HOL.hello} New ${HOL.n.replace(/^the /, '')} things are in the 🪙 shop.`), 2600); }, 6000); }
 });
 }

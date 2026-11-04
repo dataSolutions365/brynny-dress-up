@@ -27,7 +27,9 @@ const sea = () => (G.seaState && G.seaState()) || { swum: 0, dolphin: 0, whale: 
 const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0, kn: {} };
 // the foods on Rosie's menu (FOOD_MAIN and FOOD_SWEET in 3d/src/12g-place-restaurant.js)
 const FOOD_MAINS = ['pizza', 'burger', 'pasta', 'pancakes', 'sushi', 'salad'], FOOD_SWEETS = ['sundae', 'cake', 'cookies'];
-const LIST = [
+// challenges with hol: only count and show while that holiday is on in town (window.__season, from seasons.js, which loads after this file)
+const seasonOn = h => !!(window.__season && window.__season.on(h));
+const ALL_LIST = [
   // ✨ Sparkle Studio
   { id: 'dress', tab: 'studio', e: '👗', t: 'Put on a dress', r: 1, go: 'studio', poll: () => SAVE.look.dress ? 1 : 0 },
   { id: 'fullLook', tab: 'studio', e: '👒', t: 'Wear a hat, shoes and an extra all at once', r: 1, go: 'studio', poll: () => SAVE.look.hat && SAVE.look.shoes && Object.keys(SAVE.look.extras || {}).length ? 1 : 0 },
@@ -95,6 +97,14 @@ const LIST = [
   { id: 'skTrick', tab: 'explore', e: '🛹', t: 'Do a trick at the Skate Park', r: 1, go: 'skate', ev: { k: 'trick' } },
   { id: 'skTricks', tab: 'explore', e: '🌀', t: 'Land 10 tricks at the Skate Park', r: 2, goal: 10, go: 'skate', ev: { k: 'trick' } },
   { id: 'skCombo', tab: 'explore', e: '🔥', t: 'Land a combo at the Skate Park (a trick plus air or a grind)', r: 2, go: 'skate', ev: { k: 'skateCombo' } },
+  // ⛰️ Lookout Mountain and 🌲 the Treetop Adventure across the canal (3d/src/26h-adventure.js)
+  { id: 'ropesUp', tab: 'explore', e: '🪜', t: 'Climb up into the treetops at the ropes course', r: 1, go: 'ropes', ev: { k: 'ropes', a: a => a === 'up' } },
+  { id: 'ropesAll', tab: 'explore', e: '🌉', t: 'Cross all 3 rope bridges in the treetops', r: 2, goal: 3, u: true, go: 'ropes', ev: { k: 'ropesBridge' } },
+  { id: 'zipTree', tab: 'explore', e: '🌲', t: 'Ride the treetop zip line', r: 1, go: 'ropes', ev: { k: 'zip', a: a => a === 'tree' } },
+  { id: 'rockWall', tab: 'explore', e: '🧗', t: 'Climb the rock wall to the top of Lookout Mountain', r: 2, go: 'mountain', ev: { k: 'climb', a: a => a === 'wall' } },
+  { id: 'hikeTop', tab: 'explore', e: '🥾', t: 'Hike the trail to the top of Lookout Mountain', r: 2, go: 'mountain', ev: { k: 'climb', a: a => a === 'trail' } },
+  { id: 'zipBig', tab: 'explore', e: '🪂', t: 'Zip line all the way down from the top of Lookout Mountain', r: 2, go: 'mountain', ev: { k: 'zip', a: a => a === 'mountain' } },
+  { id: 'zip5', tab: 'explore', e: '💨', t: 'Ride 5 zip lines', r: 2, goal: 5, go: 'ropes', ev: { k: 'zip' } },
   { id: 'carFixed', tab: 'explore', e: '🏁', t: 'Fix up your whole car: tire, oil and engine', r: 2, go: 'garage', ev: { k: 'carfixed' } },
   { id: 'carSpin', tab: 'explore', e: '🚗', t: 'Paint your car and take it for a spin', r: 1, go: 'garage', ev: { k: 'carspin' } },
   { id: 'sandcastle', tab: 'explore', e: '🏰', t: 'Build a sandcastle at the beach', r: 2, go: 'beach', ev: { k: 'sandcastle' } },
@@ -171,8 +181,27 @@ const LIST = [
   { id: 'sea_sharkrow', tab: 'ocean', grp: 'ghost', e: '🔥', t: 'Get away from Ghost 5 times in a row without being bumped', r: 3, goal: 5, go: 'bay', poll: () => sea().sharkRow },
   { id: 'sea_rides4', tab: 'ocean', grp: 'ghost', e: '🏆', t: 'Ride all 4 sea rides: Shelly, Splash, Big Blue and Pip', r: 3, goal: 4, go: 'bay', poll: () => sea().rode },
   { id: 'sea_swim5k', tab: 'ocean', grp: 'ghost', e: '🌊', t: 'Swim 5000 steps in the sea', r: 3, goal: 5000, go: 'bay', poll: () => sea().swum },
+  // 🎄 Christmas (3d/christmas.js): snowball fights, snowmen and Santa, only while it's Christmas in town
+  { id: 'xs_throw', tab: 'xmas', hol: 'christmas', e: '❄️', t: 'Throw a snowball', r: 1, ev: { k: 'snowball', a: a => a === 'throw' } },
+  { id: 'xs_hit', tab: 'xmas', hol: 'christmas', e: '🎯', t: 'Hit someone with a snowball', r: 1, ev: { k: 'snowball', a: a => a === 'hit' } },
+  { id: 'xs_hit10', tab: 'xmas', hol: 'christmas', e: '☃️', t: 'Hit people with 10 snowballs', r: 2, goal: 10, ev: { k: 'snowball', a: a => a === 'hit' } },
+  { id: 'xs_santaHit', tab: 'xmas', hol: 'christmas', e: '🎅', t: 'Hit Santa with a snowball', r: 2, go: 'studio', ev: { k: 'snowball', a: a => a === 'santa' } },
+  { id: 'xs_fight', tab: 'xmas', hol: 'christmas', e: '🤾', t: 'Ask someone in town for a snowball fight', r: 1, ev: { k: 'snowfight', a: a => a == null } },
+  { id: 'xs_fightWin', tab: 'xmas', hol: 'christmas', e: '🏆', t: 'Win a snowball fight', r: 2, ev: { k: 'snowfight', a: a => a === 0 } },
+  { id: 'xs_fightWin3', tab: 'xmas', hol: 'christmas', e: '👑', t: 'Win 3 snowball fights', r: 3, goal: 3, ev: { k: 'snowfight', a: a => a === 0 } },
+  { id: 'xs_snowman', tab: 'xmas', hol: 'christmas', e: '⛄', t: 'Build a snowman', r: 1, ev: { k: 'snowman' } },
+  { id: 'xs_snowman3', tab: 'xmas', hol: 'christmas', e: '☃️', t: 'Build 3 snowmen', r: 2, goal: 3, ev: { k: 'snowman' } },
+  { id: 'xs_snowmanTown', tab: 'xmas', hol: 'christmas', e: '🗺️', t: 'Build snowmen in 3 different places', r: 3, goal: 3, u: true, ev: { k: 'snowman' } },
+  { id: 'xs_snowmanVillage', tab: 'xmas', hol: 'christmas', e: '🏘️', t: 'Build a snowman in Christmas Village', r: 2, go: 'christmas', ev: { k: 'snowman', a: a => a === 'christmas' } },
+  { id: 'xs_santa', tab: 'xmas', hol: 'christmas', e: '👋', t: 'Say hi to Santa (he walks round the big tree)', r: 1, go: 'studio', ev: { k: 'santa' } },
+  { id: 'xs_gift', tab: 'xmas', hol: 'christmas', e: '🎁', t: 'Get a present from Santa', r: 1, go: 'studio', ev: { k: 'santagift' } },
+  { id: 'xs_treeDance', tab: 'xmas', hol: 'christmas', e: '🎄', t: 'Dance under the big Christmas tree', r: 1, go: 'studio', ev: { k: 'act', a: a => a === 'dance', z: 'studio' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
+// the list in play: everything except holiday challenges when it isn't their holiday (the same array, so window.__chal.list stays current)
+const LIST = [];
+const syncList = () => { const want = ALL_LIST.filter(c => !c.hol || seasonOn(c.hol)); if (want.length !== LIST.length) LIST.splice(0, LIST.length, ...want); };
+syncList();
 const DAILY = [
   { id: 'd_feed', e: '🍖', t: 'Feed your pet 2 times', goal: 2, go: 'parlor', ev: { k: 'feed' } },
   { id: 'd_moves', e: '💃', t: 'Do 5 dance moves', goal: 5, ev: { k: 'act', a: a => MOVES.includes(a) } },
@@ -191,7 +220,7 @@ const DAILY = [
   { id: 'd_eat', e: '🍝', t: "Eat a meal at Rosie's Restaurant", go: 'diner', ev: { k: 'eat' } },
   { id: 'd_rush', e: '🛵', t: 'Do a delivery rush', go: 'diner', ev: { k: 'deliver' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
@@ -219,7 +248,7 @@ function progress(ch) {
   const s = store(ch);
   return Math.min(goalOf(ch), ch.u ? (s.u[ch.id] || []).length : (s.n[ch.id] || 0));
 }
-const allCh = () => LIST.concat(todays());
+const allCh = () => { syncList(); return LIST.concat(todays()); };
 const left = zid => allCh().some(ch => !isDone(ch) && ch.go === zid);
 window.__chal = { left, list: LIST, today: todays, progress, isDone };
 
@@ -343,7 +372,8 @@ let panelOpen = false, tab = 'today';
 function render() {
   const r = rank(), nx = RANKS[RANKS.indexOf(r) + 1], s = C.stars || 0;
   $('#chalRank').innerHTML = `<div class="crank"><b>${r[1]}</b><div><strong>${r[2]}</strong>${nx ? `<i><u style="width:${Math.round((s - r[0]) / (nx[0] - r[0]) * 100)}%"></u></i><span>${nx[0] - s} more ⭐ to ${nx[2]} ${nx[1]}</span>` : '<span>You are a legend! 🌈</span>'}</div><em>⭐ ${s}</em></div><div class="cspend">🛒 <b>⭐ ${Math.max(0, s - ((SAVE.barn && SAVE.barn.spent) || 0))}</b> left to spend on rare animals at the 🐴 Happy Barn<small>⭐ ${s} is every star you ever earned (your rank). It never goes down when you spend.</small></div>`;
-  $('#chalTabs').innerHTML = TABS.map(([id, e, n]) => {
+  syncList();
+  $('#chalTabs').innerHTML = TABS.filter(t => !t[3] || seasonOn(t[3])).map(([id, e, n]) => {
     const list = id === 'today' ? todays() : LIST.filter(c => c.tab === id), open = list.filter(c => !isDone(c)).length;
     return `<button class="tab${tab === id ? ' on' : ''}" data-tab="${id}"><b>${e}</b>${n}${open && id === 'today' ? '<s></s>' : ''}</button>`;
   }).join('');

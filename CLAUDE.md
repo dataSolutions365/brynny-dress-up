@@ -74,9 +74,27 @@
   and counts toward the 🏆 earned rides). Everyone who sits down takes the first free chair in `RST.seats` (`pickSeat()`), friends online
   show sitting in theirs through the `dine` entry in `SHOW`, and townspeople get nudged out of the chairs. Add a food by adding it to `FOOD_MAIN`/`FOOD_SWEET` and a builder in `FOOD_BUILD`
   (and its id to `FOOD_MAINS`/`FOOD_SWEETS` in `3d/challenges.js`). `3d/tests/restaurant.mjs` (run on every PR) eats a meal and wins a rush.
+- ⛰️ Lookout Mountain and 🌲 Treetop Adventure: `3d/src/26h-adventure.js`, on the canal's far bank (angles 92 to 136), over a wooden footbridge.
+  Places on the far bank push their own walkable sector into `BANK_LAND` and their footbridges into `BANK_BRIDGES` (both in `3d/src/26f-ocean.js`);
+  `collide()` asks `bankLand()` first. Raised walkways (the footbridge deck, platforms, rope bridges) are `SURF` entries: they only count as ground
+  once you're up on them (`HIGH.on`), so swimmers go under the footbridge and people walk under the platforms. The mountain's shape is one function,
+  `mtH()`, used for both the rock you see and the ground you walk on; `advBlock()` stops walking up the steep rock (only the `TRAIL` and the climbing
+  `WALL` go up) and stops you stepping off the ropes course (the harness). `advStep()` moves you on the ladder, the wall and the `ZIPS`; friends see
+  it through the 'adv' entry in `SHOW`. `3d/tests/adventure.mjs` (run on every PR) does the whole thing.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
+- 🎄 Seasons: `3d/seasons.js` picks today's holiday. THE SEASON SWITCH is `TOWN_THEME` in that file: a holiday id plus the last day
+  it stays on (now Christmas until Dec 30), after which the calendar takes over again; `null` always follows the calendar.
+  Holiday shop things are only sold during their holiday but stay yours once bought. Halloween Hollow's pumpkins, ghosts,
+  gravestones and purple glow are listed in `Z.halloween.spooky` (`3d/src/05-place-halloween.js`) and only come out for Halloween.
+  `3d/christmas.js` is Christmas in town: snow on the ground, the really big tree in the middle (the 👗 dress-up pad moves in front of it:
+  the game loop reads `Z.studio.pad.x/.z`), lights round the street lights and along the tops of the buildings (instanced, one draw call
+  per half), 🎅 Santa walking round the plaza and out along the paths (a present once a day), ❄️ snowballs and snowball fights
+  (first to 5 hits, from the talk buttons), and ⛄ snowmen you roll by walking and stack (saved in `SAVE.xmas.snowmen`).
+  Its action buttons come in through `ACT_HOOKS` (`3d/src/19-ui-closet.js`). The 🎄 Christmas tab in `3d/challenges.js` uses `hol: 'christmas'`:
+  a challenge with `hol` only shows and counts during that holiday. Keep the Christmas look real, not cartoony.
+  `3d/tests/christmas.mjs` (run on every PR) checks the tree, the lights, Santa, a snowball hit, a whole snowman, and that Halloween brings the pumpkins back.
 - 🐾 Barn animals and the 🚨 Round-up (`3d/src/26g-town-animals.js`): four barn animals (Waddles, Billy, Truffle, Woolly, in `ROAM_LIST`)
   wander the meadow round the Happy Barn and never follow you (walking up makes one stop and look at you, then it carries on).
   "Start a Round-up" near the barn sends them out onto their own two streets each (street = the `ang` of a place with a path) until
