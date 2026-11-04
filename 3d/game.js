@@ -1703,6 +1703,10 @@ function deliveryBox(){const g=new THREE.Group();
  anims.push(t=>{if(curZone!==z)return;for(const tb of TB){const k=1+Math.sin(t*11+tb.lx*3)*.15+Math.sin(t*7.3+tb.lz)*.1;tb.flame.scale.set(k,1.6*k,k);}});
  // the table you sit at is the front right one (on the outside chair, facing the kitchen side of the table)
  RST.myT=TB[3];RST.seat={lx:TB[3].lx+.8,lz:TB[3].lz};
+ // every chair a diner can take, best first (the two left outside chairs belong to the people already having dinner).
+ // Each person who sits down takes the first one nobody is in (24l-restaurant.js), so nobody sits on anyone.
+ RST.seats=[[3,1],[1,1],[3,-1],[1,-1],[2,1],[0,1]].map(([i,side])=>({t:TB[i],side,lx:TB[i].lx+side*.8,lz:TB[i].lz}));
+ RST.seats.push(...[[0,-1],[2,-1]].map(([i,side])=>({t:TB[i],side,lx:TB[i].lx+side*.8,lz:TB[i].lz,npc:1})));
 
  // ---- string lights over the patio, on four iron poles ----
  {const bulbM=glow('#ffd590',1.7),wire=std('#1d1d1d',{roughness:.8});const poles=[[-5.3,-1.8],[5.3,-1.8],[5.3,5.2],[-5.3,5.2]];
@@ -9907,9 +9911,18 @@ function rStep(o,dt){if(o.path&&o.path.length){const tg=o.path[0];tmpV.subVector
 /* ---------- 🍽️ sitting down to eat ---------- */
 const meal={phase:'menu',main:'pizza',drink:'lemonade',sweet:null,food:null,drk:null,bites:0,sips:0,bite:0,biteDid:false,fork:null,cam:{p:new THREE.Vector3(),t:new THREE.Vector3()}};
 const BITES=4,SIPS=3;
-const TBL=()=>RST.myT;
+const TBL=()=>(meal.seat||RST.seats[0]).t;
+// 🪑 every person eating here gets their own chair: a friend online who is eating sends which chair (the 'dine' entry in
+// 26c-friends-see.js), and townspeople standing next to a chair count too, so you take the first chair nobody is in
+function seatSpot(s){return zW(RZ,s.lx,0,s.lz);}
+function seatTaken(s,skipMe){if(s.npc)return true;const w=seatSpot(s),i=RST.seats.indexOf(s);
+  if(!skipMe&&restOpen&&meal.mode==='eat'&&meal.seat===s)return true;
+  if(typeof mapOthers!=='undefined'&&mapOthers)for(const o of mapOthers.values()){const dn=o.shows&&o.shows.dine;if(dn&&dn.h&&dn.h.s===i)return true;if(o.pos&&Math.hypot(o.pos.x-w.x,o.pos.z-w.z)<.6)return true;}
+  for(const f of FRIENDS)if(Math.hypot(f.pos.x-w.x,f.pos.z-w.z)<.6)return true;
+  return false;}
+function pickSeat(){return RST.seats.find(s=>!seatTaken(s,true))||RST.seats[0];}
 function clearTable(){for(const k of ['food','drk']){const f=meal[k];if(f){f.g.parent&&f.g.parent.remove(f.g);freeObj(f.g);meal[k]=null;}}}
-function sitDown(){const s=RST.seat,p=zW(RZ,s.lx,0,s.lz);player.pos.copy(p);player.vy=0;player.speed=0;player.face=zFace(RZ,-1,0);av.play('chair');}
+function sitDown(){const s=meal.seat=pickSeat(),p=seatSpot(s);player.pos.copy(p);player.vy=0;player.speed=0;player.face=zFace(RZ,-s.side,0);av.play('chair');}
 function openRest(mode){if(closetOpen||!started)return;closeTalk();buildRest();restOpen=closetOpen=true;meal.mode=mode;RST.spad.parts.forEach(v=>v.visible=false);RST.dpad.lbl.visible=false;
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
   meal.cam.p.copy(camera.position);meal.cam.t.copy(cam.fv||player.pos);
@@ -9937,8 +9950,8 @@ function order(kind,drinkKind){if(meal.phase!=='menu'&&meal.phase!=='dessert')re
       const f=makeFood(kind);f.g.position.set(-.04,.008,0);r.tray.add(f.g);let d=null;if(drinkKind){d=makeFood(drinkKind);d.g.position.set(.11,.008,.06);r.tray.add(d.g);}
       r.tray.visible=true;r.want=null;
       rosieGo(rosieThere().slice(1),()=>{if(!restOpen||meal.phase!=='wait'){r.tray.visible=false;return;}r.want=zFace(RZ,0,1);
-        const tb=TBL().g;f.g.position.set(.3,.76,0);f.g.rotation.y=Math.PI/2;tb.add(f.g);meal.food=f;
-        if(d){if(meal.drk){tb.remove(meal.drk.g);freeObj(meal.drk.g);}d.g.position.set(.24,.76,.24);tb.add(d.g);meal.drk=d;meal.sips=0;}
+        const tb=TBL().g,sd=meal.seat.side;f.g.position.set(sd*.3,.76,0);f.g.rotation.y=sd*Math.PI/2;tb.add(f.g);meal.food=f;
+        if(d){if(meal.drk){tb.remove(meal.drk.g);freeObj(meal.drk.g);}d.g.position.set(sd*.24,.76,sd*.24);tb.add(d.g);meal.drk=d;meal.sips=0;}
         r.tray.visible=false;meal.bites=0;meal.phase=sweet?'eatSweet':'eat';handFork(true);renderRest();tone(660,.08,'triangle',.1);
         rSay(r,rnd(['Enjoy your meal! 😊','Bon appétit! ✨','Buon appetito! 🇮🇹']));
         setTimeout(()=>rosieGo(rosieBack(),()=>{r.want=zFace(RZ,0,1);}),1400);});},900);},700);});}
@@ -9992,7 +10005,9 @@ $('#rcontent').addEventListener('click',e=>{const b=e.target.closest('button');i
 
 // the camera looks at your table from the front, so you see Rosie coming over
 function restCam(dt){if(!restOpen)return;const land=innerWidth>innerHeight*1.25;
-  const want=meal.mode==='rush'?zW(RZ,-1.4,1.9,7.6):zW(RZ,land?.4:-.1,land?2:2.15,land?5.6:6.5),tgt=meal.mode==='rush'?zW(RZ,-4,.6,4.2):zW(RZ,land?2.2:2.25,.85,land?1.2:1.15);
+  // eating: from in front of your table, off to the side you're not on, so you see your face and Rosie coming over
+  const T=TBL(),sd=(meal.seat||RST.seats[0]).side;
+  const want=meal.mode==='rush'?zW(RZ,-1.4,1.9,7.6):zW(RZ,T.lx-sd*(land?2.1:2.6),land?2:2.15,T.lz+(land?3.2:4.1)),tgt=meal.mode==='rush'?zW(RZ,-4,.6,4.2):zW(RZ,T.lx-sd*(land?.3:.25),.85,T.lz-(land?1.2:1.25));
   const a=Math.min(1,dt*4);meal.cam.p.lerp(want,a);meal.cam.t.lerp(tgt,a);camera.position.copy(meal.cam.p);camera.lookAt(meal.cam.t);}
 
 /* ---------- 🛵 the delivery rush ---------- */
@@ -10059,7 +10074,10 @@ drawBoard();
 /* ---------- every frame ---------- */
 anims.push((t,dt)=>{if(!started)return;const p=player.pos;
   const near=curZone===RZ||restOpen||Math.hypot(p.x-RZ.x,p.z-RZ.z)<RZ.r+14;
-  if(near){buildRest();for(const o of RP.all)rStep(o,dt);}
+  if(near){buildRest();for(const o of RP.all)rStep(o,dt);
+    // townspeople walking through never stand in a chair (or on someone sitting in it)
+    for(const f of FRIENDS){if(Math.hypot(f.pos.x-RZ.x,f.pos.z-RZ.z)>RZ.r+1)continue;for(const s of RST.seats){const w=seatSpot(s),dx=f.pos.x-w.x,dz=f.pos.z-w.z,d=Math.hypot(dx,dz);
+      if(d<.7){const k=d>.001?(.7-d)/d:0;if(k){f.pos.x+=dx*k;f.pos.z+=dz*k;}else f.pos.z+=.7;f.g.position.copy(f.pos);if(f.tgt&&Math.hypot(f.tgt.x-w.x,f.tgt.z-w.z)<.7)f.tgt=null;}}}}
   if(restOpen&&meal.mode==='eat'){if(!av.emote||av.emote.id!=='chair'&&av.emote.id!=='cheer')av.play('chair');handFork(meal.phase==='eat'||meal.phase==='eatSweet');biteAnim(dt);}
   rushStep(dt);custStep(dt);
   if(curZone!==restZone){restZone=curZone;if(curZone===RZ&&!closetOpen&&!DL.on)setTimeout(()=>toast('Step on the 🍽️ pad to eat, or the 🛵 pad for a delivery rush!'),1600);}
@@ -10067,8 +10085,8 @@ anims.push((t,dt)=>{if(!started)return;const p=player.pos;
   {const [lx,lz]=RZ.toLocal(p.x,p.z),P=RST.spad,d=Math.hypot(lx-P.lx,lz-P.lz);if(d<P.r&&player.onGround&&!closetOpen){if(!onRSPad){onRSPad=true;openRest('eat');}}else if(d>1.3)onRSPad=false;}
   {const [lx,lz]=RZ.toLocal(p.x,p.z),P=RST.dpad,d=Math.hypot(lx-P.lx,lz-P.lz);if(d<P.r&&player.onGround&&!closetOpen){if(!onRDPad){onRDPad=true;openRest('rush');}}else if(d>1.3)onRDPad=false;}});
 
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{restaurant:{RST,meal,DL,RP,RD,openRest,closeRest,order,takeBite,takeSip,startRush,endRush,
-  state:()=>({open:restOpen,phase:meal.phase,bites:meal.bites,food:meal.food&&meal.food.g.userData.kind,rosie:RP.rosie&&{x:RP.rosie.pos.x,z:RP.rosie.pos.z,tray:RP.rosie.tray.visible,walking:!!(RP.rosie.path&&RP.rosie.path.length)},
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{restaurant:{RST,meal,DL,RP,RD,seatTaken,pickSeat,openRest,closeRest,order,takeBite,takeSip,startRush,endRush,
+  state:()=>({open:restOpen,phase:meal.phase,seat:RST.seats.indexOf(meal.seat),bites:meal.bites,food:meal.food&&meal.food.g.userData.kind,rosie:RP.rosie&&{x:RP.rosie.pos.x,z:RP.rosie.pos.z,tray:RP.rosie.tray.visible,walking:!!(RP.rosie.path&&RP.rosie.path.length)},
     rush:{on:DL.on,i:DL.i,t:DL.t,limit:DL.limit,box:!!(DL.box&&DL.box.parent),orders:DL.orders.map(o=>({id:o.z.id,x:o.p.x,z:o.p.z})),cust:DL.cust&&{x:DL.cust.pos.x,z:DL.cust.pos.z}},best:RD.best||null})}});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
@@ -10572,6 +10590,17 @@ SHOW.push({k:'dbox',
   on(f){const sp=f.a&&f.a.spine;if(!sp)return null;const b=deliveryBox();b.position.set(0,.2,-.25);sp.add(b);return {b,sp};},
   step(f,d,dt,h){if(h&&f.a&&f.a.spine!==h.sp){h.sp.remove(h.b);h.sp=f.a.spine;h.sp.add(h.b);}},
   off(f,h){if(h&&h.sp)h.sp.remove(h.b);}});
+
+// 🍝 sitting at a table in Rosie's Restaurant: friends see you in YOUR chair, sitting down (24l-restaurant.js picks a free one)
+SHOW.push({k:'dine',
+  mine(){return restOpen&&meal.mode==='eat'&&meal.seat?{s:RST.seats.indexOf(meal.seat)}:null;},
+  on(f,d){const s=RST.seats[d.s|0];if(!Number.isInteger(d.s)||!s||s.npc)return null;return {s:d.s};},
+  step(f,d,dt,h){const A=f.a;if(!A||!h)return;let s=RST.seats[h.s];
+    // you both sat down at the same moment in the same chair: on your phone they move to the next free one
+    if(restOpen&&meal.mode==='eat'&&meal.seat===s)s=RST.seats.find(x=>x!==s&&!seatTaken(x,true))||s;
+    A.g.position.copy(seatSpot(s));A.g.rotation.y=zFace(RZ,-s.side,0);
+    if(!A.emote||!['chair','cheer','wave','clap'].includes(A.emote.id))A.play('chair');},
+  off(f){if(f.a&&f.a.emote&&f.a.emote.id==='chair')f.a.emote=null;}});
 
 /* ---------- what online.js calls ---------- */
 // everything about you, for friends
