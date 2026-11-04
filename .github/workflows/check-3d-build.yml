@@ -47,6 +47,8 @@ jobs:
         run: node 3d/tests/adventure.mjs
       - name: The big world past the canal is there and blocked off, open land works, and the map shows it all
         run: node 3d/tests/big-world.mjs
+      - name: The waterpark's bridge, slides, lazy river, surfing and floating playground work
+        run: node 3d/tests/waterpark.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
       - name: The Fast Pass from the shop zips you to every place in town

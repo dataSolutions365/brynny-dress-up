@@ -55,6 +55,18 @@
   (grp 'ghost': escape 10 times, 5 in a row, ride all 4 other sea rides, swim 5000 steps); once he's yours he stops chasing you.
   He looks like a real great white on purpose, not a cartoon; keep it that way.
   `3d/tests/ocean.mjs` (run on every PR) checks you swim all round, the animals keep their own way instead of following you, feeding counts, the rides stay locked until earned and you sit on their back.
+- 💦 Splash Waterpark (`3d/src/26w-waterpark.js`): on the far bank of the canal behind the Runway and the Clothing Store, over a wooden
+  footbridge at 240°. The far-bank land, the bridge and the pools hook into `3d/src/26f-ocean.js`: `BANK_LAND` (where you may walk),
+  `BANK_BRIDGES`, `BANK_POOLS` (how deep the water is there, so swimming just works) and `BANK_GROUND` (what you can stand on, like the
+  floating playground). The layout is in `WPL` in the waterpark's own directions (local +z points back at the island): the 🌀 Twister
+  (an enclosed tube slide, up the tube conveyor) and 💨 Racer (an open body slide, up the spiral stairs) follow the paths in `WPS`
+  (change the points and the slide's shape and the ride both follow), the 🌊 wave pool (`WAVE`: a set of waves every few seconds;
+  take a board from the 🏄 rack and a wave stands you up), the 🛟 lazy river round the lagoon, and the 🎈 floating playground
+  (`WPI`: pads, a slide, a bouncer, a hump and a step tower). `wpStep()` takes over moving you on a slide, a tube or a wave
+  (25-game-loop.js asks it), and poses go through `av.wpPose` (14-avatar.js). Bikes and barn rides can cross the bridge but stay out
+  of the pools. Challenges are in the 💦 Waterpark tab of `3d/challenges.js`; friends see your tube and board through the 'wpark'
+  entry in `SHOW`. `3d/tests/waterpark.mjs` (run on every PR) walks over the bridge, swims under it, rides both slides, floats the
+  lazy river, surfs a wave and plays on the inflatables.
 - 📍 The Places tab of ⭐ Star Challenges (`placesHTML()` in `3d/challenges.js`) is a legend of every place in town with the challenges
   you do there, grouped by each challenge's `go` place (no `go` puts it under "Anywhere in town"). Give a new challenge a `go` and it shows up
   under that place by itself. `3d/tests/challenge-places.mjs` (run on every PR) checks every challenge is listed once.

@@ -1,5 +1,6 @@
 /* ================= MAP ================= */
 const MAPC={arctic:'#e4f4ff',heli:'#c9d3de',studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
+const MAP_DRAW=[];// extra drawing under the place circles: f(ctx,w2s,k)
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -10,6 +11,7 @@ function drawWorld(x,w2s,k,size){
   worldMap(x,w2s,k);// the big world past the canal, blocked off for now (26z-big-world.js)
   canalBank(x,cx,cy,k);// the grassy far bank of the canal (26f-ocean.js)
   advMap(x,w2s,k);// the footbridge over to Lookout Mountain and the ropes course (26h-adventure.js)
+  for(const f of MAP_DRAW)f(x,w2s,k);// places on the far bank draw themselves (26w-waterpark.js)
   x.beginPath();x.arc(cx,cy,(R+2.4)*k,0,Math.PI*2);x.fillStyle='#f1d9a6';x.fill();
   x.beginPath();x.arc(cx,cy,R*k,0,Math.PI*2);x.fillStyle='#8fd36f';x.fill();
   // beach dock
@@ -33,7 +35,8 @@ function drawMini(){const S=miniCv.width,h=S/2,k=S/54;// ~54 world units across
   x.font=`${Math.round(S*.12)}px serif`;x.textAlign='center';x.textBaseline='middle';
   for(const z of ZONES){const [zx,zy]=w2s(z.x,z.z);if(Math.hypot(zx-h,zy-h)<h+10)x.fillText(zEmoji(z),zx,zy);}
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=w2s(o.pos.x,o.pos.z);if(Math.hypot(ox-h,oy-h)>h-6)continue;x.beginPath();x.arc(ox,oy,7,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=2.5;x.strokeStyle='#fff';x.stroke();}
-  if(mapDest){let [dx,dy]=w2s(mapDest.x,mapDest.z);const ddx=dx-h,ddy=dy-h,dd=Math.hypot(ddx,ddy),edge=h-16;
+  // via: a place across a bridge (the 💦 waterpark) points you at the bridge first
+  if(mapDest){const md=(mapDest.via&&mapDest.via())||mapDest;let [dx,dy]=w2s(md.x,md.z);const ddx=dx-h,ddy=dy-h,dd=Math.hypot(ddx,ddy),edge=h-16;
     x.setLineDash([10,9]);x.lineDashOffset=-performance.now()/40;x.lineWidth=5;x.strokeStyle='#ff4d8d';x.beginPath();x.moveTo(h,h);
     const end=Math.min(dd,edge);x.lineTo(h+ddx/dd*end,h+ddy/dd*end);x.stroke();x.setLineDash([]);
     if(dd>edge){drawArrow(x,h+ddx/dd*edge,h+ddy/dd*edge,Math.atan2(ddx,-ddy),15,'#ff4d8d');}
