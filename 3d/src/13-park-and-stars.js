@@ -1,7 +1,7 @@
 /* ---------- park trees ---------- */
 {const trunkM=std('#7a5236',{roughness:.9});const leafs=['#3f8f3a','#4fa645','#2f7a34','#5cb04a'].map(c=>phys(c,{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')}));
  const trees=[];let tries=0;
- while(trees.length<120&&tries++<6000){const a=rand()*Math.PI*2,d=10+Math.sqrt(rand())*(R-11.5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
+ while(trees.length<140&&tries++<6000){const a=rand()*Math.PI*2,d=10+Math.sqrt(rand())*(R-11.5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
    if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+2.5))continue;
    if(ZONES.some(z=>{if(!z.d)return false;const t=(x*z.x+w*z.z)/(z.d*z.d);if(t<(z.p0||0)/z.d||t>1)return false;return Math.hypot(x-z.x*t,w-z.z*t)<3.4;}))continue;
    if(trees.some(t=>Math.hypot(t[0]-x,t[1]-w)<3.2))continue;trees.push([x,w]);}

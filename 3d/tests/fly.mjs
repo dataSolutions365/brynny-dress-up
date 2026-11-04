@@ -82,8 +82,9 @@ try {
   for (let i = 0; i < 24; i++) { s = await waitGame(.5); far = Math.max(far, Math.hypot(s.x, s.z)); if (s.y < s.floor - .2) fail(`She went into something at (${s.x.toFixed(1)}, ${s.z.toFixed(1)}).`); }
   await shot('5-cruising');
   await touch('touchEnd', []);
-  console.log(`flew as far as ${far.toFixed(1)} from the middle (the island is 72 across from the middle)`);
-  if (far > 69) fail('She flew off the island.');
+  const R = await page.evaluate(() => window.__game.R);
+  console.log(`flew as far as ${far.toFixed(1)} from the middle (the island is ${R} across from the middle)`);
+  if (far > R - 3) fail('She flew off the island.');
   if (far < 20) fail('She did not fly anywhere.');
 
   // tap 🛬 Land

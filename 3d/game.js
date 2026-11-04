@@ -254,7 +254,7 @@ function gameStatus(){const s=[],add=f=>{try{const v=f();if(v)s.push(v);}catch(e
   return s.join(' | ');}
 // ---- src/02-island.js ----
 /* ---------- island ---------- */
-const R=72;// island radius (was 44.5; grown so places have room to breathe)
+const R=88;// island radius (was 44.5, then 72; grown so places have room to breathe)
 M(new THREE.CylinderGeometry(R+1.6,R+3.2,3,96),std('#f1d9a6',{map:TEX.sand,roughness:1}),0,-1.5,0,scene,false,true);
 const grass=M(new THREE.CircleGeometry(R,96),groundMat,0,.005,0,scene,false,true);grass.rotation.x=-Math.PI/2;
 const waterGeo=new THREE.PlaneGeometry(640,640,110,110);waterGeo.rotateX(-Math.PI/2);
@@ -273,42 +273,42 @@ for(let i=0;i<10;i++){const g=new THREE.Group();const cm=std('#ffffff',{roughnes
 
 /* ---------- zones ---------- */
 const deg=d=>d*Math.PI/180;
-// Layout: an inner ring of places at d=34, an outer ring at d=57 in the gaps between them, and spots right behind
-// some inner places (d = 34 + 8.5 + their r + an 8 step gap) that get a short path from the place in front (nopath).
-// Spots behind an inner place: 120 (behind Christmas Village) is the Jump Park. 240 and 300 (d about 56) are kept for the clothing store and barber shop.
+// Layout: an inner ring of places at d=42, an outer ring at d=70 in the gaps between them, and spots right behind
+// some inner places (d = 42 + 8.5 + their r + a 13 step gap) that get a short path from the place in front (nopath).
+// Spots behind an inner place: 120 (behind Christmas Village) is the Jump Park. 240 and 300 (d about 69) are kept for the clothing store and barber shop.
 const ZONES=[
   {id:'studio',name:'✨ Sparkle Studio',ang:0,d:0,r:6.5,music:'sparkle-room'},
-  {id:'birthday',name:'🎂 Birthday Party',ang:0,d:34,r:8.5,music:'bday-ukulele'},
-  {id:'halloween',name:'🎃 Halloween Hollow',ang:60,d:34,r:8.5,music:'halloween-waltz'},
-  {id:'christmas',name:'🎄 Christmas Village',ang:120,d:34,r:8.5,music:'winter-days'},
+  {id:'birthday',name:'🎂 Birthday Party',ang:0,d:42,r:8.5,music:'bday-ukulele'},
+  {id:'halloween',name:'🎃 Halloween Hollow',ang:60,d:42,r:8.5,music:'halloween-waltz'},
+  {id:'christmas',name:'🎄 Christmas Village',ang:120,d:42,r:8.5,music:'winter-days'},
   // the beach sits at the shore so its dock reaches out over the water
   {id:'beach',name:'🏖️ Beach Day',ang:180,d:R-10.5,r:10,music:'sea-waves'},
   // the part of the canal right past the Beach, where the dolphins and the whale come by (26f-ocean.js). No path, it's water.
   {id:'bay',name:'🐬 Dolphin Bay',ang:180,d:R+9.3,r:7.5,music:'sea-waves',nopath:true},
-  {id:'runway',name:'💃 Runway',ang:240,d:34,r:8.5,music:'fashion-walk'},
-  {id:'spring',name:'🌷 Spring Garden',ang:300,d:34,r:8.5,music:'spring-birds'},
-  {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:57,r:7,music:'clouds'},
-  {id:'bakery',name:'🧁 Sweet Bakery',ang:330,d:57,r:7,music:'valentine-day'},
-  {id:'agency',name:'⭐ Star Model Agency',ang:270,d:57,r:7.5,music:'fashion-show'},
-  {id:'court',name:'🏀 Basketball Court',ang:90,d:57,r:7.5,music:'stadium'},
-  {id:'batting',name:'⚾ Batting Cage',ang:210,d:57,r:7.5,music:'stadium-cheer'},
+  {id:'runway',name:'💃 Runway',ang:240,d:42,r:8.5,music:'fashion-walk'},
+  {id:'spring',name:'🌷 Spring Garden',ang:300,d:42,r:8.5,music:'spring-birds'},
+  {id:'parlor',name:'🐾 Pet Parlor',ang:30,d:70,r:7,music:'clouds'},
+  {id:'bakery',name:'🧁 Sweet Bakery',ang:330,d:70,r:7,music:'valentine-day'},
+  {id:'agency',name:'⭐ Star Model Agency',ang:270,d:70,r:7.5,music:'fashion-show'},
+  {id:'court',name:'🏀 Basketball Court',ang:90,d:70,r:7.5,music:'stadium'},
+  {id:'batting',name:'⚾ Batting Cage',ang:210,d:70,r:7.5,music:'stadium-cheer'},
   // the barn sits right behind the Birthday Party, so it gets a short dirt path from there (nopath) instead of one from the plaza
-  {id:'barn',name:'🐴 Happy Barn',ang:0,d:56.5,r:6,music:'spring-birds',nopath:true},
-  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:58.5,r:8.5,music:'city-park',nopath:true},
-  {id:'garage',name:'🔧 Car Garage',ang:150,d:57,r:7,music:'fireworks'},
+  {id:'barn',name:'🐴 Happy Barn',ang:0,d:70,r:6,music:'spring-birds',nopath:true},
+  {id:'zoo',name:'🦒 Safari Zoo',ang:60,d:72,r:8.5,music:'city-park',nopath:true},
+  {id:'garage',name:'🔧 Car Garage',ang:150,d:70,r:7,music:'fireworks'},
   // behind the Spring Garden and the Runway, with a short path from the place in front (p0)
-  {id:'barber',name:'💈 Barber Shop',ang:300,d:56.1,r:5.6,music:'city-park',p0:43.2},
-  {id:'store',name:'👔 Clothing Store',ang:240,d:56.5,r:6,music:'fashion-walk',p0:43.2},
+  {id:'barber',name:'💈 Barber Shop',ang:300,d:69,r:5.6,music:'city-park',p0:51.2},
+  {id:'store',name:'👔 Clothing Store',ang:240,d:69.5,r:6,music:'fashion-walk',p0:51.2},
   // the trampoline park behind Christmas Village (12e-place-jump-park.js), with a short path from there
-  {id:'jump',name:'🤸 Jump Park',ang:120,d:57,r:7,music:'stadium-cheer',p0:43.2},
+  {id:'jump',name:'🤸 Jump Park',ang:120,d:70,r:7,music:'stadium-cheer',p0:51.2},
   // in the open grass between the Runway and the Beach path (ramps and tricks: 12f-place-skate-park.js, 24k-skate-park.js)
-  {id:'skate',name:'🛹 Skate Park',ang:195,d:44.5,r:9.5,music:'fireworks'},
+  {id:'skate',name:'🛹 Skate Park',ang:195,d:54.5,r:9.5,music:'fireworks'},
   // in the open grass between the Birthday Party and the Sweet Bakery (12g-place-restaurant.js, 24l-restaurant.js)
-  {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:46,r:7,music:'ballet-recital'},
+  {id:'diner',name:"🍝 Rosie's Restaurant",ang:342,d:56,r:7,music:'ballet-recital'},
   // in the open grass between the Beach path and the Car Garage (12h-place-arctic.js, 24m-arctic.js): snow, ice and polar animals
-  {id:'arctic',name:'❄️ Polar Ice',ang:165,d:45,r:9,music:'winter-days'},
+  {id:'arctic',name:'❄️ Polar Ice',ang:165,d:56,r:9,music:'winter-days'},
   // out on the open grass between the Basketball Court and the Jump Park, near the shore (12h-place-helipad.js, 26h-helicopter.js)
-  {id:'heli',name:'🚁 Helipad',ang:105,d:62,r:6.5,music:'city-park'},
+  {id:'heli',name:'🚁 Helipad',ang:105,d:76,r:6.5,music:'city-park'},
   // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one
   // side and a rock climbing wall up the other, and a treetop ropes course, with zip lines down from both
   {id:'mountain',name:'⛰️ Lookout Mountain',ang:101,d:R+26.5,r:9,music:'spring-birds',nopath:true},
@@ -1931,7 +1931,7 @@ const HPAD={r:4.3,lights:[],sock:null};
 /* ---------- park trees ---------- */
 {const trunkM=std('#7a5236',{roughness:.9});const leafs=['#3f8f3a','#4fa645','#2f7a34','#5cb04a'].map(c=>phys(c,{roughness:.8,sheen:.6,sheenColor:new THREE.Color('#d8ffb0')}));
  const trees=[];let tries=0;
- while(trees.length<120&&tries++<6000){const a=rand()*Math.PI*2,d=10+Math.sqrt(rand())*(R-11.5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
+ while(trees.length<140&&tries++<6000){const a=rand()*Math.PI*2,d=10+Math.sqrt(rand())*(R-11.5);const x=Math.sin(a)*d,w=Math.cos(a)*d;
    if(ZONES.some(z=>Math.hypot(x-z.x,w-z.z)<z.r+2.5))continue;
    if(ZONES.some(z=>{if(!z.d)return false;const t=(x*z.x+w*z.z)/(z.d*z.d);if(t<(z.p0||0)/z.d||t>1)return false;return Math.hypot(x-z.x*t,w-z.z*t)<3.4;}))continue;
    if(trees.some(t=>Math.hypot(t[0]-x,t[1]-w)<3.2))continue;trees.push([x,w]);}
@@ -13439,7 +13439,7 @@ function worldMapTags(x,S,ts){ts=Math.max(1,ts);x.save();x.font=`700 ${Math.roun
 // a tap on the map that isn't on a place: is it on a blocked-off region?
 function worldMapTap(sx,sy){const k=mapK(),S=mapCv.width,wx=(sx-S/2)/k,wz=(sy-S/2)/k,d=Math.hypot(wx,wz);
   if(d<WORLD.in||d>WORLD.out+4||openLand(wx,wz))return false;toast(`🚧 ${zLabel(regionAt(bankAng(wx,wz)))} is blocked off for now. Coming soon!`);return true;}
-Object.assign(window.__game,{WORLD,REGIONS,worldH,groundH,WFENCE,regionAt,BANK_LAND,openLandAt:openLand});
+Object.assign(window.__game,{R,WORLD,REGIONS,worldH,groundH,WFENCE,regionAt,BANK_LAND,openLandAt:openLand});
 // ---- src/27-daddy-powers.js ----
 /* ================= 🦸 SECRET DADDY POWERS (temporary, for the family demo) =================
    Type your name as " Daddy" (with a SPACE in front) on the welcome screen or in Settings. The space is trimmed off, so
