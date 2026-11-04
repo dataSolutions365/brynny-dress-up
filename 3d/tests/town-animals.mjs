@@ -96,8 +96,15 @@ try {
   await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.5);
   let s = await page.evaluate(() => window.__game.roamState());
   if (!s.on) fail('Tapping Start a Round-up should start it.');
-  const bar = await page.evaluate(() => { const b = document.querySelector('#ruBar'); return b.classList.contains('show') ? b.innerText : ''; });
+  const bar = await page.evaluate(() => { const b = document.querySelector('#ruBar'); return b.classList.contains('show') ? b.textContent : ''; });
   console.log('bar:', bar.replace(/\n/g, ' · '));
+  // the animal list is folded away (so it isn't in the way) until you tap the bar
+  const chips = () => page.evaluate(() => { const d = document.querySelector('#ruBar div'); return !!d && getComputedStyle(d).display !== 'none'; });
+  if (await chips()) fail('The list of animals should be folded away at first.');
+  await page.evaluate(() => document.querySelector('#ruBar b').click()); await gameWait(.1);
+  if (!(await chips())) fail('Tapping the bar should show the list of animals.');
+  await page.evaluate(() => document.querySelector('#ruBar b').click()); await gameWait(.1);
+  if (await chips()) fail('Tapping the bar again should fold the list away.');
   if (!/Round-up is on/.test(bar) || !['Waddles', 'Billy', 'Truffle', 'Woolly'].every(n => bar.includes(n))) fail('The bar should say the Round-up is on and list the animals still out.');
   let worst = 0; A = await st(); moved = 0;
   for (let i = 0; i < 10; i++) { await gameWait(1); const B = await st(); B.forEach((c, j) => { worst = Math.max(worst, offStreet(c)); moved += Math.hypot(c.x - A[j].x, c.z - A[j].z); }); A = B; }
@@ -126,6 +133,11 @@ try {
   console.log(`caught Truffle is ${tr.toFixed(1)} behind you`);
   if (tr > 3) fail(`A caught animal should walk along with you (Truffle is ${tr.toFixed(1)} away).`);
   if (SHOTS) { await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + 1.1; G.cam.cy = G.cam.yaw; }); await shot('caught-on-rope'); }
+  // swim out into the canal: Truffle waits on the shore on his rope, he never walks on the water
+  await page.evaluate(() => { const G = window.__game, p = G.player.pos, a = Math.atan2(p.x, p.z); p.set(Math.sin(a) * 77, 0, Math.cos(a) * 77); }); await gameWait(3);
+  const swim = await page.evaluate(() => { const G = window.__game, c = G.ROAM.find(c => c.nm === 'Truffle'); return [Math.hypot(c.pos.x, c.pos.z), G.roamState().rope]; });
+  console.log(`swimming with Truffle on the rope: he is ${swim[0].toFixed(1)} from the middle (island edge 72), rope: ${swim[1]}`);
+  if (swim[0] > 72 || swim[1] !== 'Truffle') fail(`While you swim, a caught animal should wait on the shore, still on its rope (Truffle is ${swim[0].toFixed(1)} out).`);
   await setMe(B0.x * .82, B0.z * .82); await gameWait(.6);
   s = await page.evaluate(() => window.__game.roamState());
   if (s.home !== 1 || s.rope) fail(`Walking Truffle to the barn should bring him home (home ${s.home}, rope ${s.rope}).`);
@@ -136,7 +148,7 @@ try {
   await gameWait(.5);
   s = await page.evaluate(() => window.__game.roamState());
   if (s.modes.Waddles !== 'friend') fail(`A friend's catch should put Waddles on the friend's rope (${s.modes.Waddles}).`);
-  if ((await page.evaluate(() => document.querySelector('#ruBar').innerText)).indexOf('Ava') < 0) fail('The bar should show the friend.');
+  if ((await page.evaluate(() => document.querySelector('#ruBar').textContent)).indexOf('Ava') < 0) fail('The bar should show the friend.');
   await page.evaluate(() => { const G = window.__game; G.ruFromNet('f1', 'Ava', { t: 'roam', a: 'home', r: G.RU.r, nm: 'Waddles' }); });
   const coins0 = await page.evaluate(() => window.__game.SAVE.coins || 0);
   for (const nm of ['Billy', 'Woolly']) { await goTo(nm); await gameWait(.3); await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.2);
@@ -160,7 +172,7 @@ try {
   if (!zt.includes('Safari Round-up')) fail(`Near the Safari Zoo there should be a Start a Safari Round-up button (it says "${zt}").`);
   await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.5);
   s = await page.evaluate(() => window.__game.roamState());
-  const zbar = await page.evaluate(() => document.querySelector('#ruBar').innerText);
+  const zbar = await page.evaluate(() => document.querySelector('#ruBar').textContent);
   console.log('safari:', s.grp, JSON.stringify(s.modes), '| bar:', zbar.replace(/\n/g, ' · '));
   if (!s.on || s.grp !== 'zoo') fail('Tapping it should start a Safari Round-up.');
   const SAF = ['Ziggy', 'Kito', 'Twiga', 'Tembo'];
@@ -185,7 +197,7 @@ try {
   await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.5);
   s = await page.evaluate(() => window.__game.roamState());
   const N = s.n, polar = await page.evaluate(() => window.__game.POLAR_LIST.map(o => o.nm));
-  const abar = await page.evaluate(() => document.querySelector('#ruBar').innerText);
+  const abar = await page.evaluate(() => document.querySelector('#ruBar').textContent);
   console.log(`all-animal: ${N} animals (${polar.length ? 'with the polar ones: ' + polar.join(', ') : 'no Polar Ice in town yet'}) | bar: ${abar.replace(/\n/g, ' · ')}`);
   if (!s.on || s.grp !== 'all') fail('Tapping it should start the All-Animal Round-up.');
   if (N < 8 || Object.values(s.modes).some(m => m !== 'loose')) fail(`Every animal (barn and safari${polar.length ? ' and polar' : ''}) should be loose: ${JSON.stringify(s.modes)}`);

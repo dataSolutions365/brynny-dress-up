@@ -164,7 +164,10 @@ addEventListener('load',()=>{if(window.__net)window.__net.on((id,name,d)=>{if(d&
 let roamNear=null,roamBtnKey='',roamT=0;
 const nearHome=(g,P,extra)=>{const z=RU_ZONE[g];return Math.hypot(P.x-z.x,P.z-z.z)<(z.fence||z.r)+extra;};
 const ruFriend=id=>{const n=window.__net;return (n&&n.friends&&n.friends().get(id))||(RU.fake&&RU.fake[id])||null;};// fake: friends made up by the tests
-function roamFollow(c,P,face,dt,k=0){const back=face+Math.PI+.6-k*1.2,r=1.2+c.a.rad+k*.45,tx=P.x+Math.sin(back)*r,tz=P.z+Math.cos(back)*r,dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
+function roamFollow(c,P,face,dt,k=0){const back=face+Math.PI+.6-k*1.2,r=1.2+c.a.rad+k*.45;let tx=P.x+Math.sin(back)*r,tz=P.z+Math.cos(back)*r;
+  // it won't go in the water: while you swim in the canal it waits for you on the shore, still on its rope
+  const td=Math.hypot(tx,tz),shore=R-.6;if(td>shore){tx*=shore/td;tz*=shore/td;}
+  const dx=tx-c.pos.x,dz=tz-c.pos.z,d=Math.hypot(dx,dz);
   if(d>14){c.pos.set(tx,0,tz);return 0;}if(d>.2){const sp=Math.min(7,1+d*3),st=Math.min(d,sp*dt);c.pos.x+=dx/d*st;c.pos.z+=dz/d*st;c.face=angDamp(c.face,Math.atan2(dx,dz),Math.min(1,dt*6));return sp;}
   c.face=angDamp(c.face,face,Math.min(1,dt*3));return 0;}
 function roamStep(dt){if(!started)return;roamT+=dt;const P=player.pos,slot={};
@@ -234,12 +237,13 @@ const ropeMat=std('#c8a46a',{roughness:.9}),ROPES=ROAM.map(()=>{const m=M(cyl(.0
 body.dressing #roamBtn,body.talking #roamBtn,body.shopping #roamBtn,body.sp-on #roamBtn,body.dressing #roamCatch,body.talking #roamCatch,body.shopping #roamCatch,body.sp-on #roamCatch,
 body.dressing #ruBar,body.shopping #ruBar,body.sp-on #ruBar{display:none!important}
 #ruBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 156px);z-index:8;display:none;flex-direction:column;align-items:center;gap:5px;width:max-content;max-width:calc(100vw - 32px);pointer-events:none}
+#ruBar b{pointer-events:auto;cursor:pointer}#ruBar:not(.open) div{display:none!important}
 #ruBar.show{display:flex}
 #ruBar b{background:#e8336d;color:#fff;border-radius:999px;padding:4px 12px;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
 #ruBar div{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
 #ruBar span{background:rgba(255,255,255,.92);color:#3b2357;border-radius:999px;padding:4px 10px;font-weight:700;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
 #ruBar span.home{opacity:.6}#ruBar span.rope{background:#ffe2b8}#ruBar span.me{background:#ffd23f}
-#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}
+#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}#ruBar i{font-style:normal;opacity:.85;margin-left:2px}
 #ruBar.all span{font-size:11px;padding:3px 7px}#ruBar.all b{background:linear-gradient(90deg,#ff6a3d,#e8336d)}
 @media (max-height:520px){#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 185px)}#roamCatch{bottom:calc(env(safe-area-inset-bottom) + 240px)}#ruBar{top:calc(env(safe-area-inset-top) + 52px)}}`;
   document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<button class="hud" id="roamBtn"></button><button class="hud" id="roamCatch"></button><div id="ruBar"></div>');}
@@ -248,14 +252,17 @@ function ruBar(){const el=$('#ruBar');if(!RU.on&&!RU.endT){el.classList.remove('
   const me=ruMe(),nm=id=>id===me?'You':ruEsc(RU.names[id]||'Friend'),src=RU.on?RU:RU.last;
   const set=ruSet(),out=set.filter(c=>!RU.home[c.nm]).length;
   const all=RU.grp==='all',what=all?'All-Animal Round-up':RU.grp==='zoo'?'Safari Round-up':'Round-up';el.classList.toggle('all',all);
-  let h=RU.on?(all?`<b>🌪️ ${what}! ${out} of ${set.length} still out · ⏱ ${mmss(roamT-RU.t0)}</b>`:`<b>🚨 ${what} is on! ${out} of ${set.length} still out</b>`)
-    :`<b>🏁 ${what} done!${all&&RU.last?` ⏱ ${mmss(RU.last.t)}`:''}</b>`;
+  const tg=`<i>${ruOpen?'▴':'▾'}</i>`;
+  let h=RU.on?(all?`<b>🌪️ ${what}! ${out} of ${set.length} still out · ⏱ ${mmss(roamT-RU.t0)} ${tg}</b>`:`<b>🚨 ${what} is on! ${out} of ${set.length} still out ${tg}</b>`)
+    :`<b>🏁 ${what} done!${all&&RU.last?` ⏱ ${mmss(RU.last.t)}`:''} ${tg}</b>`;
   h+='<div>'+set.map(c=>{const hm=RU.home[c.nm];if(hm)return all?'': `<span class="home">🏠 ${c.nm}<small>${nm(hm)}</small></span>`;
     if(c.mode==='rope'||c.mode==='friend')return `<span class="rope">🪢 ${c.e} ${c.nm}<small>${nm(c.owner)}</small></span>`;
     return `<span>${c.e} ${c.nm}</span>`;}).join('')+'</div>';
   const ids=Object.keys(src.names||{});
   if(ids.length>1)h+='<div>'+ids.sort((a,b)=>(src.sc[b]||0)-(src.sc[a]||0)).map(id=>`<span class="${id===me?'me':''}">${nm(id)} <small>🏠 ${src.sc[id]||0}</small></span>`).join('')+'</div>';
-  el.innerHTML=h;el.classList.add('show');}
+  el.innerHTML=h;el.classList.add('show');el.classList.toggle('open',ruOpen);}
+// the list of animals stays folded away so it isn't in the way: tap the bar to open or close it
+let ruOpen=false;$('#ruBar').addEventListener('click',e=>{if(!e.target.closest('b'))return;ruOpen=!ruOpen;sfx('pop');ruBar();});
 function roamButton(){const P=player.pos;let best=null,bd=ROAM_REACH;
   if(!closetOpen&&!(typeof SW!=='undefined'&&SW.k>.3))for(const c of ROAM){if(c.mode==='friend'||c.mode==='zoo')continue;const d=Math.hypot(P.x-c.pos.x,P.z-c.pos.z);if(d<bd){bd=d;best=c;}}
   roamNear=best;const ropes=myRopes(),rope=ropes[ropes.length-1],

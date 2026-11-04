@@ -7,7 +7,9 @@ const ACTIONS=[['wave','👋','Wave'],['dance','💃','Dance'],['twirl','🌀','
 // Avatar.play swaps in the guy animation (GUY_MOVES in 14d-dances.js).
 const GUY_ACTIONS=[['wave','👋','Wave'],['dance','🕺','Dance'],['twirl','🌀','Spin'],['kiss','👉','Pew pew'],['clap','👏','Clap'],['cheer','🙌','Cheer'],['flip','🤸','Flip'],['sit','🧘‍♂️','Sit'],['pose','😎','Cool pose'],['bow','🙇‍♂️','Bow'],['flex','💪','Flex'],['magic','🪄','Magic'],['jumpjack','⭐','Star jump']];
 let actPage=0;const PER=4;
-const allActs=()=>ballActs().concat(skateActs()).concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
+// ACT_HOOKS: modules outside game.js (like christmas.js) add their own buttons: {acts:()=>[[id,emoji,label]], run:id=>true if it was theirs}
+const ACT_HOOKS=[];const hookActs=()=>ACT_HOOKS.flatMap(h=>{try{return h.acts()||[];}catch(e){return [];}});
+const allActs=()=>hookActs().concat(ballActs()).concat(skateActs()).concat(rideActs(),isGuy(SAVE.look)?GUY_ACTIONS:ACTIONS).concat(SHOP.filter(s=>s.tab==='moves'&&owns(s.k)).map(s=>[s.k.slice(5),s.e,s.lab]));
 function renderActions(){const el=$('#actions'),A=allActs();const pages=Math.ceil(A.length/PER);if(actPage>=pages)actPage=0;const list=A.slice(actPage*PER,actPage*PER+PER);
   const R=112,cx=66,cy=72,pos=(deg,half)=>{const a=deg*Math.PI/180;return `right:calc(env(safe-area-inset-right) + ${(cx-Math.cos(a)*R-half).toFixed(0)}px);bottom:calc(env(safe-area-inset-bottom) + ${(cy+Math.sin(a)*R-half).toFixed(0)}px)`;};
   el.innerHTML=list.map((a,i)=>`<button class="act pop" data-act="${a[0]}" style="${pos([165,135,105,75][i],27)}">${a[1]}<span>${a[2]}</span></button>`).join('')+
@@ -18,6 +20,7 @@ const heartTex={};function floaties(pos,emoji,n=6){if(!heartTex[emoji])heartTex[
     const f=(t,dt)=>{life-=dt;s.position.addScaledVector(v,dt);s.material.opacity=Math.min(1,life);s.scale.setScalar(.2+(1.6-life)*.06);if(life<=0){scene.remove(s);s.material.dispose();anims.splice(anims.indexOf(f),1);}};anims.push(f);}}
 function headPos(){return av.head.getWorldPosition(new THREE.Vector3());}
 function doAction(id,picked){if(closetOpen||!started)return;const P=player.pos;
+  for(const h of ACT_HOOKS)if(h.run(id))return;
   if(id==='kick'){kickBall();return;}
   if(id==='skate'){toggleSkate();return;}
   if(id==='bike'){toggleBike();return;}

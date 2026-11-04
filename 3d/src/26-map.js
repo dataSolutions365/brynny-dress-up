@@ -1,5 +1,5 @@
 /* ================= MAP ================= */
-const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8'};
+const MAPC={studio:'#ffd6ea',birthday:'#ffb3c7',halloween:'#ff9a3c',christmas:'#e9f4ff',beach:'#ffe39a',runway:'#c9b6ff',spring:'#b8f0a8',parlor:'#ffd8b0',bakery:'#ffc4dd',agency:'#ffe066',court:'#ffb070',batting:'#a8e0a0',barn:'#f2b38a',zoo:'#f5d98a',garage:'#cfe0ff',barber:'#bcd7ff',store:'#d7ccb8',jump:'#c9b6ff',skate:'#c9ccd1',diner:'#f2c9a8',mountain:'#c8bfb2',ropes:'#9ed39a'};
 const zEmoji=z=>z.name.split(' ')[0],zLabel=z=>z.name.replace(/^\S+\s/,'');
 let mapDest=null,mapOthers=null;
 const miniCv=$('#miniCv'),miniX=miniCv.getContext('2d'),mapCv=$('#mapCv'),mapX=mapCv.getContext('2d');
@@ -8,6 +8,7 @@ function drawWorld(x,w2s,k,size){
   x.fillStyle='#2ab0d4';x.fillRect(0,0,size,size);
   const [cx,cy]=w2s(0,0);
   canalBank(x,cx,cy,k);// the grassy far bank of the canal (26f-ocean.js)
+  advMap(x,w2s,k);// the footbridge over to Lookout Mountain and the ropes course (26h-adventure.js)
   x.beginPath();x.arc(cx,cy,(R+2.4)*k,0,Math.PI*2);x.fillStyle='#f1d9a6';x.fill();
   x.beginPath();x.arc(cx,cy,R*k,0,Math.PI*2);x.fillStyle='#8fd36f';x.fill();
   // beach dock
@@ -41,7 +42,7 @@ function drawMini(){const S=miniCv.width,h=S/2,k=S/54;// ~54 world units across
   drawArrow(x,h,h,pa,15,'#8e6cff');x.restore();}
 // full map is fixed (start view: the plaza is "up"), so places never move around.
 // It can zoom in (➕ / pinch) and be dragged around, so names stay big enough to read on a phone.
-const MAPW=R+19,MAPZ=[1,1.6,2.4];
+const MAPW=R+36,MAPZ=[1,1.6,2.4];
 const mv={zi:0,z:1,ox:0,oy:0};// zoom step, zoom, and how far the view is dragged (canvas px)
 const mapK=()=>mapCv.width/(MAPW*2)*mv.z;
 // world (x,z) -> canvas px; lay=true gives the un-dragged spot used for laying out tags
@@ -147,7 +148,7 @@ let miniT=0;
 onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('tada');banner(`🎉 You made it!`);burst(player.pos.clone().add(new THREE.Vector3(0,1.5,0)),'#ff8fc8',40,3);setDest(null);}
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={freeObj,gpuNote,gameStatus,AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
-  sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
+  sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,ACT_HOOKS,renderActions,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
 Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
 // 🚲 for the bike test (3d/tests/bike.mjs)
 Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
