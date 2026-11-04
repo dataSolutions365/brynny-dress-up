@@ -13325,7 +13325,10 @@ const hasFastPass=()=>owns('power:fastpass');
 // building or standing on one of its glowing pads (that would open the barn, the bakery and so on by itself)
 function fpSpot(z){if(!z.d)return [0,z.r-1.2];// the Sparkle Studio is in the middle: stand south of the closet pad
   if(z.id==='bay')return [z.x,z.z];// right in the water with the dolphins
-  const f=z.r-.4,ux=-z.x/z.d,uz=-z.z/z.d;return [z.x+ux*f,z.z+uz*f];}
+  const ux=-z.x/z.d,uz=-z.z/z.d;
+  // places across the canal can reach out over the water: step in until you're on dry land
+  for(let f=z.r-.4;f>0;f-=1){const x=z.x+ux*f,w=z.z+uz*f;if(seaDepth(x,w,0)<.3)return [x,w];}
+  return [z.x,z.z];}
 // why the pass can't be used right now (or '' when it can)
 function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 Ride it there!';
   if(RU.on)return 'No fast pass during a Round-up! 🚨 Catch them the fun way!';
@@ -13333,6 +13336,7 @@ function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 
   if(HELI.on||HELI.ride)return 'Land the helicopter and hop out first! 🚁';
   if(PE.on)return 'No fast pass during a Polar escape! ❄️ Catch them the fun way!';
   if(ICF.on)return 'Reel in your line first! 🎣';
+  if(WP.ride)return 'Finish your water ride first! 💦';
   if(handsBusy()||ct.on)return 'Finish what you are doing first ✨';return '';}
 function fastTravel(z){const why=fpBlocked();if(why){toast(why);return false;}
   const p=player.pos;burst(p.clone().add(new THREE.Vector3(0,1,0)),'#ffd23f',40,3);sfx('star');
