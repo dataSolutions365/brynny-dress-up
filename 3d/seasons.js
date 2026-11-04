@@ -300,6 +300,11 @@ const HOL = forced ? (HOLIDAYS.find(h => h.id === forced) || null) : holidayFor(
     for (const o of hz.spooky.obs) { const i = G.obs.indexOf(o); if (i >= 0) G.obs.splice(i, 1); }
     if (HOL && HOL.id === 'christmas') hz.music = 'winter-days';
   } }
+// 🎄 at Christmas, walking around town (the park between the places) plays real Christmas songs one after another.
+// The files are in audio/ (where each one comes from and its license: audio/CREDITS.md).
+// Put the file names (without .mp3) in XMAS_TOWN_SONGS. While it's empty the park keeps its usual song.
+const XMAS_TOWN_SONGS = [];
+if (HOL && HOL.id === 'christmas' && G.PARK && G.PLAYLISTS && XMAS_TOWN_SONGS.length) { G.PLAYLISTS['xmas-town'] = XMAS_TOWN_SONGS; G.PARK.music = 'xmas-town'; }
 window.__season = { now: () => HOL, on: id => !!HOL && HOL.id === id, list: HOLIDAYS, holidayFor, night: () => nightK };
 
 // every holiday's things go in the catalog and the shop (the shop and closet only show them during their holiday, or once you own them)

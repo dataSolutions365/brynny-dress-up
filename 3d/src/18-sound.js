@@ -11,9 +11,12 @@ const songDB=(()=>{let p;const open=()=>p||(p=new Promise((ok,no)=>{if(!window.i
   const tx=(mode,fn)=>open().then(db=>new Promise((ok,no)=>{const t=db.transaction('songs',mode);const st=t.objectStore('songs');const r=fn(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=t.onabort=()=>no(t.error);}));
   return{all:()=>tx('readonly',st=>st.getAll()),put:o=>tx('readwrite',st=>st.put(o)),del:id=>tx('readwrite',st=>st.delete(id))};})();
 const playingMine=()=>myMode&&mySongs.length>0;
-function placeSrc(t){music.loop=true;music.src=`../audio/${t}.mp3`;music.play().catch(()=>{});}
+// 🎶 a place's music can be a list of songs instead of one: PLAYLISTS[name] plays them one after another (starting at a random one)
+const PLAYLISTS={},plAt={};
+function trackFile(t){const L=PLAYLISTS[t];if(!L||!L.length)return t;plAt[t]=plAt[t]==null?Math.floor(Math.random()*L.length):(plAt[t]+1)%L.length;return L[plAt[t]];}
+function placeSrc(t){const L=PLAYLISTS[t];music.loop=!(L&&L.length>1);music.src=`../audio/${trackFile(t)}.mp3`;music.play().catch(()=>{});}
 function playMine(i){if(!mySongs.length)return;myIdx=((i%mySongs.length)+mySongs.length)%mySongs.length;if(myUrl)URL.revokeObjectURL(myUrl);myUrl=URL.createObjectURL(mySongs[myIdx].blob);music.loop=mySongs.length===1;music.src=myUrl;music.volume=.45;if(musicOn)music.play().catch(()=>{});renderMusicPanel();}
-music.addEventListener('ended',()=>{if(playingMine())playMine(myIdx+1);});
+music.addEventListener('ended',()=>{if(playingMine())playMine(myIdx+1);else if(musicOn&&PLAYLISTS[curTrack])placeSrc(curTrack);});
 function setTrack(t){if(t===curTrack)return;curTrack=t;if(!musicOn||playingMine())return;const v0=music.volume;let k=0;const fade=setInterval(()=>{k++;music.volume=Math.max(0,v0*(1-k/8));if(k>=8){clearInterval(fade);if(playingMine())return;music.volume=.45;placeSrc(t);}},40);}
 function startMusic(){if(!musicOn)return;if(playingMine())playMine(myIdx<0?0:myIdx);else placeSrc(curTrack||'sparkle-room');}
 function renderMusicBtn(){$('#musicBtn').classList.toggle('off',!musicOn);}
