@@ -81,6 +81,14 @@
   `mtH()`, used for both the rock you see and the ground you walk on; `advBlock()` stops walking up the steep rock (only the `TRAIL` and the climbing
   `WALL` go up) and stops you stepping off the ropes course (the harness). `advStep()` moves you on the ladder, the wall and the `ZIPS`; friends see
   it through the 'adv' entry in `SHOW`. `3d/tests/adventure.mjs` (run on every PR) does the whole thing.
+- 🗺️ The big world (`3d/src/26z-big-world.js`): past the canal's far bank the land keeps going out to `WORLD.out`, with mountains all round
+  the edge, split into `REGIONS` (🏔️ Snowy Peaks, 🌻 Sunflower Hills, 🌲 Whispering Woods, 🏞️ Crystal Lake, 🏜️ Sunset Canyon, 🍎 Apple Orchard).
+  It's all 🚧 blocked off (a fence with "Coming soon" signs; you can't walk, swim or fly in) until a place opens there. To open a new area,
+  build the place in its own file (named to sort before `26z`), push its `BANK_LAND` sector (add `own:1` if it draws its own ground) and a
+  footbridge into `BANK_BRIDGES`: the hills there flatten, the trees step aside and the fence goes round its edge by itself. Write positions
+  relative to `R`, `BANK` and `WORLD`, never raw numbers, so the world can keep growing. The ground is one shape (`WG`, `groundH(x,z)` reads it)
+  and every tree/rock kind is one instanced shape, to stay cheap on phones. The big map opens on the island (zoom step 1); ➖ zooms out to the
+  whole world with each region striped and 🔒 named. `3d/tests/big-world.mjs` (run on every PR) checks it.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.
