@@ -55,6 +55,13 @@ const walk = (page, dx, dz, steps = 40) => page.evaluate(async ([dx, dz, steps])
 try {
   /* ---------- Christmas ---------- */
   const { page, errors, ctx, shot } = await open('?holiday=christmas');
+  // 🎶 walking around town plays the Christmas songs, and every song file is there
+  const mu = await page.evaluate(async () => { const G = window.__game, L = (G.PLAYLISTS || {})['xmas-town'] || [];
+    const ok = await Promise.all(L.map(n => fetch(`../audio/${n}.mp3`, { method: 'HEAD' }).then(r => r.ok, () => false)));
+    return { music: G.PARK && G.PARK.music, songs: L.length, missing: L.filter((n, i) => !ok[i]) }; });
+  if (mu.music !== 'xmas-town' || mu.songs < 2) fail(`town should play the Christmas songs, got ${JSON.stringify(mu)}`);
+  if (mu.missing.length) fail(`Christmas song files missing: ${mu.missing.join(', ')}`);
+  console.log(`🎶 town plays ${mu.songs} Christmas songs`);
   const s = await page.evaluate(() => { const G = window.__game, X = window.__xmas, hz = G.Z.halloween;
     return { on: !!X, tree: X && X.tree, pad: { x: G.Z.studio.pad.x, z: G.Z.studio.pad.z }, treeOb: G.obs.some(o => Math.hypot(o.x, o.z) < .1 && o.r > 1.5),
       bulbs: X && X.bulbs(), building: window.__xmasBuildingBulbs || 0, spooky: hz.spooky.parts.filter(p => p.visible).length, spookyObs: hz.spooky.obs.filter(o => G.obs.includes(o)).length,

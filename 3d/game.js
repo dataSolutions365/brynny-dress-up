@@ -4627,9 +4627,12 @@ const songDB=(()=>{let p;const open=()=>p||(p=new Promise((ok,no)=>{if(!window.i
   const tx=(mode,fn)=>open().then(db=>new Promise((ok,no)=>{const t=db.transaction('songs',mode);const st=t.objectStore('songs');const r=fn(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=t.onabort=()=>no(t.error);}));
   return{all:()=>tx('readonly',st=>st.getAll()),put:o=>tx('readwrite',st=>st.put(o)),del:id=>tx('readwrite',st=>st.delete(id))};})();
 const playingMine=()=>myMode&&mySongs.length>0;
-function placeSrc(t){music.loop=true;music.src=`../audio/${t}.mp3`;music.play().catch(()=>{});}
+// 🎶 a place's music can be a list of songs instead of one: PLAYLISTS[name] plays them one after another (starting at a random one)
+const PLAYLISTS={},plAt={};
+function trackFile(t){const L=PLAYLISTS[t];if(!L||!L.length)return t;plAt[t]=plAt[t]==null?Math.floor(Math.random()*L.length):(plAt[t]+1)%L.length;return L[plAt[t]];}
+function placeSrc(t){const L=PLAYLISTS[t];music.loop=!(L&&L.length>1);music.src=`../audio/${trackFile(t)}.mp3`;music.play().catch(()=>{});}
 function playMine(i){if(!mySongs.length)return;myIdx=((i%mySongs.length)+mySongs.length)%mySongs.length;if(myUrl)URL.revokeObjectURL(myUrl);myUrl=URL.createObjectURL(mySongs[myIdx].blob);music.loop=mySongs.length===1;music.src=myUrl;music.volume=.45;if(musicOn)music.play().catch(()=>{});renderMusicPanel();}
-music.addEventListener('ended',()=>{if(playingMine())playMine(myIdx+1);});
+music.addEventListener('ended',()=>{if(playingMine())playMine(myIdx+1);else if(musicOn&&PLAYLISTS[curTrack])placeSrc(curTrack);});
 function setTrack(t){if(t===curTrack)return;curTrack=t;if(!musicOn||playingMine())return;const v0=music.volume;let k=0;const fade=setInterval(()=>{k++;music.volume=Math.max(0,v0*(1-k/8));if(k>=8){clearInterval(fade);if(playingMine())return;music.volume=.45;placeSrc(t);}},40);}
 function startMusic(){if(!musicOn)return;if(playingMine())playMine(myIdx<0?0:myIdx);else placeSrc(curTrack||'sparkle-room');}
 function renderMusicBtn(){$('#musicBtn').classList.toggle('off',!musicOn);}
@@ -11222,7 +11225,7 @@ onTick.push(dt=>{if(mapDest&&curZone===mapDest){did('arrive',mapDest.id);sfx('ta
   if((miniT+=dt)>1/30){miniT=0;drawMini();}});
 window.__game={freeObj,gpuNote,gameStatus,AG,ct,openGlam,closeGlam,openContest,endContest,ag,setDest,mapDest:()=>mapDest,openMap,closeMap,setMapOthers:m=>{mapOthers=m;},FRIENDS,openTalk,closeTalk,townSave,player,cam,camera,openCloset,closeCloset,openParlor,closeParlor,tryParlor,openBakery,closeBakery,bakery:()=>bk,petCare,SAVE,av:()=>av,ZONES,STARS,joy,keys,PETS,doAction,setZoom:z=>{setZoom(z);renderCloset();},THREE,scene,Avatar,onTick,toast,banner,burst,friendBubble,angDamp,
   sun,hemi,skyMat,sky,renderer,FOG,LAMPS,lampMat,CLOUD_MATS,CAT,DRESSES,TOPS,HATS,EXTRAS,SHOP,Z,deg,M,std,phys,glow,sph,cyl,box,canvasTex,labelTex,sprite,floaties,sfx,tone,groundAt,obs,starGeo,earn,addHeart,tsay,talkF:()=>talkF,TALK_EXTRA,ACT_HOOKS,renderActions,persist,rebuildPlayer,refreshOpen,CT_THEMES,closetOpen:()=>closetOpen,started:()=>started};
-Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave});
+Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,getMount,fly:()=>FLY,flyLand,flyFloor,ride:()=>barnRide,openZoo,closeZoo,farmPic,barn:()=>BS,farm:()=>FA,zoo:()=>ZA,openBraid,glamCheck,zone:()=>curZone,sfx,busy:()=>closetOpen||!started||mapOpen,started:()=>started,myPet,townSave,PARK,PLAYLISTS});
 // 🚲 for the bike test (3d/tests/bike.mjs)
 Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
 // 🛹 for the skate park test (3d/tests/skate-park.mjs)
