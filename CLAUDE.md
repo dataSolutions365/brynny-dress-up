@@ -113,6 +113,9 @@
   (`did('roundup', 0)`, which also counts as a win for the 🏆 rides). Challenges are in the 🗺️ Explore tab of `3d/challenges.js`.
   🦁 A Safari Round-up starts at the Safari Zoo the same way, with the safari runaways in `SAFARI_LIST` (hidden copies until it starts,
   walked back to the zoo). Only one Round-up runs at a time (`RU.grp`).
+  🌪️ The All-Animal Round-up (`RU.grp` 'all') starts by the Sparkle Studio: every runaway (barn, safari, and the polar ones in `POLAR_LIST`
+  once Polar Ice is in town) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
+  close and then stops for a breather; you can hold 3 on ropes (`ropeMax`) and each goes to its own home.
   Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - ❄️ Polar Ice (`arctic` zone): the place is `3d/src/12h-place-arctic.js` (`ICE` has where the rink, lake and its fishing holes, and the igloo spot are,
   and `onRink()`), the animals are `3d/src/24c9g-arctic-animals.js` (polar bear, walrus, penguin and chick, arctic fox and wolf, snowy owl, all built
