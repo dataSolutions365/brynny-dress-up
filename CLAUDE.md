@@ -71,7 +71,8 @@
   (`makeFood(kind)` gives `{g, bits}`; bits disappear one by one as you eat) are in `3d/src/12g-place-restaurant.js` (`RST`).
   `3d/src/24l-restaurant.js` does sitting down to eat (Rosie walks the food over from the kitchen pass on her tray, `did('eat', food)`)
   and the 🛵 delivery rush (3 customers at places around town, a time limit, the food box on your back; `did('deliver', 0)` is a win
-  and counts toward the 🏆 earned rides). Add a food by adding it to `FOOD_MAIN`/`FOOD_SWEET` and a builder in `FOOD_BUILD`
+  and counts toward the 🏆 earned rides). Everyone who sits down takes the first free chair in `RST.seats` (`pickSeat()`), friends online
+  show sitting in theirs through the `dine` entry in `SHOW`, and townspeople get nudged out of the chairs. Add a food by adding it to `FOOD_MAIN`/`FOOD_SWEET` and a builder in `FOOD_BUILD`
   (and its id to `FOOD_MAINS`/`FOOD_SWEETS` in `3d/challenges.js`). `3d/tests/restaurant.mjs` (run on every PR) eats a meal and wins a rush.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
