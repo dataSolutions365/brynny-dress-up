@@ -56,8 +56,11 @@ const ZONES=[
   {id:'heli',name:'🚁 Helipad',ang:105,d:62,r:6.5,music:'city-park'},
   // across the canal on the far bank, over the wooden footbridge at 114 (26h-adventure.js): a mountain with a hiking trail up one
   // side and a rock climbing wall up the other, and a treetop ropes course, with zip lines down from both
-  {id:'mountain',name:'⛰️ Lookout Mountain',ang:101,d:R+26.5,r:9,music:'spring-birds',nopath:true},
-  {id:'ropes',name:'🌲 Treetop Adventure',ang:127,d:R+26,r:9,music:'city-park',nopath:true},
+  {id:'mountain',name:'⛰️ Lookout Mountain',ang:101,d:R+26.5,r:9,music:'spring-birds',nopath:true,far:true},
+  {id:'ropes',name:'🌲 Treetop Adventure',ang:127,d:R+26,r:9,music:'city-park',nopath:true,far:true},
+  // across the canal on the far bank, reached by a footbridge from behind the Runway (26w-waterpark.js). far: townspeople don't wander
+  // over there; its own inside() test (the whole waterpark, not just a circle) says when you're in it
+  {id:'water',name:'💦 Splash Waterpark',ang:240,d:R+32,r:22,music:'pool-splash',nopath:true,far:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
