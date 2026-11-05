@@ -63,6 +63,8 @@ const ZONES=[
   {id:'water',name:'💦 Splash Waterpark',ang:240,d:R+32,r:22,music:'pool-splash',nopath:true,far:true},
   // past the canal to the north-east, over its own footbridge at 70 (26i-sky-sports.js): the runway, the jump plane, the hangar and the landing target
   {id:'airfield',name:'✈️ Sunny Skies Airfield',ang:64,d:R+61,r:15,music:'city-park',nopath:true,far:true},
+  // 🏟️ Sports Park, past the canal across from the Batting Cage, over its own footbridge at 202 (26j-wiffle.js): a backyard wiffle ball field
+  {id:'wiffle',name:'⚾ Wiffle Ball Field',ang:206,d:R+33,r:15,music:'stadium-cheer',nopath:true,far:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;

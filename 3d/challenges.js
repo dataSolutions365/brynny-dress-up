@@ -254,6 +254,14 @@ const ALL_LIST = [
   { id: 'wp_playSlide', tab: 'water', e: '🎈', t: 'Slide down the big inflatable slide in the lagoon', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'slide' } },
   { id: 'wp_bounce', tab: 'water', e: '🤸', t: 'Bounce off the yellow bouncer into the water', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'bounce' } },
   { id: 'wp_jump', tab: 'water', e: '💦', t: 'Jump off the top of the step tower', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'jump' } },
+  // ⚾ the Wiffle Ball Field in the 🏟️ Sports Park (3d/src/26j-wiffle.js)
+  { id: 'wf_play', tab: 'sports', e: '⚾', t: 'Play a wiffle ball game at the Sports Park', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'game' } },
+  { id: 'wf_hit', tab: 'sports', e: '🏏', t: 'Get a hit in wiffle ball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => ['1B', '2B', '3B', 'HR'].includes(a) } },
+  { id: 'wf_xbh', tab: 'sports', e: '🏃', t: 'Hit a double or a triple in wiffle ball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === '2B' || a === '3B' } },
+  { id: 'wf_hr', tab: 'sports', e: '💥', t: 'Hit a wiffle ball over the fence', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'HR' } },
+  { id: 'wf_k', tab: 'sports', e: '🌀', t: 'Strike out 3 batters with your curving pitches', r: 2, goal: 3, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'k' } },
+  { id: 'wf_win', tab: 'sports', e: '🏆', t: 'Win a wiffle ball game against Maya and Sam', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'win' } },
+  { id: 'wf_derby', tab: 'sports', e: '🎆', t: 'Hit 5 home runs in one Home Run Derby', r: 3, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'derby5' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 // the list in play: everything except holiday challenges when it isn't their holiday (the same array, so window.__chal.list stays current)
@@ -282,7 +290,7 @@ const DAILY = [
   { id: 'd_icehome', e: '🪢', t: 'Bring 2 runaways home in a Polar escape', goal: 2, go: 'arctic', ev: { k: 'icehome' } },
   { id: 'd_slide', e: '🌀', t: 'Go down a waterslide 2 times', goal: 2, go: 'water', ev: { k: 'wpslide' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['sports', '🏟', 'Sports'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 

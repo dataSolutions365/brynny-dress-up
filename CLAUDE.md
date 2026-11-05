@@ -158,6 +158,15 @@
   in `SHOW`, `3d/src/26i-arctic-see.js`), 🎣 ice fishing and 🧊 igloo building. `3d/src/24m2-arctic-escape.js` is the 🚨 Polar escape: four of the
   animals run off into town, you catch them and walk them home on a rope (online with friends too, `{t:'icerun'}` in online.js).
   `3d/tests/arctic.mjs` (run on every PR) checks all of it.
+- 🏟️ Sports Park and ⚾ the Wiffle Ball Field (`3d/src/26j-wiffle.js`, zone 'wiffle'): on the far bank across from the Batting Cage
+  (`BANK_LAND` 194 to 218, `ground:1`, footbridge at 202). The soccer and football fields are its neighbours along the bank.
+  Field positions are in the zone's own directions with home plate at `(0, WB.HP)`; `wfAt(angle, distance)` gives a spot measured from home.
+  It's a 2-on-2 backyard game (you and Leo vs Maya and Sam) with ghost runners and the chalk-line hit rules (caught = out, grounder stopped
+  inside `WB.INF` = out, past it single, past `WB.L2` double, past `WB.L3` triple, over `WB.FR` home run), plus a 💥 Home Run Derby.
+  Wiffle pitches curve (`WF_PITCH`): `wfPitch` works the break into the throw so the ball still ends where it was aimed.
+  It plugs into the sports HUD, big button and menu through `SP.ext` in `3d/src/24e-sports.js` (other sports can do the same:
+  `SP.ext[mode]={step,press,release,cam,end}`). Challenges are in the 🏟 Sports tab of `3d/challenges.js` (`did('wiffle', …)`).
+  `3d/tests/wiffle.mjs` (run on every PR) walks over the bridge, opens the menu, plays a quick game and a Derby.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
