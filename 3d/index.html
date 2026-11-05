@@ -186,6 +186,9 @@ body.flying #actions{display:none!important}
 #glLost.stuck button,#glLost.stuck .glNote{display:block}
 #loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-size:22px;font-weight:600;z-index:40;background:radial-gradient(circle at 50% 42%,#fff4fa,#ffd6ea 75%);transition:opacity .5s;padding:20px;text-align:center}
 #loading.done{opacity:0;pointer-events:none}
+#loading .lErr{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:420px}
+#loading .lErr button{font:inherit;font-size:20px;border:0;border-radius:999px;padding:12px 26px;background:#ff4d8d;color:#fff;box-shadow:0 4px 0 #d63a72;cursor:pointer}
+#loading .lErr small{font-size:15px;font-weight:500;opacity:.75}
 /* Tiereyn the squirrel runs in circles while the world builds. Only transform animations, so she keeps running even while the phone is busy. */
 .sqTrack{position:relative;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,#c9efb4 0 52%,#a8e08f 53% 66%,transparent 67%)}
 .sqTrack:before{content:'🌰';position:absolute;left:50%;top:50%;font-size:34px;transform:translate(-50%,-50%)}
@@ -694,11 +697,29 @@ body.contest #closet{display:none}
 
 <script src="../pics.js"></script>
 <script src="../family.js"></script>
-<script type="module" src="game.js"></script>
 <script>
-// show a friendly message if the 3D engine can't load (old phone or no internet)
-setTimeout(()=>{const l=document.getElementById('loading');if(l&&!window.__game){l.dataset.err=1;l.innerHTML='<div>Could not load the 3D world. Check the internet and try again.</div>';}},20000);
+// Start-up watch. game.js (and the 3D engine it brings in from cdn.jsdelivr.net) sets window.__game once the world is built.
+// - If a file really failed (no internet, a broken download, a mistake in the code), say so and show a Try again button.
+// - If it's only slow (a slow connection or an older phone), keep waiting and say it's still coming, instead of giving up.
+// Either way the reason is reported (reportProblem, above), so a grown-up can see what went wrong.
+(()=>{const T=Date.now();let bad=null,shown=false;
+  const sec=()=>Math.round((Date.now()-T)/1000);
+  // a <script type="module"> that can't be fetched (or whose imports can't) fires 'error' on its own tag
+  window.__bootFail=(what)=>{if(!bad)bad=what;if(!window.__game)setTimeout(check,1500);};
+  // a mistake thrown while game.js builds the world
+  addEventListener('error',e=>{if(window.__game||bad)return;const f=String(e.filename||'');
+    if(/\/3d\/game\.js|jsdelivr/.test(f))bad='error in '+f.split('/').pop()+':'+(e.lineno||0)+' '+String(e.message||'').slice(0,200);if(bad)setTimeout(check,1500);},true);
+  function show(slow){const l=document.getElementById('loading');if(!l||window.__game||shown)return;shown=true;l.dataset.err=1;
+    l.innerHTML='<div class="lErr"><div>'+(slow?'The 3D world is taking a long time to load.':'Could not load the 3D world.')+'</div>'
+      +'<small>Check the internet, then tap Try again.</small><button type="button" id="lRetry">🔄 Try again</button></div>';
+    document.getElementById('lRetry').onclick=()=>{try{const u=new URL(location.href);u.searchParams.set('r',Date.now());location.replace(u.href);}catch(x){location.reload();}};
+    window.reportProblem&&reportProblem(bad||'The 3D world did not load in time','loading | '+sec()+'s'+(bad?'':' | slow, nothing failed')+' | online '+navigator.onLine);}
+  function check(){if(window.__game)return;if(bad)return show(false);
+    const m=document.getElementById('loadSub');if(m&&sec()>=20)m.textContent='Still loading… a slow connection can take a minute ✨';
+    if(sec()>=90)return show(true);setTimeout(check,5000);}
+  setTimeout(check,20000);})();
 </script>
+<script type="module" src="game.js" onerror="__bootFail('game.js or the 3D engine (three) could not be loaded')"></script>
 <script type="module" src="online.js"></script>
 <script type="module" src="challenges.js"></script>
 <script type="module" src="seasons.js"></script>
