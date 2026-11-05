@@ -152,6 +152,7 @@ const WF_MINE=['fast','curve','riser','drop'];
 #wfDia i.on{background:#ffd23f;border-color:#ffd23f}
 #wfPitches{position:fixed;z-index:6;display:none;left:calc(env(safe-area-inset-left) + 14px);bottom:calc(env(safe-area-inset-bottom) + 22px);grid-template-columns:1fr 1fr;gap:8px}
 body.wf-pick #wfPitches{display:grid}
+body.wf-on #banner{left:16px;right:16px;margin:0 auto;max-width:520px;top:24%;padding:10px 18px;border-radius:22px;background:rgba(29,26,47,.82);color:#fff;text-shadow:none;font-size:clamp(22px,6.2vw,36px);line-height:1.2;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 #wfPitches button{background:rgba(255,255,255,.92);border-radius:16px;padding:9px 10px;font-weight:700;font-size:14px;min-width:104px;box-shadow:0 3px 0 rgba(0,0,0,.15);color:#3b2357}
 #wfPitches button.sel{background:#3a5bd9;color:#fff;box-shadow:0 3px 0 #22378a}
 #wfPitches button:active{transform:scale(.95)}`;
@@ -386,7 +387,7 @@ function wfScore(runs){if(!runs)return;const k=WF.half==='top'?'me':'op';WF[k]+=
 function wfFireworks(){for(let k=0;k<4;k++)setTimeout(()=>{if(!WF.on)return;const [x,zz]=wfAt((Math.random()-.5)*1.2,WB.FR+1);burst(Z.wiffle.g.localToWorld(new THREE.Vector3(x,4+Math.random()*2,zz)),rnd(['#ffd23f','#4fb6ff','#ff6fae','#ffffff']),45,4);},k*260);}
 function wfNextBatterCount(){WF.balls=0;WF.strikes=0;}
 function wfCall(){const b=WF.ball;b.called=true;if(b.st==='pitch'){b.st='drop';b.v.set(0,0,0);}
-  if(WF.kind==='derby'){if(b.inZ){WF.swings++;wfSay(WF.mySwing!=null?'Swing and a miss!':'Strike! That one counts as a swing');}else wfSay('Ball. Wait for a good one!');WF.phase='after';WF.t=0;wfBoard();wfHudNow();return;}
+  if(WF.kind==='derby'){if(b.inZ){WF.swings++;wfSay(WF.mySwing!=null?'Swing and a miss!':'Strike! Counts as a swing');}else wfSay('Ball. Wait for a good one!');WF.phase='after';WF.t=0;wfBoard();wfHudNow();return;}
   const sw=b.swung;if(b.inZ||sw){WF.strikes++;if(WF.strikes>=3){WF.outs++;WF.abDone=true;wfSay(sw?'Strike three! Out!':'Strike three, looking! Out!');if(WF.half==='bot'){WF.ks++;did('wiffle','k');}wfNextBatterCount();}else wfSay(sw?`Swing and a miss! Strike ${WF.strikes}`:`Strike ${WF.strikes}!`);}
   else{WF.balls++;if(WF.balls>=4){wfSay('Ball four! Walk');const B=WF.bases;// a walk pushes the runners up only if they have to move
       WF.abDone=true;let runs=0;if(B[1]){if(B[2]){if(B[3])runs++;B[3]=1;}B[2]=1;}B[1]=1;wfScore(runs);wfNextBatterCount();WF.pend=0;}else wfSay(`Ball ${WF.balls}`);}
@@ -478,7 +479,8 @@ function wfCam(dt){if(!WF.on)return;const z=Z.wiffle,W=WB,b=WF.ball,bat=WF.half=
   const live=(WF.phase==='play'||WF.phase==='run'||WF.phase==='after')&&(b.st==='fly'||b.st==='held')&&b.t>.12;
   if(live&&WF.phase!=='after'||live&&b.st==='fly'){const bp=b.p;P=L(bp.x*.35,4.3+Math.min(3,wfPol(bp.x,bp.z)[1]*.12),W.HP+5.2);T=L(bp.x,Math.max(.6,bp.y*.7),bp.z);}
   else if(WF.phase==='run'&&WF.batter.run){const r=WF.batter.me?WF.myP:WF.batter.p;P=L(r.x*.5,5.2,W.HP+6.2);T=L(r.x,.8,r.z);}
-  else if(bat){P=L(1.2,2.1,W.HP+2.1);T=L(-.35,1.0,W.PZ-.5);}
+  // batting: behind the batter and pulled back, so you see yourself, the pitch coming in and the field
+  else if(bat){P=L(-1.3,2.75,W.HP+4.6);T=L(.1,.9,W.PZ-1.5);}
   else{P=L(.75,2.2,W.PZ-3.1);T=L(0,.85,W.HP);}
   const c=WF.cam;if(!c.init){c.p.copy(P);c.t.copy(T);c.init=true;}c.p.lerp(P,Math.min(1,dt*4));c.t.lerp(T,Math.min(1,dt*6));
   camera.position.copy(c.p);camera.lookAt(c.t);}
