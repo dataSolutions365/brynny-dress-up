@@ -13987,7 +13987,14 @@ function fpSpot(z){if(!z.d)return [0,z.r-1.2];// the Sparkle Studio is in the mi
   if(z.id==='bay')return [z.x,z.z];// right in the water with the dolphins
   const ux=-z.x/z.d,uz=-z.z/z.d;
   // places across the canal can reach out over the water: step in until you're on dry land
-  for(let f=z.r-.4;f>0;f-=1){const x=z.x+ux*f,w=z.z+uz*f;if(seaDepth(x,w,0)<.3)return [x,w];}
+  // and with a clear way back out toward the plaza (nothing solid like the parked jump plane at the airfield in or right in front of it):
+  // straight in from the plaza first, else a little to the side
+  const free=(x,w)=>!obs.some(o=>o.r>0&&Math.hypot(x-o.x,w-o.z)<o.r+.6),dry=(x,w)=>seaDepth(x,w,0)<.3,
+    way=(x,w)=>{for(let k=0;k<=4;k+=.5){const a=x+ux*k,b=w+uz*k;if(!free(a,b)||!dry(a,b))return false;}return true;};
+  let first=null;
+  for(const side of [0,1.5,-1.5,3,-3,4.5,-4.5,6,-6])for(let f=z.r-.4;f>0;f-=1){const x=z.x+ux*f-uz*side,w=z.z+uz*f+ux*side;if(!dry(x,w))continue;
+    if(!side&&!first)first=[x,w];if(way(x,w))return [x,w];break;}
+  if(first)return first;
   return [z.x,z.z];}
 // why the pass can't be used right now (or '' when it can)
 function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 Ride it there!';
