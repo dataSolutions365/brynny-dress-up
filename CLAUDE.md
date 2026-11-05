@@ -114,6 +114,13 @@
   which 25-game-loop.js asks first. `skyFloor()` is what's under you (never land on a roof, a tree or steep rock: it lifts you over them) and
   `skyLandable()` where you may come down (island, walkable bank, or the canal to swim). Write positions relative to `R`, `BANK` (and `WORLD`
   when it exists), never raw numbers. Friends see it through the 'sky' entry in `SHOW`. `3d/tests/sky.mjs` (run on every PR) does a glide and a jump.
+- ⚽ Soccer Field (`3d/src/26h-soccer.js`, zone 'soccer'): part of the Sports Park on the canal's far bank (its own `BANK_LAND` sector 142 to 166
+  and footbridge at 154), shared with 🏈 football (the goals are combo goals with football uprights up to `SOC.UH`). Everything is in the
+  field's own space (`SOC`: x along the field, goals at ±`SOC.FL`, +z points back toward the island). The ⚽ pad opens the games:
+  🥅 penalty shootout (swipe from the ball to shoot: where it points is where it goes, a quick swipe is hard, a bent swipe curls it;
+  then dive by swiping or tapping left/middle/right), 🎯 target practice, 🤹 keepy-uppies and 🆚 1-on-1 vs Kai with ✨ tricks.
+  Poses go through `av.socPose`/`av.socK` (14-avatar.js calls `socPoseRun`), the camera wraps `sportsCam`, `spLock` holds you still.
+  Challenges are in the 🏟 Sports tab of `3d/challenges.js`. `3d/tests/soccer.mjs` (run on every PR) plays every game, with a real swipe.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
   or waves back. `3d/tests/townspeople.mjs` (run on every PR) checks it.

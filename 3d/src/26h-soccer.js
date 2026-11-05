@@ -161,13 +161,13 @@ body.sc-on #socHud{display:flex}
 .socBtnSet.orange{background:radial-gradient(circle at 35% 30%,#ffb067,#ff6a1f);box-shadow:0 6px 20px rgba(255,106,31,.5)}
 body.sc-free #scMain{display:block;right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 24px)}
 body.sc-free #scTrick{display:block;right:calc(env(safe-area-inset-right) + 130px);bottom:calc(env(safe-area-inset-bottom) + 38px);width:84px;height:84px;font-size:14px}
-body.sc-jug #scMain{display:block;left:50%;margin-left:-60px;width:120px;height:120px;font-size:20px;bottom:calc(env(safe-area-inset-bottom) + 30px)}
+body.sc-jug #scMain{display:block;right:calc(env(safe-area-inset-right) + 24px);width:120px;height:120px;font-size:20px;bottom:calc(env(safe-area-inset-bottom) + 30px)}
 #scSwipe{position:fixed;inset:0;z-index:5;display:none;touch-action:none}
 body.sc-swipe #scSwipe{display:block}
 #socHint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 22px);z-index:6;display:none;background:rgba(18,40,24,.82);color:#fff;font-weight:700;font-size:15px;padding:8px 16px;border-radius:999px;white-space:nowrap;pointer-events:none}
 body.sc-on #socHint.show{display:block}
 body.sc-on #actions,body.sc-on #petBtn,body.sc-on #talkBtn,body.sc-on #poseBtn,body.sc-on #hint,body.sc-on #side,body.sc-on #zoomCtl,body.sc-on #mini,body.sc-on #jump,body.sc-fixed #joy{display:none!important}
-@media (max-height:520px){#socHud{top:calc(env(safe-area-inset-top) + 8px)}body.sc-jug #scMain{width:96px;height:96px;margin-left:-48px}}`;
+@media (max-height:520px){#socHud{top:calc(env(safe-area-inset-top) + 8px)}body.sc-jug #scMain{width:100px;height:100px}}`;
   document.head.appendChild(st);
   const d=document.createElement('div');d.innerHTML=`<div class="hud" id="socHud"><div id="scTop"><b id="scTitle"></b><span id="scScore"></span><span id="scDots"></span><span id="scInfo"></span></div><button id="scLeave">✕ Leave</button></div>
 <div id="scSwipe"><canvas id="scTrail" style="width:100%;height:100%;display:block"></canvas></div><button class="socBtnSet" id="scMain"></button><button class="socBtnSet purple" id="scTrick"></button><div id="socHint"></div>`;
@@ -361,10 +361,10 @@ function socPkSetup(){const S=SOC,kai=socKai(),leo=socLeo();socNewBall(S.PK,0);S
   else{// Kai shoots at you
     leo.a.g.visible=false;kai.a.g.visible=true;socPut(S.FL-.35,0,-Math.PI/2);kai.p.set(S.PK-2.6,0,(Math.random()<.5?-1:1)*1.1);kai.face=socFace(kai.p.x,kai.p.z,S.PK,0);
     socPose(av,'keeper');SC.phase='runup';SC.pt=0;SC.kaiShot=null;SC.dove=null;socBody(true,'swipe');socHint('🧤 Swipe or tap left, middle or right to dive!');
-    SC.cam.P=new THREE.Vector3(S.FL+1.05,2.45,0);SC.cam.T=new THREE.Vector3(S.PK-1,.55,0);}
+    SC.cam.P=new THREE.Vector3(S.FL+1.25,1.62,0);SC.cam.T=new THREE.Vector3(S.PK-1,.7,0);}
   socPkHud();}
 function socPkHud(){const d=SC.kicks.map(k=>k.me==null?'·':k.me?'⚽':'❌').join(''),c=SC.kicks.map(k=>k.cpu==null?'·':k.cpu?'⚽':'🧤').join('');
-  socHud('🥅 Penalties',`${SC.me} - ${SC.cpu}`,'',`${SC.turn==='shoot'?'your kick':'you\'re in goal'} · round ${SC.round+1}${SC.round>=5?' (sudden death)':''}`);$('#scDots').textContent=d+' | '+c;}
+  socHud('🥅 Penalties',`${SC.me} - ${SC.cpu}`,'',`${SC.turn==='shoot'?'your kick':'in goal 🧤'}${SC.round>=5?' · sudden death':''}`);$('#scDots').textContent=d+' | '+c;}
 // does Leo save it? He guesses a side (and reads slow shots better); corners and hard, curling shots are hard to reach
 function socLeoGuess(sh){const side=Math.abs(sh.tz)<.9?0:Math.sign(sh.tz),read=.28+.5*(sh.T-.5);let g;
   if(Math.random()<read)g=side;else g=[-1,0,1][Math.floor(Math.random()*3)];
@@ -480,7 +480,7 @@ function socTgtStep(dt,t){const S=SOC,b=SC.ball;SC.pt+=dt;
 
 /* ---------- 🤹 keepy-uppies ---------- */
 function socJugStart(){const S=SOC;socPut(0,2,socFace(0,2,0,-1));const b=socNewBall(0,2);SC.n=0;
-  SC.jug={y:1.1,vy:2.4,x:0,vx:0,cool:0,dead:false,next:'foot',last:null};SC.cam.P=new THREE.Vector3(-1.6,1.7,5.4);SC.cam.T=new THREE.Vector3(0,.95,1.6);
+  SC.jug={y:1.1,vy:2.4,x:0,vx:0,cool:0,dead:false,next:'foot',last:null};SC.cam.P=new THREE.Vector3(1.9,1.45,-1.4);SC.cam.T=new THREE.Vector3(0,.85,1.8);
   socBtnSet('#scMain','⚽<br>TAP!','');socHud('🤹 Keepy-uppies','0','','don\'t let it drop!');socHint('Tap when the ball drops to your foot, knee or head!');}
 // which part of you the ball is next to (height above the grass)
 const socJugZone=y=>y>1.32&&y<1.78?'head':y>.48&&y<.82?'knee':y>.08&&y<.42?'foot':null;

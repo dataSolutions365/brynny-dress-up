@@ -254,6 +254,21 @@ const ALL_LIST = [
   { id: 'wp_playSlide', tab: 'water', e: '🎈', t: 'Slide down the big inflatable slide in the lagoon', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'slide' } },
   { id: 'wp_bounce', tab: 'water', e: '🤸', t: 'Bounce off the yellow bouncer into the water', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'bounce' } },
   { id: 'wp_jump', tab: 'water', e: '💦', t: 'Jump off the top of the step tower', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'jump' } },
+  // ⚽ the Soccer Field on the far bank (3d/src/26h-soccer.js)
+  { id: 'soc_pk', tab: 'sports', e: '⚽', t: 'Score a penalty past Leo the goalie', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'pk' } },
+  { id: 'soc_save', tab: 'sports', e: '🧤', t: 'Dive and save one of Kai\'s penalties', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'save' } },
+  { id: 'soc_pkwin', tab: 'sports', e: '🥅', t: 'Win a penalty shootout', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'pkwin' } },
+  { id: 'soc_top', tab: 'sports', e: '🔥', t: 'Score in the top corner', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'top' } },
+  { id: 'soc_curl', tab: 'sports', e: '🌀', t: 'Bend a curling shot into the goal (swipe in a curve)', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'curl' } },
+  { id: 'soc_tgt', tab: 'sports', e: '🎯', t: 'Hit 10 targets in target practice', r: 2, goal: 10, go: 'soccer', ev: { k: 'soccer', a: a => a === 'target' } },
+  { id: 'soc_tgt4', tab: 'sports', e: '🏹', t: 'Hit all four targets in one game', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'targets' } },
+  { id: 'soc_jug10', tab: 'sports', e: '🤹', t: 'Do 10 keepy-uppies in a row', r: 1, go: 'soccer', ev: { k: 'soccerJug', a: n => n >= 10 } },
+  { id: 'soc_jug25', tab: 'sports', e: '🌟', t: 'Do 25 keepy-uppies in a row', r: 3, go: 'soccer', ev: { k: 'soccerJug', a: n => n >= 25 } },
+  { id: 'soc_header', tab: 'sports', e: '🗣️', t: 'Keep the ball up with a header', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'header' } },
+  { id: 'soc_trick', tab: 'sports', e: '✨', t: 'Fool Kai with a soccer trick', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick' } },
+  { id: 'soc_tricks5', tab: 'sports', e: '🌈', t: 'Fool Kai with 5 tricks', r: 2, goal: 5, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick' } },
+  { id: 'soc_nutmeg', tab: 'sports', e: '🥜', t: 'Nutmeg Kai: put the ball through his legs', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick_nutmeg' } },
+  { id: 'soc_v1win', tab: 'sports', e: '🏆', t: 'Beat Kai 1-on-1', r: 3, go: 'soccer', ev: { k: 'soccer', a: a => a === 'v1win' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 // the list in play: everything except holiday challenges when it isn't their holiday (the same array, so window.__chal.list stays current)
@@ -282,7 +297,7 @@ const DAILY = [
   { id: 'd_icehome', e: '🪢', t: 'Bring 2 runaways home in a Polar escape', goal: 2, go: 'arctic', ev: { k: 'icehome' } },
   { id: 'd_slide', e: '🌀', t: 'Go down a waterslide 2 times', goal: 2, go: 'water', ev: { k: 'wpslide' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['sports', '🏟', 'Sports'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
