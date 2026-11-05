@@ -269,6 +269,14 @@ const ALL_LIST = [
   { id: 'soc_tricks5', tab: 'sports', e: '🌈', t: 'Fool Kai with 5 tricks', r: 2, goal: 5, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick' } },
   { id: 'soc_nutmeg', tab: 'sports', e: '🥜', t: 'Nutmeg Kai: put the ball through his legs', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick_nutmeg' } },
   { id: 'soc_v1win', tab: 'sports', e: '🏆', t: 'Beat Kai 1-on-1', r: 3, go: 'soccer', ev: { k: 'soccer', a: a => a === 'v1win' } },
+  // 🏈 flag football on the ⚽ Soccer Field (3d/src/26i2-football-games.js)
+  { id: 'ftFg', tab: 'sports', e: '🏈', t: 'Kick a field goal through the uprights', r: 1, go: 'soccer', ev: { k: 'football', a: a => a === 'fg' } },
+  { id: 'ftFg50', tab: 'sports', e: '🦵', t: 'Kick a 50-yard field goal', r: 3, go: 'soccer', ev: { k: 'football', a: a => a === 'fg50' } },
+  { id: 'ftTdPass', tab: 'sports', e: '🎯', t: 'Throw a touchdown pass in a pick-up game', r: 2, go: 'soccer', ev: { k: 'football', a: a => a === 'tdpass' } },
+  { id: 'ftSack', tab: 'sports', e: '💥', t: 'Sack the quarterback (grab his flag)', r: 1, go: 'soccer', ev: { k: 'football', a: a => a === 'sack' } },
+  { id: 'ftSack5', tab: 'sports', e: '🚩', t: 'Sack the quarterback 5 times', r: 2, goal: 5, go: 'soccer', ev: { k: 'football', a: a => a === 'sack' } },
+  { id: 'ftWin', tab: 'sports', e: '🦅', t: 'Win a pick-up football game with your team', r: 3, go: 'soccer', ev: { k: 'football', a: a => a === 'win' } },
+  { id: 'ftRetTd', tab: 'sports', e: '🏃', t: 'Run a punt back for a touchdown', r: 2, go: 'soccer', ev: { k: 'football', a: a => a === 'rettd' } },
   // ⚾ the Wiffle Ball Field in the 🏟️ Sports Park (3d/src/26j-wiffle.js)
   { id: 'wf_play', tab: 'sports', e: '⚾', t: 'Play a wiffle ball game at the Sports Park', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'game' } },
   { id: 'wf_hit', tab: 'sports', e: '🏏', t: 'Get a hit in wiffle ball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => ['1B', '2B', '3B', 'HR'].includes(a) } },
