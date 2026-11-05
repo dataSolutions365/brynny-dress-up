@@ -151,10 +151,12 @@ try {
 
   // ---------- 🤹 keepy-uppies ----------
   await page.evaluate(() => window.__soccer.start('jug'));
-  let taps = 0;
-  for (let i = 0; i < 400 && taps < 12; i++) { s = await S(); if (!s.jug || s.jug.dead) break;
-    if (s.jug.vy < .5 && s.jug.y > .12 && s.jug.y < .38) { await page.evaluate(() => window.__soccer.press()); taps++; if (taps === 6) await shot('8-keepy-uppies'); }
-    await page.waitForTimeout(30); }
+  // tap from inside the game every frame (polling from here can miss the moment on a slow test computer)
+  await page.evaluate(() => { window.__jugTaps = 0; window.__game.onTick.push(() => { const j = window.__soccer.SC.jug;
+    if (window.__jugTaps < 12 && j && !j.dead && j.vy < .5 && j.y > .12 && j.y < .38) { window.__soccer.press(); window.__jugTaps++; } }); });
+  let taps = 0, shotDone = false;
+  for (let i = 0; i < 600 && taps < 12; i++) { s = await S(); taps = await page.evaluate(() => window.__jugTaps); if (!s.jug || s.jug.dead) break;
+    if (taps >= 6 && !shotDone) { shotDone = true; await shot('8-keepy-uppies'); } await page.waitForTimeout(100); }
   s = await S();
   if (s.n < 10) fail(`Tapping when the ball reaches your foot should keep it up (${s.n} in a row).`); else ok(`Keepy-uppies: ${s.n} in a row`);
   s = await waitGame(6, s => !s.mode);
