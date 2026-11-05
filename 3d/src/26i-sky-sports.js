@@ -515,11 +515,14 @@ function cnOpen(x,z,wet){const g=groundAt(x,z),L=skyLandable(x,z);if(Math.hypot(
   for(const [dx,dz] of [[0,0],[1.3,0],[-1.3,0],[0,1.3],[0,-1.3]])if(skyFloor(x+dx,z+dz)>g+.25)return false;return true;}
 // the closest one, a little ahead of you if it can be (you're already flying that way)
 // (dry ground first; the water only when there's no dry ground close by, and then you splash in and swim)
-function cnSpotFind(x,z,hd){const ax=Math.sin(hd)*3,az=Math.cos(hd)*3;
-  for(const wet of [false,true]){if(cnOpen(x+ax,z+az,wet))return [x+ax,z+az];
-    for(let r=1.5;r<=40;r+=1.5)for(let i=0;i<16;i++){const a=hd+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/8,sx=x+ax+Math.sin(a)*r,sz=z+az+Math.cos(a)*r;if(cnOpen(sx,sz,wet))return [sx,sz];}}
+// It has to be one you can fly straight to from height y without anything tall in the way (trees, rock), and not one you
+// already got stuck going to (bad).
+function cnClear(x,z,sx,sz,y){const d=Math.hypot(sx-x,sz-z);for(let t=1.5;t<d;t+=1.5){const k=t/d;if(skyFloor(x+(sx-x)*k,z+(sz-z)*k)>y-.8)return false;}return true;}
+function cnSpotFind(x,z,hd,y,bad){const ax=Math.sin(hd)*3,az=Math.cos(hd)*3,ok=(sx,sz,wet,clear)=>!(bad||[]).some(b=>Math.hypot(b[0]-sx,b[1]-sz)<5)&&cnOpen(sx,sz,wet)&&(!clear||cnClear(x,z,sx,sz,y));
+  for(const [wet,clear] of [[false,true],[false,false],[true,true],[true,false]]){if(ok(x+ax,z+az,wet,clear))return [x+ax,z+az];
+    for(let r=1.5;r<=40;r+=1.5)for(let i=0;i<16;i++){const a=hd+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/8,sx=x+ax+Math.sin(a)*r,sz=z+az+Math.cos(a)*r;if(ok(sx,sz,wet,clear))return [sx,sz];}}
   return null;}
-function sdPull(auto){if(SKY.mode!=='ff')return;Object.assign(SKY,{mode:'open',t:0,k:0,cnSpot:null});skyCan.visible=true;
+function sdPull(auto){if(SKY.mode!=='ff')return;Object.assign(SKY,{mode:'open',t:0,k:0,cnSpot:null,cnBad:[],cnLift:0,cnLow:0});skyCan.visible=true;
   tone(180,.15,'sawtooth',.06);tone(110,.3,'sine',.12,.25);if(auto)toast('🪂 Your parachute opened by itself at the safe height!');
   setTimeout(()=>{if(SKY.mode==='cn'||SKY.mode==='open')toast('🎯 Steer to the round target by the hangar!');},2600);}
 function skyLandBtn(){if(SKY.mode==='hg'){SKY.land=true;SKY.spot=null;sfx('pop');}}
@@ -620,7 +623,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     let drift=false,spotD=99;
     if(!flare&&!open&&p.y<g+10){const mine=steer&&p.y>g+4;
       if(mine||(S.cnSpot&&!cnOpen(S.cnSpot[0],S.cnSpot[1],true)))S.cnSpot=null;
-      if(!mine&&!S.cnSpot)S.cnSpot=cnSpotFind(p.x,p.z,S.hd);
+      if(!mine&&!S.cnSpot)S.cnSpot=cnSpotFind(p.x,p.z,S.hd,p.y,S.cnBad);
       if(S.cnSpot){spotD=Math.hypot(S.cnSpot[0]-p.x,S.cnSpot[1]-p.z);if(spotD>.5)want=Math.atan2(S.cnSpot[0]-p.x,S.cnSpot[1]-p.z);steer=true;}}
     if(!flare&&!S.cnSpot&&p.y<g+8&&(!landable||below>g+.5)){drift=true;steer=true;
       // to the closest place you can come down: the airfield's target, or straight in toward town (the canal and the island are always that way)
@@ -628,6 +631,8 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
       if(dT<dIn+70||r0<=R+.3){want=Math.atan2(AIRF.tgt.x-p.x,AIRF.tgt.z-p.z);if(!S.said.back){S.said.back=1;toast('🌬️ The breeze carries you back toward the airfield');}}
       else{want=Math.atan2(-p.x,-p.z);if(!S.said.home){S.said.home=1;toast('🌬️ The breeze carries you back toward town');}}}
     if(r0>skyMaxR()-10){want=Math.atan2(-p.x,-p.z);steer=true;}
+    // stuck low for 20 s out past the canal (hemmed in by trees and rock): head straight in toward the canal and town
+    if(!flare&&!open&&(S.cnLow||0)>20&&r0>R+1){want=Math.atan2(-p.x,-p.z);steer=true;S.cnSpot=null;spotD=99;}
     // something taller than you coming up (a building, a tree, the big Christmas tree): turn round it instead of floating up over it
     let dodge=false;if(!flare&&!open){const hx=Math.sin(S.hd),hz=Math.cos(S.hd),tall=d=>{const f=skyFloor(p.x+hx*d,p.z+hz*d);return f>p.y-1.2&&f>below+.5;};
       if(tall(2.5)||tall(6)){const side=a=>skyFloor(p.x+Math.sin(S.hd+a)*5,p.z+Math.cos(S.hd+a)*5);
@@ -637,10 +642,17 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     const hx=Math.sin(S.hd)*fwd,hz=Math.cos(S.hd)*fwd;S.vx+=(hx-S.vx)*Math.min(1,dt*(open?2.5:2));S.vz+=(hz-S.vz)*Math.min(1,dt*(open?2.5:2));
     const wantVy=open?-2.4:flare?-.7:-((S.cnSpot?(spotD<4?3:spotD>12?1.3:2.05):2.05)+Math.abs(S.bank)*1.6);S.vy+=(wantVy-S.vy)*Math.min(1,dt*(open?3.2:2));
     const sv=Math.hypot(S.vx,S.vz),look=S.cnSpot&&spotD<sv*1.1?spotD/Math.max(sv*1.1,.1):1;// only look as far as the landing spot
-    const ahead=Math.max(skyFloor(p.x+S.vx*.5*look,p.z+S.vz*.5*look),skyFloor(p.x+S.vx*1.1*look,p.z+S.vz*1.1*look)),need=ahead+.5-p.y;if(need>0&&!flare)S.vy=Math.max(S.vy,Math.min(dodge?1.2:3,need*2.5));// (the last resort: lift over it)
+    const ahead=Math.max(skyFloor(p.x+S.vx*.5*look,p.z+S.vz*.5*look),skyFloor(p.x+S.vx*1.1*look,p.z+S.vz*1.1*look)),need=ahead+.5-p.y;
+    // stuck low for a long time (hemmed in by trees and rock): stop lifting over things and just come down
+    if(!open&&p.y<g+10)S.cnLow=(S.cnLow||0)+dt;const force=S.cnLow>20;
+    if(need>0&&!flare&&!force)S.vy=Math.max(S.vy,Math.min(dodge?1.2:3,need*2.5));// (the last resort: lift over it)
+    // something keeps lifting you on the way to the landing spot: forget that spot and pick another
+    if(S.cnSpot&&need>0&&!flare){S.cnLift=(S.cnLift||0)+dt;if(S.cnLift>1.2){(S.cnBad||=[]).push(S.cnSpot);S.cnSpot=null;S.cnLift=0;}}else S.cnLift=Math.max(0,(S.cnLift||0)-dt*.5);
     p.x+=S.vx*dt;p.z+=S.vz*dt;p.y+=S.vy*dt;
-    const fl=skyFloor(p.x,p.z),gg=groundAt(p.x,p.z);if(p.y<fl+.25&&fl>gg+.2)p.y=fl+.25;
+    const fl=skyFloor(p.x,p.z),gg=groundAt(p.x,p.z);if(p.y<fl+.25&&fl>gg+.2)p.y=force?Math.max(p.y,gg+.6):fl+.25;// (stuck: skim low through the treetops instead)
     const L=skyLandable(p.x,p.z);
+    // flaring but drifted over something you can't land on (a tree, rock, the fenced-off land): back to flying, to pick a spot
+    if(flare&&(fl>gg+.2||!L)){S.mode='cn';S.t=0;S.cnSpot=null;}
     if(S.mode==='cn'&&p.y-gg<1.5&&fl<=gg+.2&&L){S.mode='cnFlare';S.t=0;}
     if(p.y<=gg+.01&&!open){p.y=gg;S.mode='cnDown';S.t=0;S.cnK=1;
       if(L==='water'){burst(new THREE.Vector3(p.x,.1,p.z),'#bfeaff',30,2.4);tone(200,.3,'sine',.1,0,80);toast('💦 Splash! Time for a swim');skyEnd(false);return true;}

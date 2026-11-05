@@ -126,7 +126,8 @@ try {
   s = await waitGame(60, s => !s.mode);
   console.log(`landed at (${s.x.toFixed(1)}, ${s.z.toFixed(1)}), height ${s.y.toFixed(2)}, ${s.land}`);
   if (s.mode) fail(`You should have landed, mode is ${s.mode}.`);
-  if (Math.abs(s.y - s.ground) > .2 || s.land !== true) fail('You should be standing on open ground after landing.');
+  // on open ground, or a splash into the canal to swim (both are real landings; never on a roof, a tree or rock)
+  if (s.land === 'water' ? s.y > .6 : (Math.abs(s.y - s.ground) > .2 || s.land !== true)) fail('You should be standing on open ground (or swimming in the canal) after landing.');
   await shot('12-landed');
   s = await waitGame(150, s => s.plane === 'park');
   console.log(`the plane is back: ${s.plane}`);
