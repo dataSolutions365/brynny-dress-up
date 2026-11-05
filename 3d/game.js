@@ -10206,7 +10206,7 @@ function skateParkStep(dt,ix,iy,mag){const z=Z.skate,P=SKP,p=player.pos,kind=skW
     const hn=skH(nx,nz);
     // the ground drops away faster than you'd fall (the lip of a ramp, the top of the stairs): you're flying
     // or you reach the coping of a steep wall going up: off you go too, whatever the size of this step (else you'd roll on over the deck)
-    const up=G2>2.5&&vys>0&&hn>y-.1,lip=up&&(()=>{const[a,b]=skGrad(nx,nz,hn);return a*a+b*b<.2;})();
+    const up=G2>2.5&&vys>0&&hn>y-.1,lip=up&&(()=>{const[a,b]=skGrad(nx,nz,hn);return a*a+b*b<Math.max(.2,G2*.5);})();// (a step that lands just over the coping, on the edge of the deck, counts too)
     if(lip||hn<y+vys*h-.5*SK_G*h*h-.012){P.air=true;P.airT=0;P.vx=dx*vh;P.vz=dz*vh;P.vy=vys;
       if(lip&&hn>y+vys*h){P.y=y;}else{P.lx=nx;P.lz=nz;P.y=y+vys*h;}
       // straight up off the top of a steep wall onto its deck (the half-pipe, the quarter pipe, not the kicker): go up and come back down onto the ramp, turning around in the air
@@ -11240,7 +11240,7 @@ Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,get
 // 🚲 for the bike test (3d/tests/bike.mjs)
 Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
 // 🛹 for the skate park test (3d/tests/skate-park.mjs)
-Object.assign(window.__game,{skatePark:()=>SKP,skTrick,skateH,skateLH,SKZ,toggleSkate,sk:()=>SK});
+Object.assign(window.__game,{skatePark:()=>SKP,skTrick,skateH,skateLH,SKZ,toggleSkate,sk:()=>SK,skStep:skateParkStep});
 // ---- src/26b-portrait.js ----
 /* ================= PORTRAITS FOR THE 2D STUDIO ================= */
 // The 2D studio's top-left picture can be "my 3D character" or "my pet". Whenever your look (or your pet's outfit)
