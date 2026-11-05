@@ -143,6 +143,13 @@ try {
 
   /* ---------- Halloween: pumpkins back, no Christmas ---------- */
   const H = await open('?holiday=halloween');
+  // 🎶 outside Christmas, walking around town plays the everyday town songs, and every song file is there
+  const tm = await H.page.evaluate(async () => { const G = window.__game, L = (G.PLAYLISTS || {}).town || [];
+    const ok = await Promise.all(L.map(n => fetch(`../audio/${n}.mp3`, { method: 'HEAD' }).then(r => r.ok, () => false)));
+    return { music: G.PARK && G.PARK.music, songs: L.length, missing: L.filter((n, i) => !ok[i]) }; });
+  if (tm.music !== 'town' || tm.songs < 2) fail(`outside Christmas the town should play the town songs, got ${JSON.stringify(tm)}`);
+  if (tm.missing.length) fail(`town song files missing: ${tm.missing.join(', ')}`);
+  console.log(`🎶 outside Christmas the town plays ${tm.songs} songs`);
   const h = await H.page.evaluate(() => { const G = window.__game, hz = G.Z.halloween;
     return { xmas: !!window.__xmas, spooky: hz.spooky.parts.every(p => p.visible), pad: Math.hypot(G.Z.studio.pad.x, G.Z.studio.pad.z), santa: !!window.__santa,
       xs: window.__chal.list.filter(c => c.hol === 'christmas').length }; });
