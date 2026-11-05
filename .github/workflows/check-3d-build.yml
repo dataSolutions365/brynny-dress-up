@@ -67,3 +67,5 @@ jobs:
         run: node 3d/tests/closets-match.mjs
       - name: The helicopter is won or bought, flies over the trees, lands on the Helipad and comes when called
         run: node 3d/tests/helicopter.mjs
+      - name: Wiffle ball (bat, pitch, field, Derby)
+        run: node 3d/tests/wiffle.mjs

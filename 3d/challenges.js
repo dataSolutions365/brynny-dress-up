@@ -269,6 +269,14 @@ const ALL_LIST = [
   { id: 'soc_tricks5', tab: 'sports', e: '🌈', t: 'Fool Kai with 5 tricks', r: 2, goal: 5, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick' } },
   { id: 'soc_nutmeg', tab: 'sports', e: '🥜', t: 'Nutmeg Kai: put the ball through his legs', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick_nutmeg' } },
   { id: 'soc_v1win', tab: 'sports', e: '🏆', t: 'Beat Kai 1-on-1', r: 3, go: 'soccer', ev: { k: 'soccer', a: a => a === 'v1win' } },
+  // ⚾ the Wiffle Ball Field in the 🏟️ Sports Park (3d/src/26j-wiffle.js)
+  { id: 'wf_play', tab: 'sports', e: '⚾', t: 'Play a wiffle ball game at the Sports Park', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'game' } },
+  { id: 'wf_hit', tab: 'sports', e: '🏏', t: 'Get a hit in wiffle ball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => ['1B', '2B', '3B', 'HR'].includes(a) } },
+  { id: 'wf_xbh', tab: 'sports', e: '🏃', t: 'Hit a double or a triple in wiffle ball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === '2B' || a === '3B' } },
+  { id: 'wf_hr', tab: 'sports', e: '💥', t: 'Hit a wiffle ball over the fence', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'HR' } },
+  { id: 'wf_k', tab: 'sports', e: '🌀', t: 'Strike out 3 batters with your curving pitches', r: 2, goal: 3, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'k' } },
+  { id: 'wf_win', tab: 'sports', e: '🏆', t: 'Win a wiffle ball game against Maya and Sam', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'win' } },
+  { id: 'wf_derby', tab: 'sports', e: '🎆', t: 'Hit 5 home runs in one Home Run Derby', r: 3, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'derby5' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
 // the list in play: everything except holiday challenges when it isn't their holiday (the same array, so window.__chal.list stays current)
