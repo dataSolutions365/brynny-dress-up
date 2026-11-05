@@ -243,7 +243,11 @@ try {
     // for the button, wait until no other runaway is right next to this one (so the button is for this one)
     if (button) for (let i = 0; i < 20; i++) { if (await page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm), p = c.pos; c.tired = 3;
       return G.ROAM.every(o => o === c || o.mode === 'pen' || Math.hypot(o.pos.x - p.x, o.pos.z - p.z) > 4 + o.a.rad); }, nm)) break; await gameWait(.5); }
-    await page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm); c.tired = 3; G.player.pos.set(c.pos.x + 1.2, 0, c.pos.z); }, nm);
+    // (and not by any home: walking there with ones already on ropes brings them home, and you'd be holding fewer)
+    await page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm); c.tired = 3;
+      if (G.ruNearHome(c.pos.x, c.pos.z, 4) || G.ruNearHome(c.pos.x + 1.2, c.pos.z, 4)) safe: for (let r = 20; r < 60; r += 4) for (let a = 0; a < 6.28; a += .3) {
+        const x = Math.sin(a) * r, z = Math.cos(a) * r; if (G.looseOk(x, z) && G.looseOk(x + 1.2, z) && !G.ruNearHome(x, z, 6) && !G.ruNearHome(x + 1.2, z, 6)) { c.pos.set(x, c.pos.y, z); break safe; } }
+      G.player.pos.set(c.pos.x + 1.2, 0, c.pos.z); }, nm);
     if (button) { await gameWait(.3); const t = await btn('#roamCatch'); if (!t.includes('Catch ' + nm)) fail(`Next to a tired ${nm} there should be a Catch button (it says "${t}").`);
       await page.evaluate(() => document.querySelector('#roamCatch').click()); }
     else await page.evaluate(nm => { const G = window.__game; G.ruCatch(G.ROAM.find(c => c.nm === nm)); }, nm); await gameWait(.2); };
@@ -252,7 +256,8 @@ try {
   s = await page.evaluate(() => window.__game.roamState());
   const four = order.filter(n => n !== fl)[2]; await grab(four, false);
   const s4 = await page.evaluate(() => window.__game.roamState());
-  await page.evaluate(() => { const p = window.__game.player.pos; p.set(p.x * .9, 0, p.z * .9 + 5); }); await gameWait(3);
+  await page.evaluate(() => { const G = window.__game, p = G.player.pos; let x = p.x * .9, z = p.z * .9 + 5;
+    if (G.ruNearHome(x, z, 4)) { x = p.x; z = p.z; } p.set(x, 0, z); }); await gameWait(3);
   const trail = await page.evaluate(() => { const G = window.__game, p = G.player.pos; return G.ROAM.filter(c => c.mode === 'rope').map(c => Math.hypot(c.pos.x - p.x, c.pos.z - p.z)); });
   console.log(`on ropes: ${s.ropes.join(', ')} (a 4th: ${s4.ropes.length}), ${trail.map(d => d.toFixed(1)).join(', ')} behind you`);
   if (s.ropes.length !== 3 || s4.ropes.length !== 3) fail(`You should be able to hold 3 runaways at once, and no more (${s.ropes.length}, then ${s4.ropes.length}).`);
