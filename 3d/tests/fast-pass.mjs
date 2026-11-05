@@ -104,6 +104,8 @@ try {
     if (at !== id) fail(`zipping to ${id} landed in ${at}`);
     if (a.busy) fail(`landing at ${id} opened something by itself (landed on a pad?)`);
     if (moved < .5) fail(`stuck after zipping to ${id}`);
+    const by = await page.evaluate(([x, z]) => window.__game.obs.find(o => o.r > 0 && Math.hypot(x - o.x, z - o.z) < o.r + .5), [a.x, a.z]);
+    if (by) fail(`zipping to ${id} put you right up against something solid at (${by.x.toFixed(1)}, ${by.z.toFixed(1)})`);
     await page.evaluate(() => { for (const m of document.querySelectorAll('.modal.show')) m.classList.remove('show'); const g = window.__game; g.closeCloset && g.closetOpen() && g.closeCloset(); });
   }
   if (errors.length) fail(`page errors: ${errors.join(' | ')}`);

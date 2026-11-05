@@ -10279,7 +10279,7 @@ function skateParkStep(dt,ix,iy,mag){const z=Z.skate,P=SKP,p=player.pos,kind=skW
     const hn=skH(nx,nz);
     // the ground drops away faster than you'd fall (the lip of a ramp, the top of the stairs): you're flying
     // or you reach the coping of a steep wall going up: off you go too, whatever the size of this step (else you'd roll on over the deck)
-    const up=G2>2.5&&vys>0&&hn>y-.1,lip=up&&(()=>{const[a,b]=skGrad(nx,nz,hn);return a*a+b*b<.2;})();
+    const up=G2>2.5&&vys>0&&hn>y-.1,lip=up&&(()=>{const[a,b]=skGrad(nx,nz,hn);return a*a+b*b<Math.max(.2,G2*.5);})();// (a step that lands just over the coping, on the edge of the deck, counts too)
     if(lip||hn<y+vys*h-.5*SK_G*h*h-.012){P.air=true;P.airT=0;P.vx=dx*vh;P.vz=dz*vh;P.vy=vys;
       if(lip&&hn>y+vys*h){P.y=y;}else{P.lx=nx;P.lz=nz;P.y=y+vys*h;}
       // straight up off the top of a steep wall onto its deck (the half-pipe, the quarter pipe, not the kicker): go up and come back down onto the ramp, turning around in the air
@@ -11314,7 +11314,7 @@ Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,get
 // 🚲 for the bike test (3d/tests/bike.mjs)
 Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
 // 🛹 for the skate park test (3d/tests/skate-park.mjs)
-Object.assign(window.__game,{skatePark:()=>SKP,skTrick,skateH,skateLH,SKZ,toggleSkate,sk:()=>SK});
+Object.assign(window.__game,{skatePark:()=>SKP,skTrick,skateH,skateLH,SKZ,toggleSkate,sk:()=>SK,skStep:skateParkStep});
 // ---- src/26b-portrait.js ----
 /* ================= PORTRAITS FOR THE 2D STUDIO ================= */
 // The 2D studio's top-left picture can be "my 3D character" or "my pet". Whenever your look (or your pet's outfit)
@@ -12633,7 +12633,7 @@ onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=
 // for challenges.js and the tests
 function roamState(){return {fed:Object.keys(RS.fed).length,n:ROAM.length,on:RU.on,grp:RU.grp,home:Object.keys(RU.home).length,sc:{...RU.sc},
   rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,ropes:myRopes().map(c=>c.nm),best:RS.allBest||0,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
-addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,ZA,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,looseOk,POLAR_LIST,ruCatch,ruLetGo,ruFromNet,ruMe,BZ});});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,ZA,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,looseOk,POLAR_LIST,ruCatch,ruLetGo,ruFromNet,ruMe,BZ,ruNearHome:(x,z,m=0)=>Object.keys(RU_ZONE).some(g=>nearHome(g,{x,z},RU_HOME+m))});});
 // ---- src/26h-adventure.js ----
 /* ================= ⛰️ LOOKOUT MOUNTAIN and 🌲 TREETOP ADVENTURE, across the canal =================
    On the grassy far bank of the canal, between angles 92 and 136 (BANK_LAND in 26f-ocean.js), over a wooden footbridge at 114.
@@ -14061,7 +14061,14 @@ function fpSpot(z){if(!z.d)return [0,z.r-1.2];// the Sparkle Studio is in the mi
   if(z.id==='bay')return [z.x,z.z];// right in the water with the dolphins
   const ux=-z.x/z.d,uz=-z.z/z.d;
   // places across the canal can reach out over the water: step in until you're on dry land
-  for(let f=z.r-.4;f>0;f-=1){const x=z.x+ux*f,w=z.z+uz*f;if(seaDepth(x,w,0)<.3)return [x,w];}
+  // and with a clear way back out toward the plaza (nothing solid like the parked jump plane at the airfield in or right in front of it):
+  // straight in from the plaza first, else a little to the side
+  const free=(x,w)=>!obs.some(o=>o.r>0&&Math.hypot(x-o.x,w-o.z)<o.r+.6),dry=(x,w)=>seaDepth(x,w,0)<.3,
+    way=(x,w)=>{for(let k=0;k<=4;k+=.5){const a=x+ux*k,b=w+uz*k;if(!free(a,b)||!dry(a,b))return false;}return true;};
+  let first=null;
+  for(const side of [0,1.5,-1.5,3,-3,4.5,-4.5,6,-6])for(let f=z.r-.4;f>0;f-=1){const x=z.x+ux*f-uz*side,w=z.z+uz*f+ux*side;if(!dry(x,w))continue;
+    if(!side&&!first)first=[x,w];if(way(x,w))return [x,w];break;}
+  if(first)return first;
   return [z.x,z.z];}
 // why the pass can't be used right now (or '' when it can)
 function fpBlocked(){if(DL.on)return 'No fast pass during a delivery rush! 🛵 Ride it there!';

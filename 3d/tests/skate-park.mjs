@@ -112,6 +112,19 @@ try {
   check(!!s, `a kickflip in the air pops up with points when you land ("${s && s.txt}")`);
   await want(null);
 
+  // the same at any speed and any frame rate: rolling up either wall of the half-pipe from anywhere, you go up off the coping and
+  // turn around, and never fly out over the back. This moves the board itself with fixed time steps (a fast computer's down to a
+  // slow phone's), so it gives the same answer on every computer.
+  { const r = await page.evaluate(() => { const G = window.__game, P = G.skatePark(), out = []; let n = 0;
+      for (const dt of [1 / 60, 1 / 45, 1 / 30, .05]) for (const side of [-1, 1]) for (let i = 0; i < 40; i++) for (const S of [7, 8.5, 10]) {
+        const x0 = side * (2 + i * .023); n++;
+        Object.assign(P, { lx: x0, lz: -6.5, y: G.skateLH(x0, -6.5), air: false, S, hd: side * Math.PI / 2, face: side * Math.PI / 2, vert: null, grind: null, trick: null, vx: 0, vz: 0, vy: 0 });
+        let t = 0, air = false, far = 0;
+        while (t < 3) { G.skStep(dt, 0, 0, 0); t += dt; far = Math.max(far, Math.abs(P.lx)); if (P.air) air = true; else if (air) break; }
+        if (far > 4.2) out.push(`from x ${x0.toFixed(2)} at speed ${S}, ${Math.round(1 / dt)} frames a second: out to x ${far.toFixed(2)}`); }
+      return { n, out }; });
+    check(r.out.length === 0, `rolling up the half-pipe walls ${r.n} ways, you never fly out over the back (${r.out.slice(0, 3).join('; ')})`); }
+
   // --- ollie onto the rail and grind it ---
   await setup({ kind: 'board', at: [0, 9], face: Math.PI });
   await until(s => s.on && !s.air, 5);

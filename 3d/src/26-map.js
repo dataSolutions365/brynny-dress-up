@@ -163,4 +163,4 @@ Object.assign(window.__game,{openBarn,closeBarn,startRide,stopRide,callSteed,get
 // 🚲 for the bike test (3d/tests/bike.mjs)
 Object.assign(window.__game,{bike:()=>BIKE,bikeModel:()=>BK,toggleBike});
 // 🛹 for the skate park test (3d/tests/skate-park.mjs)
-Object.assign(window.__game,{skatePark:()=>SKP,skTrick,skateH,skateLH,SKZ,toggleSkate,sk:()=>SK});
+Object.assign(window.__game,{skatePark:()=>SKP,skTrick,skateH,skateLH,SKZ,toggleSkate,sk:()=>SK,skStep:skateParkStep});
