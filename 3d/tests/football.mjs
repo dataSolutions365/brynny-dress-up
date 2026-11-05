@@ -96,8 +96,8 @@ try {
       if (g.ph === 'live' && g.qb === me && !g.thrown && !g.carrier && g.t > 1.4) { const s = g.wr.map(w => Math.min(...B.them.map(d => Math.hypot(w.p.x - d.p.x, w.p.z - d.p.z)))); F.throwTo(s[0] > s[1] ? 0 : 1); }
       if (g.ph === 'live' && g.poss === 'them' && g.count >= 3) { const t = g.carrier || (!g.thrown ? g.qb : null);
         if (t && t.team === 'them') { const dx = t.p.x - me.p.x, dz = t.p.z - me.p.z, d = Math.hypot(dx, dz);
-          if (d > .8) { const k = Math.min(d, 4.8 * dt) / d, [x, z] = Z.toWorld(me.p.x + dx * k, me.p.z + dz * k); G.player.pos.x = x; G.player.pos.z = z; }
-          if (d < 1.2 && me.grabCD <= 0) F.press(); } }
+          if (d > .5) { const k = Math.min(d, 4.8 * dt) / d, [x, z] = Z.toWorld(me.p.x + dx * k, me.p.z + dz * k); G.player.pos.x = x; G.player.pos.z = z; }
+          if (d < .95 && me.grabCD <= 0) F.press(); } }// inside 1.0 a grab always gets the flag
       if (g.ph === 'live' && g.carrier && g.carrier.team === 'us' && g.carrier !== me) st.caught = 1;
       const k = g.snaps + g.poss + g.drives.us + g.drives.them;
       if (g.ph === 'dead' && last !== k) { last = k; st.plays++; st[g.res] = (st[g.res] || 0) + 1; if (g.res !== 'inc' && g.carrier && g.carrier !== g.qb) st.catch++; } }; });
@@ -118,7 +118,7 @@ try {
   const onScreen = () => page.evaluate(() => { const G = window.__game, B = G.football.FTB, g = B.g, c = G.camera; c.updateMatrixWorld();
     const all = [B.me, ...B.us, ...B.them], out = [];
     for (const e of all) { const v = (e === B.me ? G.av().g : e.a.g).getWorldPosition(new c.position.constructor()); v.y += .9; v.project(c);
-      if (Math.abs(v.x) > .95 || Math.abs(v.y) > .9 || v.z > 1) out.push(e.name); }
+      if (Math.abs(v.x) > .95 || Math.abs(v.y) > .9 || v.z > 1) out.push(e.name + " " + v.x.toFixed(2) + "," + v.y.toFixed(2)); }
     const q = g.qb.a.g.getWorldPosition(new c.position.constructor()), dq = q.distanceTo(c.position);
     return { poss: g.poss, ph: g.ph, out, camH: +(c.position.y - q.y).toFixed(1), dq: +dq.toFixed(1) }; });
   for (const side of ['us', 'them']) {
@@ -141,10 +141,13 @@ try {
   await page.evaluate(() => document.querySelector('#ftDone').click());
 
   // 5. Sack the QB: six snaps
-  await page.evaluate(() => window.__game.football.start('sack'));
+  // the same dice every run, so a slow test computer doesn't change how the six snaps go
+  await page.evaluate(() => { let a = 20261105; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; });
+  await page.evaluate(() => { const st = window.__ft.st; for (const k in st) st[k] = 0; window.__game.football.start('sack'); });
   await play(3.6); await shot('football-5-sack');
   await play(200, () => !window.__game.football.FTB.mode);
-  { const g = await page.evaluate(() => ({ sacks: window.__game.football.FTB.g.sacks, snaps: window.__game.football.FTB.g.snaps, mode: window.__game.football.FTB.mode }));
+  { const g = await page.evaluate(() => ({ sacks: window.__game.football.FTB.g.sacks, snaps: window.__game.football.FTB.g.snaps, mode: window.__game.football.FTB.mode, st: window.__ft.st }));
+    console.log("   drill:", JSON.stringify(g.st));
     if (!g.mode && g.snaps === 6 && g.sacks >= 2) ok(`Sack the QB: ${g.sacks} sacks in 6 snaps`); else fail(`Sack the QB: ${JSON.stringify(g)}`); }
   await page.evaluate(() => document.querySelector('#ftDone').click());
 

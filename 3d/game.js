@@ -15312,7 +15312,8 @@ function ftGamePress(){const G=FTB.g;if(G.ph==='pick'&&G.poss==='them')return;
 function ftGameAlt(){const me=FTB.me,G=FTB.g;if(G.carrier!==me||me.jukeT>0||me.jukeCD>0)return;me.jukeT=.45;me.jukeCD=1.5;av.play('twirl');tone(500,.12,'sine',.08,0,900);}
 // a flag is pulled: the play is over right there
 function ftTag(by,who){const G=FTB.g;ftPull(by,who);if(G.ph!=='live')return;
-  const sack=!G.thrown&&!G.qbRun&&who===G.qb;G.res=sack?'sack':'tag';G.spot=who.p.z;G.ph='dead';G.deadT=1.9;ftWhistle();
+  // a sack: the quarterback's flag pulled behind the line of scrimmage before he throws, even if he was scrambling
+  const sack=!G.thrown&&who===G.qb&&(who.p.z-G.los)*ftDir()<=0;G.res=sack?'sack':'tag';G.spot=who.p.z;G.ph='dead';G.deadT=1.9;ftWhistle();
   if(sack){banner(by===FTB.me?'💥 SACK! You got him!':`💥 Sacked by ${by.name}!`);if(by===FTB.me){G.sacks++;did('football','sack');ftCheer();}}
   else banner(`🚩 Flag pulled by ${by===FTB.me?'you':by.name}!`);
   if(G.poss==='them'&&by.team==='us'&&!sack)G.stops++;}
@@ -15474,7 +15475,10 @@ function ftCam(dt){if(!FTB.mode)return;const c=FTB.cam,me=FTB.me,B=FTB.ball;let 
     // far enough that the receivers, the defenders and the field ahead all fit on a phone held upright
     const G=FTB.g,dir=ftDir(),back=-dir,wide=camera.aspect<1?1:.72;let f;if(B.st==='air')f=B.p;else if(G.carrier)f=G.carrier.p;else f=G.qb.p;
     const fz=dir<0?Math.min(f.z,G.los+1):Math.max(f.z,G.los-1);
-    P=new THREE.Vector3(f.x*.15,12.5*wide,fz+back*16.5*wide);T=new THREE.Vector3(f.x*.3,0,fz+dir*6);}
+    // and when the play spreads out toward the sidelines, back up a bit more so nobody runs off the side of the screen
+    let mx=0;for(const e of [FTB.me,...FTB.pl])if(e&&e.a&&e.a.g.visible!==false)mx=Math.max(mx,Math.abs(e.p.x-f.x*.15));
+    const k=wide*Math.min(1.6,Math.max(1,mx/4.6));
+    P=new THREE.Vector3(f.x*.15,12.5*k,fz+back*16.5*k);T=new THREE.Vector3(f.x*.3,0,fz+dir*6);}
   FTZ.g.localToWorld(P);FTZ.g.localToWorld(T);
   if(!c.init){c.p.copy(P);c.t.copy(T);c.init=true;}c.p.lerp(P,Math.min(1,dt*4));c.t.lerp(T,Math.min(1,dt*5));
   camera.position.copy(c.p);camera.lookAt(c.t);
