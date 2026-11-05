@@ -1,6 +1,7 @@
 // Hang gliding and skydiving test (3d/src/26i-sky-sports.js), on an iPhone-size screen:
 //  🪂 steps on the launch spot on top of Lookout Mountain, taps 🪂 Hang glide!, runs off the ramp, glides toward town (steering with
 //     the joystick), checks a thermal lifts you up, taps 🛬 Land and checks you come down on open ground (not a roof, not a tree).
+//  🪂 also opens a parachute over town and checks it always comes down and lands (never floats back up).
 //  ✈️ steps on the spot by the plane at the airfield, taps ✈️ Go skydiving!, checks the plane takes off and climbs to jump height
 //     with the door open, taps 🪂 Jump!, falls, the parachute opens by itself at the safe height, and you land standing up.
 //     Then the plane lands again and taxis back to its spot.
@@ -125,12 +126,26 @@ try {
   s = await waitGame(60, s => !s.mode);
   console.log(`landed at (${s.x.toFixed(1)}, ${s.z.toFixed(1)}), height ${s.y.toFixed(2)}, ${s.land}`);
   if (s.mode) fail(`You should have landed, mode is ${s.mode}.`);
-  if (s.y > .6 || s.land !== true) fail('You should be standing on the ground after landing.');
+  if (Math.abs(s.y - s.ground) > .2 || s.land !== true) fail('You should be standing on open ground after landing.');
   await shot('12-landed');
   s = await waitGame(150, s => s.plane === 'park');
   console.log(`the plane is back: ${s.plane}`);
   if (s.plane !== 'park') fail(`The plane should land and taxi back to its spot, it is "${s.plane}".`);
   await shot('13-plane-back');
+  // a parachute coming down over town (busy with roofs, trees, lamps and, at Christmas, the big tree) still lands, on open ground,
+  // whether you let it fly itself or hold the joystick the whole way down
+  for (const [nm, x, z, held] of [['the plaza', 12, 12, 0], ['the plaza, steering', 12, 12, 1], ['the far bank', 20, 95, 0]]) {
+    await page.evaluate(([x, z]) => { const G = window.__game; G.skyGo.canopyAt(x, G.groundAt(x, z) + 20, z, Math.atan2(-x, -z)); }, [x, z]);
+    if (held) { await touch('touchStart', [{ x: 100, y: 600 }]); for (let i = 1; i <= 8; i++) { await touch('touchMove', [{ x: 100 + i * 2, y: 600 - i * 6 }]); await page.waitForTimeout(30); } }
+    let top = 0; const t0 = (await G()).clock;
+    s = await waitGame(45, s => { top = Math.max(top, s.y); return !s.mode; });
+    if (held) await touch('touchEnd', []);
+    await page.evaluate(() => { const j = window.__game.joy; j.id = null; j.x = j.y = 0; });
+    console.log(`parachute over ${nm}: down in ${(s.clock - t0).toFixed(0)} s at (${s.x.toFixed(1)}, ${s.z.toFixed(1)}), ${s.land}, highest ${top.toFixed(1)}`);
+    if (s.mode) fail(`A parachute over ${nm} should come down and land within 45 s, it is still ${s.mode} at height ${s.y.toFixed(1)}.`);
+    if (top > 23) fail(`A parachute over ${nm} should never float back up (it went up to ${top.toFixed(1)}).`);
+    s = await waitGame(2.5);
+  }
   if (errors.length) fail(`The game had errors:\n  ${errors.join('\n  ')}`);
   if (!process.exitCode) console.log('✅ Hang gliding and skydiving work.');
 } finally {
