@@ -14060,7 +14060,7 @@ const skyEase=u=>u<=0?0:u>=1?1:u*u*(3-2*u);
 const skyMaxR=()=>(typeof WORLD!=='undefined'&&WORLD&&WORLD.out?WORLD.out:BANK.out+60)-6;
 
 // where you may come down: true on land you can walk on, 'water' in the canal (you swim), false anywhere else
-function skyLandable(x,z){const d=Math.hypot(x,z);if(d<=R+.3)return true;if(inCanal(x,z))return 'water';
+function skyLandable(x,z){const d=Math.hypot(x,z);if(d<=CANAL.inR)return true;// (the island, right out to its sandy edge at the water)if(inCanal(x,z))return 'water';
   tmpSky.set(x,0,z);return bankLand(tmpSky)&&Math.abs(tmpSky.x-x)<.01&&Math.abs(tmpSky.z-z)<.01;}
 // the highest thing under (x,z): buildings, trees and lamps on the island, the mountain's steep rock, the pines over the canal
 function skyFloor(x,z){let f=flyFloor(x,z,1);const d=Math.hypot(x,z);
@@ -14788,7 +14788,7 @@ SHOW.push({k:'sky',
 
 // for the test (3d/tests/sky.mjs)
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{sky:()=>({mode:SKY.mode,t:SKY.t,hd:SKY.hd,sp:SKY.sp,vy:SKY.vy,pr:SKY.pr,flight:SKY.flight,land:SKY.land,btn:skyKey,plane:PL.mode,planeY:PL.pos.y,planeX:PL.pos.x,planeZ:PL.pos.z,door:PL.doorK,clock:clock.elapsedTime}),
-  SKY_PARTS:{RAMP,AIRF,THERM,PL_ALT},skyGo:{hgGo,sdGo,sdJump,sdPull,skyLandBtn,canopyAt:(x,y,z,hd)=>{flyGrid();skyCamKeep();Object.assign(SKY,{mode:'ff',t:0,hd,vx:0,vz:0,vy:-6,said:{}});player.pos.set(x,y,z);sdPull(false);}},skyFloor,skyLandable,skyLift});});
+  SKY_PARTS:{RAMP,AIRF,THERM,PL_ALT},skyGo:{hgGo,sdGo,sdJump,sdPull,skyLandBtn,canopyAt:(x,y,z,hd)=>{flyGrid();skyCamKeep();Object.assign(SKY,{mode:'ff',t:0,hd,vx:0,vz:0,vy:-6,said:{}});player.pos.set(x,y,z);sdPull(false);},step:skyStep},skyFloor,skyLandable,skyLift});});
 // ---- src/26j-wiffle.js ----
 /* ================= ⚾ WIFFLE BALL FIELD (🏟️ Sports Park, across the canal from the Batting Cage) =================
    A backyard wiffle ball field on the canal's far bank (BANK_LAND a0 194 .. a1 218), over a wooden footbridge at 202 (it lands beside the backstop, by the ⚾ pad).
