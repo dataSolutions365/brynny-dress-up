@@ -418,48 +418,81 @@ function decorate(sm, fresh) {
 }
 for (const d of X.snowmen) buildSnowman(d, false);
 // rolling: a ball of snow in front of you that grows as you walk
-const ROLL = { on: false, stage: 0, r: .14, ball: null, last: null, base: null, full: false };
+const ROLL = { on: false, stage: 0, r: .2, ball: null, last: null, base: null, full: false, pct: 0 };
+const ROLL_START = .2, ROLL_GROW = .045; // how big a new ball starts, and how much it grows per step walked
+// the ⛄ helper at the top of the screen: what to do next, and how big the ball is
+const rollHud = document.createElement('div'); rollHud.id = 'xmasRoll';
+rollHud.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 58px);transform:translateX(-50%);z-index:30;background:rgba(255,255,255,.95);color:#1f3a5a;font:700 15px system-ui,sans-serif;padding:8px 14px 10px;border-radius:18px;box-shadow:0 6px 18px rgba(31,58,90,.25);display:none;pointer-events:none;text-align:center;min-width:220px;max-width:86vw;transition:transform .15s';
+rollHud.innerHTML = '<div id="xmasRollTxt"></div><div style="margin-top:6px;height:12px;border-radius:6px;background:#dfe9f5;overflow:hidden"><div id="xmasRollBar" style="height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#9cc8f0,#4a90d9);transition:width .2s"></div></div>';
+document.body.appendChild(rollHud);
+const PART = ['bottom', 'middle', 'head'];
+let rollHudKey = '';
+function rollHUD() {
+  if (!ROLL.on) { rollHud.style.display = 'none'; rollHudKey = ''; return; }
+  const R0 = SM_SIZES[ROLL.stage], pct = ROLL.full ? 100 : Math.round(100 * (ROLL.r - ROLL_START) / (R0 - ROLL_START));
+  let txt;
+  if (!ROLL.full) txt = `⛄ Walk around to roll the ${PART[ROLL.stage]} ball bigger!`;
+  else if (ROLL.stage === 0) txt = '⛄ Big enough! Tap ⛄ Put down';
+  else { const B = ROLL.base, far = B ? Math.hypot(B.d.x - player.pos.x, B.d.z - player.pos.z) : 0;
+    txt = far > 2.8 ? `⛄ Push it back to your snowman (${Math.round(far)} steps away)` : '⛄ Tap ⛄ Stack to put it on top!'; }
+  const key = txt + pct; if (key === rollHudKey) return; rollHudKey = key;
+  rollHud.style.display = 'block'; document.getElementById('xmasRollTxt').textContent = txt;
+  const bar = document.getElementById('xmasRollBar'); bar.style.width = Math.max(4, pct) + '%'; bar.style.background = ROLL.full ? 'linear-gradient(90deg,#7fd38a,#2fa84f)' : 'linear-gradient(90deg,#9cc8f0,#4a90d9)';
+}
+function rollNudge() { rollHud.style.transform = 'translateX(-50%) scale(1.12)'; setTimeout(() => { rollHud.style.transform = 'translateX(-50%)'; }, 180); }
+// a soft arrow over the snowman you're building, so you can find it again
+const baseArrow = new THREE.Mesh(new THREE.ConeGeometry(.16, .32, 16), new THREE.MeshStandardMaterial({ color: '#4a90d9', roughness: .5, emissive: '#1d4f86', emissiveIntensity: .35 }));
+baseArrow.rotation.x = Math.PI; baseArrow.visible = false; scene.add(baseArrow);
 function snowmanAct() {
   if (G.busy && G.busy()) return;
   if (G.ride && G.ride()) { G.toast('Hop off your ride first to build a snowman ⛄'); return; }
   if (!ROLL.on) { // start rolling the next ball
-    ROLL.on = true; ROLL.r = .14; ROLL.full = false; ROLL.last = player.pos.clone();
+    ROLL.on = true; ROLL.r = ROLL_START; ROLL.full = false; ROLL.last = player.pos.clone();
     ROLL.ball = new THREE.Mesh(SM_GEO[ROLL.stage], smSnow); ROLL.ball.castShadow = true; ROLL.ball.scale.setScalar(ROLL.r / SM_SIZES[ROLL.stage]); scene.add(ROLL.ball);
-    G.toast(ROLL.stage === 0 ? '⛄ Walk around to roll the snow into a big ball!' : ROLL.stage === 1 ? '⛄ Roll a middle ball, then bring it back to your snowman' : '⛄ Now a small ball for the head!');
-    G.renderActions(); return; }
-  if (!ROLL.full) { G.toast('⛄ Keep walking! The ball is still too small'); return; }
-  const P = player.pos, f = player.face, fx = P.x + Math.sin(f) * (1 + SM_SIZES[ROLL.stage]), fz = P.z + Math.cos(f) * (1 + SM_SIZES[ROLL.stage]);
+    G.sfx('pop'); placeRoll(0); rollHUD(); G.renderActions(); return; }
+  if (!ROLL.full) { G.toast('⛄ Keep walking! The ball is still too small'); rollNudge(); return; }
+  const P = player.pos, f = player.face, fx = ROLL.ball.position.x, fz = ROLL.ball.position.z; // it goes down right where the ball is
   if (ROLL.stage === 0) {
     if (G.obs.some(o => Math.hypot(o.x - fx, o.z - fz) < o.r + .6)) { G.toast('⛄ Not enough room here. Try a more open spot'); return; }
     const d = { x: fx, z: fz, face: f + Math.PI, n: 1, scarf: rnd(SCARVES), at: zoneId() || 'park' };
-    ROLL.base = buildSnowman(d, false); dropRoll(); ROLL.stage = 1; G.toast('⛄ Great base! Tap ⛄ again to roll the middle'); G.renderActions(); return; }
-  const B = ROLL.base; if (!B || Math.hypot(B.d.x - P.x, B.d.z - P.z) > 2.8) { G.toast('⛄ Bring it to your snowman to stack it on top'); return; }
+    ROLL.base = buildSnowman(d, false); dropRoll(); ROLL.stage = 1; G.burst(ROLL.base.g.position.clone().add(new THREE.Vector3(0, .6, 0)), '#ffffff', 16, 1.5); G.sfx('pop');
+    G.toast('⛄ Great base! Tap ⛄ Middle to roll the next ball'); G.renderActions(); return; }
+  const B = ROLL.base; if (!B || Math.hypot(B.d.x - P.x, B.d.z - P.z) > 2.8) { G.toast('⛄ Bring it to your snowman to stack it on top'); rollNudge(); return; }
   const b = new THREE.Mesh(SM_GEO[ROLL.stage], smSnow); b.position.y = stackY[ROLL.stage]; b.castShadow = true; B.g.add(b); B.parts.push(b); B.d.n = ROLL.stage + 1; dropRoll();
   G.burst(B.g.position.clone().add(new THREE.Vector3(0, stackY[ROLL.stage], 0)), '#ffffff', 16, 1.5);
-  if (ROLL.stage === 1) { ROLL.stage = 2; G.toast('⛄ Now roll a small ball for the head!'); G.renderActions(); return; }
+  if (ROLL.stage === 1) { ROLL.stage = 2; G.sfx('pop'); G.toast('⛄ Now tap ⛄ Head and roll a small ball for the head!'); G.renderActions(); return; }
   // done: the face, arms and scarf go on
   B.d.n = 3; decorate(B, true); ROLL.stage = 0; ROLL.base = null;
   X.snowmen.push(B.d); while (X.snowmen.length > 6) { const old = X.snowmen.shift(), sm = snowmen.find(s => s.d === old); if (sm) removeSnowman(sm); } persist();
   G.banner('⛄ You built a snowman!'); G.earn(10, 'Snowman'); did('snowman', B.d.at); G.renderActions();
 }
-function dropRoll() { if (ROLL.ball) { scene.remove(ROLL.ball); ROLL.ball = null; } ROLL.on = false; ROLL.full = false; }
+function dropRoll() { if (ROLL.ball) { scene.remove(ROLL.ball); ROLL.ball = null; } ROLL.on = false; ROLL.full = false; ROLL.pct = 0; rollHUD(); }
+// the ball sits on the snow a step in front of you and a little to your right, so the camera behind you can see it
+function placeRoll(moved) {
+  const P = player.pos, f = player.face, R0 = SM_SIZES[ROLL.stage], k = ROLL.r / R0, d = 1.05 + ROLL.r, side = .35 + ROLL.r * .6;
+  ROLL.ball.scale.setScalar(k);
+  const x = P.x + Math.sin(f) * d - Math.cos(f) * side, z = P.z + Math.cos(f) * d + Math.sin(f) * side; ROLL.ball.position.set(x, G.groundAt(x, z) + ROLL.r * .92, z);
+  if (moved) ROLL.ball.rotateOnWorldAxis(new THREE.Vector3(Math.cos(f), 0, -Math.sin(f)), moved / Math.max(.1, ROLL.r));
+}
 function removeSnowman(sm) { scene.remove(sm.g); const i = G.obs.indexOf(sm.ob); if (i >= 0) G.obs.splice(i, 1); snowmen.splice(snowmen.indexOf(sm), 1); }
 ticks.push(dt => {
-  if (!ROLL.on || !ROLL.ball) return; const P = player.pos, f = player.face, R0 = SM_SIZES[ROLL.stage];
+  const B = ROLL.base; baseArrow.visible = !!B;
+  if (B) { const t = performance.now() / 1000; baseArrow.position.set(B.d.x, B.g.position.y + stackY[B.parts.length - 1] + SM_SIZES[B.parts.length - 1] + .45 + Math.sin(t * 3) * .1, B.d.z); baseArrow.rotation.y = t; }
+  if (!ROLL.on || !ROLL.ball) return; const P = player.pos, R0 = SM_SIZES[ROLL.stage];
   const moved = Math.hypot(P.x - ROLL.last.x, P.z - ROLL.last.z); ROLL.last.copy(P);
   if (moved > 2) return; // teleported (opened something)
-  if (!ROLL.full) { ROLL.r = Math.min(R0, ROLL.r + moved * .028); if (ROLL.r >= R0) { ROLL.full = true; G.sfx('pop'); G.toast(ROLL.stage === 0 ? '⛄ Big enough! Tap ⛄ to put it down' : '⛄ Big enough! Take it to your snowman and tap ⛄'); G.renderActions(); } }
-  const k = ROLL.r / R0, d = .45 + ROLL.r; ROLL.ball.scale.setScalar(k);
-  const x = P.x + Math.sin(f) * d, z = P.z + Math.cos(f) * d; ROLL.ball.position.set(x, G.groundAt(x, z) + ROLL.r * .92, z);
-  ROLL.ball.rotateOnWorldAxis(new THREE.Vector3(Math.cos(f), 0, -Math.sin(f)), moved / Math.max(.1, ROLL.r));
+  if (!ROLL.full) { ROLL.r = Math.min(R0, ROLL.r + moved * ROLL_GROW);
+    const pct = Math.floor(10 * (ROLL.r - ROLL_START) / (R0 - ROLL_START)); if (pct !== ROLL.pct) { ROLL.pct = pct; G.renderActions(); }
+    if (ROLL.r >= R0) { ROLL.full = true; G.sfx('tada'); G.burst(ROLL.ball.position.clone(), '#ffffff', 12, 1.2); G.renderActions(); } }
+  placeRoll(moved); rollHUD();
 });
 
 /* ================= ACTION BUTTONS ================= */
-const snowLabel = () => !ROLL.on ? (ROLL.stage === 0 ? 'Snowman' : ROLL.stage === 1 ? 'Middle' : 'Head') : ROLL.full ? (ROLL.stage === 0 ? 'Put down' : 'Stack') : 'Rolling…';
+const snowLabel = () => !ROLL.on ? (ROLL.stage === 0 ? 'Snowman' : ROLL.stage === 1 ? 'Middle' : 'Head') : ROLL.full ? (ROLL.stage === 0 ? 'Put down' : 'Stack') : `Roll ${ROLL.pct * 10}%`;
 G.ACT_HOOKS.unshift({ acts: () => [['snowball', '❄️', 'Snowball'], ['snowman', '⛄', snowLabel()]], run: id => { if (id === 'snowball') { playerThrow(); return true; } if (id === 'snowman') { snowmanAct(); return true; } return false; } });
 G.renderActions();
 
 // for the test (3d/tests/christmas.mjs)
-window.__xmas = { tree: TREE, santa: window.__santa, snowmen: () => snowmen.map(s => ({ x: s.d.x, z: s.d.z, n: s.d.n })), roll: () => ({ on: ROLL.on, stage: ROLL.stage, full: ROLL.full, r: ROLL.r }),
+window.__xmas = { tree: TREE, santa: window.__santa, snowmen: () => snowmen.map(s => ({ x: s.d.x, z: s.d.z, n: s.d.n })), roll: () => ({ on: ROLL.on, stage: ROLL.stage, full: ROLL.full, r: ROLL.r, hud: rollHud.style.display !== 'none' ? document.getElementById('xmasRollTxt').textContent : '', ball: ROLL.ball ? { x: ROLL.ball.position.x, z: ROLL.ball.position.z } : null }),
   fight: () => FIGHT && { you: FIGHT.you, them: FIGHT.them, f: FIGHT.f.name }, startFight, throwAt: playerThrow, balls: () => balls.length, bulbs: () => allBulbs.reduce((a, b) => a + b.im.count, 0) };
 }

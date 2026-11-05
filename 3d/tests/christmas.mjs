@@ -111,6 +111,12 @@ try {
   await page.evaluate(() => { const G = window.__game; G.player.pos.set(-30, 0, -30); G.player.face = 0; for (const f of G.FRIENDS) if (f.pos.distanceTo(G.player.pos) < 12) f.pos.set(0, 0, 40); });
   for (let stage = 0; stage < 3; stage++) {
     await page.evaluate(() => window.__game.doAction('snowman'));
+    // you can see what's happening: a helper at the top says what to do, and the ball sits out in front of you where the camera sees it
+    const st = await page.evaluate(async () => { await new Promise(r => setTimeout(r, 200)); const r = window.__xmas.roll(), p = window.__game.player.pos;
+      return { hud: r.hud, ahead: r.ball && Math.hypot(r.ball.x - p.x, r.ball.z - p.z), label: [...document.querySelectorAll('#actions button, #actions .act')].map(e => e.textContent).join('|') }; });
+    if (!/Walk around/.test(st.hud)) fail(`no ⛄ helper telling you to walk while rolling (${JSON.stringify(st)})`);
+    if (!(st.ahead > 1.1)) fail(`the rolling ball is hidden behind you (${JSON.stringify(st)})`);
+    if (stage === 0) { console.log('rolling:', JSON.stringify(st)); await walk(page, 0, 4, 30); await page.evaluate(() => { const G = window.__game; G.cam.yaw = Math.PI; }); await shot('rolling'); }
     // walk back and forth until the ball is big enough
     for (let k = 0; k < 12; k++) { if ((await page.evaluate(() => window.__xmas.roll().full))) break; await walk(page, k % 2 ? -5 : 5, 0, 30); }
     const r = await page.evaluate(() => window.__xmas.roll());
@@ -118,8 +124,9 @@ try {
     if (stage > 0) await page.evaluate(() => { const G = window.__game, sm = window.__xmas.snowmen(), b = G.SAVE.xmas; }); // stacking happens next to the base
     if (stage > 0) await page.evaluate(() => { const G = window.__game, p = G.player; const base = window.__xmasBase; p.pos.set(base.x, 0, base.z - 1.6); p.face = 0; });
     await page.evaluate(() => window.__game.doAction('snowman'));
-    if (stage === 0) await page.evaluate(() => { const G = window.__game, p = G.player, f = p.face; window.__xmasBase = { x: p.pos.x + Math.sin(f) * 1.55, z: p.pos.z + Math.cos(f) * 1.55 }; });
+    if (stage === 0) await page.evaluate(() => { const L = window.__xmas.snowmen(), b = L[L.length - 1]; window.__xmasBase = { x: b.x, z: b.z }; });
   }
+  if (await page.evaluate(() => window.__xmas.roll().hud)) fail('the ⛄ helper stayed up after the snowman was built');
   const sm = await page.evaluate(() => ({ list: window.__xmas.snowmen(), saved: window.__game.SAVE.xmas.snowmen.length, done: window.__chal.isDone(window.__chal.list.find(c => c.id === 'xs_snowman')) }));
   console.log('snowmen:', JSON.stringify(sm));
   if (!sm.list.some(s => s.n === 3)) fail('the snowman did not get all 3 balls');
