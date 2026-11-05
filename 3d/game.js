@@ -15127,7 +15127,14 @@ function ftOpenMenu(){if(FTB.mode||FTB.menu||SP.mode)return;FTB.menu=true;const 
    <button class="spPick" data-m="ret"><b>🏃</b><span><strong>Kick returns</strong><small>Catch 5 punts and run them back${S.ret!=null?` · Best: ${S.ret} yards`:''}</small></span></button>
    <button class="btn ghost" id="ftNo">Not now</button>`;
   c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ftCloseMenu();ftStart(b.dataset.m);});
-  $('#ftNo').onclick=ftCloseMenu;$('#ftMenu').classList.add('show');sfx('pop');}
+  ftSuitBtn(c);$('#ftNo').onclick=ftCloseMenu;$('#ftMenu').classList.add('show');sfx('pop');}
+// 👕 suit up in a football uniform: the Eagles jersey, white football pants and cleats (your outfit is kept, like the other sports)
+const FT_LOOK={top:{id:'jersey',c:'#2a5fc4'},bottom:{id:'baseballpants',c:'#ffffff'},shoes:{id:'ballcleats',c:'#2d2d3a'}};
+const ftWearing=()=>{const l=SAVE.look;return !l.dress&&l.top&&l.top.id==='jersey'&&l.bottom&&l.bottom.id==='baseballpants';};
+function ftSuitBtn(c){if(ftWearing())return;
+  const b=document.createElement('button');b.className='btn';b.id='ftSuit';b.style.cssText='display:block;width:calc(100% - 8px);margin:2px 4px 8px';b.textContent='👕 Suit up in a football uniform';c.querySelector('p').after(b);
+  b.onclick=()=>{const l=SAVE.look;if(!spCanUnsuit())SAVE.sports.prev=JSON.parse(JSON.stringify(l));l.dress=null;l.top={...FT_LOOK.top};l.bottom={...FT_LOOK.bottom};l.shoes={...FT_LOOK.shoes};l.hat=null;
+    persist();rebuildPlayer();sfx('star');b.textContent='✅ Suited up! Pick a game';b.disabled=true;b.style.opacity=.7;did('dress','football');};}
 function ftCloseMenu(){FTB.menu=false;$('#ftMenu').classList.remove('show');}
 $('#ftMenu').addEventListener('click',e=>{if(e.target.id==='ftMenu'&&!FTB.mode)ftCloseMenu();});
 function ftStart(m){ftCloseMenu();
@@ -15158,7 +15165,8 @@ function ftEnd(show=true,quit=false){const m=FTB.mode;if(!m)return;FTB.mode=null
   else if(m==='ret'){const S=FTB.r;coins=Math.round(S.yards/4)+S.td*10;best=ftBest('ret',S.yards);
     h=`<h2>${S.td?'🏃 Touchdown return!':S.yards>=80?'🏃 Great returns!':'🏃 Good try!'}</h2><div class="spBig">${S.yards} yards</div><p>${S.td?`${S.td} touchdown${S.td>1?'s':''} · `:''}longest ${S.long} yards${best?' · New best! 🎉':''}</p>`;}
   if(quit)coins=0;if(coins>0){earn(coins,'sports');h+=`<p>🪙 +${coins} coins</p>`;}
-  $('#ftCard').innerHTML=h+`<button class="btn" id="ftAgain">🔁 Play again</button> <button class="btn ghost" id="ftDone">Done</button>`;
+  $('#ftCard').innerHTML=h+`<button class="btn" id="ftAgain">🔁 Play again</button> <button class="btn ghost" id="ftDone">Done</button>`+(spCanUnsuit()?`<br><button class="btn ghost" id="ftUnsuit">👗 Back to my outfit</button>`:'');
+  if(spCanUnsuit())$('#ftUnsuit').onclick=()=>{spUnsuit();ftCloseMenu();};
   $('#ftAgain').onclick=()=>{ftCloseMenu();ftStart(m);};$('#ftDone').onclick=ftCloseMenu;
   FTB.menu=true;$('#ftMenu').classList.add('show');if(coins>=15||best)sfx('tada');}
 $('#ftLeave').onclick=()=>ftEnd(true,true);
@@ -15304,7 +15312,8 @@ function ftGamePress(){const G=FTB.g;if(G.ph==='pick'&&G.poss==='them')return;
 function ftGameAlt(){const me=FTB.me,G=FTB.g;if(G.carrier!==me||me.jukeT>0||me.jukeCD>0)return;me.jukeT=.45;me.jukeCD=1.5;av.play('twirl');tone(500,.12,'sine',.08,0,900);}
 // a flag is pulled: the play is over right there
 function ftTag(by,who){const G=FTB.g;ftPull(by,who);if(G.ph!=='live')return;
-  const sack=!G.thrown&&!G.qbRun&&who===G.qb;G.res=sack?'sack':'tag';G.spot=who.p.z;G.ph='dead';G.deadT=1.9;ftWhistle();
+  // a sack: the quarterback's flag pulled behind the line of scrimmage before he throws, even if he was scrambling
+  const sack=!G.thrown&&who===G.qb&&(who.p.z-G.los)*ftDir()<=0;G.res=sack?'sack':'tag';G.spot=who.p.z;G.ph='dead';G.deadT=1.9;ftWhistle();
   if(sack){banner(by===FTB.me?'💥 SACK! You got him!':`💥 Sacked by ${by.name}!`);if(by===FTB.me){G.sacks++;did('football','sack');ftCheer();}}
   else banner(`🚩 Flag pulled by ${by===FTB.me?'you':by.name}!`);
   if(G.poss==='them'&&by.team==='us'&&!sack)G.stops++;}
@@ -15457,14 +15466,19 @@ function ftRetDead(res){const S=FTB.r,me=FTB.me;S.ph='dead';S.deadT=2.2;S.res=re
 /* ---------- camera: high behind the play, looking down the field ---------- */
 function ftCam(dt){if(!FTB.mode)return;const c=FTB.cam,me=FTB.me,B=FTB.ball;let P,T;
   if(FTB.mode==='fg'){const S=FTB.fg;
-    if(S.ph==='fly'&&B.p.z<S.zH-1){P=new THREE.Vector3(-.4,2.2,S.zH+4.6);T=new THREE.Vector3(B.p.x*.6,Math.max(1.5,B.p.y*.8),Math.min(B.p.z,-FTF.HL+4)-2);}
-    else{P=new THREE.Vector3(-.35,1.85,S.zH+4.4);T=new THREE.Vector3(0,2.3,-FTF.HL);}}
+    if(S.ph==='fly'&&B.p.z<S.zH-1){P=new THREE.Vector3(-.4,4,S.zH+10);T=new THREE.Vector3(B.p.x*.6,Math.max(1.5,B.p.y*.8),Math.min(B.p.z,-FTF.HL+4)-2);}
+    else{P=new THREE.Vector3(-.35,3.8,S.zH+10);T=new THREE.Vector3(0,2.6,-FTF.HL);}}// pulled back behind the kicker and holder
   else if(FTB.mode==='ret'){const S=FTB.r;const f=(S.ph==='air'&&B.st==='air')?new THREE.Vector3((me.p.x+B.p.x)/2,0,Math.max(me.p.z-2,(me.p.z+B.p.z)/2)):me.p;
-    P=new THREE.Vector3(f.x*.55,5.4,me.p.z+7.2);T=new THREE.Vector3(f.x*.8,.9,f.z-5);
+    P=new THREE.Vector3(f.x*.4,8,me.p.z+10.5);T=new THREE.Vector3(f.x*.7,.6,f.z-6);
     if(S.ph==='air'&&B.st==='air')T.y=Math.min(4,B.p.y*.4+.9);}
-  else{const G=FTB.g;let f;if(B.st==='air')f=B.p;else if(G.carrier)f=G.carrier.p;else f=G.qb.p;
-    const fz=G.poss==='us'?Math.min(f.z,G.los+2):Math.min(f.z,G.los+.5);
-    P=new THREE.Vector3(f.x*.45,5.6,fz+8);T=new THREE.Vector3(f.x*.7,.6,fz-4.5);}
+  else{// behind the quarterback of whoever has the ball (yours, or the Bears' when you're on defense), up high and back
+    // far enough that the receivers, the defenders and the field ahead all fit on a phone held upright
+    const G=FTB.g,dir=ftDir(),back=-dir,wide=camera.aspect<1?1:.72;let f;if(B.st==='air')f=B.p;else if(G.carrier)f=G.carrier.p;else f=G.qb.p;
+    const fz=dir<0?Math.min(f.z,G.los+1):Math.max(f.z,G.los-1);
+    // and when the play spreads out toward the sidelines, back up a bit more so nobody runs off the side of the screen
+    let mx=0;for(const e of [FTB.me,...FTB.pl])if(e&&e.a&&e.a.g.visible!==false)mx=Math.max(mx,Math.abs(e.p.x-f.x*.15));
+    const k=wide*Math.min(1.6,Math.max(1,mx/4.6));
+    P=new THREE.Vector3(f.x*.15,12.5*k,fz+back*16.5*k);T=new THREE.Vector3(f.x*.3,0,fz+dir*6);}
   FTZ.g.localToWorld(P);FTZ.g.localToWorld(T);
   if(!c.init){c.p.copy(P);c.t.copy(T);c.init=true;}c.p.lerp(P,Math.min(1,dt*4));c.t.lerp(T,Math.min(1,dt*5));
   camera.position.copy(c.p);camera.lookAt(c.t);
