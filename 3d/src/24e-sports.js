@@ -7,6 +7,10 @@
 const SP={mode:null,z:null,balls:[],ball:null,poss:null,hold:null,dunk:null,score:0,opp:0,shots:0,t:0,left:0,
   next:0,busy:0,stealCD:0,msgT:0,lastBy:null,cpu:null,menu:false,bat:null,cam:{p:new THREE.Vector3(),t:new THREE.Vector3(),init:false},
   autoYaw:true};
+// SP.ext: other sports plug in here as SP.ext[mode]={step(dt,t),press(),release(),cam(dt),end(show,quit)} (e.g. ⚾ wiffle ball, 26j-wiffle.js).
+// While SP.mode is one of them, walking is locked and the HUD, the big button, ✕ Leave and the menu card are shared.
+SP.ext={};
+const spX=()=>SP.mode&&SP.ext[SP.mode];
 const SP_G=9.8,SP_BR=.13,SP_SWEET=.8;// aim is +0.009 strong: right on the rim's sweet spot (tuned with a quick physics simulation)
 if(!SAVE.sports)SAVE.sports={};
 const spBest=(k,v,hi=true)=>{const S=SAVE.sports;if(v==null)return S[k];if(S[k]==null||(hi?v>S[k]:v<S[k])){S[k]=v;persist();return true;}return false;};
@@ -54,7 +58,7 @@ function spBtn(text,cls){const b=$('#spMain');if(b.dataset.t!==text){b.dataset.t
 const spLocal=(z,w)=>{const [x,zz]=z.toLocal(w.x,w.z);return new THREE.Vector3(x,w.y,zz);};
 const spSetWorld=(z,lx,lz)=>{const [x,w]=z.toWorld(lx,lz);player.pos.x=x;player.pos.z=w;};
 const spFace=(z,lx,lz,tx,tz)=>Math.atan2(tx-lx,tz-lz)+z.rot;// world facing for looking from (lx,lz) to (tx,tz)
-function spLock(){return !!SP.mode&&(SP.mode==='ft'||SP.mode==='bat'||!!SP.hold||!!SP.dunk);}
+function spLock(){if(spX())return true;return !!SP.mode&&(SP.mode==='ft'||SP.mode==='bat'||!!SP.hold||!!SP.dunk);}
 function spSay(t,ms=1300){banner(t);}
 function spCheer(){try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}}
 // arm poses drawn on top of the normal walking animation
@@ -190,7 +194,8 @@ function spCheck(who){const C=SPC,z=SP.z,c=spCpu();for(const b of SP.balls.slice
   if(who==='me'){spSetWorld(z,0,top);player.face=spFace(z,0,top,0,C.HZ);c.p.set(0,0,def);c.face=Math.atan2(0,1);}
   else{spSetWorld(z,0,def);player.face=spFace(z,0,def,0,top);c.p.set(0,0,top);c.face=Math.PI;c.plan=null;c.t=0;c.shootT=-1;}
   cam.yaw=spFace(z,0,top,0,C.HZ)+Math.PI;cam.cy=cam.yaw;spBoard();spHud('🆚 You vs Kai',`${SP.score} - ${SP.opp}`,who==='me'?'your ball':'Kai\'s ball');}
-function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;SP.mode=null;SP.hold=null;SP.rel=null;SP.dunk=null;for(const a of [av,SP.cpu&&SP.cpu.a])if(a){a.shot=null;a.handsBack=false;for(const A of a.arms)A.hand.rotation.set(0,0,0);}$('#spMeter').classList.remove('show');spBody(false);
+function spEnd(show=true,quit=false){const m=SP.mode;if(!m)return;
+  if(SP.ext[m]){SP.mode=null;$('#spMeter').classList.remove('show');spBody(false);try{SP.ext[m].end(show,quit);}catch(e){console.error(e);}if(SP.onEnd)try{SP.onEnd(m,quit,show);}catch(e){}return;}SP.mode=null;SP.hold=null;SP.rel=null;SP.dunk=null;for(const a of [av,SP.cpu&&SP.cpu.a])if(a){a.shot=null;a.handsBack=false;for(const A of a.arms)A.hand.rotation.set(0,0,0);}$('#spMeter').classList.remove('show');spBody(false);
   for(const b of SP.balls.slice())spDropBall(b);if(SP.cpu)SP.cpu.a.g.visible=false;
   if(m==='bat')spBatStop();Z.court.board.draw('0','0');
   if(!show){if(SP.onEnd)try{SP.onEnd(m,true,false);}catch(e){}return;}let h='',coins=0,best=false;
@@ -215,13 +220,13 @@ $('#spLeave').onclick=()=>spEnd(true,true);
 /* ---------- the big button ---------- */
 function spCanDunk(){if(SP.mode!=='shoot'&&SP.mode!=='v1')return false;if(SP.poss!=='me'||!SP.ball||SP.ball.st!=='hold'||SP.dunk||SP.hold)return false;
   const l=spLocal(SP.z,player.pos);const d=Math.hypot(l.x,l.z-SPC.HZ);return d<2.1&&l.z>SPC.HZ-.2;}
-function spPress(){if(!SP.mode||SP.menu)return;
+function spPress(){if(!SP.mode||SP.menu)return;if(spX()){spX().press&&spX().press();return;}
   if(SP.mode==='bat'){spSwing();return;}
   if(SP.mode==='v1'&&SP.poss==='cpu'){spSteal();return;}
   if(SP.poss!=='me'||!SP.ball||SP.ball.st!=='hold'||SP.dunk||SP.hold)return;
   if(spCanDunk()){spDunk();return;}
   SP.hold={t:0};$('#spMeter').classList.add('show');tone(440,.05,'sine',.06);}
-function spRelease(){if(!SP.hold)return;const C=SPC,z=SP.z,h=SP.hold;SP.hold=null;$('#spMeter').classList.remove('show');
+function spRelease(){if(spX()){spX().release&&spX().release();return;}if(!SP.hold)return;const C=SPC,z=SP.z,h=SP.hold;SP.hold=null;$('#spMeter').classList.remove('show');
   const u=(h.t/1.05)%2,v=u<1?u:2-u;const l=spLocal(z,player.pos);const dist=Math.hypot(l.x,l.z-C.HZ);
   let w=SP.mode==='ft'?.15:Math.max(.07,.15-.014*Math.max(0,dist-3));let contest=0;
   if(SP.mode==='v1'){const c=SP.cpu;contest=Math.max(0,1-Math.hypot(c.p.x-l.x,c.p.z-l.z)/1.6);w*=1-.45*contest;}
@@ -406,7 +411,7 @@ function spLanded(b,hd){const B=SP.bat,P=SPB;const ft=Math.round(hd*12);
   else spSay(ft<40?`⚾ Base hit! ${ft} ft`:ft<90?`⚾ Line drive! ${ft} ft`:`⚾ Deep fly! ${ft} ft`);}
 
 /* ---------- cameras ---------- */
-function sportsCam(dt){if(!SP.mode)return;const z=SP.z;let P,T;
+function sportsCam(dt){if(!SP.mode)return;if(spX()){spX().cam&&spX().cam(dt);return;}const z=SP.z;let P,T;
   if(SP.mode==='ft'){const lx=SP.lx||0;P=z.g.localToWorld(new THREE.Vector3(lx*.85+.35,2.35,SPC.FT+3.4));T=z.g.localToWorld(new THREE.Vector3(lx*.3,2.1,SPC.HZ));}
   else if(SP.mode==='bat'){const B=SP.bat,b=B&&B.ball;
     if(b&&b.st==='hit'&&b.t>.15){P=z.g.localToWorld(new THREE.Vector3(.6,2.6,SPB.PLATE+3.2));T=z.g.localToWorld(b.p.clone());}
@@ -423,6 +428,6 @@ anims.push((t,dt)=>{// runs every frame after the player moved, before the camer
   if(curZone!==SP.lastZone){SP.lastZone=curZone;if(started&&!SP.mode&&curZone&&(curZone.id==='court'||curZone.id==='batting'))setTimeout(()=>toast(curZone.id==='court'?'Step on the 🏀 pad to play basketball!':'Step on the ⚾ pad for batting practice!'),1600);}
   if(!SP.mode)return;
   if(closetOpen){spEnd(false);return;}
-  if(SP.mode==='bat')spBatStep(dt,t);else spCourtStep(dt,t);
-  av.g.position.copy(player.pos);av.g.rotation.y=player.face;av.tag.visible=SP.mode!=='ft'&&SP.mode!=='bat';});
-window.__sports={SP,launch:spLaunch,stepBall:spStepBall,newBall:spNewBall,dropBall:spDropBall,step:(dt)=>{if(SP.mode)SP.mode==='bat'?spBatStep(dt,clock.elapsedTime):spCourtStep(dt,clock.elapsedTime);},start:spStart,end:spEnd,press:spPress,release:spRelease,menu:spOpenMenu,busy:()=>!!SP.mode};
+  if(spX())spX().step(dt,t);else if(SP.mode==='bat')spBatStep(dt,t);else spCourtStep(dt,t);
+  if(!SP.mode)return;av.g.position.copy(player.pos);av.g.rotation.y=player.face;av.tag.visible=SP.mode!=='ft'&&SP.mode!=='bat'&&!spX();});
+window.__sports={SP,launch:spLaunch,stepBall:spStepBall,newBall:spNewBall,dropBall:spDropBall,step:(dt)=>{if(spX())spX().step(dt,clock.elapsedTime);else if(SP.mode)SP.mode==='bat'?spBatStep(dt,clock.elapsedTime):spCourtStep(dt,clock.elapsedTime);},start:spStart,end:spEnd,press:spPress,release:spRelease,menu:spOpenMenu,busy:()=>!!SP.mode};

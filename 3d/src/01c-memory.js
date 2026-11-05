@@ -60,7 +60,7 @@ canvas.addEventListener('webglcontextrestored',()=>{const n=glNap;glNap=null;
 // what the player was doing, for the problem reports (3d/index.html), e.g. "playing 1-on-1 | online with 1 friend"
 function gameStatus(){const s=[],add=f=>{try{const v=f();if(v)s.push(v);}catch(e){}};
   add(()=>!started&&'on the welcome screen');add(()=>closetOpen&&'in the closet');add(()=>glamOpen&&'at the glam mirror');
-  add(()=>SP.mode&&'playing '+({ft:'free throws',shoot:'shootout',v1:'1-on-1',bat:'batting'}[SP.mode]||SP.mode));add(()=>VS.on&&'match with friends');
+  add(()=>SP.mode&&'playing '+({ft:'free throws',shoot:'shootout',v1:'1-on-1',bat:'batting',wif:'wiffle ball'}[SP.mode]||SP.mode));add(()=>VS.on&&'match with friends');
   add(()=>{const n=window.__net;return n&&n.live()&&`online with ${n.friends().size} friend${n.friends().size>1?'s':''}`;});
   add(()=>FLY.on&&'flying');add(()=>barnRide&&'riding');add(()=>gpuNote());
   return s.join(' | ');}

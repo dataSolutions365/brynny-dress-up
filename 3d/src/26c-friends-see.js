@@ -129,14 +129,14 @@ SHOW.push({k:'park',
 
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){
-  if(SP.mode)return {bat:'⚾ Batting practice',ft:'🏀 Free throws',shoot:'🔥 Basketball shootout',v1:'🆚 1-on-1 with Kai'}[SP.mode]||'🏀 Playing ball';
+  if(SP.mode)return {bat:'⚾ Batting practice',ft:'🏀 Free throws',shoot:'🔥 Basketball shootout',v1:'🆚 1-on-1 with Kai',wif:'⚾ Wiffle ball game'}[SP.mode]||'🏀 Playing ball';
   if(ck.on)return '🏆 Cake contest';if(pc.on)return '🏆 Pet contest';if(ct.on)return '📸 Model contest';
   if(glamOpen)return '💄 Glam mirror';if(barberOpen)return '💈 At the barber';if(storeOpen)return '👕 Clothes shopping';
   if(bakeryOpen)return '🎂 Baking a cake';if(parlorOpen)return '🐾 Pet Parlor spa';if(barnOpen)return '🐴 At the barn';if(zooOpen)return '🦒 At the zoo';
   if(DL.on)return '🛵 Delivering food';if(restOpen)return meal.mode==='rush'?'🛵 At Rosie\'s':'🍝 Eating at Rosie\'s';
   if(garageOpen)return '🔧 Fixing a car';if(sandOpen)return '🏰 Building a sandcastle';if(shopOpen)return '🪙 At the shop';if(mapOpen)return '🗺️ Looking at the map';
   if(talkF)return `💬 Talking to ${talkF.name}`;if(closetOpen)return '👗 Getting dressed';return null;}
-function showHold(){if(SP.mode==='bat')return 'bat';if(SP.mode&&SP.ball&&SP.ball.st==='hold'&&SP.poss==='me')return 'ball';return null;}
+function showHold(){if(SP.mode==='bat'||SP.wifBat)return 'bat';if(SP.mode&&SP.ball&&SP.ball.st==='hold'&&SP.poss==='me')return 'ball';return null;}
 const showBallMat=()=>std('#e8742a',{roughness:.6});
 SHOW.push({k:'doing',
   mine(){const w=showDoing(),hold=showHold();return w||hold?{w,hold}:null;},
