@@ -84,6 +84,14 @@ const ALL_LIST = [
   { id: 'talk5', tab: 'town', e: '👭', t: 'Talk to 5 different people', r: 2, goal: 5, u: true, ev: { k: 'talk' } },
   { id: 'quest', tab: 'town', e: '🎁', t: 'Help someone with their task', r: 2, poll: () => Math.min(1, SAVE.townDone || 0) },
   { id: 'quest5', tab: 'town', e: '🦸‍♀️', t: 'Help with 5 tasks', r: 3, goal: 5, poll: () => SAVE.townDone || 0 },
+  // 🏈 flag football on the ⚽ Soccer Field (3d/src/26i2-football-games.js)
+  { id: 'ftFg', tab: 'sports', e: '🏈', t: 'Kick a field goal through the uprights', r: 1, go: 'soccer', ev: { k: 'football', a: a => a === 'fg' } },
+  { id: 'ftFg50', tab: 'sports', e: '🦵', t: 'Kick a 50-yard field goal', r: 3, go: 'soccer', ev: { k: 'football', a: a => a === 'fg50' } },
+  { id: 'ftTdPass', tab: 'sports', e: '🎯', t: 'Throw a touchdown pass in a pick-up game', r: 2, go: 'soccer', ev: { k: 'football', a: a => a === 'tdpass' } },
+  { id: 'ftSack', tab: 'sports', e: '💥', t: 'Sack the quarterback (grab his flag)', r: 1, go: 'soccer', ev: { k: 'football', a: a => a === 'sack' } },
+  { id: 'ftSack5', tab: 'sports', e: '🚩', t: 'Sack the quarterback 5 times', r: 2, goal: 5, go: 'soccer', ev: { k: 'football', a: a => a === 'sack' } },
+  { id: 'ftWin', tab: 'sports', e: '🦅', t: 'Win a pick-up football game with your team', r: 3, go: 'soccer', ev: { k: 'football', a: a => a === 'win' } },
+  { id: 'ftRetTd', tab: 'sports', e: '🏃', t: 'Run a punt back for a touchdown', r: 2, go: 'soccer', ev: { k: 'football', a: a => a === 'rettd' } },
   { id: 'sportVs', tab: 'town', e: '🆚', t: 'Play basketball or baseball against a friend online', r: 1, go: 'court', ev: { k: 'sportvs' } },
   { id: 'sportVsWin', tab: 'town', e: '🏆', t: 'Beat your friends in a basketball or baseball match', r: 2, go: 'court', ev: { k: 'sportvs', a: p => p === 0 } },
   { id: 'sportVs5', tab: 'town', e: '🏅', t: 'Play 5 matches against friends', r: 2, goal: 5, go: 'court', ev: { k: 'sportvs' } },
@@ -282,7 +290,7 @@ const DAILY = [
   { id: 'd_icehome', e: '🪢', t: 'Bring 2 runaways home in a Polar escape', goal: 2, go: 'arctic', ev: { k: 'icehome' } },
   { id: 'd_slide', e: '🌀', t: 'Go down a waterslide 2 times', goal: 2, go: 'water', ev: { k: 'wpslide' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore'], ['sports', '🏟️', 'Sports']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
