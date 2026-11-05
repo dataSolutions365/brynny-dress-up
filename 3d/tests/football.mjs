@@ -67,6 +67,10 @@ try {
   await play(.6);
   if (await page.evaluate(() => document.querySelector('#ftMenu').classList.contains('show'))) ok('the 🏈 pad opens the football menu'); else fail('the 🏈 pad did not open the menu');
   await shot('football-2-menu');
+  // 👕 suit up in the football uniform from the menu
+  await page.evaluate(() => document.querySelector('#ftSuit').click());
+  { const l = await page.evaluate(() => { const l = window.__game.SAVE.look; return { top: l.top && l.top.id, bottom: l.bottom && l.bottom.id, shoes: l.shoes && l.shoes.id, av: window.__game.av().look.top.id }; });
+    if (l.top === 'jersey' && l.bottom === 'baseballpants' && l.shoes === 'ballcleats' && l.av === 'jersey') ok('👕 suits up in the football uniform'); else fail(`the football uniform didn't go on: ${JSON.stringify(l)}`); }
 
   // 3. field goals: stop the aim in the green and the power above the line; kick 2 is a weak one on purpose
   await page.evaluate(() => { document.querySelector('#ftMenu [data-m="fg"]').click();
@@ -111,7 +115,19 @@ try {
   { const r = await page.evaluate(() => { const B = window.__game.football.FTB; return { mode: B.mode, us: B.us.map(e => e.name), them: B.them.map(e => e.name) }; });
     if (r.mode === 'game' && picks.every(n => r.us.includes(n)) && r.them.length === 3 && !r.them.some(n => r.us.includes(n))) ok(`picked a team: Eagles ${r.us.join(', ')} vs Bears ${r.them.join(', ')}`);
     else fail(`team picking went wrong: picked ${picks}, got ${JSON.stringify(r)}`); }
-  await play(2.2); await shot('football-4-game');
+  const onScreen = () => page.evaluate(() => { const G = window.__game, B = G.football.FTB, g = B.g, c = G.camera; c.updateMatrixWorld();
+    const all = [B.me, ...B.us, ...B.them], out = [];
+    for (const e of all) { const v = (e === B.me ? G.av().g : e.a.g).getWorldPosition(new c.position.constructor()); v.y += .9; v.project(c);
+      if (Math.abs(v.x) > .95 || Math.abs(v.y) > .9 || v.z > 1) out.push(e.name); }
+    const q = g.qb.a.g.getWorldPosition(new c.position.constructor()), dq = q.distanceTo(c.position);
+    return { poss: g.poss, ph: g.ph, out, camH: +(c.position.y - q.y).toFixed(1), dq: +dq.toFixed(1) }; });
+  for (const side of ['us', 'them']) {
+    await play(120, `(() => { const g = window.__game.football.FTB.g; return !!g && g.poss === '${side}' && g.ph === 'live' && g.t > .8; })()`);
+    await play(.4);
+    const r = await onScreen();
+    if (r.poss === side && !r.out.length && r.camH > 6) ok(`the camera sees all 6 players from behind the QB (${side === 'us' ? 'your ball' : 'Bears ball'}, ${r.camH} up, ${r.dq} from the QB)`);
+    else fail(`the camera misses players (${side}): ${JSON.stringify(r)}`);
+    if (side === 'us') await shot('football-4-game'); else await shot('football-4b-defense'); }
   await play(400, () => !window.__game.football.FTB.mode);
   { const r = await page.evaluate(() => ({ g: (({ us, them, drives, sacks, tds }) => ({ us, them, drives, sacks, tds }))(window.__game.football.FTB.g), st: window.__ft.st,
       mode: window.__game.football.FTB.mode, card: document.querySelector('#ftCard').textContent }));
