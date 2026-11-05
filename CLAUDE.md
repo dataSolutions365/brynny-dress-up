@@ -134,6 +134,17 @@
   'hseat' entry sits passengers in their seat on every phone. Keep it real-looking, not a cartoon.
   `3d/tests/helicopter.mjs` (run on every PR) buys and wins it, flies it and lands it on the pad; `3d/tests/heli-friends.mjs`
   flies a friend along with two phones (same setup as `online-see.mjs`).
+- 🏈 Flag football is played on the ⚽ Soccer Field (`3d/src/26h-soccer.js` builds the field; the soccer goals carry football uprights, `SOC.UH`).
+  `3d/src/26i-football.js` paints the football lines over the grass, adds the 🏈 pad (next to the ⚽ pad) and `FTZ`, the field's football
+  directions (z along the field, you always drive toward -z, `ftZ(yard)`). `3d/src/26i2-football-games.js` has the games: 🥅 field goals
+  (aim, power, wind), 🏈 a 3-on-3 pick-up game (pick a play, throw to an open receiver, pull the QB's flag to sack him; it's flag football so
+  nobody gets tackled), 💥 Sack the QB and 🏃 kick returns. `ftStep()` runs first in the movement chain and `ftCam()` after `sportsCam()`.
+  While football is on, it keeps the ⚽ pad quiet (`SC.onPad`). Challenges are in the 🏟️ Sports tab of `3d/challenges.js`.
+  `3d/tests/football.mjs` (run on every PR) plays them all.
+- 🧢 Team picker (`3d/src/24e3-team-picker.js`), shared by football and soccer: `ROSTER` is the kids you can pick, each with ⚡ speed,
+  🎯 throwing, 🙌 catching and 🦵 kicking from 1 to 5. `teamPick({sport,size,title,done,cancel})` runs the draft (you pick first, the
+  🐻 Bears captain takes the best one left using `TP_WANT[sport]`) and calls `done(mine, theirs)`. `rosterAvatar(r,color)` gives that
+  kid's avatar in a jersey, and `rosterSpeed/rosterHands/rosterArm/rosterLeg(r)` turn stats into numbers for the games.
 - 🎄 Seasons: `3d/seasons.js` picks today's holiday. THE SEASON SWITCH is `TOWN_THEME` in that file: a holiday id plus the last day
   it stays on (now Christmas until Dec 30), after which the calendar takes over again; `null` always follows the calendar.
   Holiday shop things are only sold during their holiday but stay yours once bought. Halloween Hollow's pumpkins, ghosts,
