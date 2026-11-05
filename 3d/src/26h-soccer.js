@@ -287,7 +287,7 @@ const SOC_LOOK={top:{id:'tee',c:'#e8334a'},bottom:{id:'athshorts',c:'#ffffff'},s
 const socKitLook=()=>isGuy(SAVE.look)?SOC_GUY_LOOK:SOC_LOOK;
 function socSuitBtn(c){const L=socKitLook(),l=SAVE.look;if(!l.dress&&l.top&&l.top.id===L.top.id&&l.shoes&&l.shoes.id==='cleats')return;
   const b=document.createElement('button');b.className='btn';b.style.cssText='display:block;width:calc(100% - 8px);margin:2px 4px 8px';b.textContent='👕 Suit up in a soccer kit';c.querySelector('p').after(b);
-  b.onclick=()=>{const l=SAVE.look;if(!spCanUnsuit())SAVE.sports.prev=JSON.parse(JSON.stringify(l));l.dress=null;l.top={...L.top};l.bottom={...L.bottom};l.shoes={...L.shoes};
+  b.onclick=()=>{const l=SAVE.look;spKeepOutfit(L);l.dress=null;l.top={...L.top};l.bottom={...L.bottom};l.shoes={...L.shoes};
     persist();rebuildPlayer();sfx('star');b.textContent='✅ Suited up! Pick a game';b.disabled=true;b.style.opacity=.7;did('dress','soccer');};}
 function socStart(m){socCloseMenu();SC.mode=m;SC.t=0;SC.turn='shoot';SC.kaiShot=null;SC.dove=null;SC.me=0;SC.cpu=0;SC.kicks=[];SC.round=0;SC.n=0;SC.phase='';SC.pt=0;SC.dive=null;SC.swipe=null;SC.cam.init=false;SC.trick=0;SC.stun=0;SC.cool=0;SC.own=null;
   closeMap&&closeMap();joy.id=null;joy.x=joy.y=0;did('play','soc_'+m);setTrack('stadium');
