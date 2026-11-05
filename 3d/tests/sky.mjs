@@ -1,7 +1,8 @@
 // Hang gliding and skydiving test (3d/src/26i-sky-sports.js), on an iPhone-size screen:
 //  🪂 steps on the launch spot on top of Lookout Mountain, taps 🪂 Hang glide!, runs off the ramp, glides toward town (steering with
 //     the joystick), checks a thermal lifts you up, taps 🛬 Land and checks you come down on open ground (not a roof, not a tree).
-//  🪂 also opens a parachute over town and checks it always comes down and lands (never floats back up).
+//  🪂 also opens a parachute over town and checks it always comes down and lands (never floats back up), and opens 448 round
+//     Lookout Mountain, stepping them with fixed time steps, to check none gets stuck hovering.
 //  ✈️ steps on the spot by the plane at the airfield, taps ✈️ Go skydiving!, checks the plane takes off and climbs to jump height
 //     with the door open, taps 🪂 Jump!, falls, the parachute opens by itself at the safe height, and you land standing up.
 //     Then the plane lands again and taxis back to its spot.
@@ -123,10 +124,11 @@ try {
   if (s.mode !== 'cn' && s.mode !== 'open') fail(`The parachute should open by itself, mode is ${s.mode}.`);
   if (s.y < 15) fail('The parachute opened too low.');
   await shot('11-canopy');
-  s = await waitGame(60, s => !s.mode);
+  s = await waitGame(90, s => !s.mode);
   console.log(`landed at (${s.x.toFixed(1)}, ${s.z.toFixed(1)}), height ${s.y.toFixed(2)}, ${s.land}`);
   if (s.mode) fail(`You should have landed, mode is ${s.mode}.`);
-  if (Math.abs(s.y - s.ground) > .2 || s.land !== true) fail('You should be standing on open ground after landing.');
+  // (on open ground, or a splash into the canal when that's the closest place, and then you swim)
+  if (s.land !== 'water' && (Math.abs(s.y - s.ground) > .2 || s.land !== true)) fail('You should be standing on open ground after landing.');
   await shot('12-landed');
   s = await waitGame(150, s => s.plane === 'park');
   console.log(`the plane is back: ${s.plane}`);
@@ -146,6 +148,19 @@ try {
     if (top > 23) fail(`A parachute over ${nm} should never float back up (it went up to ${top.toFixed(1)}).`);
     s = await waitGame(2.5);
   }
+  // a parachute opening anywhere round Lookout Mountain (rock, pines, the ropes course, the bank) lands within 60 s, on open ground or
+  // in the canal, never stuck hovering. This steps the parachute itself with fixed time steps (a quick one and a slow phone's one),
+  // so it gives the same answer on every computer.
+  const stuck = await page.evaluate(() => { const G = window.__game, out = []; let n = 0;
+    for (const dt of [1 / 60, .05]) for (let x = 88; x <= 118; x += 5) for (let z = -45; z <= -10; z += 5) for (const hd of [0, 1.57, 3.14, 4.71]) {
+      G.skyGo.canopyAt(x, G.groundAt(x, z) + 20, z, hd); const p = G.player.pos; let t = 0; n++;
+      while (t < 60 && G.sky().mode) { G.skyGo.step(dt, 0, 0, 0); t += dt; }
+      const L = G.skyLandable(p.x, p.z);
+      if (G.sky().mode || (L !== 'water' && (L !== true || Math.abs(p.y - G.skyFloor(p.x, p.z)) > .2)))
+        out.push(`from (${x}, ${z}) heading ${hd}: ${G.sky().mode || 'landed'} at (${p.x.toFixed(1)}, ${p.z.toFixed(1)}) height ${p.y.toFixed(1)}`);
+    } return { n, out }; });
+  console.log(`parachutes round the mountain: ${stuck.n - stuck.out.length} of ${stuck.n} came down`);
+  for (const o of stuck.out) fail(`A parachute should always come down and land, ${o}.`);
   if (errors.length) fail(`The game had errors:\n  ${errors.join('\n  ')}`);
   if (!process.exitCode) console.log('✅ Hang gliding and skydiving work.');
 } finally {

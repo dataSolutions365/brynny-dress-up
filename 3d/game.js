@@ -14537,11 +14537,12 @@ function cnOpen(x,z,wet){const g=groundAt(x,z),L=skyLandable(x,z);if(Math.hypot(
   for(const [dx,dz] of [[0,0],[1.3,0],[-1.3,0],[0,1.3],[0,-1.3]])if(skyFloor(x+dx,z+dz)>g+.25)return false;return true;}
 // the closest one, a little ahead of you if it can be (you're already flying that way)
 // (dry ground first; the water only when there's no dry ground close by, and then you splash in and swim)
-function cnSpotFind(x,z,hd){const ax=Math.sin(hd)*3,az=Math.cos(hd)*3;
-  for(const wet of [false,true]){if(cnOpen(x+ax,z+az,wet))return [x+ax,z+az];
-    for(let r=1.5;r<=40;r+=1.5)for(let i=0;i<16;i++){const a=hd+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/8,sx=x+ax+Math.sin(a)*r,sz=z+az+Math.cos(a)*r;if(cnOpen(sx,sz,wet))return [sx,sz];}}
+// (a spot it tried and couldn't get down onto is in SKY.cnBad, and it picks another one away from it)
+function cnSpotFind(x,z,hd){const ax=Math.sin(hd)*3,az=Math.cos(hd)*3,bad=SKY.cnBad||[],ok=(sx,sz,wet)=>!bad.some(b=>Math.hypot(b[0]-sx,b[1]-sz)<5)&&cnOpen(sx,sz,wet);
+  for(const wet of [false,true]){if(ok(x+ax,z+az,wet))return [x+ax,z+az];
+    for(let r=1.5;r<=40;r+=1.5)for(let i=0;i<16;i++){const a=hd+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/8,sx=x+ax+Math.sin(a)*r,sz=z+az+Math.cos(a)*r;if(ok(sx,sz,wet))return [sx,sz];}}
   return null;}
-function sdPull(auto){if(SKY.mode!=='ff')return;Object.assign(SKY,{mode:'open',t:0,k:0,cnSpot:null});skyCan.visible=true;
+function sdPull(auto){if(SKY.mode!=='ff')return;Object.assign(SKY,{mode:'open',t:0,k:0,cnSpot:null,cnSpotT:0,cnBad:[]});skyCan.visible=true;
   tone(180,.15,'sawtooth',.06);tone(110,.3,'sine',.12,.25);if(auto)toast('🪂 Your parachute opened by itself at the safe height!');
   setTimeout(()=>{if(SKY.mode==='cn'||SKY.mode==='open')toast('🎯 Steer to the round target by the hangar!');},2600);}
 function skyLandBtn(){if(SKY.mode==='hg'){SKY.land=true;SKY.spot=null;sfx('pop');}}
@@ -14642,6 +14643,9 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     let drift=false,spotD=99;
     if(!flare&&!open&&p.y<g+10){const mine=steer&&p.y>g+4;
       if(mine||(S.cnSpot&&!cnOpen(S.cnSpot[0],S.cnSpot[1],true)))S.cnSpot=null;
+      // circling over a spot it can't get down onto (too high over the trees to drop in): give up on it and pick another
+      if(S.cnSpot&&(S.cnSpotT+=dt)>12){S.cnBad.push(S.cnSpot);S.cnSpot=null;}
+      if(!S.cnSpot)S.cnSpotT=0;
       if(!mine&&!S.cnSpot)S.cnSpot=cnSpotFind(p.x,p.z,S.hd);
       if(S.cnSpot){spotD=Math.hypot(S.cnSpot[0]-p.x,S.cnSpot[1]-p.z);if(spotD>.5)want=Math.atan2(S.cnSpot[0]-p.x,S.cnSpot[1]-p.z);steer=true;}}
     if(!flare&&!S.cnSpot&&p.y<g+8&&(!landable||below>g+.5)){drift=true;steer=true;
@@ -14663,7 +14667,9 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     p.x+=S.vx*dt;p.z+=S.vz*dt;p.y+=S.vy*dt;
     const fl=skyFloor(p.x,p.z),gg=groundAt(p.x,p.z);if(p.y<fl+.25&&fl>gg+.2)p.y=fl+.25;
     const L=skyLandable(p.x,p.z);
-    if(S.mode==='cn'&&p.y-gg<1.5&&fl<=gg+.2&&L){S.mode='cnFlare';S.t=0;}
+    if(S.mode==='cn'&&p.y-gg<1.5&&fl<=gg+.2&&L&&(!S.cnSpot||spotD<3)){S.mode='cnFlare';S.t=0;}
+    // flaring drifted over something you can't land on (a fence, the trees, the rock): fly on and find another spot
+    else if(flare&&(fl>gg+.2||!L)){S.mode='cn';S.t=0;S.cnSpot=null;}
     if(p.y<=gg+.01&&!open){p.y=gg;S.mode='cnDown';S.t=0;S.cnK=1;
       if(L==='water'){burst(new THREE.Vector3(p.x,.1,p.z),'#bfeaff',30,2.4);tone(200,.3,'sine',.1,0,80);toast('💦 Splash! Time for a swim');skyEnd(false);return true;}
       const d=Math.hypot(p.x-AIRF.tgt.x,p.z-AIRF.tgt.z);did('skydive','land');burst(new THREE.Vector3(p.x,gg+.05,p.z),'#ffffff',16,1.2);
@@ -14776,7 +14782,7 @@ SHOW.push({k:'sky',
 
 // for the test (3d/tests/sky.mjs)
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{sky:()=>({mode:SKY.mode,t:SKY.t,hd:SKY.hd,sp:SKY.sp,vy:SKY.vy,pr:SKY.pr,flight:SKY.flight,land:SKY.land,btn:skyKey,plane:PL.mode,planeY:PL.pos.y,planeX:PL.pos.x,planeZ:PL.pos.z,door:PL.doorK,clock:clock.elapsedTime}),
-  SKY_PARTS:{RAMP,AIRF,THERM,PL_ALT},skyGo:{hgGo,sdGo,sdJump,sdPull,skyLandBtn,canopyAt:(x,y,z,hd)=>{flyGrid();skyCamKeep();Object.assign(SKY,{mode:'ff',t:0,hd,vx:0,vz:0,vy:-6,said:{}});player.pos.set(x,y,z);sdPull(false);}},skyFloor,skyLandable,skyLift});});
+  SKY_PARTS:{RAMP,AIRF,THERM,PL_ALT},skyGo:{hgGo,sdGo,sdJump,sdPull,skyLandBtn,canopyAt:(x,y,z,hd)=>{flyGrid();skyCamKeep();Object.assign(SKY,{mode:'ff',t:0,hd,vx:0,vz:0,vy:-6,said:{}});player.pos.set(x,y,z);sdPull(false);},step:skyStep},skyFloor,skyLandable,skyLift});});
 // ---- src/26j-wiffle.js ----
 /* ================= ⚾ WIFFLE BALL FIELD (🏟️ Sports Park, across the canal from the Batting Cage) =================
    A backyard wiffle ball field on the canal's far bank (BANK_LAND a0 194 .. a1 218), over a wooden footbridge at 202 (it lands beside the backstop, by the ⚾ pad).
