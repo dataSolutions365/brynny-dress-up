@@ -151,8 +151,9 @@ try {
   const wins1 = await page.evaluate(() => (window.__game.SAVE.earn && window.__game.SAVE.earn.wins) || 0);
   if (wins1 !== wins0 + 1) fail(`Winning a rush should count as a win for the earned rides (wins went ${wins0} -> ${wins1}).`);
 
-  // a rush where the clock runs out
-  await page.evaluate(() => window.__game.restaurant.startRush());
+  // a rush where the clock runs out (started back at Rosie's, like you do in the game: you're still standing at the last
+  // customer's place, and the new rush's first order can be that same place, which would deliver it straight away)
+  await page.evaluate(() => { const G = window.__game, z = G.ZONES.find(z => z.id === 'diner'); const [x, w] = z.toWorld(-3.4, 7); G.player.pos.set(x, 0, w); G.restaurant.startRush(); });
   await until('the second rush to start', s => s.rush.on, 10_000);
   await page.evaluate(() => { const D = window.__game.restaurant.DL; D.t = D.limit - .5; });
   s = await until('time to run out', s => !s.rush.on, 20_000);
