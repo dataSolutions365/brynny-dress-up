@@ -29,7 +29,7 @@ const MUSIC = [
   'audio/school-bell.mp3', 'audio/sea-waves.mp3', 'audio/sparkle-room.mp3', 'audio/spooky-wind.mp3',
   'audio/spring-birds.mp3', 'audio/stadium-cheer.mp3', 'audio/stadium.mp3', 'audio/valentine-day.mp3',
   'audio/wedding-day.mp3', 'audio/wedding-music.mp3', 'audio/winter-days.mp3', 'audio/xmas-musicbox.mp3',
-  'audio/xmas-we-wish.mp3', 'audio/xmas-joy-to-the-world.mp3',
+  'audio/xmas-we-wish.mp3', 'audio/xmas-joy-to-the-world.mp3', 'audio/xmas-good-king-wenceslas.mp3', 'audio/xmas-wassailing.mp3',
 ];
 
 // The 3D engine. These load on the very first visit, before this file is running, so save them up front.
