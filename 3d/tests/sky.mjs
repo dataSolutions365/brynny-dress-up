@@ -1,8 +1,7 @@
 // Hang gliding and skydiving test (3d/src/26i-sky-sports.js), on an iPhone-size screen:
 //  🪂 steps on the launch spot on top of Lookout Mountain, taps 🪂 Hang glide!, runs off the ramp, glides toward town (steering with
 //     the joystick), checks a thermal lifts you up, taps 🛬 Land and checks you come down on open ground (not a roof, not a tree).
-//  🪂 also opens a parachute over town and checks it always comes down and lands (never floats back up), and opens 448 round
-//     Lookout Mountain, stepping them with fixed time steps, to check none gets stuck hovering.
+//  🪂 also opens a parachute over town and checks it always comes down and lands (never floats back up).
 //  ✈️ steps on the spot by the plane at the airfield, taps ✈️ Go skydiving!, checks the plane takes off and climbs to jump height
 //     with the door open, taps 🪂 Jump!, falls, the parachute opens by itself at the safe height, and you land standing up.
 //     Then the plane lands again and taxis back to its spot.
@@ -124,11 +123,11 @@ try {
   if (s.mode !== 'cn' && s.mode !== 'open') fail(`The parachute should open by itself, mode is ${s.mode}.`);
   if (s.y < 15) fail('The parachute opened too low.');
   await shot('11-canopy');
-  s = await waitGame(90, s => !s.mode);
+  s = await waitGame(60, s => !s.mode);
   console.log(`landed at (${s.x.toFixed(1)}, ${s.z.toFixed(1)}), height ${s.y.toFixed(2)}, ${s.land}`);
   if (s.mode) fail(`You should have landed, mode is ${s.mode}.`);
-  // (on open ground, or a splash into the canal when that's the closest place, and then you swim)
-  if (s.land !== 'water' && (Math.abs(s.y - s.ground) > .2 || s.land !== true)) fail('You should be standing on open ground after landing.');
+  // on open ground, or a splash into the canal to swim (both are real landings; never on a roof, a tree or rock)
+  if (s.land === 'water' ? s.y > .6 : (Math.abs(s.y - s.ground) > .2 || s.land !== true)) fail('You should be standing on open ground (or swimming in the canal) after landing.');
   await shot('12-landed');
   s = await waitGame(150, s => s.plane === 'park');
   console.log(`the plane is back: ${s.plane}`);
