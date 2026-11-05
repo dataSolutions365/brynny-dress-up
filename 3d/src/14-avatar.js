@@ -449,6 +449,8 @@ class Avatar{
     if(this.wpPose)this.wpPose(this,tgt,sp,air,t);
     // dribbling, kicking and passing a ball (24g-ball-play.js)
     if(this.ballMove)ballPose(this,tgt,sp,t);
+    // playing soccer (26h-soccer.js): goalie stance and dives, tricks, kicks and keepy-uppies
+    if(this.socPose||this.socK)socPoseRun(this,tgt,sp,air,t);
     damp(L[0].hp.rotation,'x',tgt.l0);damp(L[1].hp.rotation,'x',tgt.l1);damp(L[0].kn.rotation,'x',tgt.k0);damp(L[1].kn.rotation,'x',tgt.k1);
     damp(A[0].sh.rotation,'x',tgt.a0x);damp(A[1].sh.rotation,'x',tgt.a1x);damp(A[0].sh.rotation,'z',tgt.a0z,9);damp(A[1].sh.rotation,'z',tgt.a1z,9);
     damp(L[0].an.rotation,'x',tgt.an);damp(L[1].an.rotation,'x',tgt.an);damp(A[0].el.rotation,'x',tgt.e0);damp(A[1].el.rotation,'x',tgt.e1);this.a0y=(this.a0y||0)+(tgt.a0y-(this.a0y||0))*Math.min(1,dt*12);A[0].el.rotation.z=ext+this.a0y;

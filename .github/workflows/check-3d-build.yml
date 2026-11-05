@@ -51,6 +51,8 @@ jobs:
         run: node 3d/tests/sky.mjs
       - name: The waterpark's bridge, slides, lazy river, surfing and floating playground work
         run: node 3d/tests/waterpark.mjs
+      - name: The soccer field - penalty shootout (swipe shots and goalie dives), targets, keepy-uppies and 1-on-1 with tricks
+        run: node 3d/tests/soccer.mjs
       - name: The Places tab lists every challenge under the place you do it
         run: node 3d/tests/challenge-places.mjs
       - name: The Fast Pass from the shop zips you to every place in town

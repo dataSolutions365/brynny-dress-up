@@ -555,8 +555,9 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     // kid-safe: low down over somewhere you can't land (the steep rock, the pines, the fenced-off hills), it turns you back toward town
     if(!flare&&r0>R+1&&(p.y<below+3||!landable&&p.y<g0+5)&&!(landable===true&&below<=g0+.3)){want=Math.atan2(-p.x,-p.z);steer=true;if(!S.said.back){S.said.back=1;toast('🌬️ The breeze turns you back toward town');}}
     if(r0>skyMaxR()-12){const inw=Math.atan2(-p.x,-p.z);want=angDamp(want,inw,Math.min(1,(r0-(skyMaxR()-12))/8));steer=true;}
-    const dTurn=angDamp(0,want-S.hd,1),rate=(inTh?1.6:1.05)*dt,st=steer?Math.max(-rate,Math.min(rate,dTurn)):0;S.hd+=st;S.turn+=(st/dt-S.turn)*Math.min(1,dt*3);
-    S.sp+=((flare?.4:S.land?Math.min(7.2,1.2+spotD*.55):inTh?5.4:6.6)-S.sp)*Math.min(1,dt*(flare?2.4:S.land?1.5:.7));
+    // coming in to land it slows down and turns tighter near the spot, so it can't get stuck circling round it over the roofs
+    const dTurn=angDamp(0,want-S.hd,1),rate=(inTh?1.6:S.land&&spotD<5?2.4:1.05)*dt,st=steer?Math.max(-rate,Math.min(rate,dTurn)):0;S.hd+=st;S.turn+=(st/dt-S.turn)*Math.min(1,dt*3);
+    S.sp+=((flare?.4:S.land?Math.min(7.2,.8+spotD*.55):inTh?5.4:6.6)-S.sp)*Math.min(1,dt*(flare?2.4:S.land?1.5:.7));
     const [lift,inT]=skyLift(p.x,p.z,p.y);
     if(inT){S.therm+=dt;if(S.therm>2&&!S.gotThermal){S.gotThermal=true;did('hglide','thermal');toast('🦅 You found a thermal! Circle in it to go up and up');tone(784,.12,'triangle',.08);tone(1047,.2,'triangle',.08,.1);}}else S.therm=0;
     const sink=flare?1.0:(S.land?(spotD<4?2.6:1.9):.85)+Math.abs(S.bank)*.6;
