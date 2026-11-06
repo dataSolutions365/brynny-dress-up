@@ -201,5 +201,5 @@ function callSteed(k){if(barnRide||closetOpen||!started||handsBusy()||!BS.own[k]
   const a=farmAnimal(k),P=player.pos;
   // trot over from the barn with a puff of sparkles
   burst(new THREE.Vector3(P.x,P.y+.6,P.z),'#ffd23f',30,2);
-  a.y=0;a.vy=0;a.face=player.face-BZ.rot;a.pos.set(P.x,P.y,P.z);a.g.position.copy(a.pos);
+  a.y=0;a.vy=0;a.face=player.face-a.Z.rot;a.pos.set(P.x,P.y,P.z);a.g.position.copy(a.pos);
   startRide(a);}

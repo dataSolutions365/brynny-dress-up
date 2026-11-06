@@ -75,3 +75,5 @@ jobs:
         run: node 3d/tests/wiffle.mjs
       - name: What's new shows once after an update, and the map's NEW tags clear when you visit
         run: node 3d/tests/whats-new.mjs
+      - name: Dino Valley - the bridge, real-looking dinosaurs in their paddocks, Meet cards, your own dinosaurs live there (not the barn), riding
+        run: node 3d/tests/dino-valley.mjs

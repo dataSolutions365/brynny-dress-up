@@ -11,6 +11,11 @@
    Keep it to about 3 to 6 notes, one short sentence each.
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
+  {v:'2026-11-07',notes:[
+    {e:'🦖',t:'Visit Dino Valley! Cross the bridge behind the Barber Shop to see a real-looking T. rex, raptors, a triceratops and more.',go:'dino'},
+    {e:'🦕',t:'Your dinosaurs moved out of the barn and into Dino Valley. The Happy Barn is just for farm animals now.',go:'dino'},
+    {e:'🥚',t:'Step on the glowing footprint by the Dino Keeper\'s hut to take care of your dinosaurs or adopt a new one.',go:'dino'},
+  ]},
   {v:'2026-11-06',notes:[
     {e:'🏊',t:'Swimming looks real now! Your arms reach forward and pull back like a real swimmer, and you float with your head up.'},
     {e:'⚽',t:'Play soccer at the new Soccer Field! Take penalty kicks, hit targets, do keepy-uppies or play 1-on-1 with Kai.',go:'soccer'},

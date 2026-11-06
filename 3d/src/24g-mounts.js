@@ -4,11 +4,11 @@
    - 🐉 Nova the starlight dragon can't be bought: she comes by herself once you've earned 50 ⭐ (prize = how many).
    - Once you have one, tap the ride button in the moves wheel and it pops out right where you are (17d-bicycle.js).
      With more than one ride the button says 🏇 Rides and opens a list to pick from.
-   - They live at the 🐴 Happy Barn when you're not riding, so you can feed, brush and rename them there.
+   - They live at the 🐴 Happy Barn when you're not riding (the dinosaurs at 🦖 Dino Valley), so you can feed, brush and rename them there.
    - Friends online see you riding them through the 'ride' entry in 26c-friends-see.js (any barn animal you ride). */
 const MOUNTS=FARM.filter(f=>f.mount||f.prize||f.earn);// earn = 🏆 rides you earn by winning or playing days in a row (24i-earned-rides.js)
 STABS.splice(1,0,['rides','🦖','Rides']);
-SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn, and the dinosaurs and unicorn there can be ridden too.';
+SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn (the dinosaurs at 🦖 Dino Valley), and the big dinosaurs and the unicorn there can be ridden too.';
 for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize||(f.earn&&f.earn.goal),earn:f.earn,
   d:f.prize||f.earn?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
 
