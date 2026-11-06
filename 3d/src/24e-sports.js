@@ -169,11 +169,14 @@ function spOpenMenu(zid){if(SP.mode||SP.menu)return;SP.menu=true;const S=SAVE.sp
 const spWearing=zid=>{const L=sportLook(zid),l=SAVE.look;return !l.dress&&l.top&&l.top.id===L.top.id&&l.bottom&&l.bottom.id===L.bottom.id;};
 function spSuitBtn(c,zid){if(spWearing(zid))return;const b=document.createElement('button');b.className='btn';b.style.cssText='display:block;width:calc(100% - 8px);margin:2px 4px 8px';
   b.textContent=zid==='court'?'👕 Suit up in basketball clothes':'👕 Suit up in a baseball uniform';c.querySelector('p').after(b);
-  b.onclick=()=>{const L=sportLook(zid),l=SAVE.look;if(!spCanUnsuit())SAVE.sports.prev=JSON.parse(JSON.stringify(l));
+  b.onclick=()=>{const L=sportLook(zid),l=SAVE.look;spKeepOutfit(L);
     l.dress=null;l.top={...L.top};l.bottom={...L.bottom};l.shoes={...L.shoes};l.hat={...L.hat};l.extras={...(l.extras||{})};if(L.glove)l.extras.glove=L.glove;else delete l.extras.glove;
     persist();rebuildPlayer();sfx('star');b.textContent='✅ Suited up! Pick a game';b.disabled=true;b.style.opacity=.7;did('dress','sports');};}
-const spCanUnsuit=()=>{const P=SAVE.sports.prev;return !!P&&isGuy(P)===isGuy(SAVE.look);};
-function spUnsuit(){const P=SAVE.sports.prev;if(!spCanUnsuit())return;SAVE.look=P;delete SAVE.sports.prev;persist();rebuildPlayer();sfx('pop');}
+// your own outfit is kept while you wear a sport's kit. "Back to my outfit" only shows while you still have that kit on:
+// once you change clothes in the closet the kept outfit is old (it could have roller skates from weeks ago), so it isn't put back
+const spKeepOutfit=L=>{const S=SAVE.sports;if(!spCanUnsuit())S.prev=JSON.parse(JSON.stringify(SAVE.look));S.kit=L.top.id;};
+const spCanUnsuit=()=>{const P=SAVE.sports.prev,l=SAVE.look;return !!P&&isGuy(P)===isGuy(l)&&!l.dress&&!!l.top&&l.top.id===SAVE.sports.kit;};
+function spUnsuit(){const P=SAVE.sports.prev;if(!spCanUnsuit())return;SAVE.look=P;delete SAVE.sports.prev;delete SAVE.sports.kit;persist();rebuildPlayer();sfx('pop');}
 function spCloseMenu(){SP.menu=false;$('#spMenu').classList.remove('show');}
 $('#spMenu').addEventListener('click',e=>{if(e.target.id==='spMenu'&&!SP.mode)spCloseMenu();});
 function spStart(m){const C=SPC;spCloseMenu();SP.mode=m;SP.z=m==='bat'?Z.batting:Z.court;SP.score=0;SP.opp=0;SP.shots=0;SP.t=0;SP.hold=null;SP.rel=null;SP.dunk=null;SP.next=0;SP.poss=null;SP.cam.init=false;SP.msgT=0;

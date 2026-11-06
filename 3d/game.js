@@ -8937,11 +8937,14 @@ function spOpenMenu(zid){if(SP.mode||SP.menu)return;SP.menu=true;const S=SAVE.sp
 const spWearing=zid=>{const L=sportLook(zid),l=SAVE.look;return !l.dress&&l.top&&l.top.id===L.top.id&&l.bottom&&l.bottom.id===L.bottom.id;};
 function spSuitBtn(c,zid){if(spWearing(zid))return;const b=document.createElement('button');b.className='btn';b.style.cssText='display:block;width:calc(100% - 8px);margin:2px 4px 8px';
   b.textContent=zid==='court'?'👕 Suit up in basketball clothes':'👕 Suit up in a baseball uniform';c.querySelector('p').after(b);
-  b.onclick=()=>{const L=sportLook(zid),l=SAVE.look;if(!spCanUnsuit())SAVE.sports.prev=JSON.parse(JSON.stringify(l));
+  b.onclick=()=>{const L=sportLook(zid),l=SAVE.look;spKeepOutfit(L);
     l.dress=null;l.top={...L.top};l.bottom={...L.bottom};l.shoes={...L.shoes};l.hat={...L.hat};l.extras={...(l.extras||{})};if(L.glove)l.extras.glove=L.glove;else delete l.extras.glove;
     persist();rebuildPlayer();sfx('star');b.textContent='✅ Suited up! Pick a game';b.disabled=true;b.style.opacity=.7;did('dress','sports');};}
-const spCanUnsuit=()=>{const P=SAVE.sports.prev;return !!P&&isGuy(P)===isGuy(SAVE.look);};
-function spUnsuit(){const P=SAVE.sports.prev;if(!spCanUnsuit())return;SAVE.look=P;delete SAVE.sports.prev;persist();rebuildPlayer();sfx('pop');}
+// your own outfit is kept while you wear a sport's kit. "Back to my outfit" only shows while you still have that kit on:
+// once you change clothes in the closet the kept outfit is old (it could have roller skates from weeks ago), so it isn't put back
+const spKeepOutfit=L=>{const S=SAVE.sports;if(!spCanUnsuit())S.prev=JSON.parse(JSON.stringify(SAVE.look));S.kit=L.top.id;};
+const spCanUnsuit=()=>{const P=SAVE.sports.prev,l=SAVE.look;return !!P&&isGuy(P)===isGuy(l)&&!l.dress&&!!l.top&&l.top.id===SAVE.sports.kit;};
+function spUnsuit(){const P=SAVE.sports.prev;if(!spCanUnsuit())return;SAVE.look=P;delete SAVE.sports.prev;delete SAVE.sports.kit;persist();rebuildPlayer();sfx('pop');}
 function spCloseMenu(){SP.menu=false;$('#spMenu').classList.remove('show');}
 $('#spMenu').addEventListener('click',e=>{if(e.target.id==='spMenu'&&!SP.mode)spCloseMenu();});
 function spStart(m){const C=SPC;spCloseMenu();SP.mode=m;SP.z=m==='bat'?Z.batting:Z.court;SP.score=0;SP.opp=0;SP.shots=0;SP.t=0;SP.hold=null;SP.rel=null;SP.dunk=null;SP.next=0;SP.poss=null;SP.cam.init=false;SP.msgT=0;
@@ -13692,7 +13695,7 @@ const SOC_LOOK={top:{id:'tee',c:'#e8334a'},bottom:{id:'athshorts',c:'#ffffff'},s
 const socKitLook=()=>isGuy(SAVE.look)?SOC_GUY_LOOK:SOC_LOOK;
 function socSuitBtn(c){const L=socKitLook(),l=SAVE.look;if(!l.dress&&l.top&&l.top.id===L.top.id&&l.shoes&&l.shoes.id==='cleats')return;
   const b=document.createElement('button');b.className='btn';b.style.cssText='display:block;width:calc(100% - 8px);margin:2px 4px 8px';b.textContent='👕 Suit up in a soccer kit';c.querySelector('p').after(b);
-  b.onclick=()=>{const l=SAVE.look;if(!spCanUnsuit())SAVE.sports.prev=JSON.parse(JSON.stringify(l));l.dress=null;l.top={...L.top};l.bottom={...L.bottom};l.shoes={...L.shoes};
+  b.onclick=()=>{const l=SAVE.look;spKeepOutfit(L);l.dress=null;l.top={...L.top};l.bottom={...L.bottom};l.shoes={...L.shoes};
     persist();rebuildPlayer();sfx('star');b.textContent='✅ Suited up! Pick a game';b.disabled=true;b.style.opacity=.7;did('dress','soccer');};}
 function socStart(m){socCloseMenu();SC.mode=m;SC.t=0;SC.turn='shoot';SC.kaiShot=null;SC.dove=null;SC.me=0;SC.cpu=0;SC.kicks=[];SC.round=0;SC.n=0;SC.phase='';SC.pt=0;SC.dive=null;SC.swipe=null;SC.cam.init=false;SC.trick=0;SC.stun=0;SC.cool=0;SC.own=null;
   closeMap&&closeMap();joy.id=null;joy.x=joy.y=0;did('play','soc_'+m);setTrack('stadium');
