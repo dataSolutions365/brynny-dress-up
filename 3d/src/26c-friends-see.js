@@ -33,13 +33,13 @@ SHOW.push({k:'pet',
   step(f,d,dt,h){const pt=h&&h.pt;if(!pt)return;const P=f.pos,fc=f.cur??f.face,a=fc+2.3;
     const sx=P.x+Math.sin(a)*.9,sz=P.z+Math.cos(a)*.9,dx=sx-pt.pos.x,dz=sz-pt.pos.z,dd=Math.hypot(dx,dz);let spd=0;
     if(dd>20){pt.pos.x=sx;pt.pos.z=sz;}
-    else if(dd>.35){spd=Math.min(7,.8+dd*2.6);const st=Math.min(dd,spd*dt);pt.pos.x+=dx/dd*st;pt.pos.z+=dz/dd*st;collide(pt.pos,.22);pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}
+    else if(dd>.35){spd=Math.min(7,.8+dd*2.6);const st=Math.min(dd,spd*dt);pt.pos.x+=dx/dd*st;pt.pos.z+=dz/dd*st;PET_SEA.on=ownerWet(P,false)||inCanal(pt.pos.x,pt.pos.z);collide(pt.pos,.22);PET_SEA.on=false;pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}
     else pt.face=angDamp(pt.face,Math.atan2(P.x-pt.pos.x,P.z-pt.pos.z),dt*4);
     // hop when your friend jumps
-    if(f.air&&!h.air&&pt.y<=0&&dd<4)pt.vy=4.2;h.air=f.air;
+    if(f.air&&!h.air&&pt.y<=0&&dd<4&&!(pt.swim&&pt.swim.k>.3))pt.vy=4.2;h.air=f.air;
     pt.speed+=(spd-pt.speed)*Math.min(1,dt*8);pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0){pt.y=0;pt.vy=0;}
     const gy=groundAt(pt.pos.x,pt.pos.z);pt.pos.y+=(gy-pt.pos.y)*Math.min(1,dt*12);
-    pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);},
+    pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);petSwim(pt,dt,false);},
   off(f,h){if(!h)return;if(h.pt)scene.remove(h.pt.g);const s=h.hid;if(s&&--s._netHide<=0){s._netHide=0;s.g.visible=true;}}});
 
 // barn animals made just for a friend: they never bump into you and never join your own barn

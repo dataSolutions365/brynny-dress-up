@@ -27,7 +27,7 @@ function stepPushables(p,dt){
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
 // past the island's edge you may only be out swimming in the 🌊 canal (seaKeep in 26f-ocean.js), or on the far bank's land and footbridges (bankLand)
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
-  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!bankLand(p)&&!(p===player.pos?seaKeep(p,lim):bankOK(p))){p.x*=lim/d;p.z*=lim/d;}}// bankLand (26f-ocean.js): the bits of the far bank you can walk on, and the footbridges to them; bankOK: pets may follow you onto the waterpark and its bridge
+  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!bankLand(p)&&!(p===player.pos?seaKeep(p,lim):bankOK(p)||petSea(p))){p.x*=lim/d;p.z*=lim/d;}}// bankLand (26f-ocean.js): the bits of the far bank you can walk on, and the footbridges to them; bankOK: pets may follow you onto the waterpark and its bridge; petSea: your pet swims out into the canal with you (26f3-pet-swim.js)
 // "tried to walk but didn't move": a bug like this throws no error, so watch for it and report it once per visit
 const walkW={t0:0,d:0,sent:false};// t0: when this push on the joystick started (real time, so slow phones count the same)
 function walkWatch(mag,step){if(walkW.sent)return;if(mag<.5){walkW.t0=0;walkW.d=0;return;}const now=performance.now();if(!walkW.t0)walkW.t0=now;walkW.d+=step;

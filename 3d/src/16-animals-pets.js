@@ -219,16 +219,18 @@ function adopt(pt){did('adopt');if(!SAVE.adoptPaid){SAVE.adoptPaid=1;setTimeout(
 function stepPet(pt,dt){if(pt.inParlor){parlorPet(pt,dt);return;}let spd=0;const P=player.pos;
   if(pt.owned){const side=new THREE.Vector3(Math.sin(player.face+2.3)*.9,0,Math.cos(player.face+2.3)*.9).add(P);const d=Math.hypot(side.x-pt.pos.x,side.z-pt.pos.z);
     if(d>20){pt.pos.set(side.x,0,side.z);}else if(d>.35){pt.tgt=side;spd=Math.min(7,.8+d*2.6);}else{pt.tgt=null;pt.face=angDamp(pt.face,Math.atan2(P.x-pt.pos.x,P.z-pt.pos.z),dt*4);}
-    if(!player.onGround&&pt.y<=0&&player.vy>3&&d<4)pt.vy=4.2;}
+    if(!player.onGround&&pt.y<=0&&player.vy>3&&d<4&&!(pt.swim&&pt.swim.k>.3))pt.vy=4.2;}
   else{pt.wait-=dt;if(!pt.tgt&&pt.wait<=0){const a=Math.random()*Math.PI*2,r=Math.random()*pt.home.r*.85;pt.tgt=new THREE.Vector3(pt.home.x+Math.sin(a)*r,0,pt.home.z+Math.cos(a)*r);}
     if(pt.tgt)spd=pt.kind==='bunny'||pt.kind==='squirrel'?1.6:1.1;
     const dP=Math.hypot(P.x-pt.pos.x,P.z-pt.pos.z);if(dP<2.2&&started){spd=0;pt.face=angDamp(pt.face,Math.atan2(P.x-pt.pos.x,P.z-pt.pos.z),dt*4);}}
   if(pt.tgt&&spd>0){const dx=pt.tgt.x-pt.pos.x,dz=pt.tgt.z-pt.pos.z,d=Math.hypot(dx,dz);if(d<.3&&!pt.owned){pt.tgt=null;pt.wait=2+Math.random()*5;spd=0;}
-    else{const st=Math.min(d,spd*dt);pt.pos.x+=dx/d*st;pt.pos.z+=dz/d*st;collide(pt.pos,.22);pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}}
+    else{const st=Math.min(d,spd*dt);pt.pos.x+=dx/d*st;pt.pos.z+=dz/d*st;
+      // 🏊 your pet may swim out into the canal with you (26f3-pet-swim.js), and swim back to the shore after you
+      PET_SEA.on=pt.owned&&(ownerWet(P,true)||inCanal(pt.pos.x,pt.pos.z));collide(pt.pos,.22);PET_SEA.on=false;pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}}
   pt.speed+=(spd-pt.speed)*Math.min(1,dt*8);
   pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0){pt.y=0;pt.vy=0;}
   const gy=groundAt(pt.pos.x,pt.pos.z);pt.pos.y+=(gy-pt.pos.y)*Math.min(1,dt*12);
-  pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);}
+  pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);if(pt.owned)petSwim(pt,dt,true);}
 // some pets need a few ⭐ stars (from star challenges and hidden stars) before you can adopt them; stars are not used up
 const myStars=()=>(SAVE.chal&&SAVE.chal.stars)||0;
 const starsShort=pt=>pt.owned?0:Math.max(0,((pt.o&&pt.o.stars)||0)-myStars());
