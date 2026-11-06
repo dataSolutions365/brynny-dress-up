@@ -11190,6 +11190,7 @@ function drawMini(){const S=miniCv.width,h=S/2,k=S/54;// ~54 world units across
   for(const s of STARS){if(s.got)continue;const [sx,sy]=w2s(s.x,s.z);if(Math.hypot(sx-h,sy-h)>h)continue;x.beginPath();x.arc(sx,sy,4,0,Math.PI*2);x.fillStyle='#ffd23f';x.fill();x.lineWidth=1.5;x.strokeStyle='#fff';x.stroke();}
   x.font=`${Math.round(S*.12)}px serif`;x.textAlign='center';x.textBaseline='middle';
   for(const z of ZONES){const [zx,zy]=w2s(z.x,z.z);if(Math.hypot(zx-h,zy-h)<h+10)x.fillText(zEmoji(z),zx,zy);}
+  for(const z of ZONES){if(!isNewZone(z.id))continue;const [zx,zy]=w2s(z.x,z.z);if(Math.hypot(zx-h,zy-h)<h-8)drawNewTag(x,zx,zy-S*.085,S*.065);}// 🆕 (26k-whats-new.js)
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=w2s(o.pos.x,o.pos.z);if(Math.hypot(ox-h,oy-h)>h-6)continue;x.beginPath();x.arc(ox,oy,7,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=2.5;x.strokeStyle='#fff';x.stroke();}
   // via: a place across a bridge (the 💦 waterpark) points you at the bridge first
   if(mapDest){const md=(mapDest.via&&mapDest.via())||mapDest;let [dx,dy]=w2s(md.x,md.z);const ddx=dx-h,ddy=dy-h,dd=Math.hypot(ddx,ddy),edge=h-16;
@@ -11252,6 +11253,7 @@ function drawMap(){const S=mapCv.width,k=mapK(),x=mapX,ts=mapTS();drawWorld(x,ma
     x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.86)';x.beginPath();x.roundRect?x.roundRect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0,h/2):x.rect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0);x.fill();
     x.fillStyle='#fff';b.lines.forEach((t,i)=>x.fillText(t,cx,cy+1+(i-(b.lines.length-1)/2)*h*.72));
     if(window.__chal&&window.__chal.left(z.id)){x.font=`${Math.round(S*.04*ts)}px serif`;x.fillText('⭐',it.px+it.e*.6,it.py-it.e*.6);}}
+  for(const it of lay)if(isNewZone(it.z.id))drawNewTag(x,it.px-it.e*.6,it.py-it.e*.7,S*.03*ts);// 🆕 NEW tag until you go there (26k-whats-new.js)
   worldMapTags(x,S,ts);// 🔒 the blocked-off regions (26z-big-world.js)
   x.restore();x.textAlign='center';x.textBaseline='middle';
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=mapW2s(o.pos.x,o.pos.z);x.beginPath();x.arc(ox,oy,S*.016,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
@@ -16024,6 +16026,77 @@ anims.push((t,dt)=>{if(WF.on||!started)return;const z=Z.wiffle,p=player.pos,dz=M
   if(curZone!==WF.lastZone){WF.lastZone=curZone;if(!SP.mode&&curZone&&curZone.id==='wiffle')setTimeout(()=>toast('Step on the green ⚾ pad to play wiffle ball!'),1600);}});
 wfBoard();
 Object.assign(window.__game,{WF,WB,wfStart,wfMenu,wfAt,wfPol,wfHit,wfPress,wfStep,SP});
+// ---- src/26k-whats-new.js ----
+/* ================= 🆕 WHAT'S NEW =================
+   After an update, the first time someone opens the 3D world they get a little "What's new" card,
+   in short, kid-friendly words. It only shows once per update (SAVE.wnSeen keeps the newest update they saw).
+   Places that are new (or have something new) get a red NEW tag on the map and minimap until the player goes there
+   (SAVE.wnVisit), or until the update is NEW_DAYS old.
+
+   TO ADD NOTES FOR AN UPDATE: put a new entry at the TOP of WHATS_NEW with today's date as `v` ('YYYY-MM-DD').
+   Each note is {e: emoji, t: 'short sentence a kid can read'}. Optional:
+     go:  a place id from ZONES (02-island.js): the note gets a "Show me" button and the place gets a NEW tag
+     hol: a holiday id (seasons.js): the note only shows during that holiday
+   Keep it to about 3 to 6 notes, one short sentence each.
+   Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
+const WHATS_NEW=[
+  {v:'2026-11-06',notes:[
+    {e:'⚽',t:'Play soccer at the new Soccer Field! Take penalty kicks, hit targets, do keepy-uppies or play 1-on-1 with Kai.',go:'soccer'},
+    {e:'🏈',t:'Play flag football on the Soccer Field, and suit up in a real football uniform!',go:'soccer'},
+    {e:'⚾',t:'Wiffle Ball has a new camera, so you can see the ball better when you bat and catch.',go:'wiffle'},
+    {e:'⛄',t:'Tap ⛄ Snowman, then walk in the snow to roll big snowballs and stack them into a snowman!',hol:'christmas'},
+    {e:'🎶',t:'The town plays a playlist now: lots of songs, one after another.'},
+    {e:'🦦',t:'Ollie the otter got fixed! His head is straight now. Swim out from the Beach to say hi.',go:'beach'},
+  ]},
+];
+const NEW_DAYS=30;// how long a place keeps its NEW tag after an update
+if(!SAVE.wnVisit)SAVE.wnVisit={};
+const wnDays=v=>(Date.now()-new Date(v+'T12:00:00').getTime())/864e5;
+const wnHol=n=>!n.hol||!!(window.__season&&window.__season.on&&window.__season.on(n.hol));
+// the updates this player hasn't seen yet (newest first)
+const wnUnseen=()=>WHATS_NEW.filter(u=>!SAVE.wnSeen||u.v>SAVE.wnSeen);
+// places that get a NEW tag: named by a recent note, and not visited since that update
+let wnTagCache=null,wnTagT=0;
+function wnTags(){const now=performance.now();if(wnTagCache&&now-wnTagT<1000)return wnTagCache;wnTagT=now;const s=new Set();
+  for(const u of WHATS_NEW){if(wnDays(u.v)>NEW_DAYS)continue;for(const n of u.notes)if(n.go&&wnHol(n)&&!(SAVE.wnVisit[n.go]>=u.v))s.add(n.go);}
+  return wnTagCache=s;}
+const isNewZone=id=>wnTags().has(id);
+// the red NEW tag, drawn on the map (26-map.js calls this for each place)
+function drawNewTag(x,px,py,s){const p=1+Math.sin(performance.now()/260)*.06;x.save();x.translate(px,py);x.scale(p,p);
+  x.font=`800 ${Math.round(s)}px system-ui,-apple-system,sans-serif`;x.textAlign='center';x.textBaseline='middle';
+  const w=x.measureText('NEW').width+s*.8,h=s*1.35;x.beginPath();x.roundRect?x.roundRect(-w/2,-h/2,w,h,h/2):x.rect(-w/2,-h/2,w,h);
+  x.fillStyle='#ff3b6b';x.fill();x.lineWidth=Math.max(1.5,s*.16);x.strokeStyle='#fff';x.stroke();x.fillStyle='#fff';x.fillText('NEW',0,s*.06);x.restore();}
+// going to a place clears its tag
+let wnZone=null;
+// the 🗺️ Map button wears a NEW tag too while somewhere on the map has one
+let wnMini=null;
+onTick.push(()=>{const m=wnTags().size>0;if(m!==wnMini){wnMini=m;$('#mini').classList.toggle('hasNew',m);}
+  if(!started||curZone===wnZone)return;wnZone=curZone;if(!curZone||!WHATS_NEW.length)return;
+  const v=WHATS_NEW[0].v;if(isNewZone(curZone.id)&&!(SAVE.wnVisit[curZone.id]>=v)){SAVE.wnVisit[curZone.id]=v;wnTagCache=null;persist();}});
+// the card
+const wnEl=document.createElement('div');wnEl.className='modal';wnEl.id='whatsNew';
+wnEl.innerHTML='<div class="card" id="wnCard"></div>';document.body.appendChild(wnEl);
+let wnShown=null;
+function openWhatsNew(all){let ups=all?WHATS_NEW.slice(0,2):wnUnseen().slice(0,3);if(!ups.length)ups=WHATS_NEW.slice(0,1);
+  const notes=[];for(const u of ups)for(const n of u.notes)if(wnHol(n))notes.push(n);if(!notes.length)return false;
+  wnShown=notes;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
+  $('#wnCard').innerHTML=`<div class="wnTop">🆕</div><h2>What's new!</h2><p class="wnSub">Here's what we added since you last played:</p><ul id="wnList">`+
+    notes.map((n,i)=>{const z=n.go&&Z[n.go];return `<li><b>${n.e}</b><span>${n.t}</span>${z?`<button class="wnGo" data-wn="${i}">🗺️ Show me</button>`:''}</li>`;}).join('')+
+    `</ul><button class="btn" id="wnOk">Let's play! ✨</button>`;
+  wnEl.classList.add('show');sfx('pop');return true;}
+function closeWhatsNew(){if(!wnEl.classList.contains('show'))return;wnEl.classList.remove('show');if(WHATS_NEW.length&&!(SAVE.wnSeen>=WHATS_NEW[0].v)){SAVE.wnSeen=WHATS_NEW[0].v;persist();}}
+wnEl.onclick=e=>{if(e.target===wnEl||e.target.id==='wnOk'){closeWhatsNew();return;}
+  const b=e.target.closest('[data-wn]');if(!b)return;const n=wnShown[+b.dataset.wn],z=n&&Z[n.go];closeWhatsNew();if(!z)return;
+  if(curZone===z){toast(`You're already at ${zLabel(z)}! ✨`);return;}
+  if(fastPassAsk(z))return;// 🎟️ zip there or follow the arrow (26i-fast-pass.js)
+  setDest(z);sfx('star');toast(`Follow the pink arrow on the map to ${zLabel(z)} 💗`);};
+// pops up once, a moment after tapping Play, when there's an update they haven't seen
+const wnAuto=()=>!navigator.webdriver||/[?&]wn=1\b/.test(location.search);
+$('#play').addEventListener('click',()=>setTimeout(()=>{if(wnAuto()&&wnUnseen().length&&!closetOpen&&!mapOpen)openWhatsNew();},1200));
+// ⚙️ Settings has a button to see it again
+{const b=document.createElement('button');b.className='btn ghost';b.id='setNew';b.style.cssText='display:block;width:calc(100% - 8px);margin-top:10px';b.textContent="🆕 What's new";
+  $('#setClose').before(b);b.onclick=()=>{$('#settings').classList.remove('show');openWhatsNew(true);};}
+window.__whatsNew={WHATS_NEW,open:openWhatsNew,close:closeWhatsNew,tags:()=>[...wnTags()],unseen:()=>wnUnseen().map(u=>u.v)};
 // ---- src/26w-waterpark.js ----
 /* ================= 💦 SPLASH WATERPARK: tube slides, a wave pool you can surf, a lazy river and a floating playground =================
    Across the canal on the far bank, behind the Runway and the Clothing Store. Walk over the wooden footbridge (BANK_BRIDGES in

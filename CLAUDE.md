@@ -185,6 +185,13 @@
   It plugs into the sports HUD, big button and menu through `SP.ext` in `3d/src/24e-sports.js` (other sports can do the same:
   `SP.ext[mode]={step,press,release,cam,end}`). Challenges are in the 🏟 Sports tab of `3d/challenges.js` (`did('wiffle', …)`).
   `3d/tests/wiffle.mjs` (run on every PR) walks over the bridge, opens the menu, plays a quick game and a Derby.
+- 🆕 What's new (`3d/src/26k-whats-new.js`): after an update, the first time a player opens the 3D world they get a
+  "What's new" card (once per update; `SAVE.wnSeen` holds the newest one they saw), and places with something new get a red
+  NEW tag on the map, the minimap and the 🗺️ Map button until the player goes there (`SAVE.wnVisit`) or the update is `NEW_DAYS` old.
+  WHEN YOU SHIP SOMETHING A PLAYER WOULD NOTICE, add a note: a new entry at the top of `WHATS_NEW` with today's date as `v`,
+  each note `{e, t, go?, hol?}` in one short sentence a kid can read (`go` = the place id from ZONES, which adds a 🗺️ Show me
+  button and the NEW tag; `hol` = only during that holiday). It can be reopened from ⚙️ Settings. Under Playwright it only
+  pops up by itself with `?wn=1`, so the other tests aren't covered by it. `3d/tests/whats-new.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
