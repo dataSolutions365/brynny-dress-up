@@ -255,6 +255,9 @@ const ALL_LIST = [
   { id: 'wp_bounce', tab: 'water', e: '🤸', t: 'Bounce off the yellow bouncer into the water', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'bounce' } },
   { id: 'wp_jump', tab: 'water', e: '💦', t: 'Jump off the top of the step tower', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'jump' } },
   // ⚽ the Soccer Field on the far bank (3d/src/26h-soccer.js)
+  { id: 'bb3_play', tab: 'sports', e: '👥', t: 'Play a 3-on-3 basketball game with your team', r: 1, go: 'court', ev: { k: 'play', a: a => a === 'v3' } },
+  { id: 'bb3_assist', tab: 'sports', e: '🙌', t: 'Get an assist: pass to a teammate who scores in 3-on-3', r: 2, go: 'court', ev: { k: 'sport', a: a => a === 'assist' } },
+  { id: 'bb3_win', tab: 'sports', e: '🏆', t: 'Win a 3-on-3 basketball game against the Bears', r: 3, go: 'court', ev: { k: 'sport', a: a => a === 'v3win' } },
   { id: 'soc_pk', tab: 'sports', e: '⚽', t: 'Score a penalty past Leo the goalie', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'pk' } },
   { id: 'soc_save', tab: 'sports', e: '🧤', t: 'Dive and save one of Kai\'s penalties', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'save' } },
   { id: 'soc_pkwin', tab: 'sports', e: '🥅', t: 'Win a penalty shootout', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'pkwin' } },
@@ -269,6 +272,9 @@ const ALL_LIST = [
   { id: 'soc_tricks5', tab: 'sports', e: '🌈', t: 'Fool Kai with 5 tricks', r: 2, goal: 5, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick' } },
   { id: 'soc_nutmeg', tab: 'sports', e: '🥜', t: 'Nutmeg Kai: put the ball through his legs', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick_nutmeg' } },
   { id: 'soc_v1win', tab: 'sports', e: '🏆', t: 'Beat Kai 1-on-1', r: 3, go: 'soccer', ev: { k: 'soccer', a: a => a === 'v1win' } },
+  { id: 'soc_teamgoal', tab: 'sports', e: '👟', t: 'Score a goal in a 3-on-3 soccer match', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'teamgoal' } },
+  { id: 'soc_assist', tab: 'sports', e: '🤝', t: 'Pass to a teammate who scores (an assist) in 3-on-3 soccer', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'assist' } },
+  { id: 'soc_teamwin', tab: 'sports', e: '🏆', t: 'Win a 3-on-3 soccer match with your team', r: 3, go: 'soccer', ev: { k: 'soccer', a: a => a === 'teamwin' } },
   // 🏈 flag football on the ⚽ Soccer Field (3d/src/26i2-football-games.js)
   { id: 'ftFg', tab: 'sports', e: '🏈', t: 'Kick a field goal through the uprights', r: 1, go: 'soccer', ev: { k: 'football', a: a => a === 'fg' } },
   { id: 'ftFg50', tab: 'sports', e: '🦵', t: 'Kick a 50-yard field goal', r: 3, go: 'soccer', ev: { k: 'football', a: a => a === 'fg50' } },

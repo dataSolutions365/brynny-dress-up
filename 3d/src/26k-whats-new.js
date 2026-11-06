@@ -14,8 +14,15 @@
    (old:1 marks the notes from the very first card, which players who saw that card have already seen.)
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
+  {v:'2026-11-07',notes:[
+    {e:'🦖',t:'Visit Dino Valley! Cross the bridge behind the Barber Shop to see a real-looking T. rex, raptors, a triceratops and more.',go:'dino'},
+    {e:'🦕',t:'Your dinosaurs moved out of the barn and into Dino Valley. The Happy Barn is just for farm animals now.',go:'dino'},
+    {e:'🥚',t:'Step on the glowing footprint by the Dino Keeper\'s hut to take care of your dinosaurs or adopt a new one.',go:'dino'},
+  ]},
   {v:'2026-11-06',notes:[
+    {e:'🏀',t:'Play a 3-on-3 basketball game! Pick two teammates, pass the ball and beat the Bears.',go:'court'},
     {e:'⚾',t:'The Wiffle Ball Field is now a real Baseball Field! Play with real teams in uniforms, a catcher, and pitches like curveballs.',go:'wiffle'},
+    {e:'⚽',t:'Play a 3-on-3 soccer match with goalies at the Soccer Field!',go:'soccer'},
     {e:'🏊',t:'Swimming looks real now! Your arms reach forward and pull back like a real swimmer, and you float with your head up.'},
     {e:'🐶',t:'Your pet swims right next to you in the water now, instead of walking on top of it.'},
     {e:'🏄',t:'The wave pool is twice as big! Grab a surfboard at the new Surf Shack and ride the waves.',go:'water'},
@@ -31,7 +38,7 @@ const WHATS_NEW=[
   ]},
 ];
 const NEW_DAYS=30;// how long a place keeps its NEW tag after an update
-const WN_MAX=8;// at most this many notes on the card at once (newest first)
+const WN_MAX=16;// at most this many notes on the card at once (newest first; the list scrolls)
 // a note's key is made from its words, so a new or reworded note counts as unseen
 const wnKey=n=>{let h=5381;const s=n.e+n.t;for(let i=0;i<s.length;i++)h=(h*33+s.charCodeAt(i))>>>0;return h.toString(36);};
 const wnAll=()=>{const a=[];for(const u of WHATS_NEW)for(const n of u.notes)a.push({n,v:u.v,k:wnKey(n)});return a;};

@@ -322,6 +322,9 @@ const ZONES=[
   {id:'soccer',name:'⚽ Soccer Field',ang:154,d:R+43,r:12,music:'stadium',nopath:true,far:true},
   // 🏟️ Sports Park, past the canal across from the Batting Cage, over its own footbridge at 202 (26j-wiffle.js): the baseball field (it began as a wiffle ball field, so the id is still 'wiffle')
   {id:'wiffle',name:'⚾ Baseball Field',ang:206,d:R+33,r:15,music:'stadium-cheer',nopath:true,far:true},
+  // 🦖 Dino Valley, past the canal behind the Barber Shop and the Sweet Bakery, over its own footbridge at 312 (12i-place-dino-valley.js,
+  // 24n-dino-valley.js, 26y-dino-valley-land.js): real-looking dinosaurs, and where the dinosaurs you adopt live
+  {id:'dino',name:'🦖 Dino Valley',ang:312,d:R+41,r:18,music:'spring-birds',nopath:true,far:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -1935,6 +1938,136 @@ const HPAD={r:4.3,lights:[],sock:null};
    M(box(1.1,.06,.7),std('#3a3a3a',{metalness:.5}),0,.3,0,fg);
    M(new THREE.PlaneGeometry(.7,.2),new THREE.MeshBasicMaterial({map:labelTex('JET A-1',{size:60,fg:'#ffffff',bg:null,border:null}),transparent:true}),0,.72,.37,fg,false,false);
    z.ob(-S/2-.5,.9,.7);}
+ signpost(z);}
+// ---- src/12i-place-dino-valley.js ----
+/* ===== 🦖 Dino Valley: the dinosaur park across the canal (zone Z.dino, 02-island.js) =====
+   An original prehistoric valley (its own name and look): a big meadow of ferns and cycads with tall monkey-puzzle trees, a pond,
+   a nest of eggs, a 🦖 T. rex paddock behind a strong timber fence, a 🦖 raptor pen with a wire net, and the 🥚 Dino Keeper's hut
+   with a glowing footprint pad where you take care of your own dinosaurs (the barn sheet in 24d-barn.js, for dino:1 animals).
+   - This file builds everything inside the valley, in the zone's own directions (+z points back at the island and the gate).
+     The land under it, its sandy edge and the footbridge over the canal are in 26y-dino-valley-land.js (they need the canal's BANK).
+   - The dinosaurs that live here are in 24n-dino-valley.js; the real-looking models are in 24c9h-dinos.js.
+   - DV has where everything is. dvOk/dvSpot are the meadow (the plant-eaters and your own dinosaurs), dvTOk/dvTSpot the T. rex paddock
+     and dvROk/dvRSpot the raptor pen: change a number in DV and the scenery and where the dinosaurs walk both follow. */
+const DV={fence:16.8,gateA:.2,
+  T:{x:6.5,z:-6,r:7.2},// 🦖 the T. rex paddock
+  P:{x:-8.5,z:-7.5,r:4.2},// 🦖 the raptor pen
+  pond:{x:-7.2,z:1.8,r:2.4},nest:{x:3.6,z:5.2,r:.95},
+  hut:{x:-9.2,z:8.6,w:3.2,d:2.4,ry:.75},// the Dino Keeper's hut
+  bpad:{lx:-5.9,lz:11.2,r:.7},care:[-4.6,7.8],stand:[-5.4,10.4],out:[-5.6,11.9],// your dinosaurs' care pad, where yours stands, and where you stand
+  // tall trees and big rocks the dinosaurs walk round: [x, z, radius]
+  trees:[[-13.2,-1.5],[-12.5,4.5],[-3.5,-13.5],[1.2,-9.5],[12.8,4.2],[9.5,9.8],[-1.5,-4.2],[14.8,-4.5],[-14.2,-6.8]],
+  rocks:[[3.6,1.3,.9],[-3.2,4.5,.7],[11.5,1.2,.8],[-10.8,-2.6,.6],[0,-14.6,1.1]]};
+DV.avoid=[[DV.pond.x,DV.pond.z,DV.pond.r+.3],[DV.nest.x,DV.nest.z,DV.nest.r],[DV.hut.x,DV.hut.z,2.1],...DV.trees.map(([x,z])=>[x,z,.7]),...DV.rocks];
+// the meadow: inside the big fence, outside the paddocks, round the pond, the nest, the hut, the trees and rocks
+function dvOk(lx,lz,r){if(Math.hypot(lx,lz)>DV.fence-.7-r)return false;
+  for(const Q of [DV.T,DV.P])if(Math.hypot(lx-Q.x,lz-Q.z)<Q.r+.6+r)return false;
+  for(const [x,z,rr] of DV.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;
+  if(Math.abs(lx-DV.bpad.lx)<1.2+r&&Math.abs(lz-DV.bpad.lz)<1.2+r)return false;return true;}
+function dvSpot(r){for(let i=0;i<80;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*(DV.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(dvOk(lx,lz,r))return [lx,lz];}return [-1,9];}
+// inside a paddock: its middle keeps well clear of the fence so a long tail doesn't poke through
+const dvIn=(Q,lx,lz,r,k)=>Math.hypot(lx-Q.x,lz-Q.z)<Q.r-.7-r*k;
+function dvTOk(lx,lz,r){return dvIn(DV.T,lx,lz,r,2.5);}
+function dvTSpot(r){const Q=DV.T;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*Q.r,lx=Q.x+Math.sin(a)*d,lz=Q.z+Math.cos(a)*d;if(dvTOk(lx,lz,r))return [lx,lz];}return [Q.x,Q.z];}
+function dvROk(lx,lz,r){return dvIn(DV.P,lx,lz,r,1.6);}
+function dvRSpot(r){const Q=DV.P;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*Q.r,lx=Q.x+Math.sin(a)*d,lz=Q.z+Math.cos(a)*d;if(dvROk(lx,lz,r))return [lx,lz];}return [Q.x,Q.z];}
+
+const dvV=(x,y,z)=>new THREE.Vector3(x,y,z);
+{const z=Z.dino,g=z.g,F=DV.fence;z.fence=F;
+ const B=advBatch(),wood=std('#7a5a3c',{roughness:.9}),woodD=std('#5a4029',{roughness:.95}),stone=std('#8d8678',{roughness:.95}),
+   bark=std('#5e4a38',{roughness:1}),moss=std('#3f5a2c',{roughness:1});
+ // the ground: a lush meadow with a dirt path in from the gate
+ {const tx=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#5f8a3c';x.fillRect(0,0,w,h);for(let i=0;i<3200;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(40,80,30,.45)':c<.7?'rgba(130,170,70,.4)':'rgba(120,95,60,.3)';
+   x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(Math.random()*Math.PI);x.fillRect(0,0,4+Math.random()*6,1.4);x.restore();}},6);
+  patch(F+.6,std('#ffffff',{map:tx,roughness:1}),z.x,z.z,.016);
+  const dirt=canvasTex(128,128,(x,w,h)=>{x.fillStyle='#a88a62';x.fillRect(0,0,w,h);for(let i=0;i<900;i++){x.fillStyle=Math.random()<.5?'rgba(90,70,45,.35)':'rgba(205,185,150,.35)';x.fillRect(Math.random()*w,Math.random()*h,2+Math.random()*3,2);}},3);
+  const pm=std('#ffffff',{map:dirt,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-3;pm.polygonOffsetUnits=-3;
+  const path=(x0,z0,x1,z1,w)=>{const L=Math.hypot(x1-x0,z1-z0),p=M(new THREE.PlaneGeometry(w,L),pm,(x0+x1)/2,.03,(z0+z1)/2,g,false,true);p.rotation.order='YXZ';p.rotation.y=Math.atan2(x1-x0,z1-z0);p.rotation.x=-Math.PI/2;};
+  path(0,F+5,0,4,2.4);path(0,6.5,DV.stand[0],DV.stand[1],1.8);path(0,4,3,-1.5,1.8);path(-.5,4.5,-4.5,-4.5,1.8);}
+ // the big wooden fence round the valley, open at the gate (posts, two rails), all merged into a few shapes
+ {const N=Math.round(F*2*Math.PI/.85),open=a=>Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<DV.gateA;
+  for(let i=0;i<N;i++){const a=i/N*Math.PI*2;if(open(a))continue;const x=Math.sin(a)*F,w=Math.cos(a)*F;B.add(cyl(.08,.09,1.15,7),wood,x,.575,w);z.ob(x,w,.32);
+    const a2=(i+1)/N*Math.PI*2;if(open(a2))continue;for(const y of [.5,.95])B.stick(dvV(x,y,w),dvV(Math.sin(a2)*F,y,Math.cos(a2)*F),.045,woodD,5);}}
+ // the gate: two mossy stone pillars and a timber beam with the sign
+ {const gx=Math.sin(DV.gateA)*F,gz=Math.cos(DV.gateA)*F;
+  for(const s of [-1,1]){B.add(box(.9,3.4,.9),stone,s*gx,1.7,gz,0,s*.05,0);B.add(box(1.05,.25,1.05),stone,s*gx,3.45,gz);B.add(sph(.5,8,6),moss,s*gx,.15,gz,0,0,0,1.2,.35,1.2);z.ob(s*gx,gz,.65);}
+  B.add(box(2*gx+.8,.38,.42),wood,0,3.15,gz);
+  const sign=M(new THREE.PlaneGeometry(4.2,.95),new THREE.MeshBasicMaterial({map:labelTex('🦖 Dino Valley',{size:64,fg:'#2f5a2a',bg:'#f4ead2',border:'#7a5a3c'}),transparent:true}),0,3.95,gz+.02,g,false,false);
+  const back=sign.clone();back.rotation.y=Math.PI;back.position.z=gz-.02;g.add(back);
+  for(const s of [-1,1])B.stick(dvV(s*1.4,3.35,gz),dvV(s*1.4,3.55,gz),.03,woodD,5);}
+ // 🦖 the T. rex paddock: tall timber posts and four heavy rails (you look in from outside), and a sign
+ const ring=(Q,h,rails,postR,railR,gap)=>{const N=Math.round(Q.r*2*Math.PI/gap);for(let i=0;i<N;i++){const a=i/N*Math.PI*2,a2=(i+1)/N*Math.PI*2,x=Q.x+Math.sin(a)*Q.r,w=Q.z+Math.cos(a)*Q.r;
+   B.add(cyl(postR,postR*1.12,h,7),woodD,x,h/2,w);z.ob(x,w,.36);for(const y of rails)B.stick(dvV(x,y,w),dvV(Q.x+Math.sin(a2)*Q.r,y,Q.z+Math.cos(a2)*Q.r),railR,wood,5);}};
+ ring(DV.T,2.5,[.45,1.05,1.65,2.25],.13,.07,.8);
+ // 🦖 the raptor pen: posts with a wire net all round
+ ring(DV.P,1.9,[.15,1.8],.09,.05,.8);
+ {const net=canvasTex(64,64,(x,w,h)=>{x.clearRect(0,0,w,h);x.strokeStyle='rgba(60,60,58,.9)';x.lineWidth=3;x.beginPath();x.moveTo(0,0);x.lineTo(w,h);x.moveTo(w,0);x.lineTo(0,h);x.stroke();});
+  net.wrapS=net.wrapT=THREE.RepeatWrapping;net.repeat.set(Math.round(DV.P.r*2*Math.PI/.25),Math.round(1.7/.25));
+  const nm=std('#ffffff',{map:net,transparent:true,alphaTest:.3,side:THREE.DoubleSide,roughness:.6,metalness:.4});
+  M(new THREE.CylinderGeometry(DV.P.r,DV.P.r,1.7,56,1,true),nm,DV.P.x,1,DV.P.z,g,false,false);}
+ const sign=(x,w,ry,text,col)=>{B.add(cyl(.06,.07,1.6,7),woodD,x,.8,w);const p=M(new THREE.PlaneGeometry(1.9,.48),new THREE.MeshBasicMaterial({map:labelTex(text,{size:52,fg:col,bg:'#f4ead2',border:'#7a5a3c'})}),x,1.55,w,g,false,false);p.rotation.y=ry;z.ob(x,w,.2);};
+ {const a=Math.atan2(-DV.T.x,-DV.T.z+6),x=DV.T.x+Math.sin(a)*(DV.T.r+.8),w=DV.T.z+Math.cos(a)*(DV.T.r+.8);sign(x,w,a,'🦖 T. rex','#7a2f20');}
+ {const a=Math.atan2(-DV.P.x+3,-DV.P.z+4),x=DV.P.x+Math.sin(a)*(DV.P.r+.8),w=DV.P.z+Math.cos(a)*(DV.P.r+.8);sign(x,w,a,'🦖 Raptors','#5a3a1a');}
+ // the pond, with stones round it
+ {const P=DV.pond;const wm=phys('#3d7f7a',{roughness:.08,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.92});wm.polygonOffset=true;wm.polygonOffsetFactor=-4;wm.polygonOffsetUnits=-4;
+  const wtr=M(new THREE.CircleGeometry(P.r,40),wm,P.x,.04,P.z,g,false,true);wtr.rotation.x=-Math.PI/2;wtr.scale.y=.8;
+  for(let i=0;i<16;i++){const a=i/16*Math.PI*2,s=.2+((i*7)%5)*.05;B.add(new THREE.DodecahedronGeometry(s,0),stone,P.x+Math.sin(a)*(P.r+.05),s*.4,P.z+Math.cos(a)*(P.r*.8+.05),i,i*2,0,1.3,.7,1.1);}
+  for(let i=0;i<7;i++){const a=i*.9+.3;B.add(cyl(.015,.02,.9,5),moss,P.x+Math.sin(a)*(P.r-.3),.45,P.z+Math.cos(a)*(P.r*.8-.25),.1*Math.sin(i),0,.1*Math.cos(i));}}// reeds
+ // a nest with four eggs
+ {const N=DV.nest,ng=new THREE.Group();ng.position.set(N.x,0,N.z);g.add(ng);
+  for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=.62+((i*5)%3)*.06;B.add(cyl(.025,.025,.7,5),woodD,N.x+Math.sin(a)*r,.12+(i%3)*.05,N.z+Math.cos(a)*r,Math.PI/2,a+Math.PI/2+.25,0,1,1,1,'YXZ');}
+  B.add(sph(.72,14,8),std('#8a6e48',{roughness:1}),N.x,.02,N.z,0,0,0,1,.18,1);
+  const egg=phys('#efe6d2',{roughness:.5,clearcoat:.2,map:canvasTex(64,64,(x,w,h)=>{x.fillStyle='#efe6d2';x.fillRect(0,0,w,h);for(let i=0;i<80;i++){x.fillStyle='rgba(120,90,60,.45)';x.beginPath();x.arc(Math.random()*w,Math.random()*h,1+Math.random()*2,0,7);x.fill();}})});
+  for(const [x,w,a] of [[-.18,-.1,.3],[.16,-.14,-.4],[0,.18,.1],[.24,.16,.7]]){const e=M(sph(.15,14,10),egg,x,.2,w,ng);e.scale.set(1,1.35,1);e.rotation.set(a,0,a*.6);}
+  z.ob(N.x,N.z,N.r);}
+ // 🥚 the Dino Keeper's hut: log walls, a leafy roof, a door and a window
+ {const H=DV.hut,hg=new THREE.Group();hg.position.set(H.x,0,H.z);hg.rotation.y=H.ry;g.add(hg);const HB=advBatch();
+  for(let i=0;i<9;i++){const y=.14+i*.26;for(const s of [-1,1]){HB.add(cyl(.13,.13,H.w+.3,8),wood,0,y,s*H.d/2,0,0,Math.PI/2);HB.add(cyl(.13,.13,H.d+.3,8),wood,s*H.w/2,y+.13,0,Math.PI/2,0,0);}}
+  const roof=std('#5d6b34',{roughness:1});for(const s of [-1,1])HB.add(box(H.w+.9,.18,H.d*.72),roof,0,2.75,s*H.d*.32,s*.55,0,0);
+  HB.add(box(.35,.35,H.d+.5),roof,0,3.08,0);
+  HB.done(hg);
+  M(box(.9,1.6,.06),std('#3b2a1c',{roughness:.9}),-.6,.8,H.d/2+.13,hg);M(box(.7,.55,.06),phys('#bfe3ff',{roughness:.1,clearcoat:1}),.75,1.35,H.d/2+.13,hg,false,false);
+  const lt=M(new THREE.PlaneGeometry(2.2,.5),new THREE.MeshBasicMaterial({map:labelTex('🥚 Dino Keeper',{size:52,fg:'#2f5a2a',bg:'#f4ead2',border:'#7a5a3c'})}),0,2.25,H.d/2+.2,hg,false,false);
+  for(const [x,w] of [[-1,0],[1,0],[0,-.7],[0,.7]])z.ob(H.x+Math.cos(H.ry)*x*1.2+Math.sin(H.ry)*w,H.z-Math.sin(H.ry)*x*1.2+Math.cos(H.ry)*w,1.1);}
+ // the glowing footprint pad: step on it to take care of your dinosaurs (24d-barn.js opens the sheet)
+ {const P=DV.bpad;z.bpad=P;const padMat=glow('#9be36b',1.4);padMat.transparent=true;
+  const rg=M(new THREE.RingGeometry(.5,.68,40),padMat,P.lx,.05,P.lz,g,false,false);rg.rotation.x=-Math.PI/2;
+  const pin=M(new THREE.CircleGeometry(.5,40),phys('#e3f5cf',{roughness:.3,emissive:'#7cc75a',emissiveIntensity:.25}),P.lx,.045,P.lz,g,false,true);pin.rotation.x=-Math.PI/2;
+  const foot=canvasTex(128,128,x=>{x.fillStyle='#3f6a2a';x.beginPath();x.ellipse(64,80,18,22,0,0,7);x.fill();
+    for(const a of [-.5,0,.5]){x.save();x.translate(64,70);x.rotate(a);x.beginPath();x.ellipse(0,-34,8,22,0,0,7);x.fill();x.restore();}});
+  const fp=M(new THREE.PlaneGeometry(.7,.7),new THREE.MeshBasicMaterial({map:foot,transparent:true,depthWrite:false}),P.lx,.055,P.lz,g,false,false);fp.rotation.x=-Math.PI/2;
+  const lbl=z.padLbl=sprite(labelTex('🦖 Your dinosaurs!',{size:52}),1.9,.44);lbl.position.set(P.lx,1.05,P.lz);g.add(lbl);
+  anims.push(t=>{padMat.opacity=.55+.45*Math.sin(t*3);lbl.position.y=1+Math.sin(t*2)*.08;});}
+ // tall monkey-puzzle trees (an ancient kind of conifer dinosaurs really ate): a bare trunk and tiers of dark spiky branches
+ {const ndl=std('#2f4a26',{roughness:.95}),ndl2=std('#3b5a2c',{roughness:.95});
+  DV.trees.forEach(([x,w],i)=>{const h=7+((i*37)%5)*.8;B.add(cyl(.14,.3,h,8),bark,x,h/2,w);z.ob(x,w,.45);
+    for(let k=0;k<5;k++){const y=h*.55+k*(h*.45/5),r=1.9-k*.33;B.add(new THREE.ConeGeometry(r,.75,9,1,true),k%2?ndl:ndl2,x,y,w,0,i+k,0);B.add(new THREE.CylinderGeometry(r*.2,r,.18,9),k%2?ndl2:ndl,x,y-.38,w,0,i,0);}
+    B.add(new THREE.ConeGeometry(.5,1,8),ndl,x,h+.35,w);});}
+ // big mossy boulders
+ for(const [x,w,r] of DV.rocks){B.add(new THREE.DodecahedronGeometry(r,1),stone,x,r*.45,w,x,w,0,1.15,.75,1);B.add(sph(r*.75,10,6),moss,x,r*.75,w,0,0,0,1.1,.3,1);z.ob(x,w,r*.9);}
+ B.done(g);
+ /* ---------- ferns and cycads everywhere (one instanced shape each, so they cost almost nothing) ---------- */
+ {// one fern frond: a curved strip with a picture of leaflets (see-through between them)
+  const ft=canvasTex(64,256,(x,w,h)=>{x.clearRect(0,0,w,h);x.strokeStyle='#4f7a2c';x.lineWidth=3;x.beginPath();x.moveTo(w/2,h);x.lineTo(w/2,4);x.stroke();
+    for(let y=12;y<h-6;y+=9){const L=(w/2-3)*Math.sin(Math.PI*(1-y/h))*.95+4;x.fillStyle=y%18?'#5f8f36':'#4f7f2e';
+      for(const s of [-1,1]){x.beginPath();x.moveTo(w/2,y+4);x.quadraticCurveTo(w/2+s*L*.6,y-3,w/2+s*L,y-6);x.quadraticCurveTo(w/2+s*L*.5,y+3,w/2,y+7);x.fill();}}});
+  const fm2=std('#ffffff',{map:ft,alphaTest:.45,side:THREE.DoubleSide,roughness:.9});
+  const frond=(len,droop)=>{const p=new THREE.PlaneGeometry(.42,len,1,8);p.translate(0,len/2,0);const a=p.attributes.position;
+    for(let i=0;i<a.count;i++){const y=a.getY(i),q=y/len;a.setY(i,Math.sin(q*1.2)*len*.75-droop*q*q*len);a.setZ(i,(1-Math.cos(q*1.2))*len*.8);}p.computeVertexNormals();return p;};
+  const plant=(n,len,droop,tilt)=>{const parts=[];for(let i=0;i<n;i++){const f=frond(len,droop);f.rotateX(tilt);f.rotateY(i/n*Math.PI*2+i*.3);parts.push(f);}const m=mergeGeometries(parts);parts.forEach(p=>p.dispose());return m;};
+  const fern=plant(7,1.1,.25,-.35),cyc=plant(9,1.3,.1,-.6);
+  const spots=[];for(let i=0;i<260&&spots.length<120;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*(F+3.5),lx=Math.sin(a)*d,lw=Math.cos(a)*d;
+    if(Math.abs(lx)<1.6&&lw>3)continue;// keep the path from the gate clear
+    if(Math.hypot(lx-DV.bpad.lx,lw-DV.bpad.lz)<2||Math.hypot(lx-DV.hut.x,lw-DV.hut.z)<2.4||Math.hypot(lx-DV.pond.x,lw-DV.pond.z)<DV.pond.r+.2||Math.hypot(lx-DV.nest.x,lw-DV.nest.z)<1.2)continue;
+    if(Math.abs(Math.hypot(lx,lw)-F)<.5)continue;spots.push([lx,lw,.6+Math.random()*.7,Math.random()*6]);}
+  const put=(geo,list,par)=>{const im=new THREE.InstancedMesh(geo,fm2,list.length),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3();
+    list.forEach(([x,w,k,ry],i)=>{m4.compose(new THREE.Vector3(x,0,w),q.setFromAxisAngle(new THREE.Vector3(0,1,0),ry),s.set(k,k,k));im.setMatrixAt(i,m4);});im.castShadow=false;im.receiveShadow=true;par.add(im);return im;};
+  put(fern,spots.slice(0,LITE?60:90),g);
+  // cycads: a short scaly trunk with a crown of stiff fronds
+  const cy=[[-2.4,9.8],[2.6,10.4],[6.2,4.6],[-11.8,1.2],[-5.2,-1.8],[10.8,-12.2],[-13.6,10.2],[13.2,8.2],[-.8,13.6]];
+  const CB=advBatch(),trunk=std('#6b5a3e',{roughness:1,map:canvasTex(32,64,(x,w,h)=>{x.fillStyle='#6b5a3e';x.fillRect(0,0,w,h);x.strokeStyle='#4a3c28';x.lineWidth=2;for(let y=0;y<h;y+=8)for(let i=0;i<w;i+=8){x.strokeRect(i+(y%16?4:0),y,8,8);}})});
+  for(const [x,w] of cy){CB.add(cyl(.22,.28,.9,9),trunk,x,.45,w);z.ob(x,w,.4);}CB.done(g);
+  {const cg=new THREE.Group();cg.position.y=.85;g.add(cg);put(cyc,cy.map(([x,w],i)=>[x,w,.9+(i%3)*.15,i]),cg);}}
  signpost(z);}
 // ---- src/13-park-and-stars.js ----
 /* ---------- park trees ---------- */
@@ -4621,7 +4754,7 @@ function callSteed(k){if(barnRide||closetOpen||!started||handsBusy()||!BS.own[k]
   const a=farmAnimal(k),P=player.pos;
   // trot over from the barn with a puff of sparkles
   burst(new THREE.Vector3(P.x,P.y+.6,P.z),'#ffd23f',30,2);
-  a.y=0;a.vy=0;a.face=player.face-BZ.rot;a.pos.set(P.x,P.y,P.z);a.g.position.copy(a.pos);
+  a.y=0;a.vy=0;a.face=player.face-a.Z.rot;a.pos.set(P.x,P.y,P.z);a.g.position.copy(a.pos);
   startRide(a);}
 // ---- src/18-sound.js ----
 /* ================= SOUND ================= */
@@ -7661,6 +7794,268 @@ ZOO_BUILD.snowyowl=function(g,body,o){const r=.17,ride=this.k==='ukpik',by=ride?
   // owls turn their heads a long way round to look about
   this.tick=(t,dt,run)=>{if(run<.05){this.look=(this.look||0)+dt;head.rotation.y=Math.sin(this.look*.4)*1.2*(Math.sin(this.look*.13)>0?1:.2);}else head.rotation.y*=.9;};
   Object.assign(o,{neck,head,tail,nTilt:0,gz:.4,size:.42,h:by+r*1.15+.3,rad:.22,biped:true,dustR:[r,r*1.3,r]});};
+// ---- src/24c9h-dinos.js ----
+/* ===== 🦖 Dinosaurs: real-looking dinosaurs for 🦕 Dino Valley (26y-dino-valley.js), built like the zoo animals (ZOO_BUILD) =====
+   - ZOO_BUILD.trexR (Tyrannosaurus rex), raptorR (a feathered raptor, Deinonychus), trikeR (Triceratops), longneckR (Brachiosaurus)
+     and stegoR (Stegosaurus). They're built to look like the real animals as scientists picture them today: earthy colours,
+     darker on the back and pale underneath, scaly skin (feathers on the raptor, like the real ones), no cartoon eyes or smiles.
+   - Kid-safe: the T. rex has lips over its teeth (like scientists now think), and its roar is just a big rumbly head-up roar.
+   - The same builders make the dinosaurs that live at Dino Valley (DINOA, 24n-dino-valley.js) and the ones you adopt or buy
+     (FARM in 24d-barn.js uses them through model:, with scale: for the young ones). Rides get a saddle (dnSaddle) that keeps its
+     real size however small the dinosaur is, so F.ride (where you sit) is worked out from the body: see the note on each builder.
+   - Each body part is one smooth tube along a "spine" (dnTube), with its colours painted on its corners (dnPaint) so one shared
+     material per kind of dinosaur is enough (dnM keeps one of each), which keeps phones light. */
+const DNM={};const dnM=(k,make)=>DNM[k]||(DNM[k]=make());
+const dnV=(x,y,z)=>new THREE.Vector3(x,y,z);
+// little round scales, and fine feather streaks, as bumps
+const dnBump=()=>dnM('bump',()=>canvasTex(128,128,(x,w,h)=>{x.fillStyle='#808080';x.fillRect(0,0,w,h);
+  for(let i=0;i<700;i++){const c=70+(Math.random()*110|0);x.fillStyle=`rgb(${c},${c},${c})`;x.beginPath();x.arc(Math.random()*w,Math.random()*h,1.2+Math.random()*2.6,0,7);x.fill();}},4));
+const dnFeatherBump=()=>dnM('fbump',()=>canvasTex(128,128,(x,w,h)=>{x.fillStyle='#808080';x.fillRect(0,0,w,h);x.lineCap='round';
+  for(let i=0;i<520;i++){const X=Math.random()*w,Y=Math.random()*h,c=60+(Math.random()*140|0);x.strokeStyle=`rgb(${c},${c},${c})`;x.lineWidth=1+Math.random()*1.5;
+    x.beginPath();x.moveTo(X,Y);x.lineTo(X+(Math.random()-.5)*3,Y+6+Math.random()*8);x.stroke();}},4));
+// the skin is white so the colours painted on each shape show through
+const dnSkin=(k,feather)=>dnM('skin'+k,()=>std('#ffffff',{vertexColors:true,roughness:feather?.95:.82,bumpMap:feather?dnFeatherBump():dnBump(),bumpScale:feather?1.4:1.1}));
+// countershading: `top` on the back fading to `belly` underneath; pat(x,y,z,ny) can darken a spot (0..1) for stripes and blotches
+function dnPaint(geo,top,belly,pat){const p=geo.attributes.position,n=geo.attributes.normal,c=new Float32Array(p.count*3),A=new THREE.Color(top),B=new THREE.Color(belly),C=new THREE.Color();
+  for(let i=0;i<p.count;i++){const ny=n.getY(i),t=Math.min(1,Math.max(0,(ny+.62)/.85));C.copy(B).lerp(A,t*t*(3-2*t));
+    if(pat){const d=pat(p.getX(i),p.getY(i),p.getZ(i),ny);if(d)C.multiplyScalar(1-d);}c[i*3]=C.r;c[i*3+1]=C.g;c[i*3+2]=C.b;}
+  geo.setAttribute('color',new THREE.BufferAttribute(c,3));return geo;}
+// radius along a tube: a list of radii from one end to the other (smoothly blended), or a function of q (0..1)
+const dnR=rs=>typeof rs==='function'?rs:q=>{const f=q*(rs.length-1),i=Math.min(rs.length-2,Math.floor(f)),t=f-i,s=t*t*(3-2*t);return rs[i]+(rs[i+1]-rs[i])*s;};
+// one smooth body part along a spine (pts as [x,y,z]). sx/sy squash it (only for spines that stay in the up/forward plane, x = 0).
+// col = [top, belly, pat]. Returns top(q): the point on top of the part, q of the way along (for plates, bumps and saddles).
+function dnTube(pts,rs,mat,par,col,o={}){const seg=o.seg||28,rad=o.rad||14,sx=o.sx||1,sy=o.sy||1,rf=dnR(rs);
+  const c=new THREE.CatmullRomCurve3(pts.map(p=>dnV(p[0],p[1],p[2]))),g=new THREE.TubeGeometry(c,seg,1,rad,false),p=g.attributes.position,P=new THREE.Vector3();
+  for(let i=0;i<=seg;i++){c.getPointAt(i/seg,P);const r=rf(i/seg);for(let j=0;j<=rad;j++){const k=i*(rad+1)+j;
+    p.setXYZ(k,P.x+(p.getX(k)-P.x)*r*sx,P.y+(p.getY(k)-P.y)*r*sy,P.z+(p.getZ(k)-P.z)*r*sy);}}
+  g.computeVertexNormals();dnPaint(g,col[0],col[1],col[2]);M(g,mat,0,0,0,par);
+  for(const q of [0,1]){const e=c.getPointAt(q),r=rf(q);if(r>.015)M(dnPaint(sph(r,12,8),col[0],col[1],col[2]),mat,e.x,e.y,e.z,par).scale.set(sx,sy,sy);}// round ends
+  return {top:(q,v=new THREE.Vector3())=>{c.getPointAt(q,v);v.y+=rf(q)*sy*.96;return v;},at:(q,v=new THREE.Vector3())=>c.getPointAt(q,v),r:rf};}
+// a real-looking eye (amber iris, dark round pupil) that blinks with the others (a.eyes)
+function dnEye(a,par,x,y,z,r,col,ry){const e=new THREE.Group();e.position.set(x,y,z);e.rotation.y=ry;par.add(e);
+  const iris=dnM('iris'+col,()=>phys(col,{roughness:.12,clearcoat:1,clearcoatRoughness:.05})),pup=dnM('pupil',()=>std('#0b0a08',{roughness:.2}));
+  M(sph(r,14,10),iris,0,0,0,e,false,false);M(sph(r*.52,10,8),pup,0,0,r*.66,e,false,false).scale.set(.75,.9,.5);a.eyes.push(e);return e;}
+// a leg hanging from its hip or shoulder: one smooth tube through the joints (it swings from the top in FarmAnimal.update)
+function dnLeg(a,par,x,y,z,ph,joints,rads,mat,col){const lg=new THREE.Group();lg.position.set(x,y,z);par.add(lg);a.legs.push({g:lg,ph});
+  dnTube(joints,rads,mat,lg,col,{seg:16,rad:10});return lg;}
+// three forward toes with claws (theropods); P = the ball of the foot, toes reach len forward, r thick
+function dnToes(lg,P,len,r,mat,col,claw,spread=.34,n=3){for(let i=0;i<n;i++){const s=n===3?i-1:i?.5:-.5,tg=new THREE.Group();tg.position.set(P[0],P[1],P[2]);tg.rotation.y=s*spread;lg.add(tg);const L=len*(s&&n===3?.8:1);
+  dnTube([[0,0,0],[0,-r*.3,L*.5],[0,-r*.55,L]],[r,r*.72,r*.45],mat,tg,col,{seg:6,rad:8});
+  const cl=M(new THREE.ConeGeometry(r*.36,r*1.1,8),claw,0,-r*.68,L+r*.32,tg,false,false);cl.rotation.x=Math.PI/2+.5;}}
+// a round elephant-like foot pad with blunt nails (the big plant-eaters); y = the ground under the leg
+function dnPad(lg,y,r,mat,col,nail,n=3){M(dnPaint(cyl(r*.92,r*1.06,r*.75,16),col[0],col[1]),mat,0,y+r*.37,0,lg);
+  for(let i=0;i<n;i++){const a=(i-(n-1)/2)*.5;M(sph(r*.24,8,6),nail,Math.sin(a)*r*.98,y+r*.16,Math.cos(a)*r*.98,lg,false,false).scale.set(1,.75,.7);}}
+// a horn or spike from its base (x,y,z), pointing up, then tipped forward by rx and outward by rz
+function dnHorn(par,mat,x,y,z,r,h,rx,rz){const g=new THREE.ConeGeometry(r,h,12);g.translate(0,h/2,0);const m=M(g,mat,x,y,z,par);m.rotation.set(rx,0,rz);return m;}
+const dnClaw=()=>dnM('claw',()=>phys('#2a241c',{roughness:.35,clearcoat:.4}));
+const dnHornM=()=>dnM('horn',()=>phys('#ddd2b6',{roughness:.45,clearcoat:.3}));
+const dnDark=()=>dnM('dark',()=>std('#1c1814',{roughness:.6}));
+// 🏇 a saddle on a blanket, for the dinosaurs you ride (any dinosaur with F.ride). The saddle keeps its real size however small the
+// dinosaur is (it's scaled by 1/F.scale). y,z: the middle of the body under it, r its radius there, sx/sy the body's squash.
+// You sit at about F.ride = F.scale * (body height + y + r*sy) + .06 off the ground.
+function dnSaddle(a,body,y,z,r,sx,sy,col){if(!a.F.ride)return;const inv=1/(a.F.scale||1);
+  const cm=dnM('blanket'+col,()=>phys(col,{roughness:.9,sheen:.8,sheenColor:new THREE.Color('#ffffff'),side:THREE.DoubleSide})),tm=dnM('btrim',()=>phys('#e8c46a',{roughness:.4,metalness:.3})),
+    leather=dnM('leather',()=>phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4})),dkL=dnM('leatherD',()=>phys('#3e2112',{roughness:.6}));
+  const arc=2.2,len=.5*inv,bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
+  const cg=new THREE.CylinderGeometry(r*1.035,r*1.035,len,36,1,true,Math.PI-arc/2,arc);cg.rotateX(Math.PI/2);M(cg,cm,0,0,0,bg);
+  for(const s of [-1,1]){const e=M(new THREE.TorusGeometry(r*1.035,.014*inv,6,36,arc),tm,0,0,s*len/2,bg,false,false);e.rotation.z=Math.PI/2-arc/2;}
+  const sg=new THREE.Group();sg.position.set(0,y+r*sy*1.03,z);sg.scale.setScalar(inv);body.add(sg);
+  M(sph(.17,20,12),leather,0,.02,0,sg).scale.set(.95,.22,1.25);M(sph(.06,12,8),leather,0,.065,.17,sg).scale.set(1.2,1.1,.8);
+  M(sph(.1,14,10),leather,0,.06,-.17,sg).scale.set(1.3,.6,.45);
+  for(const s of [-1,1]){const f=M(sph(.12,14,10),dkL,s*.13,-.05,0,sg);f.scale.set(.25,.7,1.1);f.rotation.z=s*.5;}}
+
+/* ---------- 🦖 Tyrannosaurus rex: a huge head with lips over the teeth, tiny two-fingered arms, a deep chest, big legs and a long
+   stiff tail held out for balance. Olive brown with faint darker bands over the back. Now and then it lifts its head and roars
+   (just the head and jaw; it never chases anyone). Ride (Chomper): scale .32 => F.ride 1.15 ---------- */
+ZOO_BUILD.trexR=function(g,body,o){const by=2.45,m=dnSkin('trex'),C=['#5f5838','#cdbf98',(x,y,z,ny)=>ny>0?Math.max(0,Math.sin(z*2.6+1))*.3*ny:0],
+  dk=dnDark(),mouth=dnM('mouthT',()=>std('#7c4440',{roughness:.7})),tooth=dnM('toothT',()=>std('#efe6cc',{roughness:.4}));
+  body.position.y=by;
+  // a deep chest, a round belly and strong hips
+  const T=dnTube([[0,.5,1.7],[0,.25,1.15],[0,.03,.35],[0,.1,-.45],[0,.22,-1.05]],[.42,.72,.85,.74,.6],m,body,C,{sx:.72,seg:24,rad:16});
+  // a row of small bony bumps down the back
+  const bm=dnM('trexBump',()=>std('#4a4430',{roughness:.8}));for(let i=0;i<9;i++){const p=T.top(.12+i*.1);M(sph(.06,8,6),bm,0,p.y,p.z,body,false,false).scale.set(1.2,.6,1.6);}
+  // the tail: thick at the hips, long and stiff
+  const tail=new THREE.Group();tail.position.set(0,.22,-.95);body.add(tail);
+  const TL=dnTube([[0,0,.2],[0,-.05,-.9],[0,-.2,-2.1],[0,-.38,-3.3],[0,-.5,-4.3]],[.6,.5,.32,.15,.03],m,tail,C,{sx:.66,sy:1.1,seg:26,rad:12});
+  for(let i=0;i<10;i++){const p=TL.top(.04+i*.075);M(sph(.05-i*.003,8,6),bm,0,p.y,p.z,tail,false,false).scale.set(1.2,.6,1.6);}
+  // tiny arms with two fingers each
+  for(const s of [-1,1]){const ag=new THREE.Group();ag.position.set(s*.36,-.3,1.25);body.add(ag);
+    dnTube([[0,0,0],[s*.06,-.28,.1],[s*.05,-.36,.34]],[.11,.075,.055],m,ag,C,{seg:8,rad:8});
+    for(const f of [-1,1]){dnTube([[s*.05,-.36,.34],[s*.05+f*.03,-.44,.43]],[.035,.022],m,ag,C,{seg:4,rad:6});
+      M(new THREE.ConeGeometry(.018,.06,6),dk,s*.05+f*.03,-.47,.45,ag,false,false).rotation.x=2.3;}}
+  // strong legs: a big thigh, long shin and three toes
+  for(const s of [-1,1]){const H=by+.05,lg=dnLeg(this,g,s*.5,H,-.45,s<0?0:Math.PI,[[0,0,0],[0,-.95,.42],[0,-1.8,-.2],[0,-2.33,.08]],[.5,.34,.2,.15],m,C);
+    M(dnPaint(sph(.55,16,12),C[0],C[1]),m,0,-.4,.12,lg).scale.set(.72,1.3,1.05);
+    dnToes(lg,[0,-H+.12,.1],.55,.11,m,C,dnClaw());}
+  // the neck and the big head
+  const neck=new THREE.Group();neck.position.set(0,by+.5,1.6);g.add(neck);
+  dnTube([[0,-.28,-.35],[0,0,.1],[0,.25,.45],[0,.38,.78]],[.5,.47,.42,.4],m,neck,C,{sx:.78,seg:12,rad:14});
+  const head=new THREE.Group();head.position.set(0,.42,.84);neck.add(head);
+  dnTube([[0,.06,-.22],[0,.09,.25],[0,.01,.75],[0,-.06,1.15],[0,-.11,1.38]],[.38,.4,.31,.22,.11],m,head,C,{sx:.8,seg:18,rad:14});
+  // inside the mouth (only seen when it opens), and the teeth, which the lips cover when it's closed
+  M(sph(.2,12,8),mouth,0,-.2,.65,head,false,false).scale.set(.95,.3,3);
+  for(const s of [-1,1])for(let i=0;i<7;i++)M(new THREE.ConeGeometry(.018,.05,6),tooth,s*(.16-i*.015),-.13,.32+i*.13,head,false,false).rotation.x=Math.PI;
+  const jaw=new THREE.Group();jaw.position.set(0,-.17,0);head.add(jaw);
+  dnTube([[0,-.02,-.18],[0,-.1,.45],[0,-.1,.95],[0,-.06,1.24]],[.27,.22,.16,.08],m,jaw,['#6c6344','#d8cca8'],{sx:.92,sy:.62,seg:12,rad:12});
+  // brow ridges with little horns over the eyes, eyes that look forward, and nostrils at the end of the snout
+  for(const s of [-1,1]){M(dnPaint(sph(.11,10,8),C[0],C[1]),m,s*.24,.3,.4,head).scale.set(1,.6,1.5);M(sph(.045,8,6),bm,s*.25,.36,.33,head,false,false).scale.set(1,.8,1.4);
+    dnEye(this,head,s*.27,.19,.5,.055,'#c8922c',s*.9);
+    M(sph(.035,8,6),dk,s*.09,.04,1.32,head,false,false).scale.set(1,.6,1.6);}
+  // breathing, and a big roar now and then (head up, jaw open, no biting)
+  let rT=5+Math.random()*10,roar=0;
+  this.tick=(t,dt,run)=>{body.scale.y=1+Math.sin(t*1.2)*.01;rT-=dt;
+    if(rT<0&&run<.1&&!this.ridden){rT=14+Math.random()*18;roar=2.4;if(this.g.parent&&this.g.visible)this.speak('*big rumbly ROAR* 🦖');}
+    if(roar>0){roar-=dt;const k=Math.sin(Math.min(1,(2.4-roar)/2.4)*Math.PI);head.rotation.x=-k*.38;jaw.rotation.x=k*.42;}
+    else{head.rotation.x*=.9;jaw.rotation.x*=.9;}};
+  dnSaddle(this,body,.07,.15,.84,.72,1,'#3a5a8a');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.3,size:2.2,h:by+1.5,rad:1.3,biped:true,dustR:[.8,.8,1.2]});};
+
+/* ---------- 🦖 Raptor (Deinonychus): a fast, feathered hunter about as long as a car, with feathered arms like little wings,
+   a fan of feathers on the end of its stiff tail, and the big curved claw on each foot held up off the ground.
+   Brown with pale underneath and darker bars, like a bird of prey. Quick bird-like head turns. ---------- */
+ZOO_BUILD.raptorR=function(g,body,o){const by=.92,m=dnSkin('rap',true),C=['#5c3f27','#e8dcc2',(x,y,z,ny)=>ny>.15?Math.max(0,Math.sin(z*16))*.32*ny:0],
+  fe=dnM('rapFe',()=>std('#3b2a1c',{roughness:.95,side:THREE.DoubleSide})),feL=dnM('rapFeL',()=>std('#efe4cf',{roughness:.95,side:THREE.DoubleSide})),claw=dnClaw();
+  body.position.y=by;
+  const T=dnTube([[0,.24,.55],[0,.12,.32],[0,.02,0],[0,.06,-.3],[0,.1,-.45]],[.12,.2,.25,.22,.17],m,body,C,{sx:.72,seg:18,rad:12});
+  // soft feathers along the back
+  for(let i=0;i<9;i++){const p=T.top(.1+i*.1),f=M(new THREE.PlaneGeometry(.07,.13),fe,0,p.y+.02,p.z-.03,body,false,false);f.rotation.x=-1.15;}
+  const tail=new THREE.Group();tail.position.set(0,.1,-.42);body.add(tail);
+  dnTube([[0,0,.08],[0,.02,-.4],[0,.03,-1.0],[0,0,-1.5]],[.16,.1,.05,.02],m,tail,C,{sx:.8,seg:16,rad:10});
+  // a fan of long feathers on both sides of the end of the tail
+  for(let i=0;i<9;i++){const z=-.6-i*.11;for(const s of [-1,1]){const f=M(new THREE.PlaneGeometry(.05,.24),i%3?fe:feL,s*.1,.02,z-.06,tail,false,false);f.rotation.set(-Math.PI/2,0,-s*(1-i*.05));}}
+  // arms folded like wings, with long feathers hanging down
+  for(const s of [-1,1]){const ag=new THREE.Group();ag.position.set(s*.15,-.02,.36);ag.rotation.z=s*.15;body.add(ag);
+    dnTube([[0,0,0],[s*.05,-.12,-.13],[s*.05,-.2,.05],[s*.05,-.24,.2]],[.07,.045,.04,.03],m,ag,C,{seg:10,rad:8});
+    for(let i=0;i<6;i++){const f=M(new THREE.PlaneGeometry(.06,.22-i*.015),i%2?fe:feL,s*.075,-.21+i*.005,-.1+i*.055,ag,false,false);f.rotation.set(-.35,s*Math.PI/2,0);}
+    for(const k of [-1,1])M(new THREE.ConeGeometry(.012,.05,6),claw,s*.05,-.27,.22+k*.015,ag,false,false).rotation.x=2.4;}
+  // long legs: two toes on the ground and the big curved claw held up
+  for(const s of [-1,1]){const H=by+.02,lg=dnLeg(this,g,s*.15,H,-.1,s<0?0:Math.PI,[[0,0,0],[0,-.36,.16],[0,-.7,-.1],[0,-.9,.04]],[.14,.08,.05,.04],m,C);
+    M(dnPaint(sph(.14,12,10),C[0],C[1]),m,0,-.14,.05,lg).scale.set(.75,1.4,1);
+    dnToes(lg,[s*.01,-H+.03,.04],.14,.03,m,C,claw,.18,2);
+    const sk=M(new THREE.TorusGeometry(.04,.009,6,10,Math.PI*.7),claw,-s*.03,-H+.08,.07,lg,false,false);sk.rotation.set(0,Math.PI/2,.2);}
+  // an S-shaped neck, a long low snout, a feathery crest down the back of the neck
+  const neck=new THREE.Group();neck.position.set(0,by+.26,.52);g.add(neck);
+  dnTube([[0,-.08,-.1],[0,.1,.05],[0,.25,.06],[0,.36,.16]],[.13,.1,.085,.08],m,neck,C,{sx:.85,seg:12,rad:10});
+  for(let i=0;i<6;i++){const f=M(new THREE.PlaneGeometry(.06,.11),fe,0,.0+i*.065,-.04-i*.005+(i>3?.04:0),neck,false,false);f.rotation.x=-.5;}
+  const head=new THREE.Group();head.position.set(0,.38,.2);neck.add(head);
+  dnTube([[0,.02,-.08],[0,.03,.08],[0,-.01,.24],[0,-.03,.36]],[.085,.08,.055,.026],m,head,['#4a3220','#dccdae'],{sx:.8,seg:12,rad:10});
+  dnTube([[0,-.05,-.05],[0,-.065,.18],[0,-.055,.32]],[.05,.035,.018],m,head,['#4a3220','#e2d5b8'],{sx:.85,sy:.55,seg:8,rad:8});
+  for(const s of [-1,1]){dnEye(this,head,s*.058,.045,.05,.022,'#d8a030',s*1.25);M(sph(.012,6,4),dnDark(),s*.022,.0,.33,head,false,false);}
+  // quick, bird-like looks around
+  let lk=0,want=0;this.tick=(t,dt,run)=>{lk-=dt;if(lk<0){lk=.5+Math.random()*1.4;want=(Math.random()*2-1)*.5;}head.rotation.y+=(want-head.rotation.y)*Math.min(1,dt*14);};
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.45,size:.8,h:1.75,rad:.45,biped:true,dustR:[.2,.2,.3]});};
+
+/* ---------- 🦕 Triceratops: a big four-legged plant-eater with a huge head, a bony frill with a scalloped edge, two long horns over
+   the eyes, a short one on the nose and a parrot-like beak. Ride (Trixie): scale .4 => F.ride 1.1 ---------- */
+ZOO_BUILD.trikeR=function(g,body,o){const by=1.45,m=dnSkin('trike'),C=['#6a6446','#cfc19c',(x,y,z,ny)=>ny>.3?(Math.sin(x*9)*Math.sin(z*7)>.35?.16:0):0],
+  horn=dnHornM(),beak=dnDark(),nail=dnClaw();
+  body.position.y=by;
+  dnTube([[0,-.05,1.35],[0,.12,.75],[0,.25,0],[0,.22,-.7],[0,.05,-1.2]],[.55,.78,.88,.8,.55],m,body,C,{sx:.88,seg:22,rad:16});
+  const tail=new THREE.Group();tail.position.set(0,.05,-1.1);body.add(tail);
+  dnTube([[0,0,.15],[0,-.15,-.7],[0,-.4,-1.6],[0,-.62,-2.3]],[.5,.36,.18,.04],m,tail,C,{sx:.75,sy:1.05,seg:18,rad:12});
+  // four strong legs (the back ones longer), elephant-like feet
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.05:by+.05,
+    lg=dnLeg(this,g,sx*(fr?.5:.48),H,fr?.95:-.62,ph,fr?[[0,0,0],[sx*.04,-.6,.06],[0,-1.05,-.02],[0,-H+.2,.03]]:[[0,0,0],[0,-.55,.18],[0,-1.1,-.1],[0,-H+.2,.02]],fr?[.3,.21,.17,.17]:[.42,.26,.19,.19],m,C);
+    if(!fr)M(dnPaint(sph(.36,14,10),C[0],C[1]),m,-sx*.06,-.3,.06,lg).scale.set(.75,1.3,1.05);
+    dnPad(lg,-H,fr?.19:.21,m,C,nail,fr?4:3);}
+  const neck=new THREE.Group();neck.position.set(0,by,1.4);g.add(neck);
+  dnTube([[0,-.05,-.3],[0,-.05,.1],[0,-.08,.35]],[.5,.46,.42],m,neck,C,{sx:.85,seg:8,rad:14});
+  const head=new THREE.Group();head.position.set(0,-.05,.4);neck.add(head);
+  dnTube([[0,0,-.2],[0,.05,.25],[0,-.05,.7],[0,-.2,1.05],[0,-.32,1.22]],[.42,.42,.33,.22,.12],m,head,C,{sx:.78,seg:16,rad:14});
+  // the beak, the horns, and the frill with its bumpy edge
+  const bk=M(new THREE.ConeGeometry(.11,.3,10),beak,0,-.4,1.3,head);bk.rotation.x=Math.PI/2+.75;
+  M(new THREE.ConeGeometry(.08,.2,10),beak,0,-.5,1.12,head).rotation.x=Math.PI/2+1.1;
+  dnHorn(head,horn,0,.04,.92,.07,.26,.35,0);
+  for(const s of [-1,1]){dnHorn(head,horn,s*.2,.28,.42,.085,.95,1.0,-s*.14);dnHorn(head,horn,s*.33,-.18,.36,.05,.16,.3,-s*1.2);
+    dnEye(this,head,s*.29,.18,.55,.045,'#7a4a1a',s*1.25);}
+  const fr=new THREE.Group();fr.position.set(0,.45,-.2);fr.rotation.x=-.6;head.add(fr);
+  M(dnPaint(sph(1,26,16),'#7d6e4a','#a8966c',(x,y,z,ny)=>Math.max(0,Math.sin(Math.atan2(x,y)*7))*.12),m,0,0,0,fr).scale.set(.95,.88,.1);
+  for(let i=0;i<17;i++){const a=-1.75+i*3.5/16,x=Math.sin(a)*.93,y=Math.cos(a)*.84;const e=M(new THREE.ConeGeometry(.07,.16,8),horn,x,y,0,fr,false,false);e.rotation.z=-a;e.scale.z=.5;}
+  this.tick=(t)=>{body.scale.y=1+Math.sin(t*1.1)*.01;};
+  dnSaddle(this,body,.25,-.05,.88,.88,1,'#7a2f2f');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.35,size:1.7,h:by+1.5,rad:1,dustR:[.7,.7,1]});};
+
+/* ---------- 🦕 Brachiosaurus (the long-neck): front legs longer than the back ones like a giraffe, a very long neck that holds its
+   small head way up high, an arched crest over the nose and a short tail. Grey brown. It nibbles the tree tops.
+   Ride (Skye): scale .55 => F.ride 2.18 ---------- */
+ZOO_BUILD.longneckR=function(g,body,o){const by=2.55,m=dnSkin('brachio'),C=['#655e4e','#c4b99f',(x,y,z,ny)=>ny>.35?Math.max(0,Math.sin(z*3+x*4))*.12:0],nail=dnClaw();
+  body.position.y=by;
+  dnTube([[0,.55,1.5],[0,.4,.85],[0,.15,0],[0,-.05,-.8],[0,-.15,-1.35]],[.72,.98,1.05,.88,.62],m,body,C,{sx:.85,seg:22,rad:18});
+  const tail=new THREE.Group();tail.position.set(0,-.15,-1.25);body.add(tail);
+  dnTube([[0,0,.2],[0,-.25,-.9],[0,-.6,-2.1],[0,-.85,-3.3],[0,-.9,-4.2]],[.6,.45,.24,.1,.03],m,tail,C,{sx:.8,seg:22,rad:12});
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by+.1:by-.25,
+    lg=dnLeg(this,g,sx*(fr?.6:.58),H,fr?1.05:-.85,ph,fr?[[0,0,0],[0,-1.2,.05],[0,-2.3,-.02],[0,-H+.25,0]]:[[0,0,0],[0,-1.0,.15],[0,-1.95,-.05],[0,-H+.25,0]],fr?[.42,.3,.26,.26]:[.55,.32,.27,.27],m,C);
+    if(!fr)M(dnPaint(sph(.46,14,10),C[0],C[1]),m,-sx*.08,-.4,.05,lg).scale.set(.75,1.35,1.05);
+    dnPad(lg,-H,fr?.28:.3,m,C,nail,fr?1:3);}
+  // the long neck, curving up, and the small head with its arched crest
+  const neck=new THREE.Group();neck.position.set(0,by+.65,1.55);g.add(neck);
+  dnTube([[0,-.3,-.35],[0,.6,.25],[0,1.8,.75],[0,3.0,1.1],[0,3.75,1.3]],[.62,.5,.36,.26,.22],m,neck,C,{sx:.88,seg:30,rad:14});
+  const head=new THREE.Group();head.position.set(0,3.82,1.36);neck.add(head);
+  dnTube([[0,0,-.14],[0,.03,.15],[0,-.03,.42],[0,-.07,.56]],[.2,.21,.15,.08],m,head,C,{sx:.85,seg:12,rad:12});
+  M(dnPaint(sph(.16,14,10),C[0],C[1]),m,0,.16,.12,head).scale.set(.8,1,1.3);
+  for(const s of [-1,1]){dnEye(this,head,s*.16,.08,.04,.035,'#6a4a22',s*1.3);M(sph(.03,6,4),dnDark(),s*.05,.27,.16,head,false,false).scale.set(1,.6,1.6);}
+  // a slow sway of the long neck
+  this.tick=(t)=>{neck.rotation.y=Math.sin(t*.35)*.14;body.scale.y=1+Math.sin(t*.9)*.008;};
+  dnSaddle(this,body,.25,.3,1.02,.85,1,'#2f6a4a');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.5,size:3,h:by+.65+4.3,rad:1.7,dustR:[1,1,1.4]});};
+
+/* ---------- 🦕 Stegosaurus: a small low head, short front legs and tall back legs, two staggered rows of big plates down its back
+   (biggest over the hips) and four spikes on the end of its tail (a "thagomizer"). ---------- */
+ZOO_BUILD.stegoR=function(g,body,o){const by=1.55,m=dnSkin('stego'),C=['#6c6a3e','#d3c8a0',(x,y,z,ny)=>ny>.25?(Math.sin(z*5)*Math.sin(x*8+z)>.3?.2:0):0],
+  plate=dnM('plate',()=>phys('#8f5e3a',{roughness:.6,clearcoat:.2})),horn=dnHornM(),nail=dnClaw();
+  body.position.y=by;
+  const T=dnTube([[0,-.45,1.45],[0,-.1,.8],[0,.2,0],[0,.15,-.7],[0,-.05,-1.15]],[.38,.62,.8,.72,.5],m,body,C,{sx:.82,seg:22,rad:16});
+  const tail=new THREE.Group();tail.position.set(0,-.05,-1.05);body.add(tail);
+  const TL=dnTube([[0,0,.15],[0,-.1,-.7],[0,-.25,-1.5],[0,-.32,-2.2]],[.48,.32,.15,.05],m,tail,C,{sx:.8,seg:18,rad:12});
+  // the plates: a rounded diamond shape, made once and sized for each spot
+  const pg=dnM('plateG',()=>{const s=new THREE.Shape();s.moveTo(-.5,0);s.quadraticCurveTo(-.62,.62,0,1);s.quadraticCurveTo(.62,.62,.5,0);s.lineTo(-.5,0);
+    const g=new THREE.ExtrudeGeometry(s,{depth:.08,bevelEnabled:true,bevelThickness:.03,bevelSize:.03,bevelSegments:2});g.translate(0,0,-.04);g.rotateY(Math.PI/2);return g;});
+  const put=(par,p,h,s)=>{const pl=M(pg,plate,s*.07,p.y-.08,p.z,par,true,false);pl.scale.set(1,h,h*.85);pl.rotation.z=-s*.12;};
+  for(let i=0;i<10;i++){const q=.12+i*.088,h=.28+.5*Math.sin(Math.min(1,q*1.15)*Math.PI*.9);put(body,T.top(q),h,i%2?1:-1);}
+  for(let i=0;i<5;i++){const q=.05+i*.11;put(tail,TL.top(q),.5-i*.08,i%2?-1:1);}
+  for(const s of [-1,1])for(const q of [.78,.9]){const p=TL.at(q);const sp=dnHorn(tail,horn,s*.06,p.y+.03,p.z,.045,.5,-1.2,-s*.9);}
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.6:by+.05,
+    lg=dnLeg(this,g,sx*(fr?.36:.44),H,fr?1.0:-.55,ph,fr?[[0,0,0],[0,-.45,.04],[0,-H+.18,0]]:[[0,0,0],[0,-.65,.2],[0,-1.25,-.08],[0,-H+.18,0]],fr?[.26,.18,.16]:[.4,.24,.18,.18],m,C);
+    if(!fr)M(dnPaint(sph(.34,14,10),C[0],C[1]),m,-sx*.05,-.28,.06,lg).scale.set(.75,1.3,1.05);
+    dnPad(lg,-H,fr?.17:.2,m,C,nail,fr?4:3);}
+  const neck=new THREE.Group();neck.position.set(0,by-.5,1.5);g.add(neck);
+  dnTube([[0,.05,-.25],[0,-.08,.2],[0,-.2,.5]],[.36,.27,.2],m,neck,C,{sx:.85,seg:10,rad:12});
+  const head=new THREE.Group();head.position.set(0,-.22,.55);neck.add(head);
+  dnTube([[0,0,-.08],[0,0,.18],[0,-.06,.38],[0,-.1,.48]],[.17,.16,.1,.05],m,head,C,{sx:.8,seg:10,rad:10});
+  M(new THREE.ConeGeometry(.05,.12,8),dnDark(),0,-.13,.5,head).rotation.x=Math.PI/2+.6;
+  for(const s of [-1,1])dnEye(this,head,s*.11,.06,.1,.026,'#5a3a1a',s*1.3);
+  this.tick=(t)=>{body.scale.y=1+Math.sin(t*1.1)*.01;};
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.35,size:1.6,h:by+1.65,rad:.95,dustR:[.6,.6,.9]});};
+
+// the dinosaurs that live at 🦕 Dino Valley (24n-dino-valley.js): you can't adopt these, but you can meet them, feed them and learn about them.
+// They're added to ZOOA (24d-barn.js) with dino:1, so the zoo's "meet" card shows their facts.
+const DINOA=[
+  {k:'trexR',e:'🦖',n:'Tyrannosaurus rex',dino:1,food:[['🍖','Meat'],['🍗','Drumstick']],say:['*big rumbly ROAR* 🦖','*stomp... stomp...*','*sniff sniff*'],
+    facts:[['🥩','Diet','Carnivore (a meat-eater). It ate big plant-eating dinosaurs like Triceratops and Edmontosaurus.'],
+      ['🌍','When and where','Western North America, about 68 to 66 million years ago, at the very end of the age of dinosaurs.'],
+      ['📏','Size','Up to 12 m (40 ft) long and about 8 tonnes, heavier than an elephant!'],
+      ['✨','Fun fact','Its arms were tiny, only about as long as a grown-up\'s arm, but very strong. Scientists now think it had lips that covered its teeth, like a lizard.']]},
+  {k:'raptorR',e:'🦖',n:'Raptor (Deinonychus)',dino:1,fast:2.2,food:[['🍗','Chicken'],['🐟','Fish']],say:['*chirp chirp*','*fluffs its feathers*','*quick head tilt*'],
+    facts:[['🥩','Diet','Carnivore. A fast hunter of small and medium animals, and it may have hunted in groups.'],
+      ['🌍','When and where','North America (Montana, Wyoming and Oklahoma), about 115 to 108 million years ago.'],
+      ['📏','Size','About 3.4 m (11 ft) from nose to tail, and about as heavy as a grown-up.'],
+      ['✨','Fun fact','Real raptors had feathers, like birds! They held the big curved claw on each foot up off the ground to keep it sharp. Velociraptor was a smaller cousin, about the size of a turkey.']]},
+  {k:'trikeR',e:'🦕',n:'Triceratops',dino:1,food:[['🌿','Ferns'],['🌴','Palm leaves']],say:['*low friendly snort*','*munch munch* 🌿','*shakes its frill*'],
+    facts:[['🌿','Diet','Herbivore (a plant-eater). Tough low plants like ferns, cycads and palms, snipped off with its parrot-like beak.'],
+      ['🌍','When and where','Western North America, about 68 to 66 million years ago, at the same time and place as T. rex.'],
+      ['📏','Size','About 9 m (30 ft) long and as heavy as a big elephant. Its head was one of the biggest of any land animal ever!'],
+      ['✨','Fun fact','Its name means "three-horned face". The frill and horns may have helped it show off and tell its friends apart.']]},
+  {k:'longneckR',e:'🦕',n:'Brachiosaurus',dino:1,food:[['🌲','Tree tops'],['🍃','Leaves']],say:['*deep gentle hum*','*munches tree-top leaves* 🍃','*slow blink*'],
+    facts:[['🌿','Diet','Herbivore. Leaves from the tops of tall trees like conifers and ginkgos, hundreds of kilos a day!'],
+      ['🌍','When and where','North America (Colorado and Utah), about 154 to 150 million years ago, in the Jurassic.'],
+      ['📏','Size','About 22 m (72 ft) long, and it could hold its head about 9 m (30 ft) up, as high as a three-story building.'],
+      ['✨','Fun fact','Its front legs were longer than its back legs, like a giraffe. Its name means "arm lizard".']]},
+  {k:'stegoR',e:'🦕',n:'Stegosaurus',dino:1,food:[['🌿','Ferns'],['🥬','Leaves']],say:['*soft huff*','*munch munch* 🌿','*plates wiggle*'],
+    facts:[['🌿','Diet','Herbivore. Low plants like ferns, mosses, cycads and horsetails.'],
+      ['🌍','When and where','Western North America and Portugal, about 155 to 145 million years ago, in the Jurassic.'],
+      ['📏','Size','About 9 m (30 ft) long, as heavy as an elephant, with a head tiny for its body.'],
+      ['✨','Fun fact','The spikes on its tail are called a "thagomizer". The plates on its back may have helped it warm up, cool down and show off.']]},
+];
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -7809,19 +8204,19 @@ const FARM=[
   {k:'pony',e:'🐴',n:'Pony',nm:'Buttercup',c:50,ride:.82,about:'A sweet little pony. You can ride her around town!',food:[['🥕','Carrot'],['🍎','Apple'],['🌾','Hay']],say:['Neigh! 🐴','*happy whinny*','Ride with me! 💛']},
   {k:'horse',e:'🐎',n:'Horse',nm:'Star',c:70,ride:1.2,about:'A tall, fast horse. Ride her and gallop around town!',food:[['🥕','Carrot'],['🍎','Apple'],['🌾','Hay']],say:['Neeeigh! 🐎','*proud snort*','Let\'s gallop! 💨']},
   {k:'unicorn',e:'🦄',n:'Unicorn',nm:'Sparkle',s:10,ride:1.2,about:'Rare! A magic unicorn with a rainbow mane and a golden horn.',food:[['🍓','Strawberry'],['🍭','Lollipop'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*sparkle sparkle*','I love you! 🦄']},
-  {k:'trike',e:'🦕',n:'Triceratops',nm:'Trixie',s:12,ride:1.05,about:'Rare! A gentle dinosaur with three horns and a big frill.',food:[['🌿','Ferns'],['🍉','Melon'],['🥬','Leaves']],say:['Rawr! 💚','*happy stomp*','Three horns, one heart!']},
-  {k:'trex',e:'🦖',n:'Baby T-rex',nm:'Chomper',s:15,ride:1.05,about:'Rare! A baby T-rex with tiny arms and a big smile.',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['RAWR! 🦖','*tiny arm wave*','Rawr means I love you!']},
+  {k:'trike',e:'🦕',n:'Triceratops',nm:'Trixie',s:12,dino:1,model:'trikeR',scale:.4,ride:1.1,about:'Rare! A young triceratops with three horns and a big frill. Gentle and calm.',food:[['🌿','Ferns'],['🍉','Melon'],['🥬','Leaves']],say:['Rawr! 💚','*happy stomp*','Three horns, one heart!']},
+  {k:'trex',e:'🦖',n:'Young T. rex',nm:'Chomper',s:15,dino:1,model:'trexR',scale:.32,ride:1.15,about:'Rare! A young T. rex with tiny arms and a big rumbly roar. Gentle with friends!',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['RAWR! 🦖','*tiny arm wave*','Rawr means I love you!']},
   {k:'dragon',e:'🐉',n:'Baby dragon',nm:'Ember',s:8,ride:0,pal:'fly',scale:.42,about:'Rare! A tiny dragon who flies along behind you everywhere you go.',food:[['🌶️','Hot pepper'],['🍓','Strawberry'],['🍖','Meat']],say:['*tiny puff of smoke* 💨','Rawr! 🔥','Let\'s fly! 💜']},
-  {k:'stego',e:'🦕',n:'Mini stegosaurus',nm:'Pebble',s:5,ride:0,pal:'walk',scale:.38,about:'Rare! A pocket-size dinosaur with plates on her back. She can follow you around town.',food:[['🌿','Ferns'],['🥬','Leaves'],['🍓','Berry']],say:['*tiny stomp*','Rawr! 💚','Wait for me!']},
-  {k:'raptor',e:'🦖',n:'Mini raptor',nm:'Zippy',s:6,ride:0,pal:'walk',scale:.42,about:'Rare! A speedy little raptor who races along beside you.',food:[['🍗','Drumstick'],['🍖','Meat'],['🥚','Egg']],say:['Skreee! 💨','*zoom zoom*','Race you!']},
+  {k:'stego',e:'🦕',n:'Mini stegosaurus',nm:'Pebble',s:5,ride:0,pal:'walk',dino:1,model:'stegoR',scale:.22,about:'Rare! A pocket-size dinosaur with plates on her back. She can follow you around town.',food:[['🌿','Ferns'],['🥬','Leaves'],['🍓','Berry']],say:['*tiny stomp*','Rawr! 💚','Wait for me!']},
+  {k:'raptor',e:'🦖',n:'Mini raptor',nm:'Zippy',s:6,ride:0,pal:'walk',dino:1,model:'raptorR',scale:.45,about:'Rare! A speedy little feathered raptor who races along beside you.',food:[['🍗','Drumstick'],['🍖','Meat'],['🥚','Egg']],say:['Skreee! 💨','*zoom zoom*','Race you!']},
   {k:'monkey',e:'🐒',n:'Baby monkey',nm:'Coco',c:60,ride:0,pal:'walk',scale:.55,about:'A cheeky baby monkey with a curly tail. Takes walks with you around town.',food:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],say:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌']},
-  {k:'longneck',e:'🦕',n:'Long-neck dino',nm:'Skye',s:20,ride:2.15,about:'Super rare! A giant long-neck dinosaur. Ride way up high!',food:[['🌿','Ferns'],['🍃','Tree leaves'],['🍐','Pear']],say:['Hrrrooo! 🦕','*big gentle hum*','I can see the whole town!']},
+  {k:'longneck',e:'🦕',n:'Long-neck dino',nm:'Skye',s:20,dino:1,model:'longneckR',scale:.55,wide:.5,ride:2.18,about:'Super rare! A giant long-neck dinosaur. Ride way up high!',food:[['🌿','Ferns'],['🍃','Tree leaves'],['🍐','Pear']],say:['Hrrrooo! 🦕','*big gentle hum*','I can see the whole town!']},
   // rides from the shop: bought with ⭐ in the shop's 🦖 Rides tab (mount = price), or won as a prize (prize = ⭐ stars you need to earn).
   // They live at the barn like the others, and you call them from anywhere with the ride button (24g-mounts.js).
   {k:'kitty',e:'🐱',n:'Big fluffy cat',nm:'Marshmallow',mount:10,ride:1.08,about:'A giant, super fluffy cat you can ride! She purrs when you hug her.',food:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],say:['Purrrrr 💕','Mrrrow! 🐱','*big fluffy stretch*']},
-  {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
+  {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,dino:1,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
   {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,fly:1,ride:1.2,about:'A lavender unicorn with feathery wings. Ride her and tap 🪽 Fly to soar over the treetops!',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
-  {k:'ptero',e:'🦕',n:'Pterodactyl',nm:'Sunny',mount:14,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
+  {k:'ptero',e:'🦕',n:'Pterodactyl',nm:'Sunny',mount:14,dino:1,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
   {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
   {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
@@ -7852,7 +8247,7 @@ const ZOOA=[
   {k:'gator',e:'🐊',n:'Alligator',swim:.36,food:[['🐟','Fish'],['🍗','Chicken']],say:['*low rumbly bellow*','*snap snap!* 🐊','*lazy sunbathing*'],
     facts:[['🥗','Diet','Carnivore. Fish, turtles, snakes, birds and small animals. It can go months without eating in the winter!'],['🌍','Habitat','Rivers, lakes and swamps of the southeastern United States, like Florida and Louisiana. A cousin lives in China.'],['⏳','Lifespan','About 35 to 50 years in the wild, and up to 70 in zoos.'],['✨','Fun fact','You can tell an alligator from a crocodile by its wide, rounded U-shaped snout. When its mouth is shut you can only see its top teeth! It has about 80 teeth and grows new ones all its life.']]}
 ];
-ZOOA.push(...arcticZooList());FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
+ZOOA.push(...arcticZooList(),...DINOA);FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
 const BS=SAVE.barn;BS.own||={};
@@ -8013,60 +8408,11 @@ class FarmAnimal{
       const tail=new THREE.Group();tail.position.set(0,by-.05,-.3);g.add(tail);taperTube([fV(0,0,0),fV(0,-.12,-.25),fV(.08,-.2,-.5)],q=>.11*(1-q*.75),skin,tail,16,10);
       const tip=M(new THREE.ConeGeometry(.08,.14,4),fShiny('#ff6fae'),.09,-.21,-.56,tail);tip.rotation.x=-Math.PI/2;tip.scale.y=.4;
       Object.assign(o,{neck,head,tail,nTilt:.25,size:1,h:1.35,rad:.45,biped:true,dustR:[.22,.22,.3]});}
-    if(k==='stego'){const r=.4,len=.6,leg=.32,by=leg+r*.6,skin=fm('#f2a65a',{roughness:.7}),belly=fm('#fff0d6'),plate=fShiny('#7cc7b0',{roughness:.4});
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.7,1.3);
-      for(let i=0;i<7;i++){const q=i/6,z=(q-.5)*len*1.5,y=r*(.85+Math.sin(q*Math.PI)*.15);for(const sx of [-1,1]){const p=M(new THREE.ConeGeometry(.16+Math.sin(q*Math.PI)*.08,.3+Math.sin(q*Math.PI)*.12,4),plate,sx*.05,y+.1,z+sx*.05,body);p.scale.z=.25;p.rotation.z=sx*.15;}}
-      fLegs(this,g,r*.6,len*.45,leg+.06,leg+.06,.11,skin,fShiny('#e9dcc4'));
-      const neck=new THREE.Group();neck.position.set(0,by-.02,len/2+r*.55);neck.rotation.x=1.3;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.07,0);head.rotation.x=-1.3;neck.add(head);const H=.24;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.9,.85,1.2);M(sph(H*.6,14,10),belly,0,-H*.35,H*.65,head).scale.set(1,.6,1.1);
-      fEyes(this,head,H,.48,.2,.65,.45,.24,'#2a5a3a');fBlush(head,H,.62,-.12,.72);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.3),fV(0,-.15,-.6)],q=>.2*(1-q*.85),skin,tail,16,12);
-      for(const [x,y,z,a] of [[.08,-.1,-.5,.9],[-.08,-.1,-.5,-.9],[.07,-.13,-.6,.9],[-.07,-.13,-.6,-.9]]){const sp=M(new THREE.ConeGeometry(.035,.22,8),fShiny('#fff4dc'),x,y,z,tail);sp.rotation.z=-a;}
-      Object.assign(o,{neck,head,tail,nTilt:1.3,size:1,h:by+.45,rad:.65,dustR:[r,r,len*.8]});}
     // 🐒 Coco: a real-looking little monkey, the same builder as the Pet Parlor's real pets (Pet.buildReal in 16-animals-pets.js), in brown
     if(k==='monkey'){const p=new Pet('monkey','#7b5b43','',null,{real:1,light:'#d8c4a6',face:'#2b211c',paw:'#2b211c'}),S=1.6;
       if(p.tag){p.g.remove(p.tag);p.tag.material.map.dispose();p.tag.material.dispose();p.tag=null;}
       p.g.scale.setScalar(S);g.add(p.g);this.tick=(t,dt,run)=>{p.speed=run*2.4;p.happy=this.happy;p.update(dt);};
       Object.assign(o,{size:1,h:p.tagH*S,rad:.4,dustR:[.17,.55,.3]});}
-    if(k==='trex'||k==='raptor'){const rap=k==='raptor',by=.62,skin=fm(rap?'#5ec8c8':'#86c96a',{roughness:.7}),belly=fm(rap?'#e8fbff':'#e6f5c8',{roughness:.7}),spot=fm(rap?'#ff8fc8':'#5fa850');
-      body.position.y=by;body.rotation.x=-.25;const t=M(new THREE.CapsuleGeometry(.25,.3,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(.2,14,10),belly,0,-.1,.12,body).scale.set(.95,.9,1.3);
-      for(let i=0;i<5;i++)M(new THREE.ConeGeometry(.04,.09,6),spot,0,.25-i*.005,.15-i*.12,body);
-      for(const sx of [-1,1]){const arm=M(new THREE.CapsuleGeometry(.03,.09,4,8),skin,sx*.17,-.02,.3,body);arm.rotation.x=-1;}
-      this.legs=[];for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.16,.5,-.02);g.add(lg);M(sph(.13,12,10),skin,0,0,0,lg).scale.set(.8,1.1,1.1);
-        M(capTop(.06,.32),skin,0,-.05,-.03,lg);M(sph(.08,10,8),skin,0,-.48,.06,lg).scale.set(1,.5,1.6);this.legs.push({g:lg,ph});}
-      const neck=new THREE.Group();neck.position.set(0,by+.22,.3);neck.rotation.x=.3;g.add(neck);M(new THREE.CapsuleGeometry(.12,.12,6,12),skin,0,.08,0,neck);
-      const head=new THREE.Group();head.position.set(0,.24,.04);head.rotation.x=-.3;neck.add(head);const H=.22;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.9,.9,1.15);const jaw=M(sph(H*.7,16,12),belly,0,-H*.45,H*.5,head);jaw.scale.set(1.05,.55,1.3);
-      for(let i=0;i<6;i++){const sx=i<3?-1:1,q=i%3;M(new THREE.ConeGeometry(H*.05,H*.12,6),phys('#ffffff',{roughness:.3}),sx*H*(.35-q*.1),-H*.3,H*(.65+q*.18),head,false,false).rotation.x=Math.PI;}
-      fEyes(this,head,H,.45,.3,.62,.5,.24,'#7a4a12');fBlush(head,H,.6,-.05,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.02,-.3);g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.25),fV(0,-.15,-.5),fV(0,-.32,-.72)],q=>.2*(1-q*.85),skin,tail,20,12);
-      Object.assign(o,{neck,head,tail,nTilt:.3,size:.95,h:1.2,rad:.45,biped:true,dustR:[.25,.25,.35]});}
-    if(k==='trike'){const r=.4,len=.6,leg=.32,by=leg+r*.65,skin=fm('#7cc7b0',{roughness:.7}),belly=fm('#d8f3ea'),frillM=fShiny('#ff9ec8',{roughness:.5}),horn=fShiny('#fff4dc');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.7,1.3);
-      for(let i=0;i<6;i++)M(sph(r*.13,10,8),fm('#4fa88e'),Math.sin(i*2.1)*r*.6,r*.8,(i/5-.5)*len,body,false,false).scale.set(1,.4,1);
-      fLegs(this,g,r*.6,len*.45,leg+.06,leg+.06,.11,skin,fShiny('#e9dcc4'));
-      const neck=new THREE.Group();neck.position.set(0,by+.02,len/2+r*.65);neck.rotation.x=1.25;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.08,0);head.rotation.x=-1.25+.05;neck.add(head);const H=.27;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.95,.9,1.15);M(new THREE.ConeGeometry(H*.35,H*.6,12),belly,0,-H*.35,H*1.1,head).rotation.x=Math.PI/2+.4;
-      const fr=M(new THREE.CylinderGeometry(H*1.35,H*1.35,H*.12,10),frillM,0,H*.55,-H*.35,head);fr.rotation.x=-1.05;
-      for(let i=0;i<10;i++){const a=i/10*Math.PI*2;M(sph(H*.13,8,6),fShiny('#ffd23f'),Math.sin(a)*H*1.3,H*.55+Math.cos(a)*H*1.3*Math.cos(1.05)-.0,-H*.35-Math.cos(a)*H*1.3*Math.sin(1.05),head,false,false);}
-      for(const sx of [-1,1]){const hn=M(new THREE.ConeGeometry(H*.14,H*1.05,10),horn,sx*H*.38,H*.8,H*.6,head);hn.rotation.set(1.05,0,-sx*.2);}
-      const nh=M(new THREE.ConeGeometry(H*.1,H*.35,10),horn,0,H*.05,H*1.05,head);nh.rotation.x=.4;
-      fEyes(this,head,H,.5,.2,.68,.45,.2,'#5a3a12');fBlush(head,H,.62,-.1,.72);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.08,-.25),fV(0,-.2,-.5)],q=>.18*(1-q*.8),skin,tail,16,12);
-      Object.assign(o,{neck,head,tail,nTilt:1.25,size:1.1,h:by+.55,rad:.7,dustR:[r,r,len*.8]});}
-    if(k==='longneck'){const r=.5,len=.7,leg=.78,by=leg+r*.6,skin=fm('#8fb8f0',{roughness:.7}),belly=fm('#e6f0ff'),spot=fm('#6a8fe0');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.75,1.3);
-      for(let i=0;i<8;i++)M(sph(r*.14,10,8),spot,Math.sin(i*2.4)*r*.65,r*.75+Math.cos(i*1.3)*r*.1,(i/7-.5)*len*1.1,body,false,false).scale.set(1,.4,1);
-      fLegs(this,g,r*.6,len*.45,leg+.1,leg+.1,.14,skin,fShiny('#d6e3f7'));
-      const neck=new THREE.Group();neck.position.set(0,by+r*.3,len/2+r*.4);neck.rotation.x=.38;g.add(neck);const nl=1.7;
-      taperTube([fV(0,0,0),fV(0,nl*.35,.05),fV(0,nl*.7,0),fV(0,nl,-.02)],q=>.2-.1*q,skin,neck,24,14);
-      const head=new THREE.Group();head.position.set(0,nl+.05,0);head.rotation.x=-.38+.1;neck.add(head);const H=.19;
-      M(sph(H,20,14),skin,0,0,0,head).scale.set(.9,.85,1.25);M(sph(H*.7,14,10),belly,0,-H*.35,H*.55,head).scale.set(.95,.6,1.2);
-      fEyes(this,head,H,.45,.22,.62,.45,.24,'#2a3a6a');fBlush(head,H,.62,-.12,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.1,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.1,-.4),fV(.1,-.35,-.9),fV(.25,-.6,-1.3)],q=>.28*(1-q*.85),skin,tail,24,12);
-      Object.assign(o,{neck,head,tail,nTilt:.38,size:1.6,h:by+nl+.4,rad:1,dustR:[r,r,len*.8]});}
     /* ---- rides from the shop (24g-mounts.js): all original designs ---- */
     // 🐱 a giant fluffy cat: round and soft, pointy ears, green eyes, a big curly tail
     if(k==='kitty'){const r=.36,len=.5,leg=.42,by=leg+r*.7,fur=fm('#fff3e4',{roughness:1}),peach=fm('#ffc999'),white=fm('#ffffff',{roughness:1}),pink=fShiny('#ffa3bf',{roughness:.45}),whisk=std('#b8a796');
@@ -8242,12 +8588,17 @@ function paddockOk(lx,lz,r){return barnOk(lx,lz,r);}
 function barnOk(lx,lz,r){if(Math.hypot(lx,lz)>BZ.fence-.45-r)return false;if(lz<BZ.barnBox.lz+BZ.barnBox.d/2+.15+r)return false;
   for(const [x,z,rr] of PADDOCK_AVOID)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function paddockSpot(r){for(let i=0;i<60;i++){const lx=(Math.random()*2-1)*4.6,lz=-1.2+Math.random()*5.6;if(paddockOk(lx,lz,r))return [lx,lz];}return [0,1];}
-function farmAnimal(k){if(FA[k])return FA[k];const a=FA[k]=new FarmAnimal(k);a.Z=BZ;a.ok=barnOk;a.spot=paddockSpot;a.mates=FA;scene.add(a.g);const [lx,lz]=paddockSpot(a.rad);a.lx=lx;a.lz=lz;placeFarm(a);return a;}
+// where each animal lives: the dinosaurs (dino:1) at 🦖 Dino Valley (12i-place-dino-valley.js), everyone else at the barn.
+// care = where the one you look after stands, stand = where you stand, out = where you step off when you're done
+const HOMES={barn:{id:'barn',Z:BZ,ok:barnOk,spot:paddockSpot,care:[0,1.55],stand:[1.2,3.3],out:[0,3.1],name:'🐴 Happy Barn'},
+  dino:{id:'dino',Z:Z.dino,ok:dvOk,spot:dvSpot,care:DV.care,stand:DV.stand,out:DV.out,name:'🦖 Dino Valley'}};
+const farmHome=k=>FK[k]&&FK[k].dino?HOMES.dino:HOMES.barn;
+function farmAnimal(k){if(FA[k])return FA[k];const a=FA[k]=new FarmAnimal(k),H=farmHome(k);a.home=H;a.Z=H.Z;a.ok=H.ok;a.spot=H.spot;a.mates=FA;scene.add(a.g);const [lx,lz]=H.spot(a.rad);a.lx=lx;a.lz=lz;placeFarm(a);return a;}
 function placeFarm(a){const [x,w]=a.Z.toWorld(a.lx,a.lz);a.pos.set(x,a.y,w);a.g.position.copy(a.pos);a.g.rotation.y=a.Z.rot+a.face;a.ob.x=x;a.ob.z=w;a.ob.r=a.g.visible&&!a.ridden?a.rad*.75:0;}
-const CARE_SPOT=[0,1.55];let barnOpen=false,barnSel=null,barnTab='mine',barnPreview=null,barnRide=null,onFPad=false,barnZoneIn=false;
+let barnAt='barn',barnOpen=false,barnSel=null,barnTab='mine',barnPreview=null,barnRide=null,onFPad=false,barnZoneIn=false;
 function stepFarm(a,dt){if(a.ridden)return;let sp=0;
-  if(barnOpen&&a===barnSel){// walk over to the care spot and look at you
-    const dx=CARE_SPOT[0]-a.lx,dz=CARE_SPOT[1]-a.lz,d=Math.hypot(dx,dz);
+  if(barnOpen&&a===barnSel&&a.home){// walk over to the care spot and look at you
+    const C=a.home.care,dx=C[0]-a.lx,dz=C[1]-a.lz,d=Math.hypot(dx,dz);
     if(d>.08){sp=Math.min(1.6,d*2);a.lx+=dx/d*Math.min(d,sp*dt);a.lz+=dz/d*Math.min(d,sp*dt);a.face=angDamp(a.face,Math.atan2(dx,dz),Math.min(1,dt*6));}
     else a.face=angDamp(a.face,.35,Math.min(1,dt*3));
     a.graze=Math.max(0,a.graze-dt*2);}
@@ -8270,15 +8621,15 @@ function stepFarm(a,dt){if(a.ridden)return;let sp=0;
 
 /* ---------- riding ---------- */
 function startRide(a){if(!a||!a.F.ride)return;closeBarn(true);if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);barnRide=a;BS.steed=a.k;persist();a.ridden=true;a.ob.r=0;a.graze=0;
-  player.pos.set(a.pos.x,player.pos.y,a.pos.z);player.face=BZ.rot+a.face;cam.yaw=player.face+Math.PI;av.play('ride');
+  player.pos.set(a.pos.x,player.pos.y,a.pos.z);player.face=a.Z.rot+a.face;cam.yaw=player.face+Math.PI;av.play('ride');
   $('#rideBtn').textContent=`${a.F.e} Hop off`;$('#rideBtn').style.display='block';did('ride',a.k);sfx('tada');a.speak(rnd(a.F.say));
   toast(`Ride ${BS.own[a.k].n} anywhere in town! Tap “Hop off” to get down 💨`);renderActions();}
 function stopRide(force){const a=barnRide;if(!a)return;
   if(FLY.on){if(!force){flyLand(true);return;}flyEnd(true);}// up in the air: land first (24h-flying.js)
   flyStraighten(a);FLY.settle=0;FLY.open=FLY.tuck=0;barnRide=null;a.ridden=false;a.y=0;a.vy=0;$('#rideBtn').style.display='none';if(av.emote&&av.emote.id==='ride')av.emote=null;
-  const P=player.pos,[lx,lz]=BZ.toLocal(P.x,P.z);
-  if(paddockOk(lx,lz,a.rad*.7)){a.lx=lx;a.lz=lz;a.face=player.face-BZ.rot;const s=a.rad+.45;P.x+=Math.cos(player.face)*s;P.z-=Math.sin(player.face)*s;}
-  else{burst(a.g.position.clone().add(new THREE.Vector3(0,a.h*.5,0)),'#ffd23f',30,2);const [x,z]=paddockSpot(a.rad);a.lx=x;a.lz=z;a.tgt=null;toast(`${BS.own[a.k].n} trotted home to the 🐴 Happy Barn 💖`);}
+  const P=player.pos,H=a.home,[lx,lz]=H.Z.toLocal(P.x,P.z);
+  if(H.ok(lx,lz,a.rad*.7)){a.lx=lx;a.lz=lz;a.face=player.face-H.Z.rot;const s=a.rad+.45;P.x+=Math.cos(player.face)*s;P.z-=Math.sin(player.face)*s;}
+  else{burst(a.g.position.clone().add(new THREE.Vector3(0,a.h*.5,0)),'#ffd23f',30,2);const [x,z]=H.spot(a.rad);a.lx=x;a.lz=z;a.tgt=null;toast(`${BS.own[a.k].n} went home to ${H.name} 💖`);}
   placeFarm(a);renderActions();}
 $('#rideBtn').onclick=()=>{sfx('pop');stopRide();};
 function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started||handsBusy()){stopRide(true);return;}// off during sports, contests and other games
@@ -8294,11 +8645,11 @@ const rideBoost=()=>barnRide?barnRide.F.boost||1+Math.min(.9,barnRide.size*.5):1
 /* ---------- little buddies that follow you around town (the baby dragon flies!) ---------- */
 function palGo(k){if(BS.pal&&BS.pal!==k)palHome();BS.pal=k;const a=farmAnimal(k);a.along=true;a.ob.r=0;a.tgt=null;
   const P=player.pos;a.pos.set(P.x-Math.sin(player.face)*1.2,P.y+(a.F.pal==='fly'?1.4:0),P.z-Math.cos(player.face)*1.2);a.g.position.copy(a.pos);burst(a.pos.clone().add(new THREE.Vector3(0,.4,0)),'#ffd23f',20,1.5);}
-function palHome(){const k=BS.pal;BS.pal=null;persist();const a=FA[k];if(!a)return;a.along=false;
-  if(Math.hypot(a.pos.x-BZ.x,a.pos.z-BZ.z)>BZ.r){burst(a.pos.clone(),'#ffd23f',20,1.5);[a.lx,a.lz]=paddockSpot(a.rad);}else{const [lx,lz]=BZ.toLocal(a.pos.x,a.pos.z);if(barnOk(lx,lz,a.rad)){a.lx=lx;a.lz=lz;}else[a.lx,a.lz]=paddockSpot(a.rad);}
+function palHome(){const k=BS.pal;BS.pal=null;persist();const a=FA[k];if(!a)return;a.along=false;const H=a.home;
+  if(Math.hypot(a.pos.x-H.Z.x,a.pos.z-H.Z.z)>H.Z.r){burst(a.pos.clone(),'#ffd23f',20,1.5);[a.lx,a.lz]=H.spot(a.rad);}else{const [lx,lz]=H.Z.toLocal(a.pos.x,a.pos.z);if(H.ok(lx,lz,a.rad)){a.lx=lx;a.lz=lz;}else[a.lx,a.lz]=H.spot(a.rad);}
   a.y=0;a.flying=a.F.pal==='fly';placeFarm(a);}
 const palV=new THREE.Vector3();
-function palStep(a,dt){if(barnOpen&&a===barnSel){if(a.along){a.along=false;[a.lx,a.lz]=[CARE_SPOT[0],CARE_SPOT[1]+1];}stepFarm(a,dt);return;}
+function palStep(a,dt){if(barnOpen&&a===barnSel){if(a.along){a.along=false;[a.lx,a.lz]=[a.home.care[0],a.home.care[1]+1];}stepFarm(a,dt);return;}
   if(!a.along){a.along=true;}
   const P=player.pos,fly=a.F.pal==='fly',back=player.face+Math.PI+(fly?.5:.75),r=(fly?.75:.95)+a.rad;
   palV.set(P.x+Math.sin(back)*r,fly?P.y+1.45+Math.sin(a.t*2.2)*.12:P.y,P.z+Math.cos(back)*r);
@@ -8313,37 +8664,41 @@ function palStep(a,dt){if(barnOpen&&a===barnSel){if(a.along){a.along=false;[a.lx
 const fCoins=()=>SAVE.coins||0;
 const starsEarned=()=>(SAVE.chal&&SAVE.chal.stars)||0;
 function barnMoney(){$('#barnMoney').textContent=`🪙 ${fCoins()} · ⭐ ${starsLeft()} to spend`;}
-function openBarn(){if(closetOpen||!started)return;closeTalk();barnOpen=closetOpen=true;BZ.padLbl.visible=false;
-  document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
-  const mine=Object.keys(BS.own);barnTab=mine.length?'mine':'adopt';if(!barnSel||!BS.own[barnSel.k])barnSel=mine.length?farmAnimal(BS.sel&&BS.own[BS.sel]?BS.sel:mine[0]):null;
-  const [px,pz]=BZ.toWorld(1.2,3.3);player.pos.set(px,0,pz);player.vy=0;player.speed=0;
+// the barn sheet opens at the 🐴 Happy Barn ('barn') or at 🦖 Dino Valley ('dino'), and only shows the animals that live there
+const atHome=f=>(barnAt==='dino')===!!f.dino;
+const myHere=()=>Object.keys(BS.own).filter(k=>FK[k]&&atHome(FK[k]));
+function openBarn(at){if(closetOpen||!started)return;closeTalk();barnAt=at==='dino'?'dino':'barn';const H=HOMES[barnAt];barnOpen=closetOpen=true;H.Z.padLbl.visible=false;
+  document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#barnUI h2').textContent=barnAt==='dino'?'🦖 Dino Valley':'🐴 Happy Barn';
+  const mine=myHere();barnTab=mine.length?'mine':barnAt==='dino'?'rare':'adopt';if(!barnSel||!BS.own[barnSel.k]||!atHome(barnSel.F))barnSel=mine.length?farmAnimal(BS.sel&&mine.includes(BS.sel)?BS.sel:mine[0]):null;
+  const [px,pz]=H.Z.toWorld(...H.stand);player.pos.set(px,groundAt(px,pz),pz);player.vy=0;player.speed=0;
   fcam.p.copy(camera.position);fcam.t.copy(cam.fv||player.pos);fcam.dy=0;
   if(barnSel){const n=farmNeed(barnSel.k);setTimeout(()=>{if(barnOpen&&barnSel)barnSel.speak(n||rnd(barnSel.F.say));},600);}
-  else if(barnTab==='adopt')previewFarm(FARM[0].k);
+  else{const l=tabList(barnTab);if(l.length)previewFarm(l[0].k);}
   renderBarn();$('#barnUI').classList.add('show');$('#barnContent').scrollTop=0;sfx('tada');thumbsSoon();}
-function closeBarn(keep){if(!barnOpen)return;barnOpen=closetOpen=false;BZ.padLbl.visible=true;document.body.classList.remove('dressing');$('#barnUI').classList.remove('show');
-  clearPreview();persist();if(!keep){const [px,pz]=BZ.toWorld(0,3.1);player.pos.set(px,0,pz);cam.yaw=cam.cy=BZ.rot;player.face=BZ.rot;}}
+function closeBarn(keep){if(!barnOpen)return;const H=HOMES[barnAt];barnOpen=closetOpen=false;H.Z.padLbl.visible=true;document.body.classList.remove('dressing');$('#barnUI').classList.remove('show');
+  clearPreview();persist();if(!keep){const [px,pz]=H.Z.toWorld(...H.out);player.pos.set(px,groundAt(px,pz),pz);cam.yaw=cam.cy=H.Z.rot;player.face=H.Z.rot;}}
 $('#barnDone').onclick=()=>closeBarn();
 function clearPreview(){if(barnPreview&&!BS.own[barnPreview.k]){const a=barnPreview;scene.remove(a.g);a.ob.r=0;const i=obs.indexOf(a.ob);if(i>=0)obs.splice(i,1);delete FA[a.k];
   a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}barnPreview=null;}
-function previewFarm(k){if(barnPreview&&barnPreview.k===k)return;clearPreview();const a=farmAnimal(k);if(!BS.own[k]){a.lx=CARE_SPOT[0];a.lz=CARE_SPOT[1]+.6;a.face=.35;barnPreview=a;a.setTag('');}barnSel=a;
+function previewFarm(k){if(barnPreview&&barnPreview.k===k)return;clearPreview();const a=farmAnimal(k);if(!BS.own[k]){a.lx=a.home.care[0];a.lz=a.home.care[1]+.6;a.face=.35;barnPreview=a;a.setTag('');}barnSel=a;
   a.speak(rnd(a.F.say));a.hop=1;placeFarm(a);}
 const FTABS=[['mine','💖','My animals'],['adopt','🪙','Adopt'],['rare','⭐','Rare'],['pals','🐉','Buddies']];
-const tabList=t=>FARM.filter(f=>t==='mounts'?f.mount||f.prize||f.earn:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
+// here: only the animals that live where the sheet is open (the animal book passes false to list them all)
+const tabList=(t,here=true)=>FARM.filter(f=>(!here||atHome(f))&&(t==='mounts'?f.mount||f.prize||f.earn:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal));
 const fMeter=(e,n,v)=>`<div class="meter">${e} ${n}<i><b style="width:${Math.round(v)}%"></b></i></div>`;
-function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
-  $('#barnTabs').innerHTML=FTABS.map(([id,e,n])=>`<button class="tab${id===barnTab?' on':''}" data-ftab="${id}"><b>${e}</b>${n}</button>`).join('');
+function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]&&atHome(f)),dn=barnAt==='dino';
+  $('#barnTabs').innerHTML=FTABS.filter(([id])=>id==='mine'||tabList(id).length).map(([id,e,n])=>`<button class="tab${id===barnTab?' on':''}" data-ftab="${id}"><b>${dn&&id==='pals'?'🦖':dn&&id==='mine'?'🦕':e}</b>${dn&&id==='mine'?'My dinosaurs':n}</button>`).join('');
   let h='',m='';const a=barnSel,F=a&&a.F;
   if(barnTab==='mine'){
-    if(!mine.length)h=`<p class="drawhint" style="margin-top:14px">You don't have any barn animals yet. Tap <b>🪙 Adopt</b> to pick your first one!</p>`;
+    if(!mine.length)h=dn?`<p class="drawhint" style="margin-top:14px">You don't have any dinosaurs yet. Tap <b>⭐ Rare</b> or <b>🦖 Buddies</b> to adopt your first one!</p>`:`<p class="drawhint" style="margin-top:14px">You don't have any barn animals yet. Tap <b>🪙 Adopt</b> to pick your first one!</p>`;
     else{h=`<div class="farmRow">${mine.map(f=>`<button class="item${a&&a.k===f.k?' on':''}" data-fsel="${f.k}">${fThumb(f)}<span>${esc(BS.own[f.k].n)}</span></button>`).join('')}</div>`;
       if(a&&BS.own[a.k]){const c=farmCare(a.k);a.showDust(c.shine);m=fMeter('🌾','Food',c.food)+fMeter('✨','Shiny',c.shine)+fMeter('💖','Love',c.love);
         h+=`<div class="farmName"><label>Name</label><input id="farmName" maxlength="14" value="${esc(BS.own[a.k].n)}" aria-label="Animal name"></div>
           <h3>Feed ${esc(BS.own[a.k].n)}</h3><div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-ffeed="${i}">${e} ${n}</button>`).join('')}</div>
           <h3>Care</h3><div class="ctbtns farmBtns"><button class="btn ghost" data-fdo="brush">🪮 Brush</button><button class="btn ghost" data-fdo="hug">💖 Hug</button><button class="btn ghost" data-fdo="water">💧 Water</button></div>
-          ${F.pal?`<div class="ctbtns"><button class="btn big" data-fdo="along">${BS.pal===a.k?`🏠 ${esc(BS.own[a.k].n)} stays at the barn`:`🐾 Take ${esc(BS.own[a.k].n)} with you!`}</button></div><p class="drawhint">${F.pal==='fly'?'Flies along behind you everywhere you go!':'Follows you all around town!'}</p>`:F.ride?`<div class="ctbtns"><button class="btn big" data-fdo="ride">🏇 Ride ${esc(BS.own[a.k].n)}!</button></div>`:`<p class="drawhint">${F.n}s are too little to ride, but they love hugs!</p>`}`;}}}
+          ${F.pal?`<div class="ctbtns"><button class="btn big" data-fdo="along">${BS.pal===a.k?`🏠 ${esc(BS.own[a.k].n)} stays ${dn?'in Dino Valley':'at the barn'}`:`🐾 Take ${esc(BS.own[a.k].n)} with you!`}</button></div><p class="drawhint">${F.pal==='fly'?'Flies along behind you everywhere you go!':'Follows you all around town!'}</p>`:F.ride?`<div class="ctbtns"><button class="btn big" data-fdo="ride">🏇 Ride ${esc(BS.own[a.k].n)}!</button></div>`:`<p class="drawhint">${F.n}s are too little to ride, but they love hugs!</p>`}`;}}}
   else{const list=tabList(barnTab);
-    h=`<button class="catLink" data-fbook="1">📖 See every animal in the game</button>`+(barnTab==='adopt'?`<button class="dinoLink" data-ftabgo="rare">🦖 Looking for dinosaurs and the unicorn? Tap here for ⭐ Rare!</button><button class="dinoLink" data-ftabgo="pals">🐉 Baby dragon and mini dinos that follow you? Tap here for Buddies!</button>`:'')+(barnTab==='rare'?`<div class="starNote">⭐ <b>${starsEarned()}</b> earned · <b>${starsLeft()}</b> left to spend<small>The ⭐ at the top counts every star you ever earned (that's your rank), so it never goes down. Rare animals use stars from "left to spend". Earn more from ⭐🏆 challenges!</small></div>`:'')+
+    h=`<button class="catLink" data-fbook="1">📖 See every animal in the game</button>`+(barnTab==='adopt'?`<button class="dinoLink" data-ftabgo="rare">🦄 Looking for the unicorn? Tap here for ⭐ Rare!</button><button class="dinoLink" data-ftabgo="pals">🐉 A baby dragon or a monkey that follows you? Tap here for Buddies!</button>`:'')+(!dn&&barnTab!=='mine'?`<button class="dinoLink" data-fdino="1">🦖 The dinosaurs moved to Dino Valley! Tap to find the way there.</button>`:'')+(barnTab==='rare'?`<div class="starNote">⭐ <b>${starsEarned()}</b> earned · <b>${starsLeft()}</b> left to spend<small>The ⭐ at the top counts every star you ever earned (that's your rank), so it never goes down. Rare animals use stars from "left to spend". Earn more from ⭐🏆 challenges!</small></div>`:'')+
       `<div class="grid">${list.map(f=>{const own=!!BS.own[f.k];return `<button class="item${a&&a.k===f.k?' on':''}" data-fpick="${f.k}">${fThumb(f)}<span>${f.n}</span><em class="${own?'got':''}">${own?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`}</em></button>`;}).join('')}</div>`;
     if(a&&list.includes(F)){const own=!!BS.own[a.k],have=F.s?starsLeft():fCoins(),cost=F.s||F.c,cur=F.s?'⭐':'🪙';
       h+=`<div class="farmAbout"><b>${F.e} ${F.n}</b><span>${F.about}</span>${F.ride?'<span>🏇 You can ride this one!</span>':''}
@@ -8352,7 +8707,7 @@ function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
   const ni=$('#farmName');if(ni)ni.onchange=()=>{const v=ni.value.trim().slice(0,14);if(!v||!barnSel||!BS.own[barnSel.k])return;BS.own[barnSel.k].n=v;barnSel.setTag(v);persist();renderBarn();};}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 $('#barnTabs').onclick=e=>{const b=e.target.closest('[data-ftab]');if(!b)return;barnTab=b.dataset.ftab;sfx('pop');
-  if(barnTab==='mine'){clearPreview();const mine=Object.keys(BS.own);barnSel=mine.length?farmAnimal(BS.sel&&BS.own[BS.sel]?BS.sel:mine[0]):null;}
+  if(barnTab==='mine'){clearPreview();const mine=myHere();barnSel=mine.length?farmAnimal(BS.sel&&mine.includes(BS.sel)?BS.sel:mine[0]):null;}
   else{const list=tabList(barnTab);if(!barnSel||!list.includes(barnSel.F))previewFarm((list.find(f=>!BS.own[f.k])||list[0]).k);}
   renderBarn();$('#barnContent').scrollTop=0;};
 $('#barnContent').onclick=e=>{const b=e.target.closest('button');if(!b||!barnOpen)return;const d=b.dataset;
@@ -8361,6 +8716,7 @@ $('#barnContent').onclick=e=>{const b=e.target.closest('button');if(!b||!barnOpe
   if(d.fadopt)return adoptFarm(d.fadopt);
   if(d.ftabgo){barnTab=d.ftabgo;const l=tabList(barnTab);previewFarm((l.find(f=>!BS.own[f.k])||l[0]).k);sfx('pop');renderBarn();$('#barnContent').scrollTop=0;return;}
   if(d.fbook){closeBarn();setTimeout(openCatalog,350);return;}
+  if(d.fdino){closeBarn();setDest(Z.dino);sfx('star');toast('Follow the pink arrow on the map to 🦖 Dino Valley 💗');return;}
   const a=barnSel;if(!a||!BS.own[a.k])return;const c=farmCare(a.k),top=()=>a.g.position.clone().add(new THREE.Vector3(0,a.h*.75,0));
   if(d.ffeed!=null){const [fe,fn]=a.F.food[+d.ffeed];c.food=Math.min(100,c.food+34);a.graze=1;a.eatT=1.4;floaties(top(),fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('farmfeed',a.k);}
   if(d.fdo==='brush'){c.shine=Math.min(100,c.shine+26);a.wig=.6;burst(top(),'#ffffff',18,1.2,.12);floaties(top(),'✨',3);a.showDust(c.shine);tone(900,.05,'sine',.08);tone(1200,.05,'sine',.08,.06);
@@ -8434,6 +8790,7 @@ function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpe
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';player.speed=0;
   fcam.p.copy(camera.position);fcam.t.copy(cam.fv||player.pos);
   if(a.F.arctic){const I=SAVE.ice||(SAVE.ice={});I.seen||={};if(!I.seen[a.k]){I.seen[a.k]=1;persist();}did('icelearn',a.k);}// ❄️ polar animals count for the Polar challenges, not the Safari ones
+  else if(a.F.dino)did('dinolearn',a.k);// 🦖 Dino Valley
   else{const seen=zooSeen();if(!seen[a.k]){seen[a.k]=1;persist();did('zoolearn',a.k);}}
   a.speak(rnd(a.F.say));renderZoo();$('#zooUI').classList.add('show');$('#zooContent').scrollTop=0;sfx('pop');}
 function closeZoo(){if(!zooOpen)return;zooOpen=closetOpen=false;document.body.classList.remove('dressing');$('#zooUI').classList.remove('show');
@@ -8443,9 +8800,10 @@ function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
     ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`💖 ${esc(BS.own[r.k].n)} is yours! Step on the 🦖 footprint by the Dino Keeper's hut to take care of ${esc(BS.own[r.k].n)}.`:`🥚 Want one of your own? Step on the 🦖 footprint by the Dino Keeper's hut to adopt ${r.e} ${r.nm} with ⭐ stars!`}</p>`:'')(a.F.dino&&FARM.find(f=>f.dino&&f.model===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
-  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did(a.F.arctic?'icefeed':'zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
+  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did(a.F.arctic?'icefeed':a.F.dino?'dinofeed':'zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
@@ -8458,14 +8816,15 @@ let catOpen=false;
 function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div class="catRow">${ico}<span><strong>${name}</strong><small>${sub}</small></span><em class="${cls}">${tag}</em>${go?`<button data-catgo="${go}" aria-label="Show the way">📍</button>`:''}</div>`;
   const pets=PETS.map(pt=>{const need=(pt.o&&pt.o.stars)||0,z=pt.home;
     return row(`<b>${PET_E[pt.kind]||'🐾'}</b>`,esc(pt.name),`A ${pt.kind} who lives at ${z?z.name:'town'}`,pt.owned?'💖 Your pet':need?(st>=need?`✅ ⭐ ${need} reached`:`🔒 ⭐ ${need} stars`):'Free!',pt.owned?'got':need?(st>=need?'got':'star'):'free',z&&z.id);});
-  const farm=f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`,BS.own[f.k]?'got':f.s?'star':'coin','barn');
+  const farm=f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`,BS.own[f.k]?'got':f.s?'star':'coin',f.dino?'dino':'barn');
   $('#catList').innerHTML=`<div class="cnote">You've earned ⭐ ${st} stars and have ⭐ ${starsLeft()} left to spend. Pets are free to adopt. Some need a certain number of ⭐ stars first (you keep your stars). Barn animals and little buddies cost 🪙 coins, and the rare ones cost ⭐ stars (spending stars never lowers your rank).</div>
     <h3>🐾 Pets around town</h3>${pets.join('')}
-    <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt').map(farm).join('')}
-    <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
-    <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
-    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
-    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.filter(f=>!f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}
+    <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt',false).map(farm).join('')}
+    <h3>✨ Rare animals · ⭐ stars (dinosaurs live at 🦖 Dino Valley)</h3>${tabList('rare',false).map(farm).join('')}
+    <h3>🐉 Little buddies who follow you</h3>${tabList('pals',false).map(farm).join('')}
+    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts',false).map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
+    <h3>🦖 Dino Valley · free to visit</h3>${ZOOA.filter(f=>f.dino).map(f=>row(fThumb(f),f.n,'Meet them, feed them and learn about them','Visit','free','dino')).join('')}
+    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.filter(f=>!f.arctic&&!f.dino).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}
     <h3>❄️ Polar Ice · free to visit</h3>${ZOOA.filter(f=>f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','arctic')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
@@ -8477,13 +8836,16 @@ $('#catalog').onclick=e=>{if(e.target.id==='catalog')return closeCatalog();const
 /* ---------- every frame (called from the game loop) ---------- */
 function barnStep(p,dt){
   zooStep(p,dt);
-  const near=Math.hypot(p.x-BZ.x,p.z-BZ.z)<40;
-  for(const k in FA){const a=FA[k];if(a.tag)a.tag.visible=!(barnOpen&&a===barnSel);if(a===barnRide)continue;if(k===BS.pal)palStep(a,dt);else if(near||barnOpen)stepFarm(a,dt);}
+  const near={};for(const id in HOMES){const Hz=HOMES[id].Z;near[id]=Math.hypot(p.x-Hz.x,p.z-Hz.z)<45;}
+  for(const k in FA){const a=FA[k];if(a.tag)a.tag.visible=!(barnOpen&&a===barnSel);if(a===barnRide)continue;if(k===BS.pal)palStep(a,dt);else if(near[a.home.id]||barnOpen)stepFarm(a,dt);}
   rideStep(dt);
   // the glowing horseshoe pad opens the barn
-  {const [lx,lz]=BZ.toLocal(p.x,p.z),d=Math.hypot(lx-BZ.bpad.lx,lz-BZ.bpad.lz);if(d<BZ.bpad.r&&player.onGround&&!closetOpen&&!barnRide){if(!onFPad&&started){onFPad=true;openBarn();}}else if(d>1.3)onFPad=false;}
-  const inZ=Math.hypot(p.x-BZ.x,p.z-BZ.z)<BZ.r+1;if(inZ&&!barnZoneIn&&started&&!closetOpen&&!barnRide){setTimeout(()=>toast(Object.keys(BS.own).length?'Step on the glowing horseshoe to take care of your animals 🐴':'Step on the glowing horseshoe to adopt farm animals and dinosaurs 🐴🦖'),1600);
-    for(const k in BS.own){const n=farmNeed(k);if(n&&FA[k]){FA[k].speak(n);break;}}}barnZoneIn=inZ;}
+  {let on=null,far=true;for(const id in HOMES){const Hz=HOMES[id].Z,[lx,lz]=Hz.toLocal(p.x,p.z),d=Math.hypot(lx-Hz.bpad.lx,lz-Hz.bpad.lz);if(d<Hz.bpad.r)on=id;if(d<=1.3)far=false;}
+   if(on&&player.onGround&&!closetOpen&&!barnRide){if(!onFPad&&started){onFPad=true;openBarn(on);}}else if(far)onFPad=false;}
+  const inZ=Math.hypot(p.x-BZ.x,p.z-BZ.z)<BZ.r+1?'barn':Math.hypot(p.x-Z.dino.x,p.z-Z.dino.z)<Z.dino.r+1?'dino':'';
+  if(inZ&&inZ!==barnZoneIn&&started&&!closetOpen&&!barnRide){const dn=inZ==='dino',have=Object.keys(BS.own).some(k=>FK[k]&&!!FK[k].dino===dn);
+    setTimeout(()=>toast(dn?(have?'Step on the glowing footprint by the hut to take care of your dinosaurs 🦖':'Step on the glowing footprint by the hut to adopt a dinosaur of your own 🦖'):(have?'Step on the glowing horseshoe to take care of your animals 🐴':'Step on the glowing horseshoe to adopt farm animals 🐴')),1600);
+    for(const k in BS.own){const n=farmNeed(k);if(n&&FA[k]&&FA[k].home.id===inZ){FA[k].speak(n);break;}}}barnZoneIn=inZ;}
 const fcam={p:new THREE.Vector3(),t:new THREE.Vector3(),dy:0},fWant=new THREE.Vector3(),fTgt=new THREE.Vector3();
 function barnCam(dt){const a=barnOpen?barnSel:zooOpen?zooSel:null;if(!a)return;const s=Math.max(.55,a.h);const yaw=a.Z.rot+a.face+.55,pitch=.22,d=1.25+s*(a.h>2?1.8:1.55);
   fTgt.set(a.pos.x,a.pos.y+a.h*(a.h>2?.62:.5),a.pos.z);fWant.set(fTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,fTgt.y+Math.sin(pitch)*d+.2,fTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
@@ -8830,7 +9192,7 @@ function spBtn(text,cls){const b=$('#spMain');if(b.dataset.t!==text){b.dataset.t
 const spLocal=(z,w)=>{const [x,zz]=z.toLocal(w.x,w.z);return new THREE.Vector3(x,w.y,zz);};
 const spSetWorld=(z,lx,lz)=>{const [x,w]=z.toWorld(lx,lz);player.pos.x=x;player.pos.z=w;};
 const spFace=(z,lx,lz,tx,tz)=>Math.atan2(tx-lx,tz-lz)+z.rot;// world facing for looking from (lx,lz) to (tx,tz)
-function spLock(){if(spX())return true;return !!SP.mode&&(SP.mode==='ft'||SP.mode==='bat'||!!SP.hold||!!SP.dunk);}
+function spLock(){if(spX())return spX().lock?spX().lock():true;return !!SP.mode&&(SP.mode==='ft'||SP.mode==='bat'||!!SP.hold||!!SP.dunk);}
 function spSay(t,ms=1300){banner(t);}
 function spCheer(){try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}}
 // arm poses drawn on top of the normal walking animation
@@ -8913,9 +9275,10 @@ function spMade(b){const C=SPC,z=Z.court;b.made=true;z.hoop.swish=1;tone(880,.12
   else if(SP.mode==='v1'){if(b.by==='me')SP.score+=b.pts;else SP.opp+=b.pts;
     spSay(b.by==='me'?(b.dunked?'💥 SLAM DUNK!':b.pts===3?'🔥 Three pointer!':'🏀 Bucket!'):(b.dunked?'😮 Kai dunks!':'Kai scores'));
     SP.poss=null;SP.next=1.3;SP.nextFor=b.by==='me'?'cpu':'me';}
+  else if(spX()&&spX().made)spX().made(b);// e.g. 🏀 3-on-3 (24e4-basketball-3v3.js)
   if(b.by==='me'){spCheer();did('sport','basket');}
   spBoard();}
-function spBoard(){const zb=Z.court.board;if(SP.mode==='ft')zb.draw(SP.score,10-SP.shots,'🎯 MADE · LEFT');else if(SP.mode==='shoot')zb.draw(SP.score,Math.ceil(SP.left),'🔥 POINTS · TIME');else if(SP.mode==='v1')zb.draw(SP.score,SP.opp,'YOU · KAI');else zb.draw('0','0');}
+function spBoard(){const zb=Z.court.board;if(SP.mode==='ft')zb.draw(SP.score,10-SP.shots,'🎯 MADE · LEFT');else if(SP.mode==='shoot')zb.draw(SP.score,Math.ceil(SP.left),'🔥 POINTS · TIME');else if(SP.mode==='v1')zb.draw(SP.score,SP.opp,'YOU · KAI');else if(spX()&&spX().board)spX().board(zb);else zb.draw('0','0');}
 
 /* ---------- the computer player for 1-on-1 ---------- */
 function spCpu(){if(SP.cpu)return SP.cpu;const L=Object.assign(defaultGuyLook(),{skin:'#b97a4f',eyes:'#3d2a1a',hair:{id:'crop',c:'#2b1d16'},dress:null,
@@ -8930,12 +9293,14 @@ function spOpenMenu(zid){if(SP.mode||SP.menu)return;SP.menu=true;const S=SAVE.sp
    <button class="spPick" data-m="ft"><b>🎯</b><span><strong>Free throws</strong><small>10 shots from the line${S.ft!=null?` · Best: ${S.ft} of 10`:''}</small></span></button>
    <button class="spPick" data-m="shoot"><b>🔥</b><span><strong>Shootout</strong><small>60 seconds. Shoot from anywhere, dunk up close${S.shoot!=null?` · Best: ${S.shoot} pts`:''}</small></span></button>
    <button class="spPick" data-m="v1"><b>🆚</b><span><strong>1-on-1 vs Kai</strong><small>First to 11 wins${S.v1w?` · Wins: ${S.v1w}`:''}</small></span></button>
+   <button class="spPick" id="spV3"><b>👥</b><span><strong>3-on-3 game</strong><small>You and 2 teammates vs the Bears. First to 11${S.v3w?` · Wins: ${S.v3w}`:''}</small></span></button>
    <button class="btn ghost" id="spNo">Not now</button>`;
   // the real game is at the ⚾ Baseball Field over the bridge (26j-wiffle.js); the cage is for batting practice
   else c.innerHTML=`<h2>⚾ Batting Cage</h2><p>Want a real game? The Baseball Field is just over the bridge: pitch, hit and run the bases with a whole team!</p>
    <button class="spPick" id="spToField"><b>⚾</b><span><strong>Play a real baseball game</strong><small>Go over to the Baseball Field</small></span></button>
    <button class="spPick" data-m="bat"><b>🏏</b><span><strong>Batting practice</strong><small>The machine throws 10 pitches${S.hr?` · Most home runs: ${S.hr}`:''}</small></span></button>
    <button class="btn ghost" id="spNo">Not now</button>`;
+  if($('#spV3'))$('#spV3').onclick=()=>{spCloseMenu();bb3Pick();};// 🏀 3-on-3 (24e4-basketball-3v3.js)
   if($('#spToField'))$('#spToField').onclick=()=>{spCloseMenu();if(fastTravel(Z.wiffle))setTimeout(()=>{if(!SP.mode&&!SP.menu)wfMenu();},700);};
   spSuitBtn(c,zid);if(SP.onMenu)try{SP.onMenu(c,zid);}catch(e){}
   c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{spCloseMenu();spStart(b.dataset.m);});
@@ -9465,6 +9830,261 @@ function teamPick({sport='football',size=3,title='Pick your team!',done,cancel})
     const l=$('#tpLast');if(l)l.onclick=()=>{for(const r of last){S.left.splice(S.left.indexOf(r),1);S.us.push(r);}
       while(S.them.length<size){const r=S.left.slice().sort((a,b)=>score(b)-score(a))[0];S.left.splice(S.left.indexOf(r),1);S.them.push(r);}draw();setTimeout(finish,700);};}
   draw();$('#tpMenu').classList.add('show');sfx('pop');}
+// ---- src/24e4-basketball-3v3.js ----
+/* ================= 🏀 3-ON-3 BASKETBALL: you and two teammates against the 🐻 Bears =================
+   Half-court streetball on the Basketball Court (12c-place-sports.js), first team to 11 wins (2s and 3s).
+   It plugs into 24e-sports.js as SP.ext.v3 (shared HUD, big button, ✕ Leave and menu card). Unlike the other
+   SP.ext games you walk and run freely with the joystick (SP.ext.v3.lock only holds you still while you shoot or dunk).
+   - Teams come from the 🧢 team picker (24e3-team-picker.js, sport 'basketball'): 🎯 throwing is how well they shoot,
+     ⚡ speed how fast they run, 🙌 catching how well they hold on to the ball.
+   - Everything is in the court's own space (hoop toward -z). V.us[0] is you (ME), the rest are computer players:
+     each guards the player with the same number on the other team (V.them[0] guards you).
+   - Your ball: hold SHOOT and let go in the green (like 1-on-1), DUNK up close, or 🤾 PASS to the most open teammate.
+     A teammate's ball: 🙋 CALL FOR IT and they pass it to you. The Bears' ball: 🖐️ STEAL when you're close, or jump to block.
+   - A pass flies to the catcher and can be picked off by a defender standing in the way.
+   - Challenges: did('sport','v3win'), did('sport','assist') (your pass, a teammate scores) and did('play','v3').
+   window.__bb3 is for tests (3d/tests/basketball-3v3.mjs). */
+TP_WANT.basketball={spd:1.2,thr:1.4,cat:1,kck:.1};
+const BB3={on:false,us:[],them:[],all:[],holder:null,pass:null,next:0,nextFor:'us',lastPass:null,callCD:0,hudT:0,clock:0,looseT:0,lastTeam:'us'};
+const BB3_WIN=11,BB3_COL={us:'#2f6fd9',them:'#d62839'};
+// a computer player in a real basketball kit: jersey and shorts in the team colour, court sneakers
+const BB3_AV=new Map();
+function bb3Avatar(r,c){const k=r.n+c;let a=BB3_AV.get(k);
+  if(!a){const L=rosterLook(r,c);L.top={id:'bballjersey',c};L.bottom={id:'bballshorts',c};L.shoes={id:'courtkicks',c:'#ffffff'};
+    a=new Avatar(L,r.n,c);a.g.visible=false;Z.court.g.add(a.g);BB3_AV.set(k,a);}return a;}
+
+/* ---------- the pass button (next to SHOOT) ---------- */
+{const st=document.createElement('style');st.textContent=`
+#bb3Pass{position:fixed;display:none;z-index:6;border-radius:50%;width:84px;height:84px;font-size:14px;font-weight:700;color:#fff;line-height:1.1;
+  right:calc(env(safe-area-inset-right) + 134px);bottom:calc(env(safe-area-inset-bottom) + 140px);
+  background:radial-gradient(circle at 35% 30%,#8fd0ff,#2f6fd9);border:4px solid rgba(255,255,255,.85);box-shadow:0 6px 20px rgba(47,111,217,.5);touch-action:none}
+#bb3Pass:active{transform:scale(.93)}
+body.bb3-me #bb3Pass{display:block}
+@media (max-height:520px){#bb3Pass{width:72px;height:72px;font-size:13px;bottom:calc(env(safe-area-inset-bottom) + 132px)}}`;
+ document.head.appendChild(st);const b=document.createElement('button');b.id='bb3Pass';document.body.appendChild(b);
+ b.addEventListener('pointerdown',e=>{e.preventDefault();bb3PassMe();});b.addEventListener('contextmenu',e=>e.preventDefault());
+ addEventListener('keydown',e=>{if(SP.mode==='v3'&&!e.repeat&&e.target.tagName!=='INPUT'&&(e.code==='KeyP'||e.code==='KeyE')){bb3PassMe();e.preventDefault();}});}
+
+/* ---------- helpers ---------- */
+const bb3Foes=A=>A.team==='us'?BB3.them:BB3.us;
+const bb3Mates=A=>(A.team==='us'?BB3.us:BB3.them).filter(o=>o!==A);
+const bb3Hoop=A=>Math.hypot(A.p.x,A.p.z-SPC.HZ);
+function bb3Near(A,list){let best=null,d=1e9;for(const o of list){const dd=Math.hypot(o.p.x-A.p.x,o.p.z-A.p.z);if(dd<d){d=dd;best=o;}}return {o:best,d};}
+const bb3Name=A=>A.me?'You':A.name;
+function bb3Hold(A){const V=BB3,b=SP.ball;V.holder=A;SP.poss=A?(A.me?'me':'cpu'):null;
+  if(A&&b){b.st='hold';b.by=A.me?'me':A.team==='us'?'mate':'cpu';b.team=A.team;V.lastTeam=A.team;A.hold=0;A.think=.45+Math.random()*.35;A.shootT=-1;A.plan=null;}
+  V.looseT=0;bb3Hud();}
+function bb3Hud(){const V=BB3,h=V.holder;spHud('🏀 3-on-3',`${SP.score} - ${SP.opp}`,h?(h.me?'your ball':h.team==='us'?`${h.name}'s ball`:`🐻 ${h.name}'s ball`):V.pass?'pass!':'loose ball!');}
+function bb3Board(zb){zb.draw(SP.score,SP.opp,'EAGLES · BEARS');}
+// the most open teammate to pass to (how far the nearest defender is), a little keener on players in front of you
+function bb3PassTarget(A){let best=null,bs=-1e9;const f=A.me?player.face-SP.z.rot:A.face;
+  for(const o of bb3Mates(A)){const open=bb3Near(o,bb3Foes(A)).d,dx=o.p.x-A.p.x,dz=o.p.z-A.p.z,dl=Math.hypot(dx,dz)||1;
+    const ahead=(Math.sin(f)*dx+Math.cos(f)*dz)/dl;const s=Math.min(open,3)+ahead*.6+(o.me?.8:0)-(dl>7?1:0);if(s>bs){bs=s;best={o,open};}}return best;}
+
+/* ---------- starting a game ---------- */
+function bb3Pick(){if(SP.mode)return;teamPick({sport:'basketball',size:3,title:'Pick your team: 3-on-3 basketball',done:(us,them)=>bb3Start(us,them),cancel:()=>{}});}
+function bb3Actor(r,team){const a=bb3Avatar(r,BB3_COL[team]);a.g.visible=true;
+  return {r,name:r.n,team,a,p:new THREE.Vector3(),vy:0,face:0,spot:null,spotT:0,stealCD:1,shootT:-1,plan:null,hold:0,think:0,follow:0,triedInt:false,drive:false};}
+function bb3Start(us,them){if(SP.mode)return;const V=BB3;spCloseMenu();
+  for(const a of BB3_AV.values())a.g.visible=false;
+  const ME={me:true,name:'You',team:'us',a:av,p:new THREE.Vector3(),vy:0,face:0,stealCD:0,shootT:-1,hold:0};
+  V.us=[ME,...us.slice(0,2).map(r=>bb3Actor(r,'us'))];V.them=them.slice(0,3).map(r=>bb3Actor(r,'them'));V.all=[...V.us,...V.them];V.me=ME;
+  V.us.forEach((A,i)=>A.mark=V.them[i]);V.them.forEach((A,i)=>A.mark=V.us[i]);
+  SP.mode='v3';SP.z=Z.court;SP.score=0;SP.opp=0;SP.shots=0;SP.t=0;SP.hold=null;SP.rel=null;SP.dunk=null;SP.next=0;SP.poss=null;SP.cam.init=false;SP.msgT=0;
+  for(const b of SP.balls.slice())spDropBall(b);
+  closeMap&&closeMap();joy.id=null;joy.x=joy.y=0;$('#joy').style.display='none';
+  V.on=true;V.next=0;V.pass=null;V.lastPass=null;V.clock=0;spBody(true,true);did('play','v3');
+  bb3Check('us');setTrack('stadium');
+  toast(`🦅 Eagles: You, ${V.us[1].name} and ${V.us[2].name}. First to ${BB3_WIN} wins! Tap 🤾 PASS to pass.`);}
+// check ball at the top of the key: the team with the ball spreads out, the other team guards
+function bb3Check(team){const V=BB3,C=SPC,z=SP.z;for(const b of SP.balls.slice())spDropBall(b);
+  const b=spNewBall();SP.ball=b;V.pass=null;SP.rel=null;SP.hold=null;$('#spMeter').classList.remove('show');
+  const top=C.HZ+5.5,OFF=[[0,top],[-3.3,C.HZ+3],[3.3,C.HZ+3]],DEF=[[0,C.HZ+4.2],[-2.6,C.HZ+2.1],[2.6,C.HZ+2.1]];
+  const O=team==='us'?V.us:V.them,D=team==='us'?V.them:V.us;
+  const put=(A,[x,w],tx,tz)=>{if(A.me){spSetWorld(z,x,w);player.face=spFace(z,x,w,tx,tz);player.vy=0;A.p.set(x,0,w);}
+    else{A.p.set(x,0,w);A.vy=0;A.shootT=-1;A.plan=null;A.spot=null;A.follow=0;A.face=Math.atan2(tx-x,tz-w);}};
+  O.forEach((A,i)=>put(A,OFF[i],0,C.HZ));D.forEach((A,i)=>put(A,DEF[i],OFF[i][0],OFF[i][1]));
+  bb3Hold(O[0]);cam.yaw=spFace(z,0,top,0,C.HZ)+Math.PI;cam.cy=cam.yaw;spBoard();
+  if(team==='them')toast(`🐻 Bears' ball. Guard ${O[0].name}: get close and tap STEAL, or jump to block!`);}
+
+/* ---------- passing ---------- */
+function bb3Pass(A,to){const V=BB3,b=SP.ball;if(!b||V.holder!==A)return;
+  const s=b.p.clone();if(A.me&&s.y<.7)s.y=player.pos.y+1.05;const d=Math.hypot(to.p.x-s.x,to.p.z-s.z);
+  V.pass={from:A,to,s,t:0,T:Math.max(.28,Math.min(.85,.12+d/9)),arc:.12+d*.05};V.holder=null;SP.poss=null;b.st='pass';
+  for(const o of V.all)o.triedInt=false;V.lastPass={from:A,to,t:V.clock};A.face=Math.atan2(to.p.x-A.p.x,to.p.z-A.p.z);
+  if(A.me){player.face=A.face+SP.z.rot;did('sport','pass');}
+  tone(500,.06,'triangle',.07);bb3Hud();}
+function bb3PassMe(){const V=BB3;if(SP.mode!=='v3'||SP.menu||V.holder!==V.me||SP.hold||SP.rel||SP.dunk)return;const t=bb3PassTarget(V.me);if(t)bb3Pass(V.me,t.o);}
+const _bbV=new THREE.Vector3();
+function bb3PassStep(dt){const V=BB3,P=V.pass,b=SP.ball;P.t+=dt;const k=Math.min(1,P.t/P.T),to=P.to;
+  _bbV.set(to.p.x,(to.me?player.pos.y:to.p.y)+1.05,to.p.z);b.p.lerpVectors(P.s,_bbV,k);b.p.y+=Math.sin(k*Math.PI)*P.arc;b.m.position.copy(b.p);b.m.rotation.x+=dt*12;
+  // a defender standing in the passing lane can pick it off
+  if(k>.2&&k<.9)for(const o of bb3Foes(P.from)){if(o.triedInt)continue;const d=Math.hypot(o.p.x-b.p.x,o.p.z-b.p.z);if(d>.5||b.p.y>2.3)continue;o.triedInt=true;
+    const ch=o.me?.5:P.from.me?.2:.28;if(Math.random()<ch){V.pass=null;bb3Hold(o);
+      if(o.me){spSay('🖐️ You picked it off!');did('sport','steal');tone(990,.12,'triangle',.1);}else spSay(o.team==='them'?`🖐️ ${o.name} intercepts!`:`🖐️ ${o.name} picks it off!`);return;}}
+  if(k>=1){V.pass=null;bb3Hold(to);if(to.me)tone(700,.05,'sine',.06);}}
+
+/* ---------- your buttons ---------- */
+function bb3CanDunk(){const V=BB3,b=SP.ball;if(V.holder!==V.me||!b||b.st!=='hold'||SP.dunk||SP.hold||SP.rel)return false;
+  const l=V.me.p.copy(spLocal(SP.z,player.pos));return Math.hypot(l.x,l.z-SPC.HZ)<2.1&&l.z>SPC.HZ-.2;}
+function bb3Press(){const V=BB3,b=SP.ball,h=V.holder;if(SP.menu||!b)return;
+  if(h===V.me){if(b.st!=='hold'||SP.dunk||SP.hold||SP.rel)return;
+    if(bb3CanDunk()){b.team='us';b.shooter=V.me;V.holder=null;SP.poss='me';spDunk();return;}
+    SP.hold={t:0};$('#spMeter').classList.add('show');tone(440,.05,'sine',.06);return;}
+  if(h&&h.team==='us'){if(h.shootT>=0||V.callCD>0)return;V.callCD=.8;toast(`🙋 ${h.name}: "Here you go!"`);bb3Pass(h,V.me);return;}
+  if(h&&h.team==='them'){const me=V.me;if(me.stealCD>0)return;me.stealCD=.9;av.play&&av.play('hop');
+    const d=Math.hypot(h.p.x-me.p.x,h.p.z-me.p.z);if(d>1.35){toast(`Get closer to ${h.name} to steal! 🖐️`);return;}
+    if(h.shootT<0&&Math.random()<.4){spSay('🖐️ Steal!');tone(660,.1,'triangle',.12);tone(990,.12,'triangle',.1,.08);bb3Hold(me);did('sport','steal');}
+    else{toast(`Missed! ${h.name} kept the ball`);tone(200,.12,'sine',.08);}}}
+function bb3Window(){const l=BB3.me.p,dist=Math.hypot(l.x,l.z-SPC.HZ);let w=Math.max(.07,.15-.014*Math.max(0,dist-3));
+  const f=bb3Near(BB3.me,BB3.them);const contest=Math.max(0,1-f.d/1.6);return {w:w*(1-.45*contest),contest,f,dist};}
+function bb3Release(){const V=BB3;if(!SP.hold)return;const h=SP.hold;SP.hold=null;$('#spMeter').classList.remove('show');
+  const u=(h.t/1.05)%2,v=u<1?u:2-u,{w,contest,f}=bb3Window(),l=V.me.p,b=SP.ball;
+  const off=(v-SP_SWEET)/w,perr=.009+off*.02+(Math.random()-.5)*.006,lerr=(Math.random()-.5)*.03*(1+contest*2)*(Math.abs(off)>1?1.6:1);
+  b.by='me';b.team='us';b.shooter=V.me;b.dunked=false;b.pts=spThree(l.x,l.z)?3:2;SP.rel={t:0,b,perr,lerr,done:false};V.holder=null;SP.poss=null;V.lastTeam='us';SP.shots++;
+  if(player.onGround)player.vy=3.6;
+  toast(Math.abs(off)<=1?(Math.abs(off)<.35?'Perfect release! ✨':'Good release!'):v<SP_SWEET?'Too soft!':'Too hard!');
+  if(contest>.35&&Math.random()<.15*contest+.04){const o=f.o;bb3Jump(o,5.5);b.blockAt=.12;setTimeout(()=>{if(SP.mode==='v3')spSay(`🖐️ Blocked by ${o.name}!`);},150);}
+  bb3Hud();}
+const bb3Jump=(A,v)=>{if(A&&!A.me&&A.p.y<=.01)A.vy=v;};
+
+/* ---------- computer players ---------- */
+const BB3_SPOTS=[[0,SPC.HZ+5.3],[-3.4,SPC.HZ+3.4],[3.4,SPC.HZ+3.4],[-4.4,SPC.HZ+.7],[4.4,SPC.HZ+.7],[-1.7,SPC.HZ+1.3],[1.7,SPC.HZ+1.3],[0,SPC.HZ+2.6]];
+function bb3PickSpot(A){const mates=bb3Mates(A);const ok=BB3_SPOTS.filter(([x,z])=>mates.every(o=>Math.hypot(o.p.x-x,o.p.z-z)>2.2&&(!o.spot||Math.hypot(o.spot[0]-x,o.spot[1]-z)>2)));
+  A.spot=rnd(ok.length?ok:BB3_SPOTS);A.spotT=2.4+Math.random()*2.6;}
+function bb3StartShot(A,drive){A.shootT=0;A.drive=drive;A.face=Math.atan2(-A.p.x,SPC.HZ-A.p.z);bb3Jump(A,drive?6.8:4.2);}
+function bb3Shoot(A){const V=BB3,C=SPC,b=SP.ball;const dist=bb3Hoop(A),f=bb3Near(A,bb3Foes(A)),contest=Math.max(0,1-f.d/1.4),three=spThree(A.p.x,A.p.z);
+  let chance=((dist<1.4?.62:three?.32:.47)*(.8+.06*A.r.thr)*(A.team==='them'?.85:1))-contest*.3;// the Bears are good, but beatable
+  b.by=A.team==='us'?'mate':'cpu';b.team=A.team;b.shooter=A;b.pts=three?3:2;V.holder=null;SP.poss=null;V.lastTeam=A.team;
+  const meBlock=A.team==='them'&&f.o&&f.o.me&&!player.onGround&&f.d<1.25;
+  if(dist<1.4&&Math.random()<.45){b.dunked=true;b.st='fly';b.p.set(0,C.RIM+.35,C.HZ+.02);b.v.set(0,-6,0);b.spin=0;b.age=0;b.made=false;b.blocked=false;b.rim=0;b.bounces=0;Z.court.hoop.shake=1;tone(90,.25,'square',.14);
+    if(meBlock&&Math.random()<.5){b.v.set(3,2,4);b.blocked=true;spSay('🖐️ You blocked the dunk!');did('sport','block');}}
+  else{const ok=Math.random()<chance;const perr=.009+(ok?(Math.random()-.5)*.008:(Math.random()<.5?-1:1)*(.045+Math.random()*.04));
+    spLaunch(b,A.drive?new THREE.Vector3(A.p.x,A.p.y+2.15,A.p.z):b.p.clone(),perr,(Math.random()-.5)*(ok?.01:.05));b.dunked=false;if(!A.drive)A.follow=.65;
+    if(meBlock&&Math.random()<.65){b.blockAt=.1;setTimeout(()=>{if(SP.mode==='v3'){spSay('🖐️ Blocked!');tone(1200,.1,'triangle',.1);}},120);did('sport','block');}
+    else if(f.o&&!f.o.me&&f.d<.9&&Math.random()<.15){bb3Jump(f.o,5.5);b.blockAt=.1;setTimeout(()=>{if(SP.mode==='v3')spSay(`🖐️ ${f.o.name} blocks it!`);},120);}}
+  bb3Hud();}
+const bb3Loose=b=>!!b&&!BB3.holder&&!BB3.pass&&b.st==='fly'&&!b.made&&(b.bounces>0||b.rim>0||b.blocked||b.age>1.2);
+function bb3Ai(A,dt,t,chaser){const V=BB3,C=SPC,b=SP.ball,S=3.4*rosterSpeed(A.r);let tx=A.p.x,tz=A.p.z,spd=0,pose=null;
+  A.stealCD-=dt;if(A.spot)A.spotT-=dt;
+  if(A.shootT>=0){A.shootT+=dt;pose=A.drive?'up':(A.shootT<.2?'shot-set':'shot-rise');A.face=Math.atan2(-A.p.x,C.HZ-A.p.z);
+    if(A.drive){const dl=bb3Hoop(A);if(dl>.7){tx=A.p.x*.5;tz=C.HZ+(A.p.z-C.HZ)*.5+.3;spd=2;}}
+    if(A.shootT>=.34){A.shootT=-1;bb3Shoot(A);if(!A.drive)pose='shot-follow';}}
+  else if(V.holder===A){A.hold+=dt;A.think-=dt;const d=bb3Hoop(A),f=bb3Near(A,bb3Foes(A));
+    if(A.think<=0){A.think=.5+Math.random()*.4;const opt=bb3PassTarget(A),open=f.d>1.5;
+      if(d<1.6)bb3StartShot(A,true);
+      else if(A.hold>4.4){if(opt&&opt.open>1.2&&(d>6.2||Math.random()<.5))bb3Pass(A,opt.o);else bb3StartShot(A,false);}
+      else if(open&&d<6.3&&A.hold>.6&&Math.random()<.42)bb3StartShot(A,false);
+      else if(opt&&opt.open>1.4&&A.hold>.5&&Math.random()<(opt.o.me?.55:.35))bb3Pass(A,opt.o);
+      else{const ang=Math.atan2(A.p.x,A.p.z-C.HZ)+(Math.random()-.5)*1.3,nd=Math.max(.5,d-1.6-Math.random()*1.6);A.plan={x:Math.sin(ang)*nd,z:C.HZ+Math.abs(Math.cos(ang))*nd+.3};}}
+    if(V.holder===A&&A.shootT<0){if(!A.plan)A.plan={x:A.p.x,z:A.p.z};tx=A.plan.x;tz=A.plan.z;spd=S*.85;pose='dribble';
+      const dx=tx-A.p.x,dz=tz-A.p.z;A.face=Math.hypot(dx,dz)>.2?Math.atan2(dx,dz):Math.atan2(-A.p.x,C.HZ-A.p.z);}}
+  else if(V.pass&&V.pass.to===A){const P=V.pass;A.face=Math.atan2(P.from.p.x-A.p.x,P.from.p.z-A.p.z);pose='reach';}
+  else if(bb3Loose(b)&&chaser){tx=b.p.x;tz=b.p.z;spd=S*1.05;A.face=Math.atan2(tx-A.p.x,tz-A.p.z);pose='reach';}
+  else if(!V.holder&&!V.pass&&b&&b.st==='fly'&&!b.made&&V.next<=0){// a shot in the air: box out round the rim for the rebound
+    const i=V.all.indexOf(A),ang=(i-2.5)*.5;tx=Math.sin(ang)*2.1;tz=C.HZ+.4+Math.cos(ang)*1.9;spd=S*.8;A.face=Math.atan2(b.p.x-A.p.x,b.p.z-A.p.z);}
+  else if(V.holder&&V.holder.team===A.team){// spread out and cut: find an open spot on the floor
+    if(!A.spot||A.spotT<=0)bb3PickSpot(A);tx=A.spot[0];tz=A.spot[1];spd=S*.75;const h=V.holder;A.face=Math.atan2(h.p.x-A.p.x,h.p.z-A.p.z);}
+  else if(V.holder){// guard your player: between them and the hoop, closer when they have the ball
+    const m=A.mark,on=V.holder===m,hx=0-m.p.x,hz=C.HZ-m.p.z,hl=Math.hypot(hx,hz)||1,gap=on?1:1.6;
+    tx=m.p.x+hx/hl*Math.min(gap,hl*.5);tz=m.p.z+hz/hl*Math.min(gap,hl*.5);spd=S;A.face=Math.atan2(m.p.x-A.p.x,m.p.z-A.p.z);
+    if(on){pose='guard';const d=Math.hypot(m.p.x-A.p.x,m.p.z-A.p.z),busy=m.me&&(SP.hold||SP.rel||SP.dunk);
+      if(d<.95&&A.stealCD<=0&&m.shootT<0&&!busy){A.stealCD=1.4+Math.random()*1.2;if(Math.random()<(m.me?.12:.15)){bb3Hold(A);
+        spSay(m.me?`🖐️ ${A.name} stole it!`:A.team==='us'?`🖐️ ${A.name} steals it!`:`🖐️ ${A.name} steals from ${m.name}!`);tone(300,.1,'square',.08);}}}}
+  else if(b&&b.st==='fly'){A.face=Math.atan2(b.p.x-A.p.x,b.p.z-A.p.z);}
+  // move
+  const dx=tx-A.p.x,dz=tz-A.p.z,dl=Math.hypot(dx,dz);let moved=0;if(dl>.05&&spd>0){const s=Math.min(dl,spd*dt);A.p.x+=dx/dl*s;A.p.z+=dz/dl*s;moved=s/Math.max(dt,1e-4);}
+  A.moved=moved;A.pose=pose;
+  // grab a loose ball
+  if(bb3Loose(b)&&b.age>.35&&b.p.y<2.3&&Math.hypot(b.p.x-A.p.x,b.p.z-A.p.z)<.55){bb3Hold(A);toast(A.team==='us'?`🙌 ${A.name} got the rebound`:`🐻 ${A.name} got the rebound`);}}
+// after everyone moved: keep them apart and on the court, then pose them
+function bb3Bodies(dt,t){const V=BB3,C=SPC,b=SP.ball,L=V.all;
+  for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],c=L[j];const ox=c.p.x-a.p.x,oz=c.p.z-a.p.z,od=Math.hypot(ox,oz);
+    if(od<.62&&od>1e-4){const push=(.62-od),nx=ox/od,nz=oz/od;if(a.me){c.p.x+=nx*push;c.p.z+=nz*push;}else if(c.me){a.p.x-=nx*push;a.p.z-=nz*push;}
+      else{a.p.x-=nx*push/2;a.p.z-=nz*push/2;c.p.x+=nx*push/2;c.p.z+=nz*push/2;}}}
+  for(const A of L){if(A.me)continue;A.p.x=Math.max(-C.X,Math.min(C.X,A.p.x));A.p.z=Math.max(C.Z0+.3,Math.min(C.Z1,A.p.z));
+    A.vy-=18*dt;A.p.y+=A.vy*dt;if(A.p.y<0){A.p.y=0;A.vy=0;}
+    let pose=A.pose;if(A.follow>0){A.follow-=dt;if(!(pose&&pose.startsWith('shot')))pose='shot-follow';}
+    A.a.g.position.copy(A.p);A.a.g.rotation.y=A.face;A.a.update(dt,A.moved||0,A.p.y>.02);
+    if(pose&&pose.startsWith('shot-')){const n=pose.slice(5);spShotPose(A.a,n,dt,n==='set'?16:n==='rise'?28:14);}else{spShotOff(A.a,dt);if(pose)spArms(A.a,pose,t);}
+    // the ball in a computer player's hands: dribbling beside them, up for a jump shot, or over the head for a layup
+    if(V.holder===A&&b&&b.st==='hold'){const f=A.face;if(A.shootT>=0&&!A.drive)spBallInHands(A.a,b,false);else if(A.shootT>=0)b.p.set(A.p.x+Math.sin(f)*.15,A.p.y+2.15,A.p.z+Math.cos(f)*.15);
+      else{const rx=-Math.cos(f),rz=Math.sin(f);b.p.set(A.p.x+rx*.32+Math.sin(f)*.2,SP_BR+Math.abs(Math.sin(t*9+A.p.x))*.62,A.p.z+rz*.32+Math.cos(f)*.2);b.m.rotation.x+=dt*6;}b.m.position.copy(b.p);}}}
+
+/* ---------- a basket ---------- */
+function bb3Made(b){const V=BB3,A=b.shooter,us=b.team==='us';if(us)SP.score+=b.pts;else SP.opp+=b.pts;
+  const LP=V.lastPass,assist=LP&&LP.to===A&&LP.from!==A&&LP.from.team===b.team&&V.clock-LP.t<7;
+  const nm=A?bb3Name(A):'';
+  if(A&&A.me)spSay(b.dunked?'💥 SLAM DUNK!':b.pts===3?'🔥 Three pointer!':'🏀 Bucket!');
+  else if(us)spSay(`${b.dunked?'💥':'🏀'} ${nm} ${b.dunked?'dunks it':b.pts===3?'hits a three':'scores'}!${assist&&LP.from.me?' 🙌 Assist!':''}`);
+  else spSay(`🐻 ${nm} ${b.dunked?'dunks':b.pts===3?'hits a three':'scores'} for the Bears`);
+  if(us&&!(A&&A.me))spCheer();
+  if(us&&assist&&LP.from.me)did('sport','assist');
+  V.holder=null;V.pass=null;SP.poss=null;V.next=1.5;V.nextFor=us?'them':'us';bb3Hud();}
+
+/* ---------- the game tick ---------- */
+function bb3Step(dt,t){const V=BB3,C=SPC,z=SP.z,p=player.pos,me=V.me;if(!V.on)return;
+  if(curZone!==z){spEnd(true,true);return;}
+  V.clock+=dt;if(V.callCD>0)V.callCD-=dt;if(me.stealCD>0)me.stealCD-=dt;
+  me.p.copy(spLocal(z,p));
+  // the shot meter while you hold SHOOT
+  if(SP.hold){SP.hold.t+=dt;const u=(SP.hold.t/1.05)%2,v=u<1?u:2-u,{w}=bb3Window();$('#spMeter b').style.bottom=(v*100)+'%';
+    const gz=$('#spMeter i');gz.style.bottom=((SP_SWEET-w)*100)+'%';gz.style.height=(w*200)+'%';player.face=spFace(z,me.p.x,me.p.z,0,C.HZ);}
+  if(SP.dunk){spDunkStep(dt);}
+  const b=SP.ball;
+  // you: the same jump shot, dunk and dribble as 1-on-1
+  const mine=b&&b.st==='hold'&&V.holder===me&&!SP.dunk,R=SP.rel;
+  av.g.position.copy(p);av.g.rotation.y=player.face;
+  if(SP.dunk){spShotOff(av,dt);spArms(av,'up',t);}
+  else if(SP.hold)spShotPose(av,'set',dt,14);
+  else if(R){R.t+=dt;spShotPose(av,R.t<SP_REL?'rise':'follow',dt,R.t<SP_REL?28:R.t<SP_REL+.12?30:12);}
+  else{spShotOff(av,dt);if(mine)spArms(av,'dribble',t);else if(V.holder&&V.holder.team==='them')spArms(av,'guard',t);else if(V.pass&&V.pass.to===me)spArms(av,'reach',t);}
+  if(mine){if(SP.hold)spBallInHands(av,b,false);
+    else{const f=player.face-z.rot,rx=-Math.cos(f),rz=Math.sin(f);b.p.set(me.p.x+rx*.32+Math.sin(f)*.22,p.y+SP_BR+Math.abs(Math.sin(t*9))*.62,me.p.z+rz*.32+Math.cos(f)*.22);b.m.position.copy(b.p);}}
+  if(R&&!R.done){spBallInHands(av,R.b,false);if(R.t>=SP_REL){R.done=true;spLaunch(R.b,R.b.p.clone(),R.perr,R.lerr);}}
+  if(R&&R.t>SP_REL+.75)SP.rel=null;
+  // the ball
+  if(V.pass)bb3PassStep(dt);
+  for(const bb of SP.balls.slice())if(bb.st==='fly')spStepBall(bb,dt);
+  if(!SP.mode)return;
+  // the computer players: one from each team goes after a loose ball (your teammates leave it to you if you're closer)
+  const loose=bb3Loose(b);let ch={us:null,them:null};
+  if(loose){for(const tm of ['us','them']){let best=null,bd=1e9;for(const A of V[tm]){const d=Math.hypot(A.p.x-b.p.x,A.p.z-b.p.z);if(d<bd){bd=d;best=A;}}ch[tm]=best&&!best.me?best:null;}}
+  for(const A of V.all)if(!A.me)bb3Ai(A,dt,t,ch[A.team]===A);
+  bb3Bodies(dt,t);
+  // you grab a loose ball when you're right there
+  if(bb3Loose(b)&&b.age>.35&&!SP.dunk&&Math.hypot(b.p.x-me.p.x,b.p.z-me.p.z)<.6&&b.p.y<p.y+2.4){bb3Hold(me);toast(V.lastTeam==='us'?'Got it! 🙌':'Rebound! 🙌');}
+  // a ball nobody gets: the other team checks it
+  if(bb3Loose(b)){V.looseT+=dt;if(V.looseT>6)bb3Check(V.lastTeam==='us'?'them':'us');}
+  // after a basket
+  if(V.next>0){V.next-=dt;if(V.next<=0){if(SP.score>=BB3_WIN||SP.opp>=BB3_WIN){spEnd(true);return;}bb3Check(V.nextFor);}}
+  // the camera turns toward the hoop while you have the ball (unless you're dragging it)
+  if(look.id===null&&V.holder===me){const want=spFace(z,me.p.x,me.p.z,0,C.HZ)+Math.PI;cam.yaw=angDamp(cam.yaw,want,Math.min(1,dt*1.2));}
+  // buttons
+  const h=V.holder;
+  if(h&&h.team==='them')spBtn('🖐️<br>STEAL','purple'+(Math.hypot(h.p.x-me.p.x,h.p.z-me.p.z)<1.35&&me.stealCD<=0?'':' dim'));
+  else if(h&&h.team==='us'&&!h.me)spBtn('🙋<br>CALL<br>FOR IT','green'+(h.shootT>=0?' dim':''));
+  else if(bb3CanDunk())spBtn('💥<br>DUNK!','');else if(h===me)spBtn('🏀<br>SHOOT','');else spBtn('🏀<br>…','dim');
+  const canPass=h===me&&!SP.hold&&!SP.rel&&!SP.dunk;document.body.classList.toggle('bb3-me',canPass);
+  V.hudT+=dt;if(V.hudT>.25){V.hudT=0;bb3Hud();if(canPass){const tg=bb3PassTarget(me),pb=$('#bb3Pass'),tx=tg?`🤾<br>PASS<br><small>${tg.o.name}</small>`:'🤾<br>PASS';if(pb.dataset.t!==tx){pb.dataset.t=tx;pb.innerHTML=tx;}}}}
+
+/* ---------- the end ---------- */
+function bb3End(show,quit){const V=BB3;V.on=false;V.holder=null;V.pass=null;SP.hold=null;SP.rel=null;SP.dunk=null;SP.poss=null;
+  document.body.classList.remove('bb3-me');for(const a of BB3_AV.values())a.g.visible=false;
+  for(const a of [av,...V.all.map(A=>A.a)])if(a){a.shot=null;a.handsBack=false;if(a.arms)for(const A of a.arms)A.hand.rotation.set(0,0,0);}
+  for(const b of SP.balls.slice())spDropBall(b);Z.court.board.draw('0','0');
+  if(!show)return;let h,coins=0;const sc=`${SP.score} - ${SP.opp}`;
+  if(quit)h=`<h2>👋 You left the game</h2><div class="spBig">${sc}</div><p>Finish a whole game to earn coins!</p>`;
+  else{const win=SP.score>SP.opp;coins=win?40:15;if(win){SAVE.sports.v3w=(SAVE.sports.v3w||0)+1;persist();did('sport','v3win');}
+    h=`<h2>${win?'🏆 The Eagles win!':'😅 The Bears win this time'}</h2><div class="spBig">${sc}</div><p>${win?`Great teamwork with ${V.us[1].name} and ${V.us[2].name}!`:'Pass to an open teammate and try again!'}</p>`;}
+  if(coins>0){earn(coins,'sports');h+=`<p>🪙 +${coins} coins</p>`;}
+  $('#spCard').innerHTML=h+`<button class="btn" id="spAgain">🔁 Play again</button> <button class="btn ghost" id="spDone">Done</button>`+(spCanUnsuit()?`<br><button class="btn ghost" id="spUnsuit">👗 Back to my outfit</button>`:'');
+  if(spCanUnsuit())$('#spUnsuit').onclick=()=>{spUnsuit();spCloseMenu();};
+  $('#spAgain').onclick=()=>{spCloseMenu();spOpenMenu('court');};$('#spDone').onclick=spCloseMenu;
+  SP.menu=true;$('#spMenu').classList.add('show');if(coins>=40)sfx('tada');}
+
+SP.ext.v3={step:bb3Step,press:bb3Press,release:bb3Release,end:bb3End,made:bb3Made,board:bb3Board,lock:()=>!!SP.hold||!!SP.dunk};
+window.__bb3={V:BB3,pick:bb3Pick,start:bb3Start,check:bb3Check,pass:bb3Pass,passMe:bb3PassMe,press:bb3Press,release:bb3Release,canDunk:bb3CanDunk,WIN:BB3_WIN};
 // ---- src/24f-sandcastle.js ----
 /* ================= 🏰 SANDCASTLE (Beach Day) =================
    Step on the glowing bucket pad at the beach and build a sandcastle, one hands-on step at a time:
@@ -9802,11 +10422,11 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{openS
    - 🐉 Nova the starlight dragon can't be bought: she comes by herself once you've earned 50 ⭐ (prize = how many).
    - Once you have one, tap the ride button in the moves wheel and it pops out right where you are (17d-bicycle.js).
      With more than one ride the button says 🏇 Rides and opens a list to pick from.
-   - They live at the 🐴 Happy Barn when you're not riding, so you can feed, brush and rename them there.
+   - They live at the 🐴 Happy Barn when you're not riding (the dinosaurs at 🦖 Dino Valley), so you can feed, brush and rename them there.
    - Friends online see you riding them through the 'ride' entry in 26c-friends-see.js (any barn animal you ride). */
 const MOUNTS=FARM.filter(f=>f.mount||f.prize||f.earn);// earn = 🏆 rides you earn by winning or playing days in a row (24i-earned-rides.js)
 STABS.splice(1,0,['rides','🦖','Rides']);
-SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn, and the dinosaurs and unicorn there can be ridden too.';
+SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn (the dinosaurs at 🦖 Dino Valley), and the big dinosaurs and the unicorn there can be ridden too.';
 for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize||(f.earn&&f.earn.goal),earn:f.earn,
   d:f.prize||f.earn?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
 
@@ -10996,6 +11616,38 @@ addEventListener('load',()=>onTick.push(()=>{if(!started||!PE.on)return;const cv
 function peState(){return {on:PE.on,home:Object.keys(PE.home).length,n:PE_ANI.length,sc:{...PE.sc},rope:(PE_ANI.find(c=>c.mode==='rope')||{}).nm||null,
   modes:Object.fromEntries(PE_ANI.map(c=>[c.nm,c.mode])),escapes:IS.escapes||0,homeAll:IS.home||0};}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{PE,PE_ANI,peState,peBegin,peCatch,peLetGo,peFromNet,peMe,peEnd});});
+// ---- src/24n-dino-valley.js ----
+/* ===== 🦖 Dino Valley: the dinosaurs that live there (the valley is 12i-place-dino-valley.js, the models 24c9h-dinos.js) =====
+   - DVA are the valley's own dinosaurs: a T. rex in its paddock, three raptors in their pen, and a triceratops, a brachiosaurus and a
+     stegosaurus (and their young) out in the meadow. They're not yours: like the zoo's animals they wander about, never follow you,
+     and you walk up and tap 🦖 Meet to see their facts card (openZoo in 24d-barn.js), feed them and pet them (through the fence too).
+   - Kid-safe: nobody chases, bites or attacks. The T. rex just lifts its head and roars now and then (24c9h-dinos.js).
+   - The dinosaurs you adopt or buy (dino:1 in FARM) live here too, in the meadow, and the 🦖 footprint pad by the Dino Keeper's hut
+     opens their care sheet (openBarn('dino') in 24d-barn.js). */
+const DZ=Z.dino,DVA=[];
+// [kind, size (1 = grown up), where it lives: m = meadow, t = T. rex paddock, r = raptor pen]
+for(const [k,sc,at] of [['trexR',.82,'t'],['raptorR',1,'r'],['raptorR',.92,'r'],['raptorR',.85,'r'],['trikeR',1,'m'],['trikeR',.5,'m'],['longneckR',1,'m'],['longneckR',.5,'m'],['stegoR',1,'m']]){
+  const a=new FarmAnimal(k);a.Z=DZ;a.mates=DVA;a.dust.forEach(d=>d.visible=false);
+  if(at==='t'){a.ok=dvTOk;a.spot=dvTSpot;}else if(at==='r'){a.ok=dvROk;a.spot=dvRSpot;}else{a.ok=dvOk;a.spot=dvSpot;}
+  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;if(sc<.7)a.baby=true;}
+  [a.lx,a.lz]=a.spot(a.rad);DVA.push(a);scene.add(a.g);placeFarm(a);}
+{document.body.insertAdjacentHTML('beforeend','<button class="hud" id="dinoMeet"></button>');
+ const st=document.createElement('style');st.textContent=`
+#dinoMeet{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 250px);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5;background:linear-gradient(90deg,#8bbf5a,#4f7f2e);box-shadow:0 6px 18px rgba(79,127,46,.4)}
+#dinoMeet:active{transform:translateX(-50%) scale(.94)}
+body.dressing #dinoMeet,body.talking #dinoMeet,body.shopping #dinoMeet{display:none!important}
+@media (max-height:520px){#dinoMeet{bottom:calc(env(safe-area-inset-bottom) + 130px)}}`;
+ document.head.appendChild(st);}
+let dinoNear=null;
+function dinoStep(dt){const p=player.pos,near=Math.hypot(p.x-DZ.x,p.z-DZ.z)<55;
+  for(const a of DVA){if(!near&&!(zooOpen&&a===zooSel)){a.g.visible=false;continue;}a.g.visible=true;stepFarm(a,dt);}
+  // the 🦖 Meet button: walk up to one (the paddock ones from outside their fence)
+  let best=null,bd=1e9;if(near&&!closetOpen&&started&&!barnRide&&!FLY.on)for(const a of DVA){const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<(a.ok===dvOk?1.3:5)&&d<bd){bd=d;best=a;}}
+  if(best!==dinoNear){dinoNear=best;const b=$('#dinoMeet');if(best){aniIco(b,best.F.e,'Meet',`Meet the ${best.baby?'young ':''}${best.F.n.replace(/ \(.*\)/,'')}`);b.style.display='block';}else b.style.display='none';}
+  if(zooOpen&&zooSel&&DVA.includes(zooSel)&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>10)closeZoo();}
+$('#dinoMeet').onclick=()=>{if(dinoNear){const a=dinoNear;dinoNear=null;$('#dinoMeet').style.display='none';openZoo(a);}};
+anims.push((t,dt)=>{if(started)dinoStep(dt);});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{DVA,DV,DZ,dinoNear:()=>dinoNear});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -13815,11 +14467,12 @@ function socOpenMenu(){if(SC.mode||SC.menu||SP.mode)return;SC.menu=true;const S=
   c.innerHTML=`<h2>⚽ Soccer Field</h2><p>Pick a game!</p>
    <button class="spPick" data-m="pk"><b>🥅</b><span><strong>Penalty shootout</strong><small>Shoot past Leo, then dive to save Kai's kicks${S.pkw?` · Wins: ${S.pkw}`:''}</small></span></button>
    <button class="spPick" data-m="v1"><b>🆚</b><span><strong>1-on-1 vs Kai</strong><small>First to 3 goals. Use tricks to get past him${S.v1w?` · Wins: ${S.v1w}`:''}</small></span></button>
+   <button class="spPick" data-m="team"><b>👟</b><span><strong>3-on-3 match</strong><small>Pick your team, with goalies. First to 5 goals${S.tw?` · Wins: ${S.tw}`:''}</small></span></button>
    <button class="spPick" data-m="tgt"><b>🎯</b><span><strong>Target practice</strong><small>10 shots at the targets in the goal${S.tgt!=null?` · Best: ${S.tgt}`:''}</small></span></button>
    <button class="spPick" data-m="jug"><b>🤹</b><span><strong>Keepy-uppies</strong><small>Keep the ball off the grass${S.jug!=null?` · Best: ${S.jug} in a row`:''}</small></span></button>
    <button class="btn ghost" id="scNo">Not now</button>`;
   socSuitBtn(c);
-  c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{socCloseMenu();socStart(b.dataset.m);});
+  c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{socCloseMenu();if(b.dataset.m==='team')socTeamPick();else socStart(b.dataset.m);});
   $('#scNo').onclick=socCloseMenu;$('#spMenu').classList.add('show');sfx('pop');}
 function socCloseMenu(){SC.menu=false;$('#spMenu').classList.remove('show');}
 $('#spMenu').addEventListener('click',e=>{if(e.target.id==='spMenu'&&SC.menu&&!SC.mode)socCloseMenu();});
@@ -13838,11 +14491,13 @@ function socStart(m){socCloseMenu();SC.mode=m;SC.t=0;SC.turn='shoot';SC.kaiShot=
   else if(m==='tgt'){socBody(true,'swipe');socTargets(true);socTgtSetup();}
   else if(m==='jug'){socBody(true,'jug');socJugStart();}
   else if(m==='v1'){socBody(true,'free');if(!SC.camSave)SC.camSave={d:cam.dist,p:cam.pitch};cam.dist=Math.max(cam.dist,10.5);cam.pitch=Math.max(cam.pitch,.5);kai.a.g.visible=true;socKickoff('me');toast('You attack the far goal ➡️  Dribble, SHOOT, and use ✨ tricks to beat Kai!');}
+  else if(m==='team'){socBody(true,'free');if(!SC.camSave)SC.camSave={d:cam.dist,p:cam.pitch};cam.dist=Math.max(cam.dist,13);cam.pitch=Math.max(cam.pitch,.55);socTeamBegin();}
   socBoard();}
-function socBoard(){const b=socZ().board;if(SC.mode==='pk'||SC.mode==='v1')b.draw(SC.me,SC.cpu,'YOU · KAI');else if(SC.mode==='tgt')b.draw(SC.me,10-SC.n,'🎯 TARGETS · BALLS');else if(SC.mode==='jug')b.draw(SC.n,SAVE.soccer.jug||0,'🤹 NOW · BEST');else b.draw(0,0,'HOME · AWAY');}
+function socBoard(){const b=socZ().board;if(SC.mode==='pk'||SC.mode==='v1')b.draw(SC.me,SC.cpu,'YOU · KAI');else if(SC.mode==='tgt')b.draw(SC.me,10-SC.n,'🎯 TARGETS · BALLS');else if(SC.mode==='jug')b.draw(SC.n,SAVE.soccer.jug||0,'🤹 NOW · BEST');else if(SC.mode==='team')b.draw(SC.me,SC.cpu,'EAGLES · BEARS');else b.draw(0,0,'HOME · AWAY');}
 function socEnd(show=true,quit=false){const m=SC.mode;if(!m)return;SC.mode=null;socNetsShow(0);if(SC.camSave){cam.dist=SC.camSave.d;cam.pitch=SC.camSave.p;SC.camSave=null;}socBody(false);socHint('');socTrail(null);
   for(const o of [SC.kai,SC.leo])if(o){o.a.g.visible=false;socResetBody(o.a);}socResetBody(av);av.g.rotation.z=0;socHideBall();socTargets(false);
-  if(SC.jug)SC.jug=null;socBoard();if(!show)return;
+  if(SC.jug)SC.jug=null;if(SC.tm)for(const e of SC.tm.pl){e.ring.visible=false;if(!e.me){e.a.g.visible=false;socResetBody(e.a);e.dive=null;}}
+  socBoard();if(!show)return;
   let h='',coins=0,best=false;const S=SAVE.soccer;
   if(quit){h=`<h2>👋 You left the game</h2><p>Finish a whole game to earn coins!</p>`;}
   else if(m==='pk'){const win=SC.me>SC.cpu,tie=SC.me===SC.cpu;coins=win?30:tie?15:10;if(win){S.pkw=(S.pkw||0)+1;persist();did('soccer','pkwin');}
@@ -13850,6 +14505,8 @@ function socEnd(show=true,quit=false){const m=SC.mode;if(!m)return;SC.mode=null;
   else if(m==='tgt'){coins=SC.me*3;best=socBest('tgt',SC.me);h=`<h2>${SC.me>=6?'🎯 Sharpshooter!':SC.me>=3?'⚽ Nice shooting!':'⚽ Good try!'}</h2><div class="spBig">${SC.me} 🎯</div><p>targets hit with 10 balls${best?' · New best! 🎉':''}</p>`;}
   else if(m==='jug'){coins=Math.min(40,SC.n);best=socBest('jug',SC.n);h=`<h2>${SC.n>=20?'🤩 Ball wizard!':SC.n>=8?'🤹 Nice touch!':'⚽ Good try!'}</h2><div class="spBig">${SC.n}</div><p>keepy-uppies in a row${best?' · New best! 🎉':''}</p>`;}
   else if(m==='v1'){const win=SC.me>SC.cpu;coins=win?30:10;if(win){S.v1w=(S.v1w||0)+1;persist();did('soccer','v1win');}h=`<h2>${win?'🏆 You beat Kai!':'😅 Kai wins this time'}</h2><div class="spBig">${SC.me} - ${SC.cpu}</div><p>${win?'What a game!':'Try a trick when Kai gets close!'}</p>`;}
+  else if(m==='team'){const win=SC.me>SC.cpu,tie=SC.me===SC.cpu;coins=win?40:tie?20:10;if(win){S.tw=(S.tw||0)+1;persist();did('soccer','teamwin');}
+    h=`<h2>${win?'🏆 The Eagles win!':tie?'🤝 It\'s a tie!':'😅 The Bears win this time'}</h2><div class="spBig">${SC.me} - ${SC.cpu}</div><p>🦅 You, ${SC.tm.us.filter(e=>!e.me).map(e=>e.r.n).join(', ')} vs 🐻 ${SC.tm.them.map(e=>e.r.n).join(', ')}</p>`;}
   if(quit)coins=0;if(coins>0){earn(coins,'sports');h+=`<p>🪙 +${coins} coins</p>`;}
   $('#spCard').innerHTML=h+`<button class="btn" id="scAgain">🔁 Play again</button> <button class="btn ghost" id="scDone">Done</button>`+(spCanUnsuit()?`<br><button class="btn ghost" id="scUnsuit">👗 Back to my outfit</button>`:'');
   if(spCanUnsuit())$('#scUnsuit').onclick=()=>{spUnsuit();socCloseMenu();};
@@ -14140,20 +14797,20 @@ function socKaiStep(dt,t,me){const S=SOC,kai=socKai(),b=SC.ball;let tx=kai.p.x,t
   kai.a.g.position.copy(kai.p);kai.a.g.rotation.y=kai.face;kai.a.update(dt,moved,false);}
 
 /* ---------- buttons and keys ---------- */
-function socPress(){if(!SC.mode||SC.menu)return;if(SC.mode==='jug'){socJugTap();return;}if(SC.mode==='v1'){if(SC.own==='me')socV1Shoot();else if(SC.own==='cpu')socTackle();}}
+function socPress(){if(!SC.mode||SC.menu)return;if(SC.mode==='jug'){socJugTap();return;}if(SC.mode==='v1'){if(SC.own==='me')socV1Shoot();else if(SC.own==='cpu')socTackle();}if(SC.mode==='team')socTeamPress();}
 {const b=$('#scMain');b.addEventListener('pointerdown',e=>{e.preventDefault();socPress();});b.addEventListener('contextmenu',e=>e.preventDefault());
-  const tb=$('#scTrick');tb.addEventListener('pointerdown',e=>{e.preventDefault();if(SC.mode==='v1')socV1Trick();});
-  addEventListener('keydown',e=>{if(!SC.mode||e.repeat||e.target.tagName==='INPUT')return;if(e.code==='KeyF'||e.code==='Enter'){socPress();e.preventDefault();}if(e.code==='KeyT'&&SC.mode==='v1')socV1Trick();if(e.code==='Escape')socEnd(true,true);});}
+  const tb=$('#scTrick');tb.addEventListener('pointerdown',e=>{e.preventDefault();if(SC.mode==='v1')socV1Trick();else if(SC.mode==='team')socTeamPassBtn();});
+  addEventListener('keydown',e=>{if(!SC.mode||e.repeat||e.target.tagName==='INPUT')return;if(e.code==='KeyF'||e.code==='Enter'){socPress();e.preventDefault();}if(e.code==='KeyT'&&SC.mode==='v1')socV1Trick();if(e.code==='KeyT'&&SC.mode==='team')socTeamPassBtn();if(e.code==='Escape')socEnd(true,true);});}
 
 /* ---------- hooks into the rest of the game ---------- */
 // hold still while you shoot, save or juggle (24e-sports.js asks spLock every frame)
-{const was=spLock;spLock=()=>was()||(!!SC.mode&&SC.mode!=='v1');}
+{const was=spLock;spLock=()=>was()||(!!SC.mode&&SC.mode!=='v1'&&SC.mode!=='team');}
 // your own Extras ⚽ ball is put away while you play (26d-ball-play.js)
 {const was=ballBusy;ballBusy=()=>was()||!!SC.mode;}
 // the camera (25-game-loop.js calls sportsCam after the normal follow camera)
 {const was=sportsCam;sportsCam=dt=>{was(dt);socCam(dt);};}
 function socNetsShow(hideS){for(const n of socZ().nets)for(const m of n.all)m.visible=n.s!==hideS;}
-function socCam(dt){socNetsShow(SC.mode==='pk'&&SC.turn==='save'?1:0);if(!SC.mode||SC.mode==='v1'||!SC.cam.P)return;const z=socZ(),c=SC.cam;let P=c.P,T=c.T;
+function socCam(dt){socNetsShow(SC.mode==='pk'&&SC.turn==='save'?1:0);if(SC.mode==='team'){socTeamCam(dt);return;}if(!SC.mode||SC.mode==='v1'||!SC.cam.P)return;const z=socZ(),c=SC.cam;let P=c.P,T=c.T;
   // follow the ball a little once it's kicked
   if((SC.mode==='pk'||SC.mode==='tgt')&&SC.ball&&SC.phase==='fly'&&SC.turn!=='save'){T=_sB.copy(c.T).lerp(SC.ball.p,.35);}
   const wp=z.g.localToWorld(_sA.copy(P)),wt=z.g.localToWorld(new THREE.Vector3().copy(T));
@@ -14167,14 +14824,245 @@ anims.push((t,dt)=>{const z=socZ();SC.clock=(SC.clock||0)+dt;
   if(z.flags&&Math.abs(player.pos.x-z.x)+Math.abs(player.pos.z-z.z)<90)for(let i=0;i<z.flags.length;i++)z.flags[i].rotation.y=Math.PI/2+Math.sin(t*3+i)*.25;
   if(!SC.mode){socNetStep(dt);return;}
   if(closetOpen){socEnd(false);return;}
-  if(SC.mode==='pk')socPkStep(dt,t);else if(SC.mode==='tgt')socTgtStep(dt,t);else if(SC.mode==='jug')socJugStep(dt,t);else if(SC.mode==='v1')socV1Step(dt,t);
+  if(SC.mode==='pk')socPkStep(dt,t);else if(SC.mode==='tgt')socTgtStep(dt,t);else if(SC.mode==='jug')socJugStep(dt,t);else if(SC.mode==='v1')socV1Step(dt,t);else if(SC.mode==='team')socTeamStep(dt,t);
   if(!SC.mode)return;
   if(!SC.dive){av.g.position.copy(player.pos);av.g.rotation.z=0;}av.g.rotation.y=player.face+(av.spinY||0)+(SC.mode==='v1'?SC.spinA||0:0);
   if(SC.mode!=='pk'||SC.turn!=='save'){if(av.socPose===SOC_POSE.keeper||av.socPose===SOC_POSE.dive)socPose(av,null);}
   if(SC.mode==='v1'&&!av.socT&&av.socPose===SOC_POSE.trick)socPose(av,null);if(av.socT&&av.socPose!==SOC_POSE.trick)socPose(av,'trick');
-  av.tag.visible=SC.mode==='v1';});
+  av.tag.visible=SC.mode==='v1'||SC.mode==='team';});
 window.__soccer={SC,SOC,start:socStart,end:socEnd,menu:socOpenMenu,shoot:(tz,ty,T,curl)=>{SC.shot={tz,ty,T,curl:curl||0,top:ty>SOC.GH-.75&&Math.abs(tz)>SOC.GW-1.1};socKick(av);SC.phase='kick';SC.pt=0;},
   dive:(sx,up)=>socPlayerDive({pts:[[innerWidth/2,innerHeight/2],[innerWidth/2+sx*120,innerHeight/2-(up?120:0)]]}),swiped:socSwiped,press:socPress,trick:socV1Trick,screen:socScreen};
+// ---- src/26h2-soccer-team.js ----
+/* ================= ⚽ 3-on-3 SOCCER MATCH with goalies (on the Soccer Field, 26h-soccer.js) =================
+   You and two teammates (🦅 Eagles, blue) against three Bears (red), and each side has a goalie in goal.
+   Teams come from the 🧢 team picker (24e3-team-picker.js): you pick 3 kids, the Bears pick 4, and each team's best
+   catcher (🙌) goes in goal. The others play out on the field; their ⚡ speed and 🦵 kicking stats count.
+   Everything is in the field's own space (SOC): the Eagles attack the goal at +x, the Bears attack -x.
+   Your buttons: with the ball ⚽ SHOOT and 👟 PASS; when a teammate has it 🙋 PASS ME!; when the Bears have it 🛡️ TACKLE.
+   Bots (socTeamBot) chase loose balls, dribble, pass to whoever is open, shoot from close in, press and tackle the
+   player on the ball, and spread out to get open. Goalies (socTeamKeeper) follow the ball along their line, come out
+   for loose balls in their box, dive at shots (their 🙌 stat helps) and throw it out to a teammate.
+   First to 5 goals, or whoever is ahead when the 3:00 clock runs out (tied: next goal wins).
+   window.__soccer.team gives the test the state; SC.tm.auto lets the test play your part with the same brain as the bots.
+   Challenges: did('soccer','teamgoal'|'assist'|'teamwin'). */
+const SOCT_COL={us:'#2e6bd8',them:'#c8303a',usK:'#2fae5a',themK:'#f0b400'};
+const SOCT_LEN=180,SOCT_WIN=5;
+const socTeamRingGeo=new THREE.RingGeometry(.4,.5,28);
+const socTeamRingMat={us:new THREE.MeshBasicMaterial({color:'#4f8dff',transparent:true,opacity:.85,depthWrite:false}),
+  them:new THREE.MeshBasicMaterial({color:'#ff5560',transparent:true,opacity:.85,depthWrite:false}),
+  me:new THREE.MeshBasicMaterial({color:'#ffd23f',transparent:true,opacity:.95,depthWrite:false})};
+function socTeamRing(kind){const m=M(socTeamRingGeo,socTeamRingMat[kind],0,.035,0,socZ().g,false,false);m.rotation.x=-Math.PI/2;m.visible=false;return m;}
+
+// 🧢 pick teams, then play
+function socTeamPick(){teamPick({sport:'soccer',size:4,title:'Pick your team: 3-on-3 + goalies',
+  done:(us,them)=>{SC.tmTeams={us,them};socStart('team');},cancel:()=>{}});}
+
+function socTeamEnt(a,r,team,key,me){return {a,r,team,key,me,p:new THREE.Vector3(),face:0,sp:0,stun:0,cool:0,touch:0,think:0,plan:0,hold:0,dive:null,slot:0,
+  ring:socTeamRing(me?'me':team),spd:(r?rosterSpeed(r):1)*(team==='them'?.88:1),leg:r?rosterLeg(r):1,hands:r?r.cat:3};}
+function socTeamBegin(){const z=socZ(),S=SOC;let T=SC.tmTeams;
+  if(!T){// no draft yet (the test, or Play again before ever picking): the last team you picked, or the first kids on the list
+    const names=(SAVE.teams&&SAVE.teams.soccer)||[],us=names.map(n=>ROSTER.find(r=>r.n===n)).filter(Boolean).slice(0,3);
+    for(const r of ROSTER){if(us.length>=3)break;if(!us.includes(r))us.push(r);}
+    const them=ROSTER.filter(r=>!us.includes(r)).slice(0,4);T=SC.tmTeams={us,them};}
+  const old=SC.tm;if(old)for(const e of old.pl){if(!e.me){e.a.g.visible=false;socResetBody(e.a);}e.ring.visible=false;}
+  const tm=SC.tm={pl:[],us:[],them:[],own:null,passTo:null,passFrom:null,assist:null,call:false,clock:SOCT_LEN,golden:false,us_:0,them_:0,
+    phase:'play',pt:0,freeze:0,last:'us',auto:old?old.auto:false,goals:{},kick:null};
+  for(const team of ['us','them']){const list=T[team].slice().sort((a,b)=>b.cat-a.cat);// the best hands go in goal
+    list.forEach((r,i)=>{const key=i===0;const a=rosterAvatar(r,key?SOCT_COL[team+'K']:SOCT_COL[team]);z.g.add(a.g);a.g.visible=true;socResetBody(a);
+      const e=socTeamEnt(a,r,team,key,false);e.slot=key?-1:(team==='us'?i:i-1);tm.pl.push(e);tm[team].push(e);});}
+  const me=socTeamEnt(av,null,'us',false,true);me.slot=0;me.spd=1;tm.me=me;tm.pl.push(me);tm.us.push(me);
+  for(const e of tm.pl)e.ring.visible=true;
+  SC.me=0;SC.cpu=0;socTeamKickoff('us');
+  toast('🦅 You\'re the Eagles in blue, attacking the far goal ➡️  Pass, shoot and score!');}
+const socTeamKeeper=team=>SC.tm[team].find(e=>e.key);
+const socTeamSide=team=>team==='us'?1:-1;// the way this team attacks (+x for the Eagles)
+// where each player stands at kickoff, in their own half
+function socTeamHome(e){const S=SOC,s=socTeamSide(e.team);if(e.key)return [-s*(S.FL-.5),0];
+  const spots=[[-1.2,0],[-5,-4.5],[-5,4.5]];const [x,z]=spots[e.slot]||spots[1];return [s*x,z];}
+function socTeamKickoff(team){const S=SOC,tm=SC.tm,b=socNewBall(0,0);tm.phase='play';tm.pt=0;tm.passTo=null;tm.assist=null;tm.call=false;tm.freeze=1;
+  for(const e of tm.pl){const [x,z]=socTeamHome(e);e.p.set(x,0,z);e.face=socFace(x,z,0,0);e.stun=0;e.cool=.6;e.touch=0;e.hold=0;e.dive=null;if(!e.me)socResetBody(e.a);}
+  // the team kicking off has its striker on the ball (that's you for the Eagles)
+  const k=tm[team].find(e=>e.slot===0&&!e.key);k.p.set(-socTeamSide(team)*.6,0,0);k.face=socFace(k.p.x,0,0,0);tm.own=k;tm.last=team;
+  socTeamSyncMe(true);cam.yaw=Math.PI/2+socZ().rot+Math.PI;cam.cy=cam.yaw;socBoard();socTeamHud();}
+// you: your avatar follows the joystick like normal; this keeps the game's copy of you in step (or moves you, on autopilot)
+function socTeamSyncMe(place){const me=SC.tm.me;if(place||SC.tm.auto){socPut(me.p.x,me.p.z,me.face);player.speed=me.sp;}else{const l=socL(player.pos);me.p.set(l.x,0,l.z);me.face=player.face-socZ().rot;me.sp=player.speed;}}
+function socTeamHud(){const tm=SC.tm,o=tm.own,m=Math.floor(Math.max(0,tm.clock)/60),s=Math.floor(Math.max(0,tm.clock)%60);
+  const who=!o?'loose ball!':o.me?'your ball':o.team==='us'?`${o.r.n}'s ball`:`🐻 ${o.r.n}'s ball`;
+  socHud('⚽ 3-on-3',`${SC.me} - ${SC.cpu}`,tm.golden?'⏱ next goal wins':`⏱ ${m}:${String(s).padStart(2,'0')}`,who);}
+const socTeamD=(a,b)=>Math.hypot(a.p.x-b.p.x,a.p.z-b.p.z);
+const socTeamOpp=e=>e.team==='us'?'them':'us';
+function socTeamGive(e){const tm=SC.tm;if(tm.own===e)return;
+  // a pass from you that a teammate takes: if they score before anyone else touches it, that's your assist
+  if(e.team==='us'&&!e.me&&tm.passFrom&&tm.passFrom.me&&tm.passTo===e)tm.assist=e;else if(e!==tm.assist)tm.assist=null;
+  tm.own=e;tm.passTo=null;tm.passFrom=null;tm.call=false;tm.shotBy=null;tm.last=e.team;e.think=.25+Math.random()*.25;if(e.key)e.hold=.9;socTeamHud();}
+// 👟 pass (or a goalie's throw) to a teammate, a little ahead of where they're running
+function socTeamPassTo(from,to,throwIt){const tm=SC.tm,b=SC.ball;const lead=to.me?.25:.45,tx=to.p.x+Math.sin(to.face)*to.sp*lead,tz=to.p.z+Math.cos(to.face)*to.sp*lead;
+  const dx=tx-b.p.x,dz=tz-b.p.z,d=Math.hypot(dx,dz)||1,v=Math.min(17,d*.95+2.4);
+  b.st='free';b.in=false;b.v.set(dx/d*v,throwIt?2.6:.3,dz/d*v);if(throwIt)b.p.y=1.1;tm.own=null;tm.passTo=to;tm.passFrom=from;from.touch=.35;if(to.me)tm.toMe=(tm.toMe||0)+1;
+  if(!from.me)socKick(from.a);else socKick(av);tone(170,.06,'sine',.12);tm.last=from.team;socTeamHud();}
+// the best teammate to pass to: open (no Bears close), and further up the field is better
+function socTeamBestMate(e,faceDir){const tm=SC.tm,s=socTeamSide(e.team);let best=null,bs=-1e9;
+  for(const m of tm[e.team]){if(m===e||m.key)continue;const d=socTeamD(e,m);if(d<2.2||d>24)continue;
+    let open=99;for(const o of tm[socTeamOpp(e.team)])if(!o.key)open=Math.min(open,socTeamD(o,m));
+    let sc=Math.min(open,5)*1.2+(m.p.x-e.p.x)*s*.35-d*.08;
+    if(faceDir!=null){const dir=Math.atan2(m.p.x-e.p.x,m.p.z-e.p.z),df=Math.abs(angDamp(0,dir-faceDir,1));sc+=(1.2-df)*4;}
+    if(m.me)sc+=1.5;// the bots like passing to you
+    if(sc>bs){bs=sc;best=m;}}
+  return best;}
+function socTeamShoot(e){const S=SOC,tm=SC.tm,b=SC.ball,s=socTeamSide(e.team),dist=Math.abs(s*S.FL-b.p.x);
+  const miss=Math.random()<Math.max(.08,.34-.05*(e.r?e.r.kck:3)+dist*.008+(e.team==='them'?.1:0));let tz=miss?(Math.random()<.5?-1:1)*(S.GW+.2+Math.random()*1.2):(Math.random()-.5)*2*(S.GW-.45);
+  const ty=.25+Math.random()*Math.min(1.5,.5+dist*.07);tm.own=null;tm.passTo=null;e.touch=.5;socKick(e.a);
+  socShoot(b,s,tz,ty,Math.max(.45,dist/16)/Math.max(.8,e.leg),0);b.shot.by=e;tm.last=e.team;socTeamHud();}
+
+/* ---------- the step: runs every frame while the match is on ---------- */
+function socTeamStep(dt,t){const S=SOC,tm=SC.tm,b=SC.ball,z=socZ(),me=tm.me;
+  if(curZone!==z){socEnd(true,true);return;}
+  tm.pt+=dt;if(tm.freeze>0)tm.freeze-=dt;socTeamSyncMe(false);
+  for(const e of tm.pl){if(e.stun>0)e.stun-=dt;if(e.cool>0)e.cool-=dt;if(e.touch>0)e.touch-=dt;}
+  // ⏱ the clock runs while the ball is in play
+  if(tm.phase==='play'&&!tm.golden){tm.clock-=dt;if(tm.clock<=0){tm.clock=0;if(SC.me!==SC.cpu){socEnd(true);return;}tm.golden=true;socSay('⏱ Tied! Next goal wins!');}}
+  // ⚽ the ball
+  const o=tm.own;
+  if(o){if(o.key&&o.hold>0){const hx=o.p.x+Math.sin(o.face)*.32,hz=o.p.z+Math.cos(o.face)*.32;b.p.set(hx,.95,hz);b.v.set(0,0,0);b.m.position.copy(b.p);}
+    else socAtFeet(b,o.p.x,o.p.z,o.face,o.sp,t,dt);}
+  else{if(b.st==='shot'){socTeamShotWatch(dt);if(b.st==='shot')socShotStep(b,dt);}else socPhys(b,dt);
+    if(b.st!=='shot'&&tm.phase==='play')socTeamPickup();}
+  // a goal?
+  if(b.in&&tm.phase==='play'){tm.phase='goal';tm.pt=0;const us=b.in>0;const by=b.shot&&b.shot.by||tm.shotBy;
+    if(us){SC.me++;spCheer();sfx('star');did('soccer','goal');
+      if(by&&by.me){socSay(rnd(['⚽ GOAL! You scored!','⚽ GOOOAL!','⚽ What a finish!']));did('soccer','teamgoal');av.play('cheer');}
+      else{socSay(`⚽ GOAL! ${by&&by.r?by.r.n:'The Eagles'} scores!`);if(tm.assist&&by===tm.assist){did('soccer','assist');toast('🤝 Your pass set that up! Assist!');}}}
+    else{SC.cpu++;socSay(`🐻 ${by&&by.r?by.r.n:'The Bears'} scores`);}
+    for(const e of tm.pl)if(!e.me&&!e.key&&e.team===(us?'us':'them'))e.a.play('cheer');
+    tm.own=null;socBoard();socTeamHud();}
+  if(tm.phase==='goal'){if(tm.pt>2.6){if(tm.golden||SC.me>=SOCT_WIN||SC.cpu>=SOCT_WIN){socEnd(true);return;}socTeamKickoff(b.in>0?'them':'us');}}
+  else if(tm.phase==='play'&&!tm.own&&b.st!=='shot')socTeamOut();
+  // 🤖 everyone else (and you, on autopilot)
+  for(const e of tm.pl){if(e.me&&!tm.auto)continue;if(e.key)socTeamKeeper2(e,dt,t);else socTeamBot(e,dt,t);}
+  // nobody walks through anybody
+  for(let i=0;i<tm.pl.length;i++)for(let j=i+1;j<tm.pl.length;j++){const a=tm.pl[i],c=tm.pl[j],dx=c.p.x-a.p.x,dz=c.p.z-a.p.z,d=Math.hypot(dx,dz);
+    if(d<.6&&d>1e-4){const push=(.6-d)/d;if(a.me&&!tm.auto){c.p.x+=dx*push;c.p.z+=dz*push;}else if(c.me&&!tm.auto){a.p.x-=dx*push;a.p.z-=dz*push;}
+      else{a.p.x-=dx*push*.5;a.p.z-=dz*push*.5;c.p.x+=dx*push*.5;c.p.z+=dz*push*.5;}}}
+  if(tm.auto)socTeamSyncMe(true);
+  for(const e of tm.pl){if(!e.me){e.p.x=Math.max(-S.FL-1.2,Math.min(S.FL+1.2,e.p.x));e.p.z=Math.max(-S.FW-1,Math.min(S.FW+1,e.p.z));
+      if(!e.dive){e.a.g.position.copy(e.p);e.a.g.rotation.y=e.face;}e.a.update(dt,e.dive?0:e.sp,false);}
+    e.ring.position.set(e.me?socL(player.pos).x:e.p.x,.035,e.me?socL(player.pos).z:e.p.z);}
+  socTeamButtons();
+  if(Math.floor(tm.clock)!==tm.hudS){tm.hudS=Math.floor(tm.clock);socTeamHud();}
+  // the joystick works as if you're looking up the field (the camera, socTeamCam, always looks toward the goal you attack)
+  cam.yaw=cam.cy=Math.PI/2+z.rot+Math.PI;
+  socNetStep(dt);}
+
+// who gets to a loose ball first (a pass is easier to take for the one it's meant for; goalies can catch it in their box)
+function socTeamPickup(){const S=SOC,tm=SC.tm,b=SC.ball,sp=Math.hypot(b.v.x,b.v.z);let best=null,bd=1e9;
+  for(const e of tm.pl){if(e.stun>0||e.touch>0)continue;const s=socTeamSide(e.team),inBox=e.key&&-s*b.p.x>S.FL-S.BOX-.5&&Math.abs(b.p.z)<S.BOXW;
+    const r=e.key?(inBox?.95:0):e===tm.passTo?.85:.62,maxV=e.key?15:e===tm.passTo?14:9,maxY=e.key?1.9:.6;
+    const d=Math.hypot(b.p.x-e.p.x,b.p.z-e.p.z);if(d<r&&sp<maxV&&b.p.y<maxY&&d<bd){bd=d;best=e;}}
+  if(best)socTeamGive(best);}
+// over the sideline: a throw-in to the other team; over the goal line: a goal kick from the goalie
+function socTeamOut(){const S=SOC,tm=SC.tm,b=SC.ball;const side=Math.abs(b.p.z)>S.FW+SOC_BR,end=Math.abs(b.p.x)>S.FL+SOC_BR&&!b.in;if(!side&&!end)return;
+  const to=tm.last==='us'?'them':'us';
+  if(end){const s=Math.sign(b.p.x),def=s>0?'them':'us',k=socTeamKeeper(def);socNewBall(s*(S.FL-S.GA),0);k.p.set(s*(S.FL-S.GA)-s*.35,0,0);k.face=socFace(k.p.x,0,0,0);socTeamGive(k);k.hold=1.3;
+    toast(def==='us'?'Goal kick: your goalie\'s ball':'Goal kick to the Bears');}
+  else{const x=Math.max(-S.FL+1,Math.min(S.FL-1,b.p.x)),zz=Math.sign(b.p.z)*(S.FW-.45);let taker=null,bd=1e9;
+    for(const e of tm[to]){if(e.key)continue;const d=Math.hypot(e.p.x-x,e.p.z-zz);if(d<bd){bd=d;taker=e;}}
+    socNewBall(x,zz);taker.p.set(x,0,zz-Math.sign(zz)*.45);taker.face=socFace(taker.p.x,taker.p.z,x+socTeamSide(to)*2,0);if(taker.me)socTeamSyncMe(true);socTeamGive(taker);
+    toast(taker.me?'Throw-in: your ball':to==='us'?`Throw-in to ${taker.r.n}`:'Throw-in to the Bears');}
+  tm.freeze=.8;}
+// 🧤 a goalie sees the shot coming and dives (whether it's saved depends on how good the shot is and their 🙌 hands)
+function socTeamShotWatch(dt){const S=SOC,tm=SC.tm,b=SC.ball,sh=b.shot;if(!sh)return;tm.shotBy=sh.by||null;const def=sh.s>0?'them':'us',k=socTeamKeeper(def);
+  if(!sh.kp){const onT=Math.abs(sh.tz)<S.GW-.05&&sh.ty<S.GH-.05;let p=.5+.08*(k.hands-3)-(Math.abs(sh.tz)>S.GW-1?.2:0)-(sh.ty>1.5?.12:0)+(sh.T>.9?.2:0)-(sh.T<.6?.15:0)+(def==='us'?.1:-.05);
+    p=Math.max(.15,Math.min(.85,p));const save=onT&&Math.random()<p;sh.kp={save,onT};
+    if(onT||Math.abs(sh.tz)<S.GW+.8){const rx=-Math.cos(k.face),rz=Math.sin(k.face),dz=sh.tz-k.p.z,side=Math.abs(dz)<.6?0:(dz*rz>0?1:-1);
+      const reach=save?Math.min(2.3,Math.max(.3,Math.abs(dz)-.3)):Math.min(2.2,Math.abs(dz)*.55+.2);
+      k.dive={t:-Math.max(0,sh.T*.35-.1),dur:side?.45:.3,side,reach,high:sh.ty>1.25,base:k.p.clone(),rx,rz};}}
+  const u=sh.t/sh.T;
+  if(sh.kp.save&&u>=.93&&b.st==='shot'){// saved!
+    b.st='free';b.shot=null;const slow=sh.T>.8;tm.shotBy=null;
+    if(slow){b.v.set(0,0,0);socTeamGive(k);k.hold=1.4;}else{b.v.set(-sh.s*4,2.2,(Math.random()<.5?-1:1)*3.5);k.touch=.5;tm.last=def;}
+    sfx('pop');socSay(def==='us'?`🧤 Great save, ${k.r.n}!`:`🧤 Saved by ${k.r.n}!`);}
+}
+// a goalie: on the line following the ball, out for loose balls in the box, a dive when a shot comes, then a throw or a kick to a teammate
+function socTeamKeeper2(k,dt,t){const S=SOC,tm=SC.tm,b=SC.ball,s=socTeamSide(k.team),gx=-s*S.FL;
+  if(k.dive){const D=k.dive;if(D.t<0){D.t+=dt;}else{socPose(k.a,'dive');const u=socDiveStep(k.a,D.base,D,dt,D.rx,D.rz);if(u>=1&&D.t>D.dur+.7){k.dive=null;socResetBody(k.a);k.a.g.position.copy(k.p);}}
+    if(k.dive)return;}
+  let tx,tz,sp=3;
+  if(tm.own===k){// hold it a moment, then throw it to someone open (or kick it long)
+    sp=0;k.face=socFace(k.p.x,k.p.z,0,0);k.hold-=dt;socPose(k.a,null);
+    if(k.hold<=0&&tm.freeze<=0){const m=socTeamBestMate(k);if(m&&socTeamD(k,m)<17)socTeamPassTo(k,m,true);
+      else{const b2=SC.ball;b2.st='free';b2.v.set(s*13,4.5,(Math.random()-.5)*6);tm.own=null;tm.passTo=null;k.touch=.5;socKick(k.a);tm.last=k.team;}}
+    tx=k.p.x;tz=k.p.z;}
+  else{const inBox=-s*b.p.x>S.FL-S.BOX&&Math.abs(b.p.z)<S.BOXW;let close=99;for(const e of tm[socTeamOpp(k.team)])close=Math.min(close,Math.hypot(e.p.x-b.p.x,e.p.z-b.p.z));
+    if(!tm.own&&b.st!=='shot'&&inBox&&Math.hypot(b.p.x-k.p.x,b.p.z-k.p.z)<close+.5){tx=b.p.x;tz=b.p.z;sp=4.6;}// come and get it
+    else{const out=Math.max(0,Math.min(1.4,(8-Math.abs(b.p.x-gx))*.25));tx=gx+s*(.45+out);tz=Math.max(-S.GW+.6,Math.min(S.GW-.6,b.p.z*.45));sp=3.2;}
+    socPose(k.a,b.st==='shot'||Math.abs(b.p.x-gx)<14?'keeper':null);}
+  socTeamMove(k,tx,tz,sp,dt);if(tm.own!==k&&sp>0&&Math.hypot(tx-k.p.x,tz-k.p.z)<.3)k.face=angDamp(k.face,socFace(k.p.x,k.p.z,b.p.x,b.p.z),Math.min(1,dt*8));}
+function socTeamMove(e,tx,tz,sp,dt){const dx=tx-e.p.x,dz=tz-e.p.z,dl=Math.hypot(dx,dz);let moved=0;
+  if(dl>.08&&sp>0&&e.stun<=0){const s=Math.min(dl,sp*dt);e.p.x+=dx/dl*s;e.p.z+=dz/dl*s;moved=s/dt;e.face=angDamp(e.face,Math.atan2(dx,dz),Math.min(1,dt*9));}
+  e.sp+=(moved-e.sp)*Math.min(1,dt*10);}
+// 🤖 a field player (a bot, or you on autopilot)
+function socTeamBot(e,dt,t){const S=SOC,tm=SC.tm,b=SC.ball,s=socTeamSide(e.team),gx=s*S.FL,run=4.3*e.spd;let tx=e.p.x,tz=e.p.z,sp=run;
+  if(e.stun>0){socTeamMove(e,tx,tz,0,dt);return;}
+  if(e.a&&!e.me&&e.a.socPose===SOC_POSE.tackle&&e.cool<1)socPose(e.a,null);
+  const opp=tm[socTeamOpp(e.team)],mates=tm[e.team],o=tm.own;
+  if(tm.phase!=='play'){const [hx,hz]=socTeamHome(e);socTeamMove(e,hx,hz,run*.6,dt);return;}
+  if(o===e){// ⚽ on the ball: shoot from close in, pass when someone's on you (or a teammate asks), otherwise run at goal
+    const dist=Math.abs(gx-e.p.x);let press=null,pd=99;for(const x of opp){if(x.key)continue;const d=socTeamD(e,x);if(d<pd){pd=d;press=x;}}
+    e.think-=dt;sp=run*.85;
+    if(!e.plan||e.planT<=0){e.plan=(Math.random()-.5)*S.FW*1.1;e.planT=1.2+Math.random()*1.2;}e.planT-=dt;
+    tx=gx-s*2.5;tz=e.plan*Math.min(1,dist/14);
+    if(press&&pd<2.4&&(press.p.x-e.p.x)*s>0)tz=e.p.z+(press.p.z>e.p.z?-2.5:2.5);// go round them
+    if(e.think<=0&&tm.freeze<=0){e.think=.3+Math.random()*.3;
+      const call=tm.call&&e.team==='us'&&!e.me;// you asked for it: they pass to you unless they're right in front of goal
+      if(dist<10.5&&Math.abs(e.p.z)<S.FW*.75&&(dist<6||!call&&(dist<7||Math.random()<.6))){socTeamShoot(e);return;}
+      if(call||(pd<1.9&&Math.random()<.6)||Math.random()<.12){const m=call?tm.me:socTeamBestMate(e);if(m){socTeamPassTo(e,m,false);return;}}}}
+  else if(o&&o.team===e.team){// a teammate has it: get open further up the field, spread out
+    const side=e.slot===1?-1:e.slot===2?1:(e.p.z>0?1:-1);tx=Math.max(-S.FL+3,Math.min(S.FL-3,o.p.x+s*5));tz=side*3.8+o.p.z*.2;sp=run*.85;
+    if(e.me&&tm.auto&&Math.random()<dt*.4)tm.call=true;}
+  else if(o){// the other team has it: the closest one presses the ball, the others cut off a pass
+    let near=null,nd=99;for(const m of mates){if(m.key)continue;const d=socTeamD(m,o);if(d<nd){nd=d;near=m;}}
+    if(near===e){tx=o.p.x-s*.7;tz=o.p.z;sp=run;
+      if(socTeamD(e,o)<1.05&&e.cool<=0&&tm.freeze<=0){e.cool=1.4;if(!e.me)socPose(e.a,'tackle');
+        if(Math.random()<.32+.05*((e.r?e.r.spd:3)-3)-(e.team==='them'?.1:0)){o.stun=.6;if(Math.random()<.55)socTeamGive(e);else{tm.own=null;b.st='free';b.v.set((e.p.x-o.p.x)*3+(Math.random()-.5),0,(e.p.z-o.p.z)*3+(Math.random()-.5));e.touch=.15;tm.last=e.team;}
+          if(o.me)toast(`${e.r.n} took the ball! Tap 🛡️ TACKLE to win it back`);}}}
+    else{// stand between a Bear and our goal
+      let mark=null,md=99;for(const x of opp){if(x.key||x===o)continue;const d=socTeamD(e,x);if(d<md){md=d;mark=x;}}
+      if(mark){tx=mark.p.x-s*1.6;tz=mark.p.z*.85+o.p.z*.15;}else{tx=o.p.x-s*4;tz=o.p.z*.5;}sp=run*.9;}}
+  else{// loose ball: the closest on each team goes for it, the others take a spot
+    let near=null,nd=99;for(const m of mates){if(m.key)continue;const d=Math.hypot(m.p.x-b.p.x,m.p.z-b.p.z);if(d<nd){nd=d;near=m;}}
+    if(near===e||tm.passTo===e){tx=b.p.x+b.v.x*.25;tz=b.p.z+b.v.z*.25;sp=run;}
+    else{const side=e.slot===1?-1:e.slot===2?1:(e.p.z>0?1:-1);tx=Math.max(-S.FL+3,Math.min(S.FL-3,b.p.x-s*2.5));tz=side*4;sp=run*.8;}}
+  socTeamMove(e,tx,tz,sp,dt);}
+
+/* ---------- your buttons ---------- */
+function socTeamButtons(){const tm=SC.tm,o=tm.own,me=tm.me;
+  if(o===me){socBtnSet('#scMain','⚽<br>SHOOT','orange');socBtnSet('#scTrick','👟<br>PASS','purple');}
+  else if(o&&o.team==='us'){socBtnSet('#scMain','⚽<br>…','dim');socBtnSet('#scTrick','🙋<br>PASS ME!','purple'+(tm.call?' dim':''));}
+  else if(o){const d=socTeamD(me,o);socBtnSet('#scMain','🛡️<br>TACKLE',d<1.6&&me.cool<=0?'':'dim');socBtnSet('#scTrick','👟<br>PASS','purple dim');}
+  else{socBtnSet('#scMain','⚽<br>…','dim');socBtnSet('#scTrick','👟<br>PASS','purple dim');}}
+function socTeamPress(){const tm=SC.tm,o=tm.own,me=tm.me;if(!tm||tm.phase!=='play')return;
+  if(o===me){if(tm.freeze>0)tm.freeze=0;const S=SOC,f=me.face,fx=Math.sin(f),dist=S.FL-me.p.x;
+    if(fx>.25&&dist<24){socTeamShootMe();}else{const b=SC.ball;b.st='free';b.v.set(Math.sin(f)*13,2.2,Math.cos(f)*13);tm.own=null;tm.passTo=null;me.touch=.4;socKick(av);tone(150,.08,'sine',.16);tm.last='us';socTeamHud();}}
+  else if(o&&o.team==='them'){if(me.cool>0)return;me.cool=.9;socPose(av,'tackle');setTimeout(()=>{if(av.socPose===SOC_POSE.tackle)socPose(av,null);},420);
+    if(socTeamD(me,o)>1.6){toast(`Get closer to ${o.key?'the goalie':o.r.n} to tackle! 🛡️`);return;}
+    if(o.key&&o.hold>0){toast('You can\'t tackle the goalie when they\'re holding it!');return;}
+    if(Math.random()>.6){toast(`Missed! ${o.r.n} kept it`);tone(200,.12,'sine',.08);return;}
+    o.stun=.7;socTeamGive(me);socSay('🛡️ Great tackle!');tone(660,.1,'triangle',.12);did('soccer','tackle');}}
+// your shot: where you're facing, like the 1-on-1
+function socTeamShootMe(){const S=SOC,tm=SC.tm,me=tm.me,b=SC.ball,f=me.face,fx=Math.sin(f),fz=Math.cos(f),dist=S.FL-me.p.x;
+  const k=(S.FL-b.p.x)/fx;let tz=b.p.z+fz*k;tz=Math.max(-S.GW-1.2,Math.min(S.GW+1.2,tz))+(Math.random()-.5)*dist*.05;const ty=.25+Math.random()*Math.min(1.5,.5+dist*.07);
+  tm.own=null;tm.passTo=null;me.touch=.5;socKick(av);socShoot(b,1,tz,ty,Math.max(.45,dist/17),0);b.shot.by=me;tm.last='us';socTeamHud();}
+function socTeamPassBtn(){const tm=SC.tm;if(!tm||tm.phase!=='play')return;const o=tm.own,me=tm.me;
+  if(o===me){if(tm.freeze>0)tm.freeze=0;const m=socTeamBestMate(me,me.face);if(m)socTeamPassTo(me,m,false);else toast('Nobody open to pass to! Run or shoot ⚽');}
+  else if(o&&o.team==='us'&&!tm.call){tm.call=true;toast(`🙋 ${o.key?'Goalie':o.r.n}, pass it to me!`);}}
+// 🎥 high up behind you, looking up the field toward the goal you attack, so you can see your teammates to pass to
+// (like football's pick-up game camera; a bit closer on a wide screen)
+function socTeamCam(dt){const z=socZ(),c=SC.cam,me=SC.tm.me,k=innerWidth>innerHeight?.75:1,l=socL(player.pos);
+  const P=_sA.set(l.x-15*k,10.5*k,l.z*.65),T=new THREE.Vector3(l.x+5,0,l.z*.85);z.g.localToWorld(P);z.g.localToWorld(T);
+  if(!c.init){c.p.copy(P);c.t.copy(T);c.init=true;}c.p.lerp(P,Math.min(1,dt*4));c.t.lerp(T,Math.min(1,dt*5));camera.position.copy(c.p);camera.lookAt(c.t);}
+// what the test can see and do
+window.__soccer=Object.assign(window.__soccer||{},{team:()=>SC.tm,teamPress:socTeamPress,teamPass:socTeamPassBtn,
+  teamPlace:(x,z,f)=>{const tm=SC.tm,me=tm.me;me.p.set(x,0,z);me.face=f;socTeamSyncMe(true);SC.ball.st='free';SC.ball.shot=null;SC.ball.in=false;socTeamGive(me);tm.freeze=0;}});
 // ---- src/26i-arctic-see.js ----
 /* ❄️ Polar Ice for friends online (after 26c-friends-see.js, which makes SHOW): friends see the ice skates on your feet
    while you skate (iceBlades in 24m-arctic.js; the skating stride comes from the rollerPose they already use). */
@@ -15884,6 +16772,8 @@ function wfBatPose(a,piv,s){const A=a.arms;if(!A)return;let u=s<0?0:Math.min(1,s
   piv.quaternion.setFromUnitVectors(_wfY,_wfV.set(Math.sin(phi)*Math.cos(elev),Math.sin(elev),Math.cos(phi)*Math.cos(elev)));
   const ax=-.9-Math.sin(ease*Math.PI)*.5;A[0].sh.rotation.x=ax;A[1].sh.rotation.x=ax;A[0].sh.rotation.z=.35-ease*.5;A[1].sh.rotation.z=-.1+ease*.2-.4;A[0].el.rotation.x=-1.2+ease*.9;A[1].el.rotation.x=-1.4+ease*1;
   a.hips.rotation.y=-.35+ease*1.1;
+  // the stance: feet a bit wider than the shoulders, knees bent, weight back (then a little stride into the swing)
+  const L=a.legs;if(L){const st=s<0?0:Math.min(1,s/.12);for(const [i,sg] of [[0,1],[1,-1]]){L[i].hp.rotation.z=sg*.2;L[i].hp.rotation.x=-.28;L[i].kn.rotation.x=.5;}L[1].hp.rotation.x=-.28-st*.25;a.g.position.y-=.045;}
   a.g.updateMatrixWorld(true);piv.position.copy(a.g.worldToLocal(A[0].hand.getWorldPosition(_wfV))).add(_wfV.set(0,-.04,0));piv.translateY(-.06);}
 // pitching: a real overhand windup. Leg kick, the arm goes down and back, up behind the head, then over the top and down across the body.
 // u: 0..1 through the motion (the ball leaves at WF_REL). The throwing shoulder only ever turns one way (back, up, over), so the arm circles like a real throw.
@@ -15908,7 +16798,7 @@ const wfHand=(a,out,glove)=>{a.g.updateMatrixWorld(true);a.arms[glove?1:0].hand.
 
 /* ---------- who is where ---------- */
 const wfMe=()=>WF.meC||(WF.meC={me:1,a:av,n:'you',get piv(){return WF.myPiv;},get p(){return WF.myP;}});
-function wfSpot(c,x,zz,face){c.p.set(x,0,zz);c.face=face;c.run=null;c.go=null;c.sit=false;if(c.a&&!c.me&&c.a.emote&&c.a.emote.id==='chair')c.a.emote=null;}
+function wfSpot(c,x,zz,face){c.p.set(x,0,zz);c.face=face;c.run=null;c.go=null;c.sit=false;c.spd=0;if(c.a&&!c.me&&c.a.emote&&c.a.emote.id==='chair')c.a.emote=null;}
 const wfBaseAt=i=>{const [x,zz]=WB.base[i],[nx,nz]=WB.base[(i+1)%4],d=Math.hypot(nx-x,nz-zz),l=i?.55:0;return [x+(nx-x)/d*l,zz+(nz-zz)/d*l];};// a runner takes a little lead off the bag
 // set everybody up for the next pitch
 // full: a new half-inning (everybody to their spot); otherwise just the next pitch or the next batter (fielders walk back by themselves)
@@ -16189,7 +17079,7 @@ function wfStep(dt,t){if(!WF.on)return;const W=WB,b=WF.ball,z=Z.wiffle;WF.t+=dt;
   // move and pose everybody
   const C=WF.cpu;wfRunnersStep(dt);for(const c of Object.values(C))if(c.go)wfGoStep(c,dt);
   WB.zoneBox.visible=WF.kind!=='derby'&&b.st!=='fly'&&(ph==='set'||ph==='wind'||ph==='pitch'||ph==='pick');
-  for(const c of Object.values(C)){const a=c.a;a.g.position.copy(c.p);a.g.rotation.y=c.face;a.update(dt,c.spd||0,false);if(a.tag)a.tag.visible=!(c.crouch&&bat);
+  for(const c of Object.values(C)){const a=c.a;if(c===Bt&&!c.run||c.crouch)c.spd=0;a.g.position.copy(c.p);a.g.rotation.y=c.face;a.update(dt,c.spd||0,false);if(a.tag)a.tag.visible=!(c.crouch&&bat);
     if(c===Bt){if(c.swing>=0){c.swing+=dt;if(c.swing>.6)c.swing=-1;}if(c.piv.visible)wfBatPose(a,c.piv,c.swing);}
     else if(c===P&&(throwing||WF.phase==='set'||WF.phase==='pick')){wfThrowPose(a,ph==='wind'?WF.t/WF_THROW:ph==='pitch'?Math.min(1,(WF_THROW*WF_REL+b.t)/WF_THROW):0);}
     else if(c.crouch){wfCrouch(a);if(b.cross&&(ph==='pitch'||ph==='wind')){a.arms[1].sh.rotation.x=-1.2-(b.cross.y-.8)*1.6;a.arms[1].sh.rotation.z=-.15+b.cross.x*1.4;}}
@@ -16248,8 +17138,15 @@ Object.assign(window.__game,{WF,WB,wfStart,wfMenu,wfAt,wfPol,wfHit,wfPress,wfSte
    (old:1 marks the notes from the very first card, which players who saw that card have already seen.)
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
+  {v:'2026-11-07',notes:[
+    {e:'🦖',t:'Visit Dino Valley! Cross the bridge behind the Barber Shop to see a real-looking T. rex, raptors, a triceratops and more.',go:'dino'},
+    {e:'🦕',t:'Your dinosaurs moved out of the barn and into Dino Valley. The Happy Barn is just for farm animals now.',go:'dino'},
+    {e:'🥚',t:'Step on the glowing footprint by the Dino Keeper\'s hut to take care of your dinosaurs or adopt a new one.',go:'dino'},
+  ]},
   {v:'2026-11-06',notes:[
+    {e:'🏀',t:'Play a 3-on-3 basketball game! Pick two teammates, pass the ball and beat the Bears.',go:'court'},
     {e:'⚾',t:'The Wiffle Ball Field is now a real Baseball Field! Play with real teams in uniforms, a catcher, and pitches like curveballs.',go:'wiffle'},
+    {e:'⚽',t:'Play a 3-on-3 soccer match with goalies at the Soccer Field!',go:'soccer'},
     {e:'🏊',t:'Swimming looks real now! Your arms reach forward and pull back like a real swimmer, and you float with your head up.'},
     {e:'🐶',t:'Your pet swims right next to you in the water now, instead of walking on top of it.'},
     {e:'🏄',t:'The wave pool is twice as big! Grab a surfboard at the new Surf Shack and ride the waves.',go:'water'},
@@ -16265,7 +17162,7 @@ const WHATS_NEW=[
   ]},
 ];
 const NEW_DAYS=30;// how long a place keeps its NEW tag after an update
-const WN_MAX=8;// at most this many notes on the card at once (newest first)
+const WN_MAX=16;// at most this many notes on the card at once (newest first; the list scrolls)
 // a note's key is made from its words, so a new or reworded note counts as unseen
 const wnKey=n=>{let h=5381;const s=n.e+n.t;for(let i=0;i<s.length;i++)h=(h*33+s.charCodeAt(i))>>>0;return h.toString(36);};
 const wnAll=()=>{const a=[];for(const u of WHATS_NEW)for(const n of u.notes)a.push({n,v:u.v,k:wnKey(n)});return a;};
@@ -16844,6 +17741,38 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{water
   local:wpLocal,world:wpWorld,state:()=>({ride:WP.ride?WP.ride.kind:'',phase:WP.ride&&WP.ride.phase||'',slide:WP.ride&&WP.ride.S?WP.ride.S.id:'',board:WP.board,slides:WP.slides||0,surfs:WP.surfs||0,
     waves:WAVE.list.map(w=>w.c),swim:SW.k,brg:BRG.on,zone:curZone&&curZone.id})},bankGround,onBankLand,bridgeAt,BRG});});
 wpReady=true;
+// ---- src/26y-dino-valley-land.js ----
+/* ===== 🦖 Dino Valley: the land under it and the footbridge over the canal (the valley itself is 12i-place-dino-valley.js) =====
+   Dino Valley sits on the canal's far bank behind the Barber Shop and the Sweet Bakery: its own BANK_LAND sector (DVL.a0 .. DVL.a1,
+   ground:1 because it draws its own grass; you walk on it like any bank land) and a wooden footbridge at DVL.bridge, like the ones to
+   the Sports Park. Pushing the sector here (before 26z-big-world.js) flattens the big world's hills there and moves its fence round it. */
+const DVL={a0:296,a1:328,bridge:312};DVL.out=Z.dino.d+Z.dino.r+4;
+BANK_LAND.push({id:'dino',a0:DVL.a0,a1:DVL.a1,out:DVL.out,ground:1});
+MAPC.dino='#7fae5a';
+// grass out to the edge of the bank, with a sandy edge down to the water (like the airfield and the ball fields)
+{const wg=new THREE.Group();scene.add(wg);const th0=deg(DVL.a0-90),th=deg(DVL.a1-DVL.a0);
+ const m=M(new THREE.RingGeometry(BANK.out-.4,DVL.out,24,1,th0,th),groundMat,0,.004,0,wg,false,true);m.rotation.x=-Math.PI/2;
+ const sand=std('#e8cf9a',{map:TEX.sand,roughness:1});
+ M(new THREE.CylinderGeometry(DVL.out,DVL.out+2,3,24,1,true,deg(DVL.a0),deg(DVL.a1-DVL.a0)),sand,0,-1.5,0,wg,false,true);
+ for(const a of [DVL.a0,DVL.a1]){const L=DVL.out-BANK.out+.4,w=M(new THREE.PlaneGeometry(L,3),sand,0,0,0,wg,false,true);const r=(BANK.out+DVL.out)/2;
+   w.position.set(Math.sin(deg(a))*r,-1.5,Math.cos(deg(a))*r);w.rotation.y=deg(a)-Math.PI/2;w.material.side=THREE.DoubleSide;}}
+/* ---------- 🌉 the footbridge over the canal ---------- */
+{const F={a:DVL.bridge,t0:R-2.5,t1:BANK.in+2.8,w:2.4,top:2.3};F.ux=Math.sin(deg(F.a));F.uz=Math.cos(deg(F.a));DVL.fb=F;
+  const loc=(x,z)=>[x*F.ux+z*F.uz,x*F.uz-z*F.ux],deck=t=>F.top*Math.sin(Math.PI*Math.max(0,Math.min(1,(t-F.t0)/(F.t1-F.t0))))+.1;
+  SURF.push({h(x,z){const [t,s]=loc(x,z);if(t<F.t0||t>F.t1||Math.abs(s)>F.w/2-.18)return -1;return deck(t);}});
+  BANK_BRIDGES.push({a:F.a,w:F.w,on:p=>HIGH.on||deck(loc(p.x,p.z)[0])<.5});
+  const g=new THREE.Group();g.rotation.y=deg(F.a);scene.add(g);const B=advBatch(),hw=F.w/2,P=(s,t,dy=0)=>new THREE.Vector3(s,deck(t)+dy,t);
+  for(let t=F.t0+.15;t<F.t1;t+=.3){const sl=Math.atan2(deck(t+.1)-deck(t-.1),.2);B.add(box(F.w,.07,.27),ADM.wood,0,deck(t)-.04,t,-sl,0,0);}
+  for(const s of [-1,1]){
+    for(let t=F.t0;t<F.t1-.4;t+=.4)B.stick(P(s*(hw-.08),t,-.12),P(s*(hw-.08),t+.4,-.12),.07,ADM.dark,6);
+    for(let t=F.t0+.3;t<F.t1;t+=1.6){B.stick(P(s*(hw-.06),t,-.05),P(s*(hw-.06),t,1.02),.05,ADM.wood,8);
+      B.stick(P(s*(hw-.06),t,1.02),P(s*(hw-.06),Math.min(F.t1-.3,t+1.6),1.02),.045,ADM.wood,8);
+      B.stick(P(s*(hw-.06),t,.55),P(s*(hw-.06),Math.min(F.t1-.3,t+1.6),.55),.025,ADM.rope,5);}
+    const arch=[];for(let i=0;i<=24;i++){const t=F.t0+3+(F.t1-F.t0-6)*i/24;arch.push(P(s*(hw-.2),t,-.18-(.6*Math.sin(Math.PI*i/24))));}
+    for(let i=0;i<24;i++)B.stick(arch[i],arch[i+1],.11,ADM.dark,7);}
+  for(const t of [F.t0+3.4,F.t1-3.4])B.add(new THREE.CylinderGeometry(.55,.75,2.4,10),ADM.stone,0,-.9,t,0,0,0,2.4,1,1);
+  B.done(g);
+  MAP_DRAW.push((x,w2s,k)=>{const a=w2s(F.ux*F.t0,F.uz*F.t0),b=w2s(F.ux*F.t1,F.uz*F.t1);x.strokeStyle='#9a6a43';x.lineWidth=Math.max(2.5,F.w*k);x.lineCap='butt';x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke();});}
 // ---- src/26z-big-world.js ----
 /* ================= 🗺️ THE BIG WORLD: land all the way out past the canal, blocked off until we build there =================
    - The island is in the middle, the 🌊 canal goes round it, and past the canal's far bank (BANK in 26f-ocean.js) the land keeps going a

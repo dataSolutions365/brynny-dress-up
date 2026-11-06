@@ -67,6 +67,9 @@ const ZONES=[
   {id:'soccer',name:'⚽ Soccer Field',ang:154,d:R+43,r:12,music:'stadium',nopath:true,far:true},
   // 🏟️ Sports Park, past the canal across from the Batting Cage, over its own footbridge at 202 (26j-wiffle.js): the baseball field (it began as a wiffle ball field, so the id is still 'wiffle')
   {id:'wiffle',name:'⚾ Baseball Field',ang:206,d:R+33,r:15,music:'stadium-cheer',nopath:true,far:true},
+  // 🦖 Dino Valley, past the canal behind the Barber Shop and the Sweet Bakery, over its own footbridge at 312 (12i-place-dino-valley.js,
+  // 24n-dino-valley.js, 26y-dino-valley-land.js): real-looking dinosaurs, and where the dinosaurs you adopt live
+  {id:'dino',name:'🦖 Dino Valley',ang:312,d:R+41,r:18,music:'spring-birds',nopath:true,far:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;

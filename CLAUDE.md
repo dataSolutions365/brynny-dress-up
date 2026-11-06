@@ -19,6 +19,10 @@
 - Basketball and batting matches against friends online are in `3d/src/24e2-sports-friends.js` (it hooks into
   `3d/src/24e-sports.js` through `SP.onMenu`, `SP.onEnd` and `SP.lx`). `3d/tests/sports-friends.mjs` plays a match with two phones
   (same setup as `online-see.mjs`).
+- 🏀 3-on-3 basketball (`3d/src/24e4-basketball-3v3.js`): you and two teammates from the 🧢 team picker (sport 'basketball') against
+  the 🐻 Bears on the half court, first to 11. It's `SP.ext.v3` in `3d/src/24e-sports.js`, but unlike the other `SP.ext` games you run
+  freely (`SP.ext.v3.lock`), and baskets come back through `SP.ext.v3.made`. `BB3.us[0]` is you; each computer player guards the one with
+  the same number on the other team. 🤾 PASS / 🙋 CALL FOR IT / 🖐️ STEAL. `3d/tests/basketball-3v3.mjs` (run on every PR) plays it.
 - Rides with `fly:1` in FARM (`3d/src/24d-barn.js`) can fly: `3d/src/24h-flying.js` does the take-off, flying and landing,
   and friends see it through the `ride` entry. `3d/tests/fly.mjs` (run on every PR) checks one takes off, clears the trees and lands.
 - Riding the 🚲 bike (`3d/src/17d-bicycle.js`): `bikeStep()` turns the wheels, cranks and handlebars and works out the lean,
@@ -129,6 +133,8 @@
   🥅 penalty shootout (swipe from the ball to shoot: where it points is where it goes, a quick swipe is hard, a bent swipe curls it;
   then dive by swiping or tapping left/middle/right), 🎯 target practice, 🤹 keepy-uppies and 🆚 1-on-1 vs Kai with ✨ tricks.
   Poses go through `av.socPose`/`av.socK` (14-avatar.js calls `socPoseRun`), the camera wraps `sportsCam`, `spLock` holds you still.
+  🆚 3-on-3 with goalies is `3d/src/26h2-soccer-team.js`: you draft your 🦅 Eagles with `teamPick` (sport 'soccer'), the best catcher on each side
+  keeps goal, and `socTeamStep` runs the clock, passing (PASS / PASS ME!), tackles, the bots and the keepers; `window.__soccer.team` is for tests.
   Challenges are in the 🏟 Sports tab of `3d/challenges.js`. `3d/tests/soccer.mjs` (run on every PR) plays every game, with a real swipe.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps
@@ -214,6 +220,14 @@
   that changes 3d/ without adding a note; put `[no-whats-new]` in the PR title or description when players won't notice anything.
   It can be reopened from ⚙️ Settings. Under Playwright it only pops up by itself with `?wn=1`, so other tests aren't covered by it.
   `3d/tests/whats-new.mjs` (run on every PR) checks it.
+- 🦖 Dino Valley (zone 'dino', across the canal behind the Barber Shop, footbridge at 312): the valley and `DV` (where the paddocks, pond,
+  nest, hut and care pad are; `dvOk`/`dvSpot` meadow, `dvTOk` T. rex paddock, `dvROk` raptor pen) are `3d/src/12i-place-dino-valley.js`, the land
+  and the footbridge `3d/src/26y-dino-valley-land.js`, its own dinosaurs (`DVA`, met through `openZoo`) `3d/src/24n-dino-valley.js`, and the
+  real-looking models (`ZOO_BUILD.trexR/raptorR/trikeR/longneckR/stegoR`, facts in `DINOA`) `3d/src/24c9h-dinos.js`. Dinosaurs never go in the
+  🐴 Happy Barn: FARM entries with `dino:1` live in Dino Valley (`HOMES`/`farmHome` in `3d/src/24d-barn.js`), and the barn sheet opens
+  there as `openBarn('dino')` from the glowing footprint pad, showing only them. Adopted ones reuse the models through `model:` with `scale:`
+  (rides get `dnSaddle`, see the note on each builder for `ride`). Kid-safe: nobody chases or bites; the T. rex just roars.
+  `3d/tests/dino-valley.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

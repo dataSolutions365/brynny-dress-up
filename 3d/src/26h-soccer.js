@@ -273,11 +273,12 @@ function socOpenMenu(){if(SC.mode||SC.menu||SP.mode)return;SC.menu=true;const S=
   c.innerHTML=`<h2>⚽ Soccer Field</h2><p>Pick a game!</p>
    <button class="spPick" data-m="pk"><b>🥅</b><span><strong>Penalty shootout</strong><small>Shoot past Leo, then dive to save Kai's kicks${S.pkw?` · Wins: ${S.pkw}`:''}</small></span></button>
    <button class="spPick" data-m="v1"><b>🆚</b><span><strong>1-on-1 vs Kai</strong><small>First to 3 goals. Use tricks to get past him${S.v1w?` · Wins: ${S.v1w}`:''}</small></span></button>
+   <button class="spPick" data-m="team"><b>👟</b><span><strong>3-on-3 match</strong><small>Pick your team, with goalies. First to 5 goals${S.tw?` · Wins: ${S.tw}`:''}</small></span></button>
    <button class="spPick" data-m="tgt"><b>🎯</b><span><strong>Target practice</strong><small>10 shots at the targets in the goal${S.tgt!=null?` · Best: ${S.tgt}`:''}</small></span></button>
    <button class="spPick" data-m="jug"><b>🤹</b><span><strong>Keepy-uppies</strong><small>Keep the ball off the grass${S.jug!=null?` · Best: ${S.jug} in a row`:''}</small></span></button>
    <button class="btn ghost" id="scNo">Not now</button>`;
   socSuitBtn(c);
-  c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{socCloseMenu();socStart(b.dataset.m);});
+  c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{socCloseMenu();if(b.dataset.m==='team')socTeamPick();else socStart(b.dataset.m);});
   $('#scNo').onclick=socCloseMenu;$('#spMenu').classList.add('show');sfx('pop');}
 function socCloseMenu(){SC.menu=false;$('#spMenu').classList.remove('show');}
 $('#spMenu').addEventListener('click',e=>{if(e.target.id==='spMenu'&&SC.menu&&!SC.mode)socCloseMenu();});
@@ -296,11 +297,13 @@ function socStart(m){socCloseMenu();SC.mode=m;SC.t=0;SC.turn='shoot';SC.kaiShot=
   else if(m==='tgt'){socBody(true,'swipe');socTargets(true);socTgtSetup();}
   else if(m==='jug'){socBody(true,'jug');socJugStart();}
   else if(m==='v1'){socBody(true,'free');if(!SC.camSave)SC.camSave={d:cam.dist,p:cam.pitch};cam.dist=Math.max(cam.dist,10.5);cam.pitch=Math.max(cam.pitch,.5);kai.a.g.visible=true;socKickoff('me');toast('You attack the far goal ➡️  Dribble, SHOOT, and use ✨ tricks to beat Kai!');}
+  else if(m==='team'){socBody(true,'free');if(!SC.camSave)SC.camSave={d:cam.dist,p:cam.pitch};cam.dist=Math.max(cam.dist,13);cam.pitch=Math.max(cam.pitch,.55);socTeamBegin();}
   socBoard();}
-function socBoard(){const b=socZ().board;if(SC.mode==='pk'||SC.mode==='v1')b.draw(SC.me,SC.cpu,'YOU · KAI');else if(SC.mode==='tgt')b.draw(SC.me,10-SC.n,'🎯 TARGETS · BALLS');else if(SC.mode==='jug')b.draw(SC.n,SAVE.soccer.jug||0,'🤹 NOW · BEST');else b.draw(0,0,'HOME · AWAY');}
+function socBoard(){const b=socZ().board;if(SC.mode==='pk'||SC.mode==='v1')b.draw(SC.me,SC.cpu,'YOU · KAI');else if(SC.mode==='tgt')b.draw(SC.me,10-SC.n,'🎯 TARGETS · BALLS');else if(SC.mode==='jug')b.draw(SC.n,SAVE.soccer.jug||0,'🤹 NOW · BEST');else if(SC.mode==='team')b.draw(SC.me,SC.cpu,'EAGLES · BEARS');else b.draw(0,0,'HOME · AWAY');}
 function socEnd(show=true,quit=false){const m=SC.mode;if(!m)return;SC.mode=null;socNetsShow(0);if(SC.camSave){cam.dist=SC.camSave.d;cam.pitch=SC.camSave.p;SC.camSave=null;}socBody(false);socHint('');socTrail(null);
   for(const o of [SC.kai,SC.leo])if(o){o.a.g.visible=false;socResetBody(o.a);}socResetBody(av);av.g.rotation.z=0;socHideBall();socTargets(false);
-  if(SC.jug)SC.jug=null;socBoard();if(!show)return;
+  if(SC.jug)SC.jug=null;if(SC.tm)for(const e of SC.tm.pl){e.ring.visible=false;if(!e.me){e.a.g.visible=false;socResetBody(e.a);e.dive=null;}}
+  socBoard();if(!show)return;
   let h='',coins=0,best=false;const S=SAVE.soccer;
   if(quit){h=`<h2>👋 You left the game</h2><p>Finish a whole game to earn coins!</p>`;}
   else if(m==='pk'){const win=SC.me>SC.cpu,tie=SC.me===SC.cpu;coins=win?30:tie?15:10;if(win){S.pkw=(S.pkw||0)+1;persist();did('soccer','pkwin');}
@@ -308,6 +311,8 @@ function socEnd(show=true,quit=false){const m=SC.mode;if(!m)return;SC.mode=null;
   else if(m==='tgt'){coins=SC.me*3;best=socBest('tgt',SC.me);h=`<h2>${SC.me>=6?'🎯 Sharpshooter!':SC.me>=3?'⚽ Nice shooting!':'⚽ Good try!'}</h2><div class="spBig">${SC.me} 🎯</div><p>targets hit with 10 balls${best?' · New best! 🎉':''}</p>`;}
   else if(m==='jug'){coins=Math.min(40,SC.n);best=socBest('jug',SC.n);h=`<h2>${SC.n>=20?'🤩 Ball wizard!':SC.n>=8?'🤹 Nice touch!':'⚽ Good try!'}</h2><div class="spBig">${SC.n}</div><p>keepy-uppies in a row${best?' · New best! 🎉':''}</p>`;}
   else if(m==='v1'){const win=SC.me>SC.cpu;coins=win?30:10;if(win){S.v1w=(S.v1w||0)+1;persist();did('soccer','v1win');}h=`<h2>${win?'🏆 You beat Kai!':'😅 Kai wins this time'}</h2><div class="spBig">${SC.me} - ${SC.cpu}</div><p>${win?'What a game!':'Try a trick when Kai gets close!'}</p>`;}
+  else if(m==='team'){const win=SC.me>SC.cpu,tie=SC.me===SC.cpu;coins=win?40:tie?20:10;if(win){S.tw=(S.tw||0)+1;persist();did('soccer','teamwin');}
+    h=`<h2>${win?'🏆 The Eagles win!':tie?'🤝 It\'s a tie!':'😅 The Bears win this time'}</h2><div class="spBig">${SC.me} - ${SC.cpu}</div><p>🦅 You, ${SC.tm.us.filter(e=>!e.me).map(e=>e.r.n).join(', ')} vs 🐻 ${SC.tm.them.map(e=>e.r.n).join(', ')}</p>`;}
   if(quit)coins=0;if(coins>0){earn(coins,'sports');h+=`<p>🪙 +${coins} coins</p>`;}
   $('#spCard').innerHTML=h+`<button class="btn" id="scAgain">🔁 Play again</button> <button class="btn ghost" id="scDone">Done</button>`+(spCanUnsuit()?`<br><button class="btn ghost" id="scUnsuit">👗 Back to my outfit</button>`:'');
   if(spCanUnsuit())$('#scUnsuit').onclick=()=>{spUnsuit();socCloseMenu();};
@@ -598,20 +603,20 @@ function socKaiStep(dt,t,me){const S=SOC,kai=socKai(),b=SC.ball;let tx=kai.p.x,t
   kai.a.g.position.copy(kai.p);kai.a.g.rotation.y=kai.face;kai.a.update(dt,moved,false);}
 
 /* ---------- buttons and keys ---------- */
-function socPress(){if(!SC.mode||SC.menu)return;if(SC.mode==='jug'){socJugTap();return;}if(SC.mode==='v1'){if(SC.own==='me')socV1Shoot();else if(SC.own==='cpu')socTackle();}}
+function socPress(){if(!SC.mode||SC.menu)return;if(SC.mode==='jug'){socJugTap();return;}if(SC.mode==='v1'){if(SC.own==='me')socV1Shoot();else if(SC.own==='cpu')socTackle();}if(SC.mode==='team')socTeamPress();}
 {const b=$('#scMain');b.addEventListener('pointerdown',e=>{e.preventDefault();socPress();});b.addEventListener('contextmenu',e=>e.preventDefault());
-  const tb=$('#scTrick');tb.addEventListener('pointerdown',e=>{e.preventDefault();if(SC.mode==='v1')socV1Trick();});
-  addEventListener('keydown',e=>{if(!SC.mode||e.repeat||e.target.tagName==='INPUT')return;if(e.code==='KeyF'||e.code==='Enter'){socPress();e.preventDefault();}if(e.code==='KeyT'&&SC.mode==='v1')socV1Trick();if(e.code==='Escape')socEnd(true,true);});}
+  const tb=$('#scTrick');tb.addEventListener('pointerdown',e=>{e.preventDefault();if(SC.mode==='v1')socV1Trick();else if(SC.mode==='team')socTeamPassBtn();});
+  addEventListener('keydown',e=>{if(!SC.mode||e.repeat||e.target.tagName==='INPUT')return;if(e.code==='KeyF'||e.code==='Enter'){socPress();e.preventDefault();}if(e.code==='KeyT'&&SC.mode==='v1')socV1Trick();if(e.code==='KeyT'&&SC.mode==='team')socTeamPassBtn();if(e.code==='Escape')socEnd(true,true);});}
 
 /* ---------- hooks into the rest of the game ---------- */
 // hold still while you shoot, save or juggle (24e-sports.js asks spLock every frame)
-{const was=spLock;spLock=()=>was()||(!!SC.mode&&SC.mode!=='v1');}
+{const was=spLock;spLock=()=>was()||(!!SC.mode&&SC.mode!=='v1'&&SC.mode!=='team');}
 // your own Extras ⚽ ball is put away while you play (26d-ball-play.js)
 {const was=ballBusy;ballBusy=()=>was()||!!SC.mode;}
 // the camera (25-game-loop.js calls sportsCam after the normal follow camera)
 {const was=sportsCam;sportsCam=dt=>{was(dt);socCam(dt);};}
 function socNetsShow(hideS){for(const n of socZ().nets)for(const m of n.all)m.visible=n.s!==hideS;}
-function socCam(dt){socNetsShow(SC.mode==='pk'&&SC.turn==='save'?1:0);if(!SC.mode||SC.mode==='v1'||!SC.cam.P)return;const z=socZ(),c=SC.cam;let P=c.P,T=c.T;
+function socCam(dt){socNetsShow(SC.mode==='pk'&&SC.turn==='save'?1:0);if(SC.mode==='team'){socTeamCam(dt);return;}if(!SC.mode||SC.mode==='v1'||!SC.cam.P)return;const z=socZ(),c=SC.cam;let P=c.P,T=c.T;
   // follow the ball a little once it's kicked
   if((SC.mode==='pk'||SC.mode==='tgt')&&SC.ball&&SC.phase==='fly'&&SC.turn!=='save'){T=_sB.copy(c.T).lerp(SC.ball.p,.35);}
   const wp=z.g.localToWorld(_sA.copy(P)),wt=z.g.localToWorld(new THREE.Vector3().copy(T));
@@ -625,11 +630,11 @@ anims.push((t,dt)=>{const z=socZ();SC.clock=(SC.clock||0)+dt;
   if(z.flags&&Math.abs(player.pos.x-z.x)+Math.abs(player.pos.z-z.z)<90)for(let i=0;i<z.flags.length;i++)z.flags[i].rotation.y=Math.PI/2+Math.sin(t*3+i)*.25;
   if(!SC.mode){socNetStep(dt);return;}
   if(closetOpen){socEnd(false);return;}
-  if(SC.mode==='pk')socPkStep(dt,t);else if(SC.mode==='tgt')socTgtStep(dt,t);else if(SC.mode==='jug')socJugStep(dt,t);else if(SC.mode==='v1')socV1Step(dt,t);
+  if(SC.mode==='pk')socPkStep(dt,t);else if(SC.mode==='tgt')socTgtStep(dt,t);else if(SC.mode==='jug')socJugStep(dt,t);else if(SC.mode==='v1')socV1Step(dt,t);else if(SC.mode==='team')socTeamStep(dt,t);
   if(!SC.mode)return;
   if(!SC.dive){av.g.position.copy(player.pos);av.g.rotation.z=0;}av.g.rotation.y=player.face+(av.spinY||0)+(SC.mode==='v1'?SC.spinA||0:0);
   if(SC.mode!=='pk'||SC.turn!=='save'){if(av.socPose===SOC_POSE.keeper||av.socPose===SOC_POSE.dive)socPose(av,null);}
   if(SC.mode==='v1'&&!av.socT&&av.socPose===SOC_POSE.trick)socPose(av,null);if(av.socT&&av.socPose!==SOC_POSE.trick)socPose(av,'trick');
-  av.tag.visible=SC.mode==='v1';});
+  av.tag.visible=SC.mode==='v1'||SC.mode==='team';});
 window.__soccer={SC,SOC,start:socStart,end:socEnd,menu:socOpenMenu,shoot:(tz,ty,T,curl)=>{SC.shot={tz,ty,T,curl:curl||0,top:ty>SOC.GH-.75&&Math.abs(tz)>SOC.GW-1.1};socKick(av);SC.phase='kick';SC.pt=0;},
   dive:(sx,up)=>socPlayerDive({pts:[[innerWidth/2,innerHeight/2],[innerWidth/2+sx*120,innerHeight/2-(up?120:0)]]}),swiped:socSwiped,press:socPress,trick:socV1Trick,screen:socScreen};
