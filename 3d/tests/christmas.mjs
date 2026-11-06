@@ -135,6 +135,20 @@ try {
   await page.evaluate(() => { const G = window.__game, b = window.__xmasBase; G.player.pos.set(b.x + 1.5, 0, b.z - 2.5); G.player.face = -.5; G.cam.yaw = Math.PI - .5; });
   await shot('snowman');
 
+  // ❄️⛄ the Snowball and Snowman buttons only show where there's snow: on the snowy island and in Polar Ice, not on the
+  // green far bank over the canal (like the ⚾ Wiffle Ball Field)
+  const where = await page.evaluate(async () => { const G = window.__game, out = {}, deg = Math.PI / 180;
+    const at = async (k, x, z) => { G.player.pos.set(x, 0, z); await new Promise(r => setTimeout(r, 400));
+      const talk = G.TALK_EXTRA.find(t => t.id === 'snowfight').btn(G.FRIENDS[0]);
+      out[k] = { acts: window.__xmas.acts(), talk: !!talk, shown: [...document.querySelectorAll('#actions [data-act]')].map(b => b.dataset.act).filter(a => /^snow/.test(a)) }; };
+    const zw = id => G.Z[id]; await at('plaza', 6, 6);
+    const a = zw('arctic'); await at('arctic', a.x, a.z);
+    const w = zw('wiffle'); await at('wiffle', w.x, w.z);
+    await at('back', 6, 6); return out; });
+  console.log('snow buttons:', JSON.stringify(where));
+  for (const k of ['plaza', 'arctic', 'back']) if (!where[k].acts.includes('snowball') || !where[k].acts.includes('snowman') || !where[k].talk) fail(`the snow buttons should show on the snow (${k}: ${JSON.stringify(where[k])})`);
+  if (where.wiffle.acts.length || where.wiffle.talk || where.wiffle.shown.length) fail(`the snow buttons show on the grass at the Wiffle Ball Field (${JSON.stringify(where.wiffle)})`);
+
   // the 🎄 Christmas tab is in the challenges
   await page.click('#stars'); await page.waitForSelector('#chal.show');
   if (!await page.locator('#chalTabs [data-tab="xmas"]').count()) fail('there is no 🎄 Christmas tab in the challenges at Christmas');
