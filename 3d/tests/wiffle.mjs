@@ -78,8 +78,12 @@ try {
     return { on: WF.on, me: WF.me, op: WF.op, hits: WF.hits, hr: WF.hr, swings: WF.swings, ks: WF.ks, inn: WF.inn, ...seen, halves: [...seen.halves], kinds: [...seen.kinds],
       log: seen.log, card: document.querySelector('#spCard').textContent, menu: document.querySelector('#spMenu').classList.contains('show'), mode: G.SP.mode }; }, [kind, jitter]);
 
+  // an old kept outfit (with roller skates) from before you last changed clothes is never put back on
+  await page.evaluate(() => { const G = window.__game, S = G.SAVE; S.sports.prev = JSON.parse(JSON.stringify(S.look)); S.sports.prev.shoes = { id: 'inlines', c: '#ff4d8d' }; delete S.sports.kit; });
+
   // 3. a quick game: you bat, then you pitch
   let g = await sim('quick', .16);
+  if (await page.evaluate(() => !!document.querySelector('#spUnsuit'))) fail('After a game it offered to put back an old outfit you had already changed out of (that is how roller skates came back).');
   console.log(`quick game: ${g.me}-${g.op}, ${g.pitches} pitches (${g.kinds.join(' ')}), ${g.swings} swings, ${g.hits} hits, ${g.outs} outs, ${g.ks} Ks, most ghost runners ${g.ghosts}, halves ${g.halves.join(',')}`);
   if (process.env.DEBUG) console.log(g.log);
   if (g.on || g.mode) fail('The quick game never finished.');
@@ -91,12 +95,20 @@ try {
   if (g.kinds.length < 3) fail('The pitches were all the same kind.');
   await page.evaluate(() => { document.querySelector('#spDone').click(); });
 
+  // suit up in the baseball uniform, play, then "Back to my outfit" gives you your own clothes (and shoes) back
+  s = await page.evaluate(() => { const G = window.__game, S = G.SAVE; S.look.shoes = { id: 'sneaker', c: '#123456' }; G.wfMenu();
+    const b = [...document.querySelectorAll('#spCard button')].find(b => /Suit up/.test(b.textContent)); if (!b) return { err: 'no suit up button' };
+    b.click(); const worn = S.look.shoes.id; document.querySelector('#spNo')?.click(); return { worn }; });
+  if (s.err) fail(`The wiffle menu had ${s.err}.`); else if (s.worn !== 'ballcleats') fail(`Suiting up did not put on cleats (${s.worn}).`);
+
   // 4. a Home Run Derby with a batter right on time: some go over the fence
   g = await sim('derby', .02);
   console.log(`derby: ${g.hr} homers in ${g.swings} swings`);
   if (g.on) fail('The Derby never finished.');
   if (g.swings !== 10) fail(`The Derby should be 10 swings, it was ${g.swings}.`);
   if (g.hr < 2) fail('A batter swinging right on time hit fewer than 2 homers in the Derby.');
+  s = await page.evaluate(() => { const u = document.querySelector('#spUnsuit'); if (!u) return null; u.click(); const sh = window.__game.SAVE.look.shoes; return sh.id + sh.c; });
+  if (s !== 'sneaker#123456') fail(`"Back to my outfit" after the Derby did not give back your own shoes (${s}).`);
   await page.evaluate(() => { document.querySelector('#spDone').click(); });
 
   // 5. pictures of a real game: batting, pitching and a ball in play
