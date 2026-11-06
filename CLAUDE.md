@@ -203,6 +203,14 @@
   Challenges are in the 🏟 Sports tab of `3d/challenges.js` (`did('wiffle', …)`). Your skateboard isn't carried in your hand at the ball fields
   (`boardStowed()` in `3d/src/17c-skateboard.js`). `3d/tests/wiffle.mjs` (run on every PR) walks over the bridge, opens the menu, plays a quick game
   (checking the overhand throw, the catcher and the runners) and a Derby.
+- 🦖 Dino Valley (zone 'dino', across the canal behind the Barber Shop, footbridge at 312): the valley and `DV` (where the paddocks, pond,
+  nest, hut and care pad are; `dvOk`/`dvSpot` meadow, `dvTOk` T. rex paddock, `dvROk` raptor pen) are `3d/src/12i-place-dino-valley.js`, the land
+  and the footbridge `3d/src/26y-dino-valley-land.js`, its own dinosaurs (`DVA`, met through `openZoo`) `3d/src/24n-dino-valley.js`, and the
+  real-looking models (`ZOO_BUILD.trexR/raptorR/trikeR/longneckR/stegoR`, facts in `DINOA`) `3d/src/24c9h-dinos.js`. Dinosaurs never go in the
+  🐴 Happy Barn: FARM entries with `dino:1` live in Dino Valley (`HOMES`/`farmHome` in `3d/src/24d-barn.js`), and the barn sheet opens
+  there as `openBarn('dino')` from the glowing footprint pad, showing only them. Adopted ones reuse the models through `model:` with `scale:`
+  (rides get `dnSaddle`, see the note on each builder for `ride`). Kid-safe: nobody chases or bites; the T. rex just roars.
+  `3d/tests/dino-valley.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

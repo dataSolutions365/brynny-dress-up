@@ -322,6 +322,9 @@ const ZONES=[
   {id:'soccer',name:'⚽ Soccer Field',ang:154,d:R+43,r:12,music:'stadium',nopath:true,far:true},
   // 🏟️ Sports Park, past the canal across from the Batting Cage, over its own footbridge at 202 (26j-wiffle.js): the baseball field (it began as a wiffle ball field, so the id is still 'wiffle')
   {id:'wiffle',name:'⚾ Baseball Field',ang:206,d:R+33,r:15,music:'stadium-cheer',nopath:true,far:true},
+  // 🦖 Dino Valley, past the canal behind the Barber Shop and the Sweet Bakery, over its own footbridge at 312 (12i-place-dino-valley.js,
+  // 24n-dino-valley.js, 26y-dino-valley-land.js): real-looking dinosaurs, and where the dinosaurs you adopt live
+  {id:'dino',name:'🦖 Dino Valley',ang:312,d:R+41,r:18,music:'spring-birds',nopath:true,far:true},
 ];
 const PARK={id:'park',name:'🌳 Sunny Park',music:'city-park'};
 for(const z of ZONES){z.x=Math.sin(deg(z.ang))*z.d;z.z=Math.cos(deg(z.ang))*z.d;z.rot=z.d?Math.atan2(-z.x,-z.z):0;
@@ -1935,6 +1938,136 @@ const HPAD={r:4.3,lights:[],sock:null};
    M(box(1.1,.06,.7),std('#3a3a3a',{metalness:.5}),0,.3,0,fg);
    M(new THREE.PlaneGeometry(.7,.2),new THREE.MeshBasicMaterial({map:labelTex('JET A-1',{size:60,fg:'#ffffff',bg:null,border:null}),transparent:true}),0,.72,.37,fg,false,false);
    z.ob(-S/2-.5,.9,.7);}
+ signpost(z);}
+// ---- src/12i-place-dino-valley.js ----
+/* ===== 🦖 Dino Valley: the dinosaur park across the canal (zone Z.dino, 02-island.js) =====
+   An original prehistoric valley (its own name and look): a big meadow of ferns and cycads with tall monkey-puzzle trees, a pond,
+   a nest of eggs, a 🦖 T. rex paddock behind a strong timber fence, a 🦖 raptor pen with a wire net, and the 🥚 Dino Keeper's hut
+   with a glowing footprint pad where you take care of your own dinosaurs (the barn sheet in 24d-barn.js, for dino:1 animals).
+   - This file builds everything inside the valley, in the zone's own directions (+z points back at the island and the gate).
+     The land under it, its sandy edge and the footbridge over the canal are in 26y-dino-valley-land.js (they need the canal's BANK).
+   - The dinosaurs that live here are in 24n-dino-valley.js; the real-looking models are in 24c9h-dinos.js.
+   - DV has where everything is. dvOk/dvSpot are the meadow (the plant-eaters and your own dinosaurs), dvTOk/dvTSpot the T. rex paddock
+     and dvROk/dvRSpot the raptor pen: change a number in DV and the scenery and where the dinosaurs walk both follow. */
+const DV={fence:16.8,gateA:.2,
+  T:{x:6.5,z:-6,r:7.2},// 🦖 the T. rex paddock
+  P:{x:-8.5,z:-7.5,r:4.2},// 🦖 the raptor pen
+  pond:{x:-7.2,z:1.8,r:2.4},nest:{x:3.6,z:5.2,r:.95},
+  hut:{x:-9.2,z:8.6,w:3.2,d:2.4,ry:.75},// the Dino Keeper's hut
+  bpad:{lx:-5.9,lz:11.2,r:.7},care:[-4.6,7.8],stand:[-5.4,10.4],out:[-5.6,11.9],// your dinosaurs' care pad, where yours stands, and where you stand
+  // tall trees and big rocks the dinosaurs walk round: [x, z, radius]
+  trees:[[-13.2,-1.5],[-12.5,4.5],[-3.5,-13.5],[1.2,-9.5],[12.8,4.2],[9.5,9.8],[-1.5,-4.2],[14.8,-4.5],[-14.2,-6.8]],
+  rocks:[[3.6,1.3,.9],[-3.2,4.5,.7],[11.5,1.2,.8],[-10.8,-2.6,.6],[0,-14.6,1.1]]};
+DV.avoid=[[DV.pond.x,DV.pond.z,DV.pond.r+.3],[DV.nest.x,DV.nest.z,DV.nest.r],[DV.hut.x,DV.hut.z,2.1],...DV.trees.map(([x,z])=>[x,z,.7]),...DV.rocks];
+// the meadow: inside the big fence, outside the paddocks, round the pond, the nest, the hut, the trees and rocks
+function dvOk(lx,lz,r){if(Math.hypot(lx,lz)>DV.fence-.7-r)return false;
+  for(const Q of [DV.T,DV.P])if(Math.hypot(lx-Q.x,lz-Q.z)<Q.r+.6+r)return false;
+  for(const [x,z,rr] of DV.avoid)if(Math.hypot(lx-x,lz-z)<rr+r)return false;
+  if(Math.abs(lx-DV.bpad.lx)<1.2+r&&Math.abs(lz-DV.bpad.lz)<1.2+r)return false;return true;}
+function dvSpot(r){for(let i=0;i<80;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*(DV.fence-1),lx=Math.sin(a)*d,lz=Math.cos(a)*d;if(dvOk(lx,lz,r))return [lx,lz];}return [-1,9];}
+// inside a paddock: its middle keeps well clear of the fence so a long tail doesn't poke through
+const dvIn=(Q,lx,lz,r,k)=>Math.hypot(lx-Q.x,lz-Q.z)<Q.r-.7-r*k;
+function dvTOk(lx,lz,r){return dvIn(DV.T,lx,lz,r,2.5);}
+function dvTSpot(r){const Q=DV.T;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*Q.r,lx=Q.x+Math.sin(a)*d,lz=Q.z+Math.cos(a)*d;if(dvTOk(lx,lz,r))return [lx,lz];}return [Q.x,Q.z];}
+function dvROk(lx,lz,r){return dvIn(DV.P,lx,lz,r,1.6);}
+function dvRSpot(r){const Q=DV.P;for(let i=0;i<40;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*Q.r,lx=Q.x+Math.sin(a)*d,lz=Q.z+Math.cos(a)*d;if(dvROk(lx,lz,r))return [lx,lz];}return [Q.x,Q.z];}
+
+const dvV=(x,y,z)=>new THREE.Vector3(x,y,z);
+{const z=Z.dino,g=z.g,F=DV.fence;z.fence=F;
+ const B=advBatch(),wood=std('#7a5a3c',{roughness:.9}),woodD=std('#5a4029',{roughness:.95}),stone=std('#8d8678',{roughness:.95}),
+   bark=std('#5e4a38',{roughness:1}),moss=std('#3f5a2c',{roughness:1});
+ // the ground: a lush meadow with a dirt path in from the gate
+ {const tx=canvasTex(256,256,(x,w,h)=>{x.fillStyle='#5f8a3c';x.fillRect(0,0,w,h);for(let i=0;i<3200;i++){const c=Math.random();x.fillStyle=c<.35?'rgba(40,80,30,.45)':c<.7?'rgba(130,170,70,.4)':'rgba(120,95,60,.3)';
+   x.save();x.translate(Math.random()*w,Math.random()*h);x.rotate(Math.random()*Math.PI);x.fillRect(0,0,4+Math.random()*6,1.4);x.restore();}},6);
+  patch(F+.6,std('#ffffff',{map:tx,roughness:1}),z.x,z.z,.016);
+  const dirt=canvasTex(128,128,(x,w,h)=>{x.fillStyle='#a88a62';x.fillRect(0,0,w,h);for(let i=0;i<900;i++){x.fillStyle=Math.random()<.5?'rgba(90,70,45,.35)':'rgba(205,185,150,.35)';x.fillRect(Math.random()*w,Math.random()*h,2+Math.random()*3,2);}},3);
+  const pm=std('#ffffff',{map:dirt,roughness:1});pm.polygonOffset=true;pm.polygonOffsetFactor=-3;pm.polygonOffsetUnits=-3;
+  const path=(x0,z0,x1,z1,w)=>{const L=Math.hypot(x1-x0,z1-z0),p=M(new THREE.PlaneGeometry(w,L),pm,(x0+x1)/2,.03,(z0+z1)/2,g,false,true);p.rotation.order='YXZ';p.rotation.y=Math.atan2(x1-x0,z1-z0);p.rotation.x=-Math.PI/2;};
+  path(0,F+5,0,4,2.4);path(0,6.5,DV.stand[0],DV.stand[1],1.8);path(0,4,3,-1.5,1.8);path(-.5,4.5,-4.5,-4.5,1.8);}
+ // the big wooden fence round the valley, open at the gate (posts, two rails), all merged into a few shapes
+ {const N=Math.round(F*2*Math.PI/.85),open=a=>Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<DV.gateA;
+  for(let i=0;i<N;i++){const a=i/N*Math.PI*2;if(open(a))continue;const x=Math.sin(a)*F,w=Math.cos(a)*F;B.add(cyl(.08,.09,1.15,7),wood,x,.575,w);z.ob(x,w,.32);
+    const a2=(i+1)/N*Math.PI*2;if(open(a2))continue;for(const y of [.5,.95])B.stick(dvV(x,y,w),dvV(Math.sin(a2)*F,y,Math.cos(a2)*F),.045,woodD,5);}}
+ // the gate: two mossy stone pillars and a timber beam with the sign
+ {const gx=Math.sin(DV.gateA)*F,gz=Math.cos(DV.gateA)*F;
+  for(const s of [-1,1]){B.add(box(.9,3.4,.9),stone,s*gx,1.7,gz,0,s*.05,0);B.add(box(1.05,.25,1.05),stone,s*gx,3.45,gz);B.add(sph(.5,8,6),moss,s*gx,.15,gz,0,0,0,1.2,.35,1.2);z.ob(s*gx,gz,.65);}
+  B.add(box(2*gx+.8,.38,.42),wood,0,3.15,gz);
+  const sign=M(new THREE.PlaneGeometry(4.2,.95),new THREE.MeshBasicMaterial({map:labelTex('🦖 Dino Valley',{size:64,fg:'#2f5a2a',bg:'#f4ead2',border:'#7a5a3c'}),transparent:true}),0,3.95,gz+.02,g,false,false);
+  const back=sign.clone();back.rotation.y=Math.PI;back.position.z=gz-.02;g.add(back);
+  for(const s of [-1,1])B.stick(dvV(s*1.4,3.35,gz),dvV(s*1.4,3.55,gz),.03,woodD,5);}
+ // 🦖 the T. rex paddock: tall timber posts and four heavy rails (you look in from outside), and a sign
+ const ring=(Q,h,rails,postR,railR,gap)=>{const N=Math.round(Q.r*2*Math.PI/gap);for(let i=0;i<N;i++){const a=i/N*Math.PI*2,a2=(i+1)/N*Math.PI*2,x=Q.x+Math.sin(a)*Q.r,w=Q.z+Math.cos(a)*Q.r;
+   B.add(cyl(postR,postR*1.12,h,7),woodD,x,h/2,w);z.ob(x,w,.36);for(const y of rails)B.stick(dvV(x,y,w),dvV(Q.x+Math.sin(a2)*Q.r,y,Q.z+Math.cos(a2)*Q.r),railR,wood,5);}};
+ ring(DV.T,2.5,[.45,1.05,1.65,2.25],.13,.07,.8);
+ // 🦖 the raptor pen: posts with a wire net all round
+ ring(DV.P,1.9,[.15,1.8],.09,.05,.8);
+ {const net=canvasTex(64,64,(x,w,h)=>{x.clearRect(0,0,w,h);x.strokeStyle='rgba(60,60,58,.9)';x.lineWidth=3;x.beginPath();x.moveTo(0,0);x.lineTo(w,h);x.moveTo(w,0);x.lineTo(0,h);x.stroke();});
+  net.wrapS=net.wrapT=THREE.RepeatWrapping;net.repeat.set(Math.round(DV.P.r*2*Math.PI/.25),Math.round(1.7/.25));
+  const nm=std('#ffffff',{map:net,transparent:true,alphaTest:.3,side:THREE.DoubleSide,roughness:.6,metalness:.4});
+  M(new THREE.CylinderGeometry(DV.P.r,DV.P.r,1.7,56,1,true),nm,DV.P.x,1,DV.P.z,g,false,false);}
+ const sign=(x,w,ry,text,col)=>{B.add(cyl(.06,.07,1.6,7),woodD,x,.8,w);const p=M(new THREE.PlaneGeometry(1.9,.48),new THREE.MeshBasicMaterial({map:labelTex(text,{size:52,fg:col,bg:'#f4ead2',border:'#7a5a3c'})}),x,1.55,w,g,false,false);p.rotation.y=ry;z.ob(x,w,.2);};
+ {const a=Math.atan2(-DV.T.x,-DV.T.z+6),x=DV.T.x+Math.sin(a)*(DV.T.r+.8),w=DV.T.z+Math.cos(a)*(DV.T.r+.8);sign(x,w,a,'🦖 T. rex','#7a2f20');}
+ {const a=Math.atan2(-DV.P.x+3,-DV.P.z+4),x=DV.P.x+Math.sin(a)*(DV.P.r+.8),w=DV.P.z+Math.cos(a)*(DV.P.r+.8);sign(x,w,a,'🦖 Raptors','#5a3a1a');}
+ // the pond, with stones round it
+ {const P=DV.pond;const wm=phys('#3d7f7a',{roughness:.08,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.92});wm.polygonOffset=true;wm.polygonOffsetFactor=-4;wm.polygonOffsetUnits=-4;
+  const wtr=M(new THREE.CircleGeometry(P.r,40),wm,P.x,.04,P.z,g,false,true);wtr.rotation.x=-Math.PI/2;wtr.scale.y=.8;
+  for(let i=0;i<16;i++){const a=i/16*Math.PI*2,s=.2+((i*7)%5)*.05;B.add(new THREE.DodecahedronGeometry(s,0),stone,P.x+Math.sin(a)*(P.r+.05),s*.4,P.z+Math.cos(a)*(P.r*.8+.05),i,i*2,0,1.3,.7,1.1);}
+  for(let i=0;i<7;i++){const a=i*.9+.3;B.add(cyl(.015,.02,.9,5),moss,P.x+Math.sin(a)*(P.r-.3),.45,P.z+Math.cos(a)*(P.r*.8-.25),.1*Math.sin(i),0,.1*Math.cos(i));}}// reeds
+ // a nest with four eggs
+ {const N=DV.nest,ng=new THREE.Group();ng.position.set(N.x,0,N.z);g.add(ng);
+  for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=.62+((i*5)%3)*.06;B.add(cyl(.025,.025,.7,5),woodD,N.x+Math.sin(a)*r,.12+(i%3)*.05,N.z+Math.cos(a)*r,Math.PI/2,a+Math.PI/2+.25,0,1,1,1,'YXZ');}
+  B.add(sph(.72,14,8),std('#8a6e48',{roughness:1}),N.x,.02,N.z,0,0,0,1,.18,1);
+  const egg=phys('#efe6d2',{roughness:.5,clearcoat:.2,map:canvasTex(64,64,(x,w,h)=>{x.fillStyle='#efe6d2';x.fillRect(0,0,w,h);for(let i=0;i<80;i++){x.fillStyle='rgba(120,90,60,.45)';x.beginPath();x.arc(Math.random()*w,Math.random()*h,1+Math.random()*2,0,7);x.fill();}})});
+  for(const [x,w,a] of [[-.18,-.1,.3],[.16,-.14,-.4],[0,.18,.1],[.24,.16,.7]]){const e=M(sph(.15,14,10),egg,x,.2,w,ng);e.scale.set(1,1.35,1);e.rotation.set(a,0,a*.6);}
+  z.ob(N.x,N.z,N.r);}
+ // 🥚 the Dino Keeper's hut: log walls, a leafy roof, a door and a window
+ {const H=DV.hut,hg=new THREE.Group();hg.position.set(H.x,0,H.z);hg.rotation.y=H.ry;g.add(hg);const HB=advBatch();
+  for(let i=0;i<9;i++){const y=.14+i*.26;for(const s of [-1,1]){HB.add(cyl(.13,.13,H.w+.3,8),wood,0,y,s*H.d/2,0,0,Math.PI/2);HB.add(cyl(.13,.13,H.d+.3,8),wood,s*H.w/2,y+.13,0,Math.PI/2,0,0);}}
+  const roof=std('#5d6b34',{roughness:1});for(const s of [-1,1])HB.add(box(H.w+.9,.18,H.d*.72),roof,0,2.75,s*H.d*.32,s*.55,0,0);
+  HB.add(box(.35,.35,H.d+.5),roof,0,3.08,0);
+  HB.done(hg);
+  M(box(.9,1.6,.06),std('#3b2a1c',{roughness:.9}),-.6,.8,H.d/2+.13,hg);M(box(.7,.55,.06),phys('#bfe3ff',{roughness:.1,clearcoat:1}),.75,1.35,H.d/2+.13,hg,false,false);
+  const lt=M(new THREE.PlaneGeometry(2.2,.5),new THREE.MeshBasicMaterial({map:labelTex('🥚 Dino Keeper',{size:52,fg:'#2f5a2a',bg:'#f4ead2',border:'#7a5a3c'})}),0,2.25,H.d/2+.2,hg,false,false);
+  for(const [x,w] of [[-1,0],[1,0],[0,-.7],[0,.7]])z.ob(H.x+Math.cos(H.ry)*x*1.2+Math.sin(H.ry)*w,H.z-Math.sin(H.ry)*x*1.2+Math.cos(H.ry)*w,1.1);}
+ // the glowing footprint pad: step on it to take care of your dinosaurs (24d-barn.js opens the sheet)
+ {const P=DV.bpad;z.bpad=P;const padMat=glow('#9be36b',1.4);padMat.transparent=true;
+  const rg=M(new THREE.RingGeometry(.5,.68,40),padMat,P.lx,.05,P.lz,g,false,false);rg.rotation.x=-Math.PI/2;
+  const pin=M(new THREE.CircleGeometry(.5,40),phys('#e3f5cf',{roughness:.3,emissive:'#7cc75a',emissiveIntensity:.25}),P.lx,.045,P.lz,g,false,true);pin.rotation.x=-Math.PI/2;
+  const foot=canvasTex(128,128,x=>{x.fillStyle='#3f6a2a';x.beginPath();x.ellipse(64,80,18,22,0,0,7);x.fill();
+    for(const a of [-.5,0,.5]){x.save();x.translate(64,70);x.rotate(a);x.beginPath();x.ellipse(0,-34,8,22,0,0,7);x.fill();x.restore();}});
+  const fp=M(new THREE.PlaneGeometry(.7,.7),new THREE.MeshBasicMaterial({map:foot,transparent:true,depthWrite:false}),P.lx,.055,P.lz,g,false,false);fp.rotation.x=-Math.PI/2;
+  const lbl=z.padLbl=sprite(labelTex('🦖 Your dinosaurs!',{size:52}),1.9,.44);lbl.position.set(P.lx,1.05,P.lz);g.add(lbl);
+  anims.push(t=>{padMat.opacity=.55+.45*Math.sin(t*3);lbl.position.y=1+Math.sin(t*2)*.08;});}
+ // tall monkey-puzzle trees (an ancient kind of conifer dinosaurs really ate): a bare trunk and tiers of dark spiky branches
+ {const ndl=std('#2f4a26',{roughness:.95}),ndl2=std('#3b5a2c',{roughness:.95});
+  DV.trees.forEach(([x,w],i)=>{const h=7+((i*37)%5)*.8;B.add(cyl(.14,.3,h,8),bark,x,h/2,w);z.ob(x,w,.45);
+    for(let k=0;k<5;k++){const y=h*.55+k*(h*.45/5),r=1.9-k*.33;B.add(new THREE.ConeGeometry(r,.75,9,1,true),k%2?ndl:ndl2,x,y,w,0,i+k,0);B.add(new THREE.CylinderGeometry(r*.2,r,.18,9),k%2?ndl2:ndl,x,y-.38,w,0,i,0);}
+    B.add(new THREE.ConeGeometry(.5,1,8),ndl,x,h+.35,w);});}
+ // big mossy boulders
+ for(const [x,w,r] of DV.rocks){B.add(new THREE.DodecahedronGeometry(r,1),stone,x,r*.45,w,x,w,0,1.15,.75,1);B.add(sph(r*.75,10,6),moss,x,r*.75,w,0,0,0,1.1,.3,1);z.ob(x,w,r*.9);}
+ B.done(g);
+ /* ---------- ferns and cycads everywhere (one instanced shape each, so they cost almost nothing) ---------- */
+ {// one fern frond: a curved strip with a picture of leaflets (see-through between them)
+  const ft=canvasTex(64,256,(x,w,h)=>{x.clearRect(0,0,w,h);x.strokeStyle='#4f7a2c';x.lineWidth=3;x.beginPath();x.moveTo(w/2,h);x.lineTo(w/2,4);x.stroke();
+    for(let y=12;y<h-6;y+=9){const L=(w/2-3)*Math.sin(Math.PI*(1-y/h))*.95+4;x.fillStyle=y%18?'#5f8f36':'#4f7f2e';
+      for(const s of [-1,1]){x.beginPath();x.moveTo(w/2,y+4);x.quadraticCurveTo(w/2+s*L*.6,y-3,w/2+s*L,y-6);x.quadraticCurveTo(w/2+s*L*.5,y+3,w/2,y+7);x.fill();}}});
+  const fm2=std('#ffffff',{map:ft,alphaTest:.45,side:THREE.DoubleSide,roughness:.9});
+  const frond=(len,droop)=>{const p=new THREE.PlaneGeometry(.42,len,1,8);p.translate(0,len/2,0);const a=p.attributes.position;
+    for(let i=0;i<a.count;i++){const y=a.getY(i),q=y/len;a.setY(i,Math.sin(q*1.2)*len*.75-droop*q*q*len);a.setZ(i,(1-Math.cos(q*1.2))*len*.8);}p.computeVertexNormals();return p;};
+  const plant=(n,len,droop,tilt)=>{const parts=[];for(let i=0;i<n;i++){const f=frond(len,droop);f.rotateX(tilt);f.rotateY(i/n*Math.PI*2+i*.3);parts.push(f);}const m=mergeGeometries(parts);parts.forEach(p=>p.dispose());return m;};
+  const fern=plant(7,1.1,.25,-.35),cyc=plant(9,1.3,.1,-.6);
+  const spots=[];for(let i=0;i<260&&spots.length<120;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*(F+3.5),lx=Math.sin(a)*d,lw=Math.cos(a)*d;
+    if(Math.abs(lx)<1.6&&lw>3)continue;// keep the path from the gate clear
+    if(Math.hypot(lx-DV.bpad.lx,lw-DV.bpad.lz)<2||Math.hypot(lx-DV.hut.x,lw-DV.hut.z)<2.4||Math.hypot(lx-DV.pond.x,lw-DV.pond.z)<DV.pond.r+.2||Math.hypot(lx-DV.nest.x,lw-DV.nest.z)<1.2)continue;
+    if(Math.abs(Math.hypot(lx,lw)-F)<.5)continue;spots.push([lx,lw,.6+Math.random()*.7,Math.random()*6]);}
+  const put=(geo,list,par)=>{const im=new THREE.InstancedMesh(geo,fm2,list.length),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3();
+    list.forEach(([x,w,k,ry],i)=>{m4.compose(new THREE.Vector3(x,0,w),q.setFromAxisAngle(new THREE.Vector3(0,1,0),ry),s.set(k,k,k));im.setMatrixAt(i,m4);});im.castShadow=false;im.receiveShadow=true;par.add(im);return im;};
+  put(fern,spots.slice(0,LITE?60:90),g);
+  // cycads: a short scaly trunk with a crown of stiff fronds
+  const cy=[[-2.4,9.8],[2.6,10.4],[6.2,4.6],[-11.8,1.2],[-5.2,-1.8],[10.8,-12.2],[-13.6,10.2],[13.2,8.2],[-.8,13.6]];
+  const CB=advBatch(),trunk=std('#6b5a3e',{roughness:1,map:canvasTex(32,64,(x,w,h)=>{x.fillStyle='#6b5a3e';x.fillRect(0,0,w,h);x.strokeStyle='#4a3c28';x.lineWidth=2;for(let y=0;y<h;y+=8)for(let i=0;i<w;i+=8){x.strokeRect(i+(y%16?4:0),y,8,8);}})});
+  for(const [x,w] of cy){CB.add(cyl(.22,.28,.9,9),trunk,x,.45,w);z.ob(x,w,.4);}CB.done(g);
+  {const cg=new THREE.Group();cg.position.y=.85;g.add(cg);put(cyc,cy.map(([x,w],i)=>[x,w,.9+(i%3)*.15,i]),cg);}}
  signpost(z);}
 // ---- src/13-park-and-stars.js ----
 /* ---------- park trees ---------- */
@@ -4621,7 +4754,7 @@ function callSteed(k){if(barnRide||closetOpen||!started||handsBusy()||!BS.own[k]
   const a=farmAnimal(k),P=player.pos;
   // trot over from the barn with a puff of sparkles
   burst(new THREE.Vector3(P.x,P.y+.6,P.z),'#ffd23f',30,2);
-  a.y=0;a.vy=0;a.face=player.face-BZ.rot;a.pos.set(P.x,P.y,P.z);a.g.position.copy(a.pos);
+  a.y=0;a.vy=0;a.face=player.face-a.Z.rot;a.pos.set(P.x,P.y,P.z);a.g.position.copy(a.pos);
   startRide(a);}
 // ---- src/18-sound.js ----
 /* ================= SOUND ================= */
@@ -7661,6 +7794,268 @@ ZOO_BUILD.snowyowl=function(g,body,o){const r=.17,ride=this.k==='ukpik',by=ride?
   // owls turn their heads a long way round to look about
   this.tick=(t,dt,run)=>{if(run<.05){this.look=(this.look||0)+dt;head.rotation.y=Math.sin(this.look*.4)*1.2*(Math.sin(this.look*.13)>0?1:.2);}else head.rotation.y*=.9;};
   Object.assign(o,{neck,head,tail,nTilt:0,gz:.4,size:.42,h:by+r*1.15+.3,rad:.22,biped:true,dustR:[r,r*1.3,r]});};
+// ---- src/24c9h-dinos.js ----
+/* ===== 🦖 Dinosaurs: real-looking dinosaurs for 🦕 Dino Valley (26y-dino-valley.js), built like the zoo animals (ZOO_BUILD) =====
+   - ZOO_BUILD.trexR (Tyrannosaurus rex), raptorR (a feathered raptor, Deinonychus), trikeR (Triceratops), longneckR (Brachiosaurus)
+     and stegoR (Stegosaurus). They're built to look like the real animals as scientists picture them today: earthy colours,
+     darker on the back and pale underneath, scaly skin (feathers on the raptor, like the real ones), no cartoon eyes or smiles.
+   - Kid-safe: the T. rex has lips over its teeth (like scientists now think), and its roar is just a big rumbly head-up roar.
+   - The same builders make the dinosaurs that live at Dino Valley (DINOA, 24n-dino-valley.js) and the ones you adopt or buy
+     (FARM in 24d-barn.js uses them through model:, with scale: for the young ones). Rides get a saddle (dnSaddle) that keeps its
+     real size however small the dinosaur is, so F.ride (where you sit) is worked out from the body: see the note on each builder.
+   - Each body part is one smooth tube along a "spine" (dnTube), with its colours painted on its corners (dnPaint) so one shared
+     material per kind of dinosaur is enough (dnM keeps one of each), which keeps phones light. */
+const DNM={};const dnM=(k,make)=>DNM[k]||(DNM[k]=make());
+const dnV=(x,y,z)=>new THREE.Vector3(x,y,z);
+// little round scales, and fine feather streaks, as bumps
+const dnBump=()=>dnM('bump',()=>canvasTex(128,128,(x,w,h)=>{x.fillStyle='#808080';x.fillRect(0,0,w,h);
+  for(let i=0;i<700;i++){const c=70+(Math.random()*110|0);x.fillStyle=`rgb(${c},${c},${c})`;x.beginPath();x.arc(Math.random()*w,Math.random()*h,1.2+Math.random()*2.6,0,7);x.fill();}},4));
+const dnFeatherBump=()=>dnM('fbump',()=>canvasTex(128,128,(x,w,h)=>{x.fillStyle='#808080';x.fillRect(0,0,w,h);x.lineCap='round';
+  for(let i=0;i<520;i++){const X=Math.random()*w,Y=Math.random()*h,c=60+(Math.random()*140|0);x.strokeStyle=`rgb(${c},${c},${c})`;x.lineWidth=1+Math.random()*1.5;
+    x.beginPath();x.moveTo(X,Y);x.lineTo(X+(Math.random()-.5)*3,Y+6+Math.random()*8);x.stroke();}},4));
+// the skin is white so the colours painted on each shape show through
+const dnSkin=(k,feather)=>dnM('skin'+k,()=>std('#ffffff',{vertexColors:true,roughness:feather?.95:.82,bumpMap:feather?dnFeatherBump():dnBump(),bumpScale:feather?1.4:1.1}));
+// countershading: `top` on the back fading to `belly` underneath; pat(x,y,z,ny) can darken a spot (0..1) for stripes and blotches
+function dnPaint(geo,top,belly,pat){const p=geo.attributes.position,n=geo.attributes.normal,c=new Float32Array(p.count*3),A=new THREE.Color(top),B=new THREE.Color(belly),C=new THREE.Color();
+  for(let i=0;i<p.count;i++){const ny=n.getY(i),t=Math.min(1,Math.max(0,(ny+.62)/.85));C.copy(B).lerp(A,t*t*(3-2*t));
+    if(pat){const d=pat(p.getX(i),p.getY(i),p.getZ(i),ny);if(d)C.multiplyScalar(1-d);}c[i*3]=C.r;c[i*3+1]=C.g;c[i*3+2]=C.b;}
+  geo.setAttribute('color',new THREE.BufferAttribute(c,3));return geo;}
+// radius along a tube: a list of radii from one end to the other (smoothly blended), or a function of q (0..1)
+const dnR=rs=>typeof rs==='function'?rs:q=>{const f=q*(rs.length-1),i=Math.min(rs.length-2,Math.floor(f)),t=f-i,s=t*t*(3-2*t);return rs[i]+(rs[i+1]-rs[i])*s;};
+// one smooth body part along a spine (pts as [x,y,z]). sx/sy squash it (only for spines that stay in the up/forward plane, x = 0).
+// col = [top, belly, pat]. Returns top(q): the point on top of the part, q of the way along (for plates, bumps and saddles).
+function dnTube(pts,rs,mat,par,col,o={}){const seg=o.seg||28,rad=o.rad||14,sx=o.sx||1,sy=o.sy||1,rf=dnR(rs);
+  const c=new THREE.CatmullRomCurve3(pts.map(p=>dnV(p[0],p[1],p[2]))),g=new THREE.TubeGeometry(c,seg,1,rad,false),p=g.attributes.position,P=new THREE.Vector3();
+  for(let i=0;i<=seg;i++){c.getPointAt(i/seg,P);const r=rf(i/seg);for(let j=0;j<=rad;j++){const k=i*(rad+1)+j;
+    p.setXYZ(k,P.x+(p.getX(k)-P.x)*r*sx,P.y+(p.getY(k)-P.y)*r*sy,P.z+(p.getZ(k)-P.z)*r*sy);}}
+  g.computeVertexNormals();dnPaint(g,col[0],col[1],col[2]);M(g,mat,0,0,0,par);
+  for(const q of [0,1]){const e=c.getPointAt(q),r=rf(q);if(r>.015)M(dnPaint(sph(r,12,8),col[0],col[1],col[2]),mat,e.x,e.y,e.z,par).scale.set(sx,sy,sy);}// round ends
+  return {top:(q,v=new THREE.Vector3())=>{c.getPointAt(q,v);v.y+=rf(q)*sy*.96;return v;},at:(q,v=new THREE.Vector3())=>c.getPointAt(q,v),r:rf};}
+// a real-looking eye (amber iris, dark round pupil) that blinks with the others (a.eyes)
+function dnEye(a,par,x,y,z,r,col,ry){const e=new THREE.Group();e.position.set(x,y,z);e.rotation.y=ry;par.add(e);
+  const iris=dnM('iris'+col,()=>phys(col,{roughness:.12,clearcoat:1,clearcoatRoughness:.05})),pup=dnM('pupil',()=>std('#0b0a08',{roughness:.2}));
+  M(sph(r,14,10),iris,0,0,0,e,false,false);M(sph(r*.52,10,8),pup,0,0,r*.66,e,false,false).scale.set(.75,.9,.5);a.eyes.push(e);return e;}
+// a leg hanging from its hip or shoulder: one smooth tube through the joints (it swings from the top in FarmAnimal.update)
+function dnLeg(a,par,x,y,z,ph,joints,rads,mat,col){const lg=new THREE.Group();lg.position.set(x,y,z);par.add(lg);a.legs.push({g:lg,ph});
+  dnTube(joints,rads,mat,lg,col,{seg:16,rad:10});return lg;}
+// three forward toes with claws (theropods); P = the ball of the foot, toes reach len forward, r thick
+function dnToes(lg,P,len,r,mat,col,claw,spread=.34,n=3){for(let i=0;i<n;i++){const s=n===3?i-1:i?.5:-.5,tg=new THREE.Group();tg.position.set(P[0],P[1],P[2]);tg.rotation.y=s*spread;lg.add(tg);const L=len*(s&&n===3?.8:1);
+  dnTube([[0,0,0],[0,-r*.3,L*.5],[0,-r*.55,L]],[r,r*.72,r*.45],mat,tg,col,{seg:6,rad:8});
+  const cl=M(new THREE.ConeGeometry(r*.36,r*1.1,8),claw,0,-r*.68,L+r*.32,tg,false,false);cl.rotation.x=Math.PI/2+.5;}}
+// a round elephant-like foot pad with blunt nails (the big plant-eaters); y = the ground under the leg
+function dnPad(lg,y,r,mat,col,nail,n=3){M(dnPaint(cyl(r*.92,r*1.06,r*.75,16),col[0],col[1]),mat,0,y+r*.37,0,lg);
+  for(let i=0;i<n;i++){const a=(i-(n-1)/2)*.5;M(sph(r*.24,8,6),nail,Math.sin(a)*r*.98,y+r*.16,Math.cos(a)*r*.98,lg,false,false).scale.set(1,.75,.7);}}
+// a horn or spike from its base (x,y,z), pointing up, then tipped forward by rx and outward by rz
+function dnHorn(par,mat,x,y,z,r,h,rx,rz){const g=new THREE.ConeGeometry(r,h,12);g.translate(0,h/2,0);const m=M(g,mat,x,y,z,par);m.rotation.set(rx,0,rz);return m;}
+const dnClaw=()=>dnM('claw',()=>phys('#2a241c',{roughness:.35,clearcoat:.4}));
+const dnHornM=()=>dnM('horn',()=>phys('#ddd2b6',{roughness:.45,clearcoat:.3}));
+const dnDark=()=>dnM('dark',()=>std('#1c1814',{roughness:.6}));
+// 🏇 a saddle on a blanket, for the dinosaurs you ride (any dinosaur with F.ride). The saddle keeps its real size however small the
+// dinosaur is (it's scaled by 1/F.scale). y,z: the middle of the body under it, r its radius there, sx/sy the body's squash.
+// You sit at about F.ride = F.scale * (body height + y + r*sy) + .06 off the ground.
+function dnSaddle(a,body,y,z,r,sx,sy,col){if(!a.F.ride)return;const inv=1/(a.F.scale||1);
+  const cm=dnM('blanket'+col,()=>phys(col,{roughness:.9,sheen:.8,sheenColor:new THREE.Color('#ffffff'),side:THREE.DoubleSide})),tm=dnM('btrim',()=>phys('#e8c46a',{roughness:.4,metalness:.3})),
+    leather=dnM('leather',()=>phys('#6a3a1e',{roughness:.5,clearcoat:.4,clearcoatRoughness:.4})),dkL=dnM('leatherD',()=>phys('#3e2112',{roughness:.6}));
+  const arc=2.2,len=.5*inv,bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
+  const cg=new THREE.CylinderGeometry(r*1.035,r*1.035,len,36,1,true,Math.PI-arc/2,arc);cg.rotateX(Math.PI/2);M(cg,cm,0,0,0,bg);
+  for(const s of [-1,1]){const e=M(new THREE.TorusGeometry(r*1.035,.014*inv,6,36,arc),tm,0,0,s*len/2,bg,false,false);e.rotation.z=Math.PI/2-arc/2;}
+  const sg=new THREE.Group();sg.position.set(0,y+r*sy*1.03,z);sg.scale.setScalar(inv);body.add(sg);
+  M(sph(.17,20,12),leather,0,.02,0,sg).scale.set(.95,.22,1.25);M(sph(.06,12,8),leather,0,.065,.17,sg).scale.set(1.2,1.1,.8);
+  M(sph(.1,14,10),leather,0,.06,-.17,sg).scale.set(1.3,.6,.45);
+  for(const s of [-1,1]){const f=M(sph(.12,14,10),dkL,s*.13,-.05,0,sg);f.scale.set(.25,.7,1.1);f.rotation.z=s*.5;}}
+
+/* ---------- 🦖 Tyrannosaurus rex: a huge head with lips over the teeth, tiny two-fingered arms, a deep chest, big legs and a long
+   stiff tail held out for balance. Olive brown with faint darker bands over the back. Now and then it lifts its head and roars
+   (just the head and jaw; it never chases anyone). Ride (Chomper): scale .32 => F.ride 1.15 ---------- */
+ZOO_BUILD.trexR=function(g,body,o){const by=2.45,m=dnSkin('trex'),C=['#5f5838','#cdbf98',(x,y,z,ny)=>ny>0?Math.max(0,Math.sin(z*2.6+1))*.3*ny:0],
+  dk=dnDark(),mouth=dnM('mouthT',()=>std('#7c4440',{roughness:.7})),tooth=dnM('toothT',()=>std('#efe6cc',{roughness:.4}));
+  body.position.y=by;
+  // a deep chest, a round belly and strong hips
+  const T=dnTube([[0,.5,1.7],[0,.25,1.15],[0,.03,.35],[0,.1,-.45],[0,.22,-1.05]],[.42,.72,.85,.74,.6],m,body,C,{sx:.72,seg:24,rad:16});
+  // a row of small bony bumps down the back
+  const bm=dnM('trexBump',()=>std('#4a4430',{roughness:.8}));for(let i=0;i<9;i++){const p=T.top(.12+i*.1);M(sph(.06,8,6),bm,0,p.y,p.z,body,false,false).scale.set(1.2,.6,1.6);}
+  // the tail: thick at the hips, long and stiff
+  const tail=new THREE.Group();tail.position.set(0,.22,-.95);body.add(tail);
+  const TL=dnTube([[0,0,.2],[0,-.05,-.9],[0,-.2,-2.1],[0,-.38,-3.3],[0,-.5,-4.3]],[.6,.5,.32,.15,.03],m,tail,C,{sx:.66,sy:1.1,seg:26,rad:12});
+  for(let i=0;i<10;i++){const p=TL.top(.04+i*.075);M(sph(.05-i*.003,8,6),bm,0,p.y,p.z,tail,false,false).scale.set(1.2,.6,1.6);}
+  // tiny arms with two fingers each
+  for(const s of [-1,1]){const ag=new THREE.Group();ag.position.set(s*.36,-.3,1.25);body.add(ag);
+    dnTube([[0,0,0],[s*.06,-.28,.1],[s*.05,-.36,.34]],[.11,.075,.055],m,ag,C,{seg:8,rad:8});
+    for(const f of [-1,1]){dnTube([[s*.05,-.36,.34],[s*.05+f*.03,-.44,.43]],[.035,.022],m,ag,C,{seg:4,rad:6});
+      M(new THREE.ConeGeometry(.018,.06,6),dk,s*.05+f*.03,-.47,.45,ag,false,false).rotation.x=2.3;}}
+  // strong legs: a big thigh, long shin and three toes
+  for(const s of [-1,1]){const H=by+.05,lg=dnLeg(this,g,s*.5,H,-.45,s<0?0:Math.PI,[[0,0,0],[0,-.95,.42],[0,-1.8,-.2],[0,-2.33,.08]],[.5,.34,.2,.15],m,C);
+    M(dnPaint(sph(.55,16,12),C[0],C[1]),m,0,-.4,.12,lg).scale.set(.72,1.3,1.05);
+    dnToes(lg,[0,-H+.12,.1],.55,.11,m,C,dnClaw());}
+  // the neck and the big head
+  const neck=new THREE.Group();neck.position.set(0,by+.5,1.6);g.add(neck);
+  dnTube([[0,-.28,-.35],[0,0,.1],[0,.25,.45],[0,.38,.78]],[.5,.47,.42,.4],m,neck,C,{sx:.78,seg:12,rad:14});
+  const head=new THREE.Group();head.position.set(0,.42,.84);neck.add(head);
+  dnTube([[0,.06,-.22],[0,.09,.25],[0,.01,.75],[0,-.06,1.15],[0,-.11,1.38]],[.38,.4,.31,.22,.11],m,head,C,{sx:.8,seg:18,rad:14});
+  // inside the mouth (only seen when it opens), and the teeth, which the lips cover when it's closed
+  M(sph(.2,12,8),mouth,0,-.2,.65,head,false,false).scale.set(.95,.3,3);
+  for(const s of [-1,1])for(let i=0;i<7;i++)M(new THREE.ConeGeometry(.018,.05,6),tooth,s*(.16-i*.015),-.13,.32+i*.13,head,false,false).rotation.x=Math.PI;
+  const jaw=new THREE.Group();jaw.position.set(0,-.17,0);head.add(jaw);
+  dnTube([[0,-.02,-.18],[0,-.1,.45],[0,-.1,.95],[0,-.06,1.24]],[.27,.22,.16,.08],m,jaw,['#6c6344','#d8cca8'],{sx:.92,sy:.62,seg:12,rad:12});
+  // brow ridges with little horns over the eyes, eyes that look forward, and nostrils at the end of the snout
+  for(const s of [-1,1]){M(dnPaint(sph(.11,10,8),C[0],C[1]),m,s*.24,.3,.4,head).scale.set(1,.6,1.5);M(sph(.045,8,6),bm,s*.25,.36,.33,head,false,false).scale.set(1,.8,1.4);
+    dnEye(this,head,s*.27,.19,.5,.055,'#c8922c',s*.9);
+    M(sph(.035,8,6),dk,s*.09,.04,1.32,head,false,false).scale.set(1,.6,1.6);}
+  // breathing, and a big roar now and then (head up, jaw open, no biting)
+  let rT=5+Math.random()*10,roar=0;
+  this.tick=(t,dt,run)=>{body.scale.y=1+Math.sin(t*1.2)*.01;rT-=dt;
+    if(rT<0&&run<.1&&!this.ridden){rT=14+Math.random()*18;roar=2.4;if(this.g.parent&&this.g.visible)this.speak('*big rumbly ROAR* 🦖');}
+    if(roar>0){roar-=dt;const k=Math.sin(Math.min(1,(2.4-roar)/2.4)*Math.PI);head.rotation.x=-k*.38;jaw.rotation.x=k*.42;}
+    else{head.rotation.x*=.9;jaw.rotation.x*=.9;}};
+  dnSaddle(this,body,.07,.15,.84,.72,1,'#3a5a8a');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.3,size:2.2,h:by+1.5,rad:1.3,biped:true,dustR:[.8,.8,1.2]});};
+
+/* ---------- 🦖 Raptor (Deinonychus): a fast, feathered hunter about as long as a car, with feathered arms like little wings,
+   a fan of feathers on the end of its stiff tail, and the big curved claw on each foot held up off the ground.
+   Brown with pale underneath and darker bars, like a bird of prey. Quick bird-like head turns. ---------- */
+ZOO_BUILD.raptorR=function(g,body,o){const by=.92,m=dnSkin('rap',true),C=['#5c3f27','#e8dcc2',(x,y,z,ny)=>ny>.15?Math.max(0,Math.sin(z*16))*.32*ny:0],
+  fe=dnM('rapFe',()=>std('#3b2a1c',{roughness:.95,side:THREE.DoubleSide})),feL=dnM('rapFeL',()=>std('#efe4cf',{roughness:.95,side:THREE.DoubleSide})),claw=dnClaw();
+  body.position.y=by;
+  const T=dnTube([[0,.24,.55],[0,.12,.32],[0,.02,0],[0,.06,-.3],[0,.1,-.45]],[.12,.2,.25,.22,.17],m,body,C,{sx:.72,seg:18,rad:12});
+  // soft feathers along the back
+  for(let i=0;i<9;i++){const p=T.top(.1+i*.1),f=M(new THREE.PlaneGeometry(.07,.13),fe,0,p.y+.02,p.z-.03,body,false,false);f.rotation.x=-1.15;}
+  const tail=new THREE.Group();tail.position.set(0,.1,-.42);body.add(tail);
+  dnTube([[0,0,.08],[0,.02,-.4],[0,.03,-1.0],[0,0,-1.5]],[.16,.1,.05,.02],m,tail,C,{sx:.8,seg:16,rad:10});
+  // a fan of long feathers on both sides of the end of the tail
+  for(let i=0;i<9;i++){const z=-.6-i*.11;for(const s of [-1,1]){const f=M(new THREE.PlaneGeometry(.05,.24),i%3?fe:feL,s*.1,.02,z-.06,tail,false,false);f.rotation.set(-Math.PI/2,0,-s*(1-i*.05));}}
+  // arms folded like wings, with long feathers hanging down
+  for(const s of [-1,1]){const ag=new THREE.Group();ag.position.set(s*.15,-.02,.36);ag.rotation.z=s*.15;body.add(ag);
+    dnTube([[0,0,0],[s*.05,-.12,-.13],[s*.05,-.2,.05],[s*.05,-.24,.2]],[.07,.045,.04,.03],m,ag,C,{seg:10,rad:8});
+    for(let i=0;i<6;i++){const f=M(new THREE.PlaneGeometry(.06,.22-i*.015),i%2?fe:feL,s*.075,-.21+i*.005,-.1+i*.055,ag,false,false);f.rotation.set(-.35,s*Math.PI/2,0);}
+    for(const k of [-1,1])M(new THREE.ConeGeometry(.012,.05,6),claw,s*.05,-.27,.22+k*.015,ag,false,false).rotation.x=2.4;}
+  // long legs: two toes on the ground and the big curved claw held up
+  for(const s of [-1,1]){const H=by+.02,lg=dnLeg(this,g,s*.15,H,-.1,s<0?0:Math.PI,[[0,0,0],[0,-.36,.16],[0,-.7,-.1],[0,-.9,.04]],[.14,.08,.05,.04],m,C);
+    M(dnPaint(sph(.14,12,10),C[0],C[1]),m,0,-.14,.05,lg).scale.set(.75,1.4,1);
+    dnToes(lg,[s*.01,-H+.03,.04],.14,.03,m,C,claw,.18,2);
+    const sk=M(new THREE.TorusGeometry(.04,.009,6,10,Math.PI*.7),claw,-s*.03,-H+.08,.07,lg,false,false);sk.rotation.set(0,Math.PI/2,.2);}
+  // an S-shaped neck, a long low snout, a feathery crest down the back of the neck
+  const neck=new THREE.Group();neck.position.set(0,by+.26,.52);g.add(neck);
+  dnTube([[0,-.08,-.1],[0,.1,.05],[0,.25,.06],[0,.36,.16]],[.13,.1,.085,.08],m,neck,C,{sx:.85,seg:12,rad:10});
+  for(let i=0;i<6;i++){const f=M(new THREE.PlaneGeometry(.06,.11),fe,0,.0+i*.065,-.04-i*.005+(i>3?.04:0),neck,false,false);f.rotation.x=-.5;}
+  const head=new THREE.Group();head.position.set(0,.38,.2);neck.add(head);
+  dnTube([[0,.02,-.08],[0,.03,.08],[0,-.01,.24],[0,-.03,.36]],[.085,.08,.055,.026],m,head,['#4a3220','#dccdae'],{sx:.8,seg:12,rad:10});
+  dnTube([[0,-.05,-.05],[0,-.065,.18],[0,-.055,.32]],[.05,.035,.018],m,head,['#4a3220','#e2d5b8'],{sx:.85,sy:.55,seg:8,rad:8});
+  for(const s of [-1,1]){dnEye(this,head,s*.058,.045,.05,.022,'#d8a030',s*1.25);M(sph(.012,6,4),dnDark(),s*.022,.0,.33,head,false,false);}
+  // quick, bird-like looks around
+  let lk=0,want=0;this.tick=(t,dt,run)=>{lk-=dt;if(lk<0){lk=.5+Math.random()*1.4;want=(Math.random()*2-1)*.5;}head.rotation.y+=(want-head.rotation.y)*Math.min(1,dt*14);};
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.45,size:.8,h:1.75,rad:.45,biped:true,dustR:[.2,.2,.3]});};
+
+/* ---------- 🦕 Triceratops: a big four-legged plant-eater with a huge head, a bony frill with a scalloped edge, two long horns over
+   the eyes, a short one on the nose and a parrot-like beak. Ride (Trixie): scale .4 => F.ride 1.1 ---------- */
+ZOO_BUILD.trikeR=function(g,body,o){const by=1.45,m=dnSkin('trike'),C=['#6a6446','#cfc19c',(x,y,z,ny)=>ny>.3?(Math.sin(x*9)*Math.sin(z*7)>.35?.16:0):0],
+  horn=dnHornM(),beak=dnDark(),nail=dnClaw();
+  body.position.y=by;
+  dnTube([[0,-.05,1.35],[0,.12,.75],[0,.25,0],[0,.22,-.7],[0,.05,-1.2]],[.55,.78,.88,.8,.55],m,body,C,{sx:.88,seg:22,rad:16});
+  const tail=new THREE.Group();tail.position.set(0,.05,-1.1);body.add(tail);
+  dnTube([[0,0,.15],[0,-.15,-.7],[0,-.4,-1.6],[0,-.62,-2.3]],[.5,.36,.18,.04],m,tail,C,{sx:.75,sy:1.05,seg:18,rad:12});
+  // four strong legs (the back ones longer), elephant-like feet
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.05:by+.05,
+    lg=dnLeg(this,g,sx*(fr?.5:.48),H,fr?.95:-.62,ph,fr?[[0,0,0],[sx*.04,-.6,.06],[0,-1.05,-.02],[0,-H+.2,.03]]:[[0,0,0],[0,-.55,.18],[0,-1.1,-.1],[0,-H+.2,.02]],fr?[.3,.21,.17,.17]:[.42,.26,.19,.19],m,C);
+    if(!fr)M(dnPaint(sph(.36,14,10),C[0],C[1]),m,-sx*.06,-.3,.06,lg).scale.set(.75,1.3,1.05);
+    dnPad(lg,-H,fr?.19:.21,m,C,nail,fr?4:3);}
+  const neck=new THREE.Group();neck.position.set(0,by,1.4);g.add(neck);
+  dnTube([[0,-.05,-.3],[0,-.05,.1],[0,-.08,.35]],[.5,.46,.42],m,neck,C,{sx:.85,seg:8,rad:14});
+  const head=new THREE.Group();head.position.set(0,-.05,.4);neck.add(head);
+  dnTube([[0,0,-.2],[0,.05,.25],[0,-.05,.7],[0,-.2,1.05],[0,-.32,1.22]],[.42,.42,.33,.22,.12],m,head,C,{sx:.78,seg:16,rad:14});
+  // the beak, the horns, and the frill with its bumpy edge
+  const bk=M(new THREE.ConeGeometry(.11,.3,10),beak,0,-.4,1.3,head);bk.rotation.x=Math.PI/2+.75;
+  M(new THREE.ConeGeometry(.08,.2,10),beak,0,-.5,1.12,head).rotation.x=Math.PI/2+1.1;
+  dnHorn(head,horn,0,.04,.92,.07,.26,.35,0);
+  for(const s of [-1,1]){dnHorn(head,horn,s*.2,.28,.42,.085,.95,1.0,-s*.14);dnHorn(head,horn,s*.33,-.18,.36,.05,.16,.3,-s*1.2);
+    dnEye(this,head,s*.29,.18,.55,.045,'#7a4a1a',s*1.25);}
+  const fr=new THREE.Group();fr.position.set(0,.45,-.2);fr.rotation.x=-.6;head.add(fr);
+  M(dnPaint(sph(1,26,16),'#7d6e4a','#a8966c',(x,y,z,ny)=>Math.max(0,Math.sin(Math.atan2(x,y)*7))*.12),m,0,0,0,fr).scale.set(.95,.88,.1);
+  for(let i=0;i<17;i++){const a=-1.75+i*3.5/16,x=Math.sin(a)*.93,y=Math.cos(a)*.84;const e=M(new THREE.ConeGeometry(.07,.16,8),horn,x,y,0,fr,false,false);e.rotation.z=-a;e.scale.z=.5;}
+  this.tick=(t)=>{body.scale.y=1+Math.sin(t*1.1)*.01;};
+  dnSaddle(this,body,.25,-.05,.88,.88,1,'#7a2f2f');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.35,size:1.7,h:by+1.5,rad:1,dustR:[.7,.7,1]});};
+
+/* ---------- 🦕 Brachiosaurus (the long-neck): front legs longer than the back ones like a giraffe, a very long neck that holds its
+   small head way up high, an arched crest over the nose and a short tail. Grey brown. It nibbles the tree tops.
+   Ride (Skye): scale .55 => F.ride 2.18 ---------- */
+ZOO_BUILD.longneckR=function(g,body,o){const by=2.55,m=dnSkin('brachio'),C=['#655e4e','#c4b99f',(x,y,z,ny)=>ny>.35?Math.max(0,Math.sin(z*3+x*4))*.12:0],nail=dnClaw();
+  body.position.y=by;
+  dnTube([[0,.55,1.5],[0,.4,.85],[0,.15,0],[0,-.05,-.8],[0,-.15,-1.35]],[.72,.98,1.05,.88,.62],m,body,C,{sx:.85,seg:22,rad:18});
+  const tail=new THREE.Group();tail.position.set(0,-.15,-1.25);body.add(tail);
+  dnTube([[0,0,.2],[0,-.25,-.9],[0,-.6,-2.1],[0,-.85,-3.3],[0,-.9,-4.2]],[.6,.45,.24,.1,.03],m,tail,C,{sx:.8,seg:22,rad:12});
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by+.1:by-.25,
+    lg=dnLeg(this,g,sx*(fr?.6:.58),H,fr?1.05:-.85,ph,fr?[[0,0,0],[0,-1.2,.05],[0,-2.3,-.02],[0,-H+.25,0]]:[[0,0,0],[0,-1.0,.15],[0,-1.95,-.05],[0,-H+.25,0]],fr?[.42,.3,.26,.26]:[.55,.32,.27,.27],m,C);
+    if(!fr)M(dnPaint(sph(.46,14,10),C[0],C[1]),m,-sx*.08,-.4,.05,lg).scale.set(.75,1.35,1.05);
+    dnPad(lg,-H,fr?.28:.3,m,C,nail,fr?1:3);}
+  // the long neck, curving up, and the small head with its arched crest
+  const neck=new THREE.Group();neck.position.set(0,by+.65,1.55);g.add(neck);
+  dnTube([[0,-.3,-.35],[0,.6,.25],[0,1.8,.75],[0,3.0,1.1],[0,3.75,1.3]],[.62,.5,.36,.26,.22],m,neck,C,{sx:.88,seg:30,rad:14});
+  const head=new THREE.Group();head.position.set(0,3.82,1.36);neck.add(head);
+  dnTube([[0,0,-.14],[0,.03,.15],[0,-.03,.42],[0,-.07,.56]],[.2,.21,.15,.08],m,head,C,{sx:.85,seg:12,rad:12});
+  M(dnPaint(sph(.16,14,10),C[0],C[1]),m,0,.16,.12,head).scale.set(.8,1,1.3);
+  for(const s of [-1,1]){dnEye(this,head,s*.16,.08,.04,.035,'#6a4a22',s*1.3);M(sph(.03,6,4),dnDark(),s*.05,.27,.16,head,false,false).scale.set(1,.6,1.6);}
+  // a slow sway of the long neck
+  this.tick=(t)=>{neck.rotation.y=Math.sin(t*.35)*.14;body.scale.y=1+Math.sin(t*.9)*.008;};
+  dnSaddle(this,body,.25,.3,1.02,.85,1,'#2f6a4a');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.5,size:3,h:by+.65+4.3,rad:1.7,dustR:[1,1,1.4]});};
+
+/* ---------- 🦕 Stegosaurus: a small low head, short front legs and tall back legs, two staggered rows of big plates down its back
+   (biggest over the hips) and four spikes on the end of its tail (a "thagomizer"). ---------- */
+ZOO_BUILD.stegoR=function(g,body,o){const by=1.55,m=dnSkin('stego'),C=['#6c6a3e','#d3c8a0',(x,y,z,ny)=>ny>.25?(Math.sin(z*5)*Math.sin(x*8+z)>.3?.2:0):0],
+  plate=dnM('plate',()=>phys('#8f5e3a',{roughness:.6,clearcoat:.2})),horn=dnHornM(),nail=dnClaw();
+  body.position.y=by;
+  const T=dnTube([[0,-.45,1.45],[0,-.1,.8],[0,.2,0],[0,.15,-.7],[0,-.05,-1.15]],[.38,.62,.8,.72,.5],m,body,C,{sx:.82,seg:22,rad:16});
+  const tail=new THREE.Group();tail.position.set(0,-.05,-1.05);body.add(tail);
+  const TL=dnTube([[0,0,.15],[0,-.1,-.7],[0,-.25,-1.5],[0,-.32,-2.2]],[.48,.32,.15,.05],m,tail,C,{sx:.8,seg:18,rad:12});
+  // the plates: a rounded diamond shape, made once and sized for each spot
+  const pg=dnM('plateG',()=>{const s=new THREE.Shape();s.moveTo(-.5,0);s.quadraticCurveTo(-.62,.62,0,1);s.quadraticCurveTo(.62,.62,.5,0);s.lineTo(-.5,0);
+    const g=new THREE.ExtrudeGeometry(s,{depth:.08,bevelEnabled:true,bevelThickness:.03,bevelSize:.03,bevelSegments:2});g.translate(0,0,-.04);g.rotateY(Math.PI/2);return g;});
+  const put=(par,p,h,s)=>{const pl=M(pg,plate,s*.07,p.y-.08,p.z,par,true,false);pl.scale.set(1,h,h*.85);pl.rotation.z=-s*.12;};
+  for(let i=0;i<10;i++){const q=.12+i*.088,h=.28+.5*Math.sin(Math.min(1,q*1.15)*Math.PI*.9);put(body,T.top(q),h,i%2?1:-1);}
+  for(let i=0;i<5;i++){const q=.05+i*.11;put(tail,TL.top(q),.5-i*.08,i%2?-1:1);}
+  for(const s of [-1,1])for(const q of [.78,.9]){const p=TL.at(q);const sp=dnHorn(tail,horn,s*.06,p.y+.03,p.z,.045,.5,-1.2,-s*.9);}
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.6:by+.05,
+    lg=dnLeg(this,g,sx*(fr?.36:.44),H,fr?1.0:-.55,ph,fr?[[0,0,0],[0,-.45,.04],[0,-H+.18,0]]:[[0,0,0],[0,-.65,.2],[0,-1.25,-.08],[0,-H+.18,0]],fr?[.26,.18,.16]:[.4,.24,.18,.18],m,C);
+    if(!fr)M(dnPaint(sph(.34,14,10),C[0],C[1]),m,-sx*.05,-.28,.06,lg).scale.set(.75,1.3,1.05);
+    dnPad(lg,-H,fr?.17:.2,m,C,nail,fr?4:3);}
+  const neck=new THREE.Group();neck.position.set(0,by-.5,1.5);g.add(neck);
+  dnTube([[0,.05,-.25],[0,-.08,.2],[0,-.2,.5]],[.36,.27,.2],m,neck,C,{sx:.85,seg:10,rad:12});
+  const head=new THREE.Group();head.position.set(0,-.22,.55);neck.add(head);
+  dnTube([[0,0,-.08],[0,0,.18],[0,-.06,.38],[0,-.1,.48]],[.17,.16,.1,.05],m,head,C,{sx:.8,seg:10,rad:10});
+  M(new THREE.ConeGeometry(.05,.12,8),dnDark(),0,-.13,.5,head).rotation.x=Math.PI/2+.6;
+  for(const s of [-1,1])dnEye(this,head,s*.11,.06,.1,.026,'#5a3a1a',s*1.3);
+  this.tick=(t)=>{body.scale.y=1+Math.sin(t*1.1)*.01;};
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.35,size:1.6,h:by+1.65,rad:.95,dustR:[.6,.6,.9]});};
+
+// the dinosaurs that live at 🦕 Dino Valley (24n-dino-valley.js): you can't adopt these, but you can meet them, feed them and learn about them.
+// They're added to ZOOA (24d-barn.js) with dino:1, so the zoo's "meet" card shows their facts.
+const DINOA=[
+  {k:'trexR',e:'🦖',n:'Tyrannosaurus rex',dino:1,food:[['🍖','Meat'],['🍗','Drumstick']],say:['*big rumbly ROAR* 🦖','*stomp... stomp...*','*sniff sniff*'],
+    facts:[['🥩','Diet','Carnivore (a meat-eater). It ate big plant-eating dinosaurs like Triceratops and Edmontosaurus.'],
+      ['🌍','When and where','Western North America, about 68 to 66 million years ago, at the very end of the age of dinosaurs.'],
+      ['📏','Size','Up to 12 m (40 ft) long and about 8 tonnes, heavier than an elephant!'],
+      ['✨','Fun fact','Its arms were tiny, only about as long as a grown-up\'s arm, but very strong. Scientists now think it had lips that covered its teeth, like a lizard.']]},
+  {k:'raptorR',e:'🦖',n:'Raptor (Deinonychus)',dino:1,fast:2.2,food:[['🍗','Chicken'],['🐟','Fish']],say:['*chirp chirp*','*fluffs its feathers*','*quick head tilt*'],
+    facts:[['🥩','Diet','Carnivore. A fast hunter of small and medium animals, and it may have hunted in groups.'],
+      ['🌍','When and where','North America (Montana, Wyoming and Oklahoma), about 115 to 108 million years ago.'],
+      ['📏','Size','About 3.4 m (11 ft) from nose to tail, and about as heavy as a grown-up.'],
+      ['✨','Fun fact','Real raptors had feathers, like birds! They held the big curved claw on each foot up off the ground to keep it sharp. Velociraptor was a smaller cousin, about the size of a turkey.']]},
+  {k:'trikeR',e:'🦕',n:'Triceratops',dino:1,food:[['🌿','Ferns'],['🌴','Palm leaves']],say:['*low friendly snort*','*munch munch* 🌿','*shakes its frill*'],
+    facts:[['🌿','Diet','Herbivore (a plant-eater). Tough low plants like ferns, cycads and palms, snipped off with its parrot-like beak.'],
+      ['🌍','When and where','Western North America, about 68 to 66 million years ago, at the same time and place as T. rex.'],
+      ['📏','Size','About 9 m (30 ft) long and as heavy as a big elephant. Its head was one of the biggest of any land animal ever!'],
+      ['✨','Fun fact','Its name means "three-horned face". The frill and horns may have helped it show off and tell its friends apart.']]},
+  {k:'longneckR',e:'🦕',n:'Brachiosaurus',dino:1,food:[['🌲','Tree tops'],['🍃','Leaves']],say:['*deep gentle hum*','*munches tree-top leaves* 🍃','*slow blink*'],
+    facts:[['🌿','Diet','Herbivore. Leaves from the tops of tall trees like conifers and ginkgos, hundreds of kilos a day!'],
+      ['🌍','When and where','North America (Colorado and Utah), about 154 to 150 million years ago, in the Jurassic.'],
+      ['📏','Size','About 22 m (72 ft) long, and it could hold its head about 9 m (30 ft) up, as high as a three-story building.'],
+      ['✨','Fun fact','Its front legs were longer than its back legs, like a giraffe. Its name means "arm lizard".']]},
+  {k:'stegoR',e:'🦕',n:'Stegosaurus',dino:1,food:[['🌿','Ferns'],['🥬','Leaves']],say:['*soft huff*','*munch munch* 🌿','*plates wiggle*'],
+    facts:[['🌿','Diet','Herbivore. Low plants like ferns, mosses, cycads and horsetails.'],
+      ['🌍','When and where','Western North America and Portugal, about 155 to 145 million years ago, in the Jurassic.'],
+      ['📏','Size','About 9 m (30 ft) long, as heavy as an elephant, with a head tiny for its body.'],
+      ['✨','Fun fact','The spikes on its tail are called a "thagomizer". The plates on its back may have helped it warm up, cool down and show off.']]},
+];
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -7809,19 +8204,19 @@ const FARM=[
   {k:'pony',e:'🐴',n:'Pony',nm:'Buttercup',c:50,ride:.82,about:'A sweet little pony. You can ride her around town!',food:[['🥕','Carrot'],['🍎','Apple'],['🌾','Hay']],say:['Neigh! 🐴','*happy whinny*','Ride with me! 💛']},
   {k:'horse',e:'🐎',n:'Horse',nm:'Star',c:70,ride:1.2,about:'A tall, fast horse. Ride her and gallop around town!',food:[['🥕','Carrot'],['🍎','Apple'],['🌾','Hay']],say:['Neeeigh! 🐎','*proud snort*','Let\'s gallop! 💨']},
   {k:'unicorn',e:'🦄',n:'Unicorn',nm:'Sparkle',s:10,ride:1.2,about:'Rare! A magic unicorn with a rainbow mane and a golden horn.',food:[['🍓','Strawberry'],['🍭','Lollipop'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*sparkle sparkle*','I love you! 🦄']},
-  {k:'trike',e:'🦕',n:'Triceratops',nm:'Trixie',s:12,ride:1.05,about:'Rare! A gentle dinosaur with three horns and a big frill.',food:[['🌿','Ferns'],['🍉','Melon'],['🥬','Leaves']],say:['Rawr! 💚','*happy stomp*','Three horns, one heart!']},
-  {k:'trex',e:'🦖',n:'Baby T-rex',nm:'Chomper',s:15,ride:1.05,about:'Rare! A baby T-rex with tiny arms and a big smile.',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['RAWR! 🦖','*tiny arm wave*','Rawr means I love you!']},
+  {k:'trike',e:'🦕',n:'Triceratops',nm:'Trixie',s:12,dino:1,model:'trikeR',scale:.4,ride:1.1,about:'Rare! A young triceratops with three horns and a big frill. Gentle and calm.',food:[['🌿','Ferns'],['🍉','Melon'],['🥬','Leaves']],say:['Rawr! 💚','*happy stomp*','Three horns, one heart!']},
+  {k:'trex',e:'🦖',n:'Young T. rex',nm:'Chomper',s:15,dino:1,model:'trexR',scale:.32,ride:1.15,about:'Rare! A young T. rex with tiny arms and a big rumbly roar. Gentle with friends!',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['RAWR! 🦖','*tiny arm wave*','Rawr means I love you!']},
   {k:'dragon',e:'🐉',n:'Baby dragon',nm:'Ember',s:8,ride:0,pal:'fly',scale:.42,about:'Rare! A tiny dragon who flies along behind you everywhere you go.',food:[['🌶️','Hot pepper'],['🍓','Strawberry'],['🍖','Meat']],say:['*tiny puff of smoke* 💨','Rawr! 🔥','Let\'s fly! 💜']},
-  {k:'stego',e:'🦕',n:'Mini stegosaurus',nm:'Pebble',s:5,ride:0,pal:'walk',scale:.38,about:'Rare! A pocket-size dinosaur with plates on her back. She can follow you around town.',food:[['🌿','Ferns'],['🥬','Leaves'],['🍓','Berry']],say:['*tiny stomp*','Rawr! 💚','Wait for me!']},
-  {k:'raptor',e:'🦖',n:'Mini raptor',nm:'Zippy',s:6,ride:0,pal:'walk',scale:.42,about:'Rare! A speedy little raptor who races along beside you.',food:[['🍗','Drumstick'],['🍖','Meat'],['🥚','Egg']],say:['Skreee! 💨','*zoom zoom*','Race you!']},
+  {k:'stego',e:'🦕',n:'Mini stegosaurus',nm:'Pebble',s:5,ride:0,pal:'walk',dino:1,model:'stegoR',scale:.22,about:'Rare! A pocket-size dinosaur with plates on her back. She can follow you around town.',food:[['🌿','Ferns'],['🥬','Leaves'],['🍓','Berry']],say:['*tiny stomp*','Rawr! 💚','Wait for me!']},
+  {k:'raptor',e:'🦖',n:'Mini raptor',nm:'Zippy',s:6,ride:0,pal:'walk',dino:1,model:'raptorR',scale:.45,about:'Rare! A speedy little feathered raptor who races along beside you.',food:[['🍗','Drumstick'],['🍖','Meat'],['🥚','Egg']],say:['Skreee! 💨','*zoom zoom*','Race you!']},
   {k:'monkey',e:'🐒',n:'Baby monkey',nm:'Coco',c:60,ride:0,pal:'walk',scale:.55,about:'A cheeky baby monkey with a curly tail. Takes walks with you around town.',food:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],say:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌']},
-  {k:'longneck',e:'🦕',n:'Long-neck dino',nm:'Skye',s:20,ride:2.15,about:'Super rare! A giant long-neck dinosaur. Ride way up high!',food:[['🌿','Ferns'],['🍃','Tree leaves'],['🍐','Pear']],say:['Hrrrooo! 🦕','*big gentle hum*','I can see the whole town!']},
+  {k:'longneck',e:'🦕',n:'Long-neck dino',nm:'Skye',s:20,dino:1,model:'longneckR',scale:.55,wide:.5,ride:2.18,about:'Super rare! A giant long-neck dinosaur. Ride way up high!',food:[['🌿','Ferns'],['🍃','Tree leaves'],['🍐','Pear']],say:['Hrrrooo! 🦕','*big gentle hum*','I can see the whole town!']},
   // rides from the shop: bought with ⭐ in the shop's 🦖 Rides tab (mount = price), or won as a prize (prize = ⭐ stars you need to earn).
   // They live at the barn like the others, and you call them from anywhere with the ride button (24g-mounts.js).
   {k:'kitty',e:'🐱',n:'Big fluffy cat',nm:'Marshmallow',mount:10,ride:1.08,about:'A giant, super fluffy cat you can ride! She purrs when you hug her.',food:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],say:['Purrrrr 💕','Mrrrow! 🐱','*big fluffy stretch*']},
-  {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
+  {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,dino:1,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
   {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,fly:1,ride:1.2,about:'A lavender unicorn with feathery wings. Ride her and tap 🪽 Fly to soar over the treetops!',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
-  {k:'ptero',e:'🦕',n:'Pterodactyl',nm:'Sunny',mount:14,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
+  {k:'ptero',e:'🦕',n:'Pterodactyl',nm:'Sunny',mount:14,dino:1,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
   {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
   {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
@@ -7852,7 +8247,7 @@ const ZOOA=[
   {k:'gator',e:'🐊',n:'Alligator',swim:.36,food:[['🐟','Fish'],['🍗','Chicken']],say:['*low rumbly bellow*','*snap snap!* 🐊','*lazy sunbathing*'],
     facts:[['🥗','Diet','Carnivore. Fish, turtles, snakes, birds and small animals. It can go months without eating in the winter!'],['🌍','Habitat','Rivers, lakes and swamps of the southeastern United States, like Florida and Louisiana. A cousin lives in China.'],['⏳','Lifespan','About 35 to 50 years in the wild, and up to 70 in zoos.'],['✨','Fun fact','You can tell an alligator from a crocodile by its wide, rounded U-shaped snout. When its mouth is shut you can only see its top teeth! It has about 80 teeth and grows new ones all its life.']]}
 ];
-ZOOA.push(...arcticZooList());FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
+ZOOA.push(...arcticZooList(),...DINOA);FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
 const BS=SAVE.barn;BS.own||={};
@@ -8013,60 +8408,11 @@ class FarmAnimal{
       const tail=new THREE.Group();tail.position.set(0,by-.05,-.3);g.add(tail);taperTube([fV(0,0,0),fV(0,-.12,-.25),fV(.08,-.2,-.5)],q=>.11*(1-q*.75),skin,tail,16,10);
       const tip=M(new THREE.ConeGeometry(.08,.14,4),fShiny('#ff6fae'),.09,-.21,-.56,tail);tip.rotation.x=-Math.PI/2;tip.scale.y=.4;
       Object.assign(o,{neck,head,tail,nTilt:.25,size:1,h:1.35,rad:.45,biped:true,dustR:[.22,.22,.3]});}
-    if(k==='stego'){const r=.4,len=.6,leg=.32,by=leg+r*.6,skin=fm('#f2a65a',{roughness:.7}),belly=fm('#fff0d6'),plate=fShiny('#7cc7b0',{roughness:.4});
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.7,1.3);
-      for(let i=0;i<7;i++){const q=i/6,z=(q-.5)*len*1.5,y=r*(.85+Math.sin(q*Math.PI)*.15);for(const sx of [-1,1]){const p=M(new THREE.ConeGeometry(.16+Math.sin(q*Math.PI)*.08,.3+Math.sin(q*Math.PI)*.12,4),plate,sx*.05,y+.1,z+sx*.05,body);p.scale.z=.25;p.rotation.z=sx*.15;}}
-      fLegs(this,g,r*.6,len*.45,leg+.06,leg+.06,.11,skin,fShiny('#e9dcc4'));
-      const neck=new THREE.Group();neck.position.set(0,by-.02,len/2+r*.55);neck.rotation.x=1.3;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.07,0);head.rotation.x=-1.3;neck.add(head);const H=.24;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.9,.85,1.2);M(sph(H*.6,14,10),belly,0,-H*.35,H*.65,head).scale.set(1,.6,1.1);
-      fEyes(this,head,H,.48,.2,.65,.45,.24,'#2a5a3a');fBlush(head,H,.62,-.12,.72);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.3),fV(0,-.15,-.6)],q=>.2*(1-q*.85),skin,tail,16,12);
-      for(const [x,y,z,a] of [[.08,-.1,-.5,.9],[-.08,-.1,-.5,-.9],[.07,-.13,-.6,.9],[-.07,-.13,-.6,-.9]]){const sp=M(new THREE.ConeGeometry(.035,.22,8),fShiny('#fff4dc'),x,y,z,tail);sp.rotation.z=-a;}
-      Object.assign(o,{neck,head,tail,nTilt:1.3,size:1,h:by+.45,rad:.65,dustR:[r,r,len*.8]});}
     // 🐒 Coco: a real-looking little monkey, the same builder as the Pet Parlor's real pets (Pet.buildReal in 16-animals-pets.js), in brown
     if(k==='monkey'){const p=new Pet('monkey','#7b5b43','',null,{real:1,light:'#d8c4a6',face:'#2b211c',paw:'#2b211c'}),S=1.6;
       if(p.tag){p.g.remove(p.tag);p.tag.material.map.dispose();p.tag.material.dispose();p.tag=null;}
       p.g.scale.setScalar(S);g.add(p.g);this.tick=(t,dt,run)=>{p.speed=run*2.4;p.happy=this.happy;p.update(dt);};
       Object.assign(o,{size:1,h:p.tagH*S,rad:.4,dustR:[.17,.55,.3]});}
-    if(k==='trex'||k==='raptor'){const rap=k==='raptor',by=.62,skin=fm(rap?'#5ec8c8':'#86c96a',{roughness:.7}),belly=fm(rap?'#e8fbff':'#e6f5c8',{roughness:.7}),spot=fm(rap?'#ff8fc8':'#5fa850');
-      body.position.y=by;body.rotation.x=-.25;const t=M(new THREE.CapsuleGeometry(.25,.3,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(.2,14,10),belly,0,-.1,.12,body).scale.set(.95,.9,1.3);
-      for(let i=0;i<5;i++)M(new THREE.ConeGeometry(.04,.09,6),spot,0,.25-i*.005,.15-i*.12,body);
-      for(const sx of [-1,1]){const arm=M(new THREE.CapsuleGeometry(.03,.09,4,8),skin,sx*.17,-.02,.3,body);arm.rotation.x=-1;}
-      this.legs=[];for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.16,.5,-.02);g.add(lg);M(sph(.13,12,10),skin,0,0,0,lg).scale.set(.8,1.1,1.1);
-        M(capTop(.06,.32),skin,0,-.05,-.03,lg);M(sph(.08,10,8),skin,0,-.48,.06,lg).scale.set(1,.5,1.6);this.legs.push({g:lg,ph});}
-      const neck=new THREE.Group();neck.position.set(0,by+.22,.3);neck.rotation.x=.3;g.add(neck);M(new THREE.CapsuleGeometry(.12,.12,6,12),skin,0,.08,0,neck);
-      const head=new THREE.Group();head.position.set(0,.24,.04);head.rotation.x=-.3;neck.add(head);const H=.22;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.9,.9,1.15);const jaw=M(sph(H*.7,16,12),belly,0,-H*.45,H*.5,head);jaw.scale.set(1.05,.55,1.3);
-      for(let i=0;i<6;i++){const sx=i<3?-1:1,q=i%3;M(new THREE.ConeGeometry(H*.05,H*.12,6),phys('#ffffff',{roughness:.3}),sx*H*(.35-q*.1),-H*.3,H*(.65+q*.18),head,false,false).rotation.x=Math.PI;}
-      fEyes(this,head,H,.45,.3,.62,.5,.24,'#7a4a12');fBlush(head,H,.6,-.05,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.02,-.3);g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.25),fV(0,-.15,-.5),fV(0,-.32,-.72)],q=>.2*(1-q*.85),skin,tail,20,12);
-      Object.assign(o,{neck,head,tail,nTilt:.3,size:.95,h:1.2,rad:.45,biped:true,dustR:[.25,.25,.35]});}
-    if(k==='trike'){const r=.4,len=.6,leg=.32,by=leg+r*.65,skin=fm('#7cc7b0',{roughness:.7}),belly=fm('#d8f3ea'),frillM=fShiny('#ff9ec8',{roughness:.5}),horn=fShiny('#fff4dc');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,20),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.7,1.3);
-      for(let i=0;i<6;i++)M(sph(r*.13,10,8),fm('#4fa88e'),Math.sin(i*2.1)*r*.6,r*.8,(i/5-.5)*len,body,false,false).scale.set(1,.4,1);
-      fLegs(this,g,r*.6,len*.45,leg+.06,leg+.06,.11,skin,fShiny('#e9dcc4'));
-      const neck=new THREE.Group();neck.position.set(0,by+.02,len/2+r*.65);neck.rotation.x=1.25;g.add(neck);
-      const head=new THREE.Group();head.position.set(0,.08,0);head.rotation.x=-1.25+.05;neck.add(head);const H=.27;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.95,.9,1.15);M(new THREE.ConeGeometry(H*.35,H*.6,12),belly,0,-H*.35,H*1.1,head).rotation.x=Math.PI/2+.4;
-      const fr=M(new THREE.CylinderGeometry(H*1.35,H*1.35,H*.12,10),frillM,0,H*.55,-H*.35,head);fr.rotation.x=-1.05;
-      for(let i=0;i<10;i++){const a=i/10*Math.PI*2;M(sph(H*.13,8,6),fShiny('#ffd23f'),Math.sin(a)*H*1.3,H*.55+Math.cos(a)*H*1.3*Math.cos(1.05)-.0,-H*.35-Math.cos(a)*H*1.3*Math.sin(1.05),head,false,false);}
-      for(const sx of [-1,1]){const hn=M(new THREE.ConeGeometry(H*.14,H*1.05,10),horn,sx*H*.38,H*.8,H*.6,head);hn.rotation.set(1.05,0,-sx*.2);}
-      const nh=M(new THREE.ConeGeometry(H*.1,H*.35,10),horn,0,H*.05,H*1.05,head);nh.rotation.x=.4;
-      fEyes(this,head,H,.5,.2,.68,.45,.2,'#5a3a12');fBlush(head,H,.62,-.1,.72);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.08,-.25),fV(0,-.2,-.5)],q=>.18*(1-q*.8),skin,tail,16,12);
-      Object.assign(o,{neck,head,tail,nTilt:1.25,size:1.1,h:by+.55,rad:.7,dustR:[r,r,len*.8]});}
-    if(k==='longneck'){const r=.5,len=.7,leg=.78,by=leg+r*.6,skin=fm('#8fb8f0',{roughness:.7}),belly=fm('#e6f0ff'),spot=fm('#6a8fe0');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.75,1.3);
-      for(let i=0;i<8;i++)M(sph(r*.14,10,8),spot,Math.sin(i*2.4)*r*.65,r*.75+Math.cos(i*1.3)*r*.1,(i/7-.5)*len*1.1,body,false,false).scale.set(1,.4,1);
-      fLegs(this,g,r*.6,len*.45,leg+.1,leg+.1,.14,skin,fShiny('#d6e3f7'));
-      const neck=new THREE.Group();neck.position.set(0,by+r*.3,len/2+r*.4);neck.rotation.x=.38;g.add(neck);const nl=1.7;
-      taperTube([fV(0,0,0),fV(0,nl*.35,.05),fV(0,nl*.7,0),fV(0,nl,-.02)],q=>.2-.1*q,skin,neck,24,14);
-      const head=new THREE.Group();head.position.set(0,nl+.05,0);head.rotation.x=-.38+.1;neck.add(head);const H=.19;
-      M(sph(H,20,14),skin,0,0,0,head).scale.set(.9,.85,1.25);M(sph(H*.7,14,10),belly,0,-H*.35,H*.55,head).scale.set(.95,.6,1.2);
-      fEyes(this,head,H,.45,.22,.62,.45,.24,'#2a3a6a');fBlush(head,H,.62,-.12,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.1,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.1,-.4),fV(.1,-.35,-.9),fV(.25,-.6,-1.3)],q=>.28*(1-q*.85),skin,tail,24,12);
-      Object.assign(o,{neck,head,tail,nTilt:.38,size:1.6,h:by+nl+.4,rad:1,dustR:[r,r,len*.8]});}
     /* ---- rides from the shop (24g-mounts.js): all original designs ---- */
     // 🐱 a giant fluffy cat: round and soft, pointy ears, green eyes, a big curly tail
     if(k==='kitty'){const r=.36,len=.5,leg=.42,by=leg+r*.7,fur=fm('#fff3e4',{roughness:1}),peach=fm('#ffc999'),white=fm('#ffffff',{roughness:1}),pink=fShiny('#ffa3bf',{roughness:.45}),whisk=std('#b8a796');
@@ -8242,12 +8588,17 @@ function paddockOk(lx,lz,r){return barnOk(lx,lz,r);}
 function barnOk(lx,lz,r){if(Math.hypot(lx,lz)>BZ.fence-.45-r)return false;if(lz<BZ.barnBox.lz+BZ.barnBox.d/2+.15+r)return false;
   for(const [x,z,rr] of PADDOCK_AVOID)if(Math.hypot(lx-x,lz-z)<rr+r)return false;return true;}
 function paddockSpot(r){for(let i=0;i<60;i++){const lx=(Math.random()*2-1)*4.6,lz=-1.2+Math.random()*5.6;if(paddockOk(lx,lz,r))return [lx,lz];}return [0,1];}
-function farmAnimal(k){if(FA[k])return FA[k];const a=FA[k]=new FarmAnimal(k);a.Z=BZ;a.ok=barnOk;a.spot=paddockSpot;a.mates=FA;scene.add(a.g);const [lx,lz]=paddockSpot(a.rad);a.lx=lx;a.lz=lz;placeFarm(a);return a;}
+// where each animal lives: the dinosaurs (dino:1) at 🦖 Dino Valley (12i-place-dino-valley.js), everyone else at the barn.
+// care = where the one you look after stands, stand = where you stand, out = where you step off when you're done
+const HOMES={barn:{id:'barn',Z:BZ,ok:barnOk,spot:paddockSpot,care:[0,1.55],stand:[1.2,3.3],out:[0,3.1],name:'🐴 Happy Barn'},
+  dino:{id:'dino',Z:Z.dino,ok:dvOk,spot:dvSpot,care:DV.care,stand:DV.stand,out:DV.out,name:'🦖 Dino Valley'}};
+const farmHome=k=>FK[k]&&FK[k].dino?HOMES.dino:HOMES.barn;
+function farmAnimal(k){if(FA[k])return FA[k];const a=FA[k]=new FarmAnimal(k),H=farmHome(k);a.home=H;a.Z=H.Z;a.ok=H.ok;a.spot=H.spot;a.mates=FA;scene.add(a.g);const [lx,lz]=H.spot(a.rad);a.lx=lx;a.lz=lz;placeFarm(a);return a;}
 function placeFarm(a){const [x,w]=a.Z.toWorld(a.lx,a.lz);a.pos.set(x,a.y,w);a.g.position.copy(a.pos);a.g.rotation.y=a.Z.rot+a.face;a.ob.x=x;a.ob.z=w;a.ob.r=a.g.visible&&!a.ridden?a.rad*.75:0;}
-const CARE_SPOT=[0,1.55];let barnOpen=false,barnSel=null,barnTab='mine',barnPreview=null,barnRide=null,onFPad=false,barnZoneIn=false;
+let barnAt='barn',barnOpen=false,barnSel=null,barnTab='mine',barnPreview=null,barnRide=null,onFPad=false,barnZoneIn=false;
 function stepFarm(a,dt){if(a.ridden)return;let sp=0;
-  if(barnOpen&&a===barnSel){// walk over to the care spot and look at you
-    const dx=CARE_SPOT[0]-a.lx,dz=CARE_SPOT[1]-a.lz,d=Math.hypot(dx,dz);
+  if(barnOpen&&a===barnSel&&a.home){// walk over to the care spot and look at you
+    const C=a.home.care,dx=C[0]-a.lx,dz=C[1]-a.lz,d=Math.hypot(dx,dz);
     if(d>.08){sp=Math.min(1.6,d*2);a.lx+=dx/d*Math.min(d,sp*dt);a.lz+=dz/d*Math.min(d,sp*dt);a.face=angDamp(a.face,Math.atan2(dx,dz),Math.min(1,dt*6));}
     else a.face=angDamp(a.face,.35,Math.min(1,dt*3));
     a.graze=Math.max(0,a.graze-dt*2);}
@@ -8270,15 +8621,15 @@ function stepFarm(a,dt){if(a.ridden)return;let sp=0;
 
 /* ---------- riding ---------- */
 function startRide(a){if(!a||!a.F.ride)return;closeBarn(true);if(BIKE.on)stopBike(true);if(SK.on)stopSkate(true);barnRide=a;BS.steed=a.k;persist();a.ridden=true;a.ob.r=0;a.graze=0;
-  player.pos.set(a.pos.x,player.pos.y,a.pos.z);player.face=BZ.rot+a.face;cam.yaw=player.face+Math.PI;av.play('ride');
+  player.pos.set(a.pos.x,player.pos.y,a.pos.z);player.face=a.Z.rot+a.face;cam.yaw=player.face+Math.PI;av.play('ride');
   $('#rideBtn').textContent=`${a.F.e} Hop off`;$('#rideBtn').style.display='block';did('ride',a.k);sfx('tada');a.speak(rnd(a.F.say));
   toast(`Ride ${BS.own[a.k].n} anywhere in town! Tap “Hop off” to get down 💨`);renderActions();}
 function stopRide(force){const a=barnRide;if(!a)return;
   if(FLY.on){if(!force){flyLand(true);return;}flyEnd(true);}// up in the air: land first (24h-flying.js)
   flyStraighten(a);FLY.settle=0;FLY.open=FLY.tuck=0;barnRide=null;a.ridden=false;a.y=0;a.vy=0;$('#rideBtn').style.display='none';if(av.emote&&av.emote.id==='ride')av.emote=null;
-  const P=player.pos,[lx,lz]=BZ.toLocal(P.x,P.z);
-  if(paddockOk(lx,lz,a.rad*.7)){a.lx=lx;a.lz=lz;a.face=player.face-BZ.rot;const s=a.rad+.45;P.x+=Math.cos(player.face)*s;P.z-=Math.sin(player.face)*s;}
-  else{burst(a.g.position.clone().add(new THREE.Vector3(0,a.h*.5,0)),'#ffd23f',30,2);const [x,z]=paddockSpot(a.rad);a.lx=x;a.lz=z;a.tgt=null;toast(`${BS.own[a.k].n} trotted home to the 🐴 Happy Barn 💖`);}
+  const P=player.pos,H=a.home,[lx,lz]=H.Z.toLocal(P.x,P.z);
+  if(H.ok(lx,lz,a.rad*.7)){a.lx=lx;a.lz=lz;a.face=player.face-H.Z.rot;const s=a.rad+.45;P.x+=Math.cos(player.face)*s;P.z-=Math.sin(player.face)*s;}
+  else{burst(a.g.position.clone().add(new THREE.Vector3(0,a.h*.5,0)),'#ffd23f',30,2);const [x,z]=H.spot(a.rad);a.lx=x;a.lz=z;a.tgt=null;toast(`${BS.own[a.k].n} went home to ${H.name} 💖`);}
   placeFarm(a);renderActions();}
 $('#rideBtn').onclick=()=>{sfx('pop');stopRide();};
 function rideStep(dt){const a=barnRide,p=player.pos;if(!a)return;if(closetOpen||!started||handsBusy()){stopRide(true);return;}// off during sports, contests and other games
@@ -8294,11 +8645,11 @@ const rideBoost=()=>barnRide?barnRide.F.boost||1+Math.min(.9,barnRide.size*.5):1
 /* ---------- little buddies that follow you around town (the baby dragon flies!) ---------- */
 function palGo(k){if(BS.pal&&BS.pal!==k)palHome();BS.pal=k;const a=farmAnimal(k);a.along=true;a.ob.r=0;a.tgt=null;
   const P=player.pos;a.pos.set(P.x-Math.sin(player.face)*1.2,P.y+(a.F.pal==='fly'?1.4:0),P.z-Math.cos(player.face)*1.2);a.g.position.copy(a.pos);burst(a.pos.clone().add(new THREE.Vector3(0,.4,0)),'#ffd23f',20,1.5);}
-function palHome(){const k=BS.pal;BS.pal=null;persist();const a=FA[k];if(!a)return;a.along=false;
-  if(Math.hypot(a.pos.x-BZ.x,a.pos.z-BZ.z)>BZ.r){burst(a.pos.clone(),'#ffd23f',20,1.5);[a.lx,a.lz]=paddockSpot(a.rad);}else{const [lx,lz]=BZ.toLocal(a.pos.x,a.pos.z);if(barnOk(lx,lz,a.rad)){a.lx=lx;a.lz=lz;}else[a.lx,a.lz]=paddockSpot(a.rad);}
+function palHome(){const k=BS.pal;BS.pal=null;persist();const a=FA[k];if(!a)return;a.along=false;const H=a.home;
+  if(Math.hypot(a.pos.x-H.Z.x,a.pos.z-H.Z.z)>H.Z.r){burst(a.pos.clone(),'#ffd23f',20,1.5);[a.lx,a.lz]=H.spot(a.rad);}else{const [lx,lz]=H.Z.toLocal(a.pos.x,a.pos.z);if(H.ok(lx,lz,a.rad)){a.lx=lx;a.lz=lz;}else[a.lx,a.lz]=H.spot(a.rad);}
   a.y=0;a.flying=a.F.pal==='fly';placeFarm(a);}
 const palV=new THREE.Vector3();
-function palStep(a,dt){if(barnOpen&&a===barnSel){if(a.along){a.along=false;[a.lx,a.lz]=[CARE_SPOT[0],CARE_SPOT[1]+1];}stepFarm(a,dt);return;}
+function palStep(a,dt){if(barnOpen&&a===barnSel){if(a.along){a.along=false;[a.lx,a.lz]=[a.home.care[0],a.home.care[1]+1];}stepFarm(a,dt);return;}
   if(!a.along){a.along=true;}
   const P=player.pos,fly=a.F.pal==='fly',back=player.face+Math.PI+(fly?.5:.75),r=(fly?.75:.95)+a.rad;
   palV.set(P.x+Math.sin(back)*r,fly?P.y+1.45+Math.sin(a.t*2.2)*.12:P.y,P.z+Math.cos(back)*r);
@@ -8313,37 +8664,41 @@ function palStep(a,dt){if(barnOpen&&a===barnSel){if(a.along){a.along=false;[a.lx
 const fCoins=()=>SAVE.coins||0;
 const starsEarned=()=>(SAVE.chal&&SAVE.chal.stars)||0;
 function barnMoney(){$('#barnMoney').textContent=`🪙 ${fCoins()} · ⭐ ${starsLeft()} to spend`;}
-function openBarn(){if(closetOpen||!started)return;closeTalk();barnOpen=closetOpen=true;BZ.padLbl.visible=false;
-  document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
-  const mine=Object.keys(BS.own);barnTab=mine.length?'mine':'adopt';if(!barnSel||!BS.own[barnSel.k])barnSel=mine.length?farmAnimal(BS.sel&&BS.own[BS.sel]?BS.sel:mine[0]):null;
-  const [px,pz]=BZ.toWorld(1.2,3.3);player.pos.set(px,0,pz);player.vy=0;player.speed=0;
+// the barn sheet opens at the 🐴 Happy Barn ('barn') or at 🦖 Dino Valley ('dino'), and only shows the animals that live there
+const atHome=f=>(barnAt==='dino')===!!f.dino;
+const myHere=()=>Object.keys(BS.own).filter(k=>FK[k]&&atHome(FK[k]));
+function openBarn(at){if(closetOpen||!started)return;closeTalk();barnAt=at==='dino'?'dino':'barn';const H=HOMES[barnAt];barnOpen=closetOpen=true;H.Z.padLbl.visible=false;
+  document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';$('#barnUI h2').textContent=barnAt==='dino'?'🦖 Dino Valley':'🐴 Happy Barn';
+  const mine=myHere();barnTab=mine.length?'mine':barnAt==='dino'?'rare':'adopt';if(!barnSel||!BS.own[barnSel.k]||!atHome(barnSel.F))barnSel=mine.length?farmAnimal(BS.sel&&mine.includes(BS.sel)?BS.sel:mine[0]):null;
+  const [px,pz]=H.Z.toWorld(...H.stand);player.pos.set(px,groundAt(px,pz),pz);player.vy=0;player.speed=0;
   fcam.p.copy(camera.position);fcam.t.copy(cam.fv||player.pos);fcam.dy=0;
   if(barnSel){const n=farmNeed(barnSel.k);setTimeout(()=>{if(barnOpen&&barnSel)barnSel.speak(n||rnd(barnSel.F.say));},600);}
-  else if(barnTab==='adopt')previewFarm(FARM[0].k);
+  else{const l=tabList(barnTab);if(l.length)previewFarm(l[0].k);}
   renderBarn();$('#barnUI').classList.add('show');$('#barnContent').scrollTop=0;sfx('tada');thumbsSoon();}
-function closeBarn(keep){if(!barnOpen)return;barnOpen=closetOpen=false;BZ.padLbl.visible=true;document.body.classList.remove('dressing');$('#barnUI').classList.remove('show');
-  clearPreview();persist();if(!keep){const [px,pz]=BZ.toWorld(0,3.1);player.pos.set(px,0,pz);cam.yaw=cam.cy=BZ.rot;player.face=BZ.rot;}}
+function closeBarn(keep){if(!barnOpen)return;const H=HOMES[barnAt];barnOpen=closetOpen=false;H.Z.padLbl.visible=true;document.body.classList.remove('dressing');$('#barnUI').classList.remove('show');
+  clearPreview();persist();if(!keep){const [px,pz]=H.Z.toWorld(...H.out);player.pos.set(px,groundAt(px,pz),pz);cam.yaw=cam.cy=H.Z.rot;player.face=H.Z.rot;}}
 $('#barnDone').onclick=()=>closeBarn();
 function clearPreview(){if(barnPreview&&!BS.own[barnPreview.k]){const a=barnPreview;scene.remove(a.g);a.ob.r=0;const i=obs.indexOf(a.ob);if(i>=0)obs.splice(i,1);delete FA[a.k];
   a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}barnPreview=null;}
-function previewFarm(k){if(barnPreview&&barnPreview.k===k)return;clearPreview();const a=farmAnimal(k);if(!BS.own[k]){a.lx=CARE_SPOT[0];a.lz=CARE_SPOT[1]+.6;a.face=.35;barnPreview=a;a.setTag('');}barnSel=a;
+function previewFarm(k){if(barnPreview&&barnPreview.k===k)return;clearPreview();const a=farmAnimal(k);if(!BS.own[k]){a.lx=a.home.care[0];a.lz=a.home.care[1]+.6;a.face=.35;barnPreview=a;a.setTag('');}barnSel=a;
   a.speak(rnd(a.F.say));a.hop=1;placeFarm(a);}
 const FTABS=[['mine','💖','My animals'],['adopt','🪙','Adopt'],['rare','⭐','Rare'],['pals','🐉','Buddies']];
-const tabList=t=>FARM.filter(f=>t==='mounts'?f.mount||f.prize||f.earn:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal);
+// here: only the animals that live where the sheet is open (the animal book passes false to list them all)
+const tabList=(t,here=true)=>FARM.filter(f=>(!here||atHome(f))&&(t==='mounts'?f.mount||f.prize||f.earn:t==='pals'?f.pal:t==='rare'?f.s&&!f.pal:f.c&&!f.pal));
 const fMeter=(e,n,v)=>`<div class="meter">${e} ${n}<i><b style="width:${Math.round(v)}%"></b></i></div>`;
-function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
-  $('#barnTabs').innerHTML=FTABS.map(([id,e,n])=>`<button class="tab${id===barnTab?' on':''}" data-ftab="${id}"><b>${e}</b>${n}</button>`).join('');
+function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]&&atHome(f)),dn=barnAt==='dino';
+  $('#barnTabs').innerHTML=FTABS.filter(([id])=>id==='mine'||tabList(id).length).map(([id,e,n])=>`<button class="tab${id===barnTab?' on':''}" data-ftab="${id}"><b>${dn&&id==='pals'?'🦖':dn&&id==='mine'?'🦕':e}</b>${dn&&id==='mine'?'My dinosaurs':n}</button>`).join('');
   let h='',m='';const a=barnSel,F=a&&a.F;
   if(barnTab==='mine'){
-    if(!mine.length)h=`<p class="drawhint" style="margin-top:14px">You don't have any barn animals yet. Tap <b>🪙 Adopt</b> to pick your first one!</p>`;
+    if(!mine.length)h=dn?`<p class="drawhint" style="margin-top:14px">You don't have any dinosaurs yet. Tap <b>⭐ Rare</b> or <b>🦖 Buddies</b> to adopt your first one!</p>`:`<p class="drawhint" style="margin-top:14px">You don't have any barn animals yet. Tap <b>🪙 Adopt</b> to pick your first one!</p>`;
     else{h=`<div class="farmRow">${mine.map(f=>`<button class="item${a&&a.k===f.k?' on':''}" data-fsel="${f.k}">${fThumb(f)}<span>${esc(BS.own[f.k].n)}</span></button>`).join('')}</div>`;
       if(a&&BS.own[a.k]){const c=farmCare(a.k);a.showDust(c.shine);m=fMeter('🌾','Food',c.food)+fMeter('✨','Shiny',c.shine)+fMeter('💖','Love',c.love);
         h+=`<div class="farmName"><label>Name</label><input id="farmName" maxlength="14" value="${esc(BS.own[a.k].n)}" aria-label="Animal name"></div>
           <h3>Feed ${esc(BS.own[a.k].n)}</h3><div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-ffeed="${i}">${e} ${n}</button>`).join('')}</div>
           <h3>Care</h3><div class="ctbtns farmBtns"><button class="btn ghost" data-fdo="brush">🪮 Brush</button><button class="btn ghost" data-fdo="hug">💖 Hug</button><button class="btn ghost" data-fdo="water">💧 Water</button></div>
-          ${F.pal?`<div class="ctbtns"><button class="btn big" data-fdo="along">${BS.pal===a.k?`🏠 ${esc(BS.own[a.k].n)} stays at the barn`:`🐾 Take ${esc(BS.own[a.k].n)} with you!`}</button></div><p class="drawhint">${F.pal==='fly'?'Flies along behind you everywhere you go!':'Follows you all around town!'}</p>`:F.ride?`<div class="ctbtns"><button class="btn big" data-fdo="ride">🏇 Ride ${esc(BS.own[a.k].n)}!</button></div>`:`<p class="drawhint">${F.n}s are too little to ride, but they love hugs!</p>`}`;}}}
+          ${F.pal?`<div class="ctbtns"><button class="btn big" data-fdo="along">${BS.pal===a.k?`🏠 ${esc(BS.own[a.k].n)} stays ${dn?'in Dino Valley':'at the barn'}`:`🐾 Take ${esc(BS.own[a.k].n)} with you!`}</button></div><p class="drawhint">${F.pal==='fly'?'Flies along behind you everywhere you go!':'Follows you all around town!'}</p>`:F.ride?`<div class="ctbtns"><button class="btn big" data-fdo="ride">🏇 Ride ${esc(BS.own[a.k].n)}!</button></div>`:`<p class="drawhint">${F.n}s are too little to ride, but they love hugs!</p>`}`;}}}
   else{const list=tabList(barnTab);
-    h=`<button class="catLink" data-fbook="1">📖 See every animal in the game</button>`+(barnTab==='adopt'?`<button class="dinoLink" data-ftabgo="rare">🦖 Looking for dinosaurs and the unicorn? Tap here for ⭐ Rare!</button><button class="dinoLink" data-ftabgo="pals">🐉 Baby dragon and mini dinos that follow you? Tap here for Buddies!</button>`:'')+(barnTab==='rare'?`<div class="starNote">⭐ <b>${starsEarned()}</b> earned · <b>${starsLeft()}</b> left to spend<small>The ⭐ at the top counts every star you ever earned (that's your rank), so it never goes down. Rare animals use stars from "left to spend". Earn more from ⭐🏆 challenges!</small></div>`:'')+
+    h=`<button class="catLink" data-fbook="1">📖 See every animal in the game</button>`+(barnTab==='adopt'?`<button class="dinoLink" data-ftabgo="rare">🦄 Looking for the unicorn? Tap here for ⭐ Rare!</button><button class="dinoLink" data-ftabgo="pals">🐉 A baby dragon or a monkey that follows you? Tap here for Buddies!</button>`:'')+(!dn&&barnTab!=='mine'?`<button class="dinoLink" data-fdino="1">🦖 The dinosaurs moved to Dino Valley! Tap to find the way there.</button>`:'')+(barnTab==='rare'?`<div class="starNote">⭐ <b>${starsEarned()}</b> earned · <b>${starsLeft()}</b> left to spend<small>The ⭐ at the top counts every star you ever earned (that's your rank), so it never goes down. Rare animals use stars from "left to spend". Earn more from ⭐🏆 challenges!</small></div>`:'')+
       `<div class="grid">${list.map(f=>{const own=!!BS.own[f.k];return `<button class="item${a&&a.k===f.k?' on':''}" data-fpick="${f.k}">${fThumb(f)}<span>${f.n}</span><em class="${own?'got':''}">${own?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`}</em></button>`;}).join('')}</div>`;
     if(a&&list.includes(F)){const own=!!BS.own[a.k],have=F.s?starsLeft():fCoins(),cost=F.s||F.c,cur=F.s?'⭐':'🪙';
       h+=`<div class="farmAbout"><b>${F.e} ${F.n}</b><span>${F.about}</span>${F.ride?'<span>🏇 You can ride this one!</span>':''}
@@ -8352,7 +8707,7 @@ function renderBarn(){barnMoney();const mine=FARM.filter(f=>BS.own[f.k]);
   const ni=$('#farmName');if(ni)ni.onchange=()=>{const v=ni.value.trim().slice(0,14);if(!v||!barnSel||!BS.own[barnSel.k])return;BS.own[barnSel.k].n=v;barnSel.setTag(v);persist();renderBarn();};}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 $('#barnTabs').onclick=e=>{const b=e.target.closest('[data-ftab]');if(!b)return;barnTab=b.dataset.ftab;sfx('pop');
-  if(barnTab==='mine'){clearPreview();const mine=Object.keys(BS.own);barnSel=mine.length?farmAnimal(BS.sel&&BS.own[BS.sel]?BS.sel:mine[0]):null;}
+  if(barnTab==='mine'){clearPreview();const mine=myHere();barnSel=mine.length?farmAnimal(BS.sel&&mine.includes(BS.sel)?BS.sel:mine[0]):null;}
   else{const list=tabList(barnTab);if(!barnSel||!list.includes(barnSel.F))previewFarm((list.find(f=>!BS.own[f.k])||list[0]).k);}
   renderBarn();$('#barnContent').scrollTop=0;};
 $('#barnContent').onclick=e=>{const b=e.target.closest('button');if(!b||!barnOpen)return;const d=b.dataset;
@@ -8361,6 +8716,7 @@ $('#barnContent').onclick=e=>{const b=e.target.closest('button');if(!b||!barnOpe
   if(d.fadopt)return adoptFarm(d.fadopt);
   if(d.ftabgo){barnTab=d.ftabgo;const l=tabList(barnTab);previewFarm((l.find(f=>!BS.own[f.k])||l[0]).k);sfx('pop');renderBarn();$('#barnContent').scrollTop=0;return;}
   if(d.fbook){closeBarn();setTimeout(openCatalog,350);return;}
+  if(d.fdino){closeBarn();setDest(Z.dino);sfx('star');toast('Follow the pink arrow on the map to 🦖 Dino Valley 💗');return;}
   const a=barnSel;if(!a||!BS.own[a.k])return;const c=farmCare(a.k),top=()=>a.g.position.clone().add(new THREE.Vector3(0,a.h*.75,0));
   if(d.ffeed!=null){const [fe,fn]=a.F.food[+d.ffeed];c.food=Math.min(100,c.food+34);a.graze=1;a.eatT=1.4;floaties(top(),fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did('farmfeed',a.k);}
   if(d.fdo==='brush'){c.shine=Math.min(100,c.shine+26);a.wig=.6;burst(top(),'#ffffff',18,1.2,.12);floaties(top(),'✨',3);a.showDust(c.shine);tone(900,.05,'sine',.08);tone(1200,.05,'sine',.08,.06);
@@ -8434,6 +8790,7 @@ function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpe
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';player.speed=0;
   fcam.p.copy(camera.position);fcam.t.copy(cam.fv||player.pos);
   if(a.F.arctic){const I=SAVE.ice||(SAVE.ice={});I.seen||={};if(!I.seen[a.k]){I.seen[a.k]=1;persist();}did('icelearn',a.k);}// ❄️ polar animals count for the Polar challenges, not the Safari ones
+  else if(a.F.dino)did('dinolearn',a.k);// 🦖 Dino Valley
   else{const seen=zooSeen();if(!seen[a.k]){seen[a.k]=1;persist();did('zoolearn',a.k);}}
   a.speak(rnd(a.F.say));renderZoo();$('#zooUI').classList.add('show');$('#zooContent').scrollTop=0;sfx('pop');}
 function closeZoo(){if(!zooOpen)return;zooOpen=closetOpen=false;document.body.classList.remove('dressing');$('#zooUI').classList.remove('show');
@@ -8443,9 +8800,10 @@ function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
     ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`💖 ${esc(BS.own[r.k].n)} is yours! Step on the 🦖 footprint by the Dino Keeper's hut to take care of ${esc(BS.own[r.k].n)}.`:`🥚 Want one of your own? Step on the 🦖 footprint by the Dino Keeper's hut to adopt ${r.e} ${r.nm} with ⭐ stars!`}</p>`:'')(a.F.dino&&FARM.find(f=>f.dino&&f.model===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
-  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did(a.F.arctic?'icefeed':'zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
+  if(b.dataset.zfeed!=null){const [fe,fn]=a.F.food[+b.dataset.zfeed];a.graze=a.k==='giraffe'?0:1;a.wig=.4;floaties(top,fe,5);a.speak(`Yum, ${fn.toLowerCase()}! 😋`);tone(520,.08,'triangle',.1);tone(660,.08,'triangle',.1,.1);did(a.F.arctic?'icefeed':a.F.dino?'dinofeed':'zoofeed',a.k);setTimeout(()=>{a.graze=0;},1500);}
   if(b.dataset.zpet){a.happy=2;a.wig=.6;floaties(top,'💖',6);a.speak(rnd(a.F.say));sfx('pop');did('zoopet',a.k);}
   // a little thank-you once a day for each kind of animal you feed and pet
   const day=new Date().toDateString(),z=zooSeen();z.fed||={};if(b.dataset.zfeed!=null&&z.fed[a.k]!==day){z.fed[a.k]=day;persist();setTimeout(()=>earn(3,`Fed the ${a.F.n.toLowerCase()}`),700);}};
@@ -8458,14 +8816,15 @@ let catOpen=false;
 function renderCatalog(){const st=myStars(),row=(ico,name,sub,tag,cls,go)=>`<div class="catRow">${ico}<span><strong>${name}</strong><small>${sub}</small></span><em class="${cls}">${tag}</em>${go?`<button data-catgo="${go}" aria-label="Show the way">📍</button>`:''}</div>`;
   const pets=PETS.map(pt=>{const need=(pt.o&&pt.o.stars)||0,z=pt.home;
     return row(`<b>${PET_E[pt.kind]||'🐾'}</b>`,esc(pt.name),`A ${pt.kind} who lives at ${z?z.name:'town'}`,pt.owned?'💖 Your pet':need?(st>=need?`✅ ⭐ ${need} reached`:`🔒 ⭐ ${need} stars`):'Free!',pt.owned?'got':need?(st>=need?'got':'star'):'free',z&&z.id);});
-  const farm=f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`,BS.own[f.k]?'got':f.s?'star':'coin','barn');
+  const farm=f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.s?`⭐ ${f.s}`:`🪙 ${f.c}`,BS.own[f.k]?'got':f.s?'star':'coin',f.dino?'dino':'barn');
   $('#catList').innerHTML=`<div class="cnote">You've earned ⭐ ${st} stars and have ⭐ ${starsLeft()} left to spend. Pets are free to adopt. Some need a certain number of ⭐ stars first (you keep your stars). Barn animals and little buddies cost 🪙 coins, and the rare ones cost ⭐ stars (spending stars never lowers your rank).</div>
     <h3>🐾 Pets around town</h3>${pets.join('')}
-    <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt').map(farm).join('')}
-    <h3>✨ Rare barn animals · ⭐ stars</h3>${tabList('rare').map(farm).join('')}
-    <h3>🐉 Little buddies who follow you</h3>${tabList('pals').map(farm).join('')}
-    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts').map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
-    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.filter(f=>!f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}
+    <h3>🐴 Barn animals · 🪙 coins</h3>${tabList('adopt',false).map(farm).join('')}
+    <h3>✨ Rare animals · ⭐ stars (dinosaurs live at 🦖 Dino Valley)</h3>${tabList('rare',false).map(farm).join('')}
+    <h3>🐉 Little buddies who follow you</h3>${tabList('pals',false).map(farm).join('')}
+    <h3>🦖 Rides from the 🛍️ shop · ⭐ stars</h3>${tabList('mounts',false).map(f=>row(fThumb(f),f.n,BS.own[f.k]?`Yours! Named ${esc(BS.own[f.k].n)}`:f.about,BS.own[f.k]?'✅ Yours':f.earn?earnTag(f.earn):f.prize?`🏆 Earn ⭐ ${f.prize}`:`⭐ ${f.mount}`,BS.own[f.k]?'got':'star',null)).join('')}
+    <h3>🦖 Dino Valley · free to visit</h3>${ZOOA.filter(f=>f.dino).map(f=>row(fThumb(f),f.n,'Meet them, feed them and learn about them','Visit','free','dino')).join('')}
+    <h3>🦒 Safari Zoo · free to visit</h3>${ZOOA.filter(f=>!f.arctic&&!f.dino).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','zoo')).join('')}
     <h3>❄️ Polar Ice · free to visit</h3>${ZOOA.filter(f=>f.arctic).map(f=>row(fThumb(f),f.n,'Pet them, feed them and learn about them','Visit','free','arctic')).join('')}`;
   $('#catStars').textContent=`⭐ ${starsLeft()} to spend · 🪙 ${fCoins()}`;}
 function openCatalog(){if(!started||closetOpen)return;try{closeTalk();}catch(e){}joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';catOpen=true;renderCatalog();$('#catalog').classList.add('show');$('#catList').scrollTop=0;sfx('pop');thumbsSoon();}
@@ -8477,13 +8836,16 @@ $('#catalog').onclick=e=>{if(e.target.id==='catalog')return closeCatalog();const
 /* ---------- every frame (called from the game loop) ---------- */
 function barnStep(p,dt){
   zooStep(p,dt);
-  const near=Math.hypot(p.x-BZ.x,p.z-BZ.z)<40;
-  for(const k in FA){const a=FA[k];if(a.tag)a.tag.visible=!(barnOpen&&a===barnSel);if(a===barnRide)continue;if(k===BS.pal)palStep(a,dt);else if(near||barnOpen)stepFarm(a,dt);}
+  const near={};for(const id in HOMES){const Hz=HOMES[id].Z;near[id]=Math.hypot(p.x-Hz.x,p.z-Hz.z)<45;}
+  for(const k in FA){const a=FA[k];if(a.tag)a.tag.visible=!(barnOpen&&a===barnSel);if(a===barnRide)continue;if(k===BS.pal)palStep(a,dt);else if(near[a.home.id]||barnOpen)stepFarm(a,dt);}
   rideStep(dt);
   // the glowing horseshoe pad opens the barn
-  {const [lx,lz]=BZ.toLocal(p.x,p.z),d=Math.hypot(lx-BZ.bpad.lx,lz-BZ.bpad.lz);if(d<BZ.bpad.r&&player.onGround&&!closetOpen&&!barnRide){if(!onFPad&&started){onFPad=true;openBarn();}}else if(d>1.3)onFPad=false;}
-  const inZ=Math.hypot(p.x-BZ.x,p.z-BZ.z)<BZ.r+1;if(inZ&&!barnZoneIn&&started&&!closetOpen&&!barnRide){setTimeout(()=>toast(Object.keys(BS.own).length?'Step on the glowing horseshoe to take care of your animals 🐴':'Step on the glowing horseshoe to adopt farm animals and dinosaurs 🐴🦖'),1600);
-    for(const k in BS.own){const n=farmNeed(k);if(n&&FA[k]){FA[k].speak(n);break;}}}barnZoneIn=inZ;}
+  {let on=null,far=true;for(const id in HOMES){const Hz=HOMES[id].Z,[lx,lz]=Hz.toLocal(p.x,p.z),d=Math.hypot(lx-Hz.bpad.lx,lz-Hz.bpad.lz);if(d<Hz.bpad.r)on=id;if(d<=1.3)far=false;}
+   if(on&&player.onGround&&!closetOpen&&!barnRide){if(!onFPad&&started){onFPad=true;openBarn(on);}}else if(far)onFPad=false;}
+  const inZ=Math.hypot(p.x-BZ.x,p.z-BZ.z)<BZ.r+1?'barn':Math.hypot(p.x-Z.dino.x,p.z-Z.dino.z)<Z.dino.r+1?'dino':'';
+  if(inZ&&inZ!==barnZoneIn&&started&&!closetOpen&&!barnRide){const dn=inZ==='dino',have=Object.keys(BS.own).some(k=>FK[k]&&!!FK[k].dino===dn);
+    setTimeout(()=>toast(dn?(have?'Step on the glowing footprint by the hut to take care of your dinosaurs 🦖':'Step on the glowing footprint by the hut to adopt a dinosaur of your own 🦖'):(have?'Step on the glowing horseshoe to take care of your animals 🐴':'Step on the glowing horseshoe to adopt farm animals 🐴')),1600);
+    for(const k in BS.own){const n=farmNeed(k);if(n&&FA[k]&&FA[k].home.id===inZ){FA[k].speak(n);break;}}}barnZoneIn=inZ;}
 const fcam={p:new THREE.Vector3(),t:new THREE.Vector3(),dy:0},fWant=new THREE.Vector3(),fTgt=new THREE.Vector3();
 function barnCam(dt){const a=barnOpen?barnSel:zooOpen?zooSel:null;if(!a)return;const s=Math.max(.55,a.h);const yaw=a.Z.rot+a.face+.55,pitch=.22,d=1.25+s*(a.h>2?1.8:1.55);
   fTgt.set(a.pos.x,a.pos.y+a.h*(a.h>2?.62:.5),a.pos.z);fWant.set(fTgt.x+Math.sin(yaw)*Math.cos(pitch)*d,fTgt.y+Math.sin(pitch)*d+.2,fTgt.z+Math.cos(yaw)*Math.cos(pitch)*d);
@@ -9802,11 +10164,11 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{openS
    - 🐉 Nova the starlight dragon can't be bought: she comes by herself once you've earned 50 ⭐ (prize = how many).
    - Once you have one, tap the ride button in the moves wheel and it pops out right where you are (17d-bicycle.js).
      With more than one ride the button says 🏇 Rides and opens a list to pick from.
-   - They live at the 🐴 Happy Barn when you're not riding, so you can feed, brush and rename them there.
+   - They live at the 🐴 Happy Barn when you're not riding (the dinosaurs at 🦖 Dino Valley), so you can feed, brush and rename them there.
    - Friends online see you riding them through the 'ride' entry in 26c-friends-see.js (any barn animal you ride). */
 const MOUNTS=FARM.filter(f=>f.mount||f.prize||f.earn);// earn = 🏆 rides you earn by winning or playing days in a row (24i-earned-rides.js)
 STABS.splice(1,0,['rides','🦖','Rides']);
-SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn, and the dinosaurs and unicorn there can be ridden too.';
+SHINT.rides='Your rides pop out wherever you are! Tap 🏇 with your moves to hop on. They live at the 🐴 Happy Barn (the dinosaurs at 🦖 Dino Valley), and the big dinosaurs and the unicorn there can be ridden too.';
 for(const f of MOUNTS)SHOP.push({k:'mount:'+f.k,tab:'rides',e:f.e,fk:f.k,n:f.n,stars:f.mount,prize:f.prize||(f.earn&&f.earn.goal),earn:f.earn,
   d:f.prize||f.earn?f.about:`${f.about} Once you have ${f.nm}, tap 🏇 with your moves and ${f.nm} pops out wherever you are!`});
 
@@ -10996,6 +11358,38 @@ addEventListener('load',()=>onTick.push(()=>{if(!started||!PE.on)return;const cv
 function peState(){return {on:PE.on,home:Object.keys(PE.home).length,n:PE_ANI.length,sc:{...PE.sc},rope:(PE_ANI.find(c=>c.mode==='rope')||{}).nm||null,
   modes:Object.fromEntries(PE_ANI.map(c=>[c.nm,c.mode])),escapes:IS.escapes||0,homeAll:IS.home||0};}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{PE,PE_ANI,peState,peBegin,peCatch,peLetGo,peFromNet,peMe,peEnd});});
+// ---- src/24n-dino-valley.js ----
+/* ===== 🦖 Dino Valley: the dinosaurs that live there (the valley is 12i-place-dino-valley.js, the models 24c9h-dinos.js) =====
+   - DVA are the valley's own dinosaurs: a T. rex in its paddock, three raptors in their pen, and a triceratops, a brachiosaurus and a
+     stegosaurus (and their young) out in the meadow. They're not yours: like the zoo's animals they wander about, never follow you,
+     and you walk up and tap 🦖 Meet to see their facts card (openZoo in 24d-barn.js), feed them and pet them (through the fence too).
+   - Kid-safe: nobody chases, bites or attacks. The T. rex just lifts its head and roars now and then (24c9h-dinos.js).
+   - The dinosaurs you adopt or buy (dino:1 in FARM) live here too, in the meadow, and the 🦖 footprint pad by the Dino Keeper's hut
+     opens their care sheet (openBarn('dino') in 24d-barn.js). */
+const DZ=Z.dino,DVA=[];
+// [kind, size (1 = grown up), where it lives: m = meadow, t = T. rex paddock, r = raptor pen]
+for(const [k,sc,at] of [['trexR',.82,'t'],['raptorR',1,'r'],['raptorR',.92,'r'],['raptorR',.85,'r'],['trikeR',1,'m'],['trikeR',.5,'m'],['longneckR',1,'m'],['longneckR',.5,'m'],['stegoR',1,'m']]){
+  const a=new FarmAnimal(k);a.Z=DZ;a.mates=DVA;a.dust.forEach(d=>d.visible=false);
+  if(at==='t'){a.ok=dvTOk;a.spot=dvTSpot;}else if(at==='r'){a.ok=dvROk;a.spot=dvRSpot;}else{a.ok=dvOk;a.spot=dvSpot;}
+  if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;if(sc<.7)a.baby=true;}
+  [a.lx,a.lz]=a.spot(a.rad);DVA.push(a);scene.add(a.g);placeFarm(a);}
+{document.body.insertAdjacentHTML('beforeend','<button class="hud" id="dinoMeet"></button>');
+ const st=document.createElement('style');st.textContent=`
+#dinoMeet{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 250px);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5;background:linear-gradient(90deg,#8bbf5a,#4f7f2e);box-shadow:0 6px 18px rgba(79,127,46,.4)}
+#dinoMeet:active{transform:translateX(-50%) scale(.94)}
+body.dressing #dinoMeet,body.talking #dinoMeet,body.shopping #dinoMeet{display:none!important}
+@media (max-height:520px){#dinoMeet{bottom:calc(env(safe-area-inset-bottom) + 130px)}}`;
+ document.head.appendChild(st);}
+let dinoNear=null;
+function dinoStep(dt){const p=player.pos,near=Math.hypot(p.x-DZ.x,p.z-DZ.z)<55;
+  for(const a of DVA){if(!near&&!(zooOpen&&a===zooSel)){a.g.visible=false;continue;}a.g.visible=true;stepFarm(a,dt);}
+  // the 🦖 Meet button: walk up to one (the paddock ones from outside their fence)
+  let best=null,bd=1e9;if(near&&!closetOpen&&started&&!barnRide&&!FLY.on)for(const a of DVA){const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<(a.ok===dvOk?1.3:5)&&d<bd){bd=d;best=a;}}
+  if(best!==dinoNear){dinoNear=best;const b=$('#dinoMeet');if(best){aniIco(b,best.F.e,'Meet',`Meet the ${best.baby?'young ':''}${best.F.n.replace(/ \(.*\)/,'')}`);b.style.display='block';}else b.style.display='none';}
+  if(zooOpen&&zooSel&&DVA.includes(zooSel)&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>10)closeZoo();}
+$('#dinoMeet').onclick=()=>{if(dinoNear){const a=dinoNear;dinoNear=null;$('#dinoMeet').style.display='none';openZoo(a);}};
+anims.push((t,dt)=>{if(started)dinoStep(dt);});
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{DVA,DV,DZ,dinoNear:()=>dinoNear});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -16244,6 +16638,11 @@ Object.assign(window.__game,{WF,WB,wfStart,wfMenu,wfAt,wfPol,wfHit,wfPress,wfSte
    Keep it to about 3 to 6 notes, one short sentence each.
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
+  {v:'2026-11-07',notes:[
+    {e:'🦖',t:'Visit Dino Valley! Cross the bridge behind the Barber Shop to see a real-looking T. rex, raptors, a triceratops and more.',go:'dino'},
+    {e:'🦕',t:'Your dinosaurs moved out of the barn and into Dino Valley. The Happy Barn is just for farm animals now.',go:'dino'},
+    {e:'🥚',t:'Step on the glowing footprint by the Dino Keeper\'s hut to take care of your dinosaurs or adopt a new one.',go:'dino'},
+  ]},
   {v:'2026-11-06',notes:[
     {e:'🏊',t:'Swimming looks real now! Your arms reach forward and pull back like a real swimmer, and you float with your head up.'},
     {e:'⚽',t:'Play soccer at the new Soccer Field! Take penalty kicks, hit targets, do keepy-uppies or play 1-on-1 with Kai.',go:'soccer'},
@@ -16823,6 +17222,38 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{water
   local:wpLocal,world:wpWorld,state:()=>({ride:WP.ride?WP.ride.kind:'',phase:WP.ride&&WP.ride.phase||'',slide:WP.ride&&WP.ride.S?WP.ride.S.id:'',board:WP.board,slides:WP.slides||0,surfs:WP.surfs||0,
     waves:WAVE.list.map(w=>w.c),swim:SW.k,brg:BRG.on,zone:curZone&&curZone.id})},bankGround,onBankLand,bridgeAt,BRG});});
 wpReady=true;
+// ---- src/26y-dino-valley-land.js ----
+/* ===== 🦖 Dino Valley: the land under it and the footbridge over the canal (the valley itself is 12i-place-dino-valley.js) =====
+   Dino Valley sits on the canal's far bank behind the Barber Shop and the Sweet Bakery: its own BANK_LAND sector (DVL.a0 .. DVL.a1,
+   ground:1 because it draws its own grass; you walk on it like any bank land) and a wooden footbridge at DVL.bridge, like the ones to
+   the Sports Park. Pushing the sector here (before 26z-big-world.js) flattens the big world's hills there and moves its fence round it. */
+const DVL={a0:296,a1:328,bridge:312};DVL.out=Z.dino.d+Z.dino.r+4;
+BANK_LAND.push({id:'dino',a0:DVL.a0,a1:DVL.a1,out:DVL.out,ground:1});
+MAPC.dino='#7fae5a';
+// grass out to the edge of the bank, with a sandy edge down to the water (like the airfield and the ball fields)
+{const wg=new THREE.Group();scene.add(wg);const th0=deg(DVL.a0-90),th=deg(DVL.a1-DVL.a0);
+ const m=M(new THREE.RingGeometry(BANK.out-.4,DVL.out,24,1,th0,th),groundMat,0,.004,0,wg,false,true);m.rotation.x=-Math.PI/2;
+ const sand=std('#e8cf9a',{map:TEX.sand,roughness:1});
+ M(new THREE.CylinderGeometry(DVL.out,DVL.out+2,3,24,1,true,deg(DVL.a0),deg(DVL.a1-DVL.a0)),sand,0,-1.5,0,wg,false,true);
+ for(const a of [DVL.a0,DVL.a1]){const L=DVL.out-BANK.out+.4,w=M(new THREE.PlaneGeometry(L,3),sand,0,0,0,wg,false,true);const r=(BANK.out+DVL.out)/2;
+   w.position.set(Math.sin(deg(a))*r,-1.5,Math.cos(deg(a))*r);w.rotation.y=deg(a)-Math.PI/2;w.material.side=THREE.DoubleSide;}}
+/* ---------- 🌉 the footbridge over the canal ---------- */
+{const F={a:DVL.bridge,t0:R-2.5,t1:BANK.in+2.8,w:2.4,top:2.3};F.ux=Math.sin(deg(F.a));F.uz=Math.cos(deg(F.a));DVL.fb=F;
+  const loc=(x,z)=>[x*F.ux+z*F.uz,x*F.uz-z*F.ux],deck=t=>F.top*Math.sin(Math.PI*Math.max(0,Math.min(1,(t-F.t0)/(F.t1-F.t0))))+.1;
+  SURF.push({h(x,z){const [t,s]=loc(x,z);if(t<F.t0||t>F.t1||Math.abs(s)>F.w/2-.18)return -1;return deck(t);}});
+  BANK_BRIDGES.push({a:F.a,w:F.w,on:p=>HIGH.on||deck(loc(p.x,p.z)[0])<.5});
+  const g=new THREE.Group();g.rotation.y=deg(F.a);scene.add(g);const B=advBatch(),hw=F.w/2,P=(s,t,dy=0)=>new THREE.Vector3(s,deck(t)+dy,t);
+  for(let t=F.t0+.15;t<F.t1;t+=.3){const sl=Math.atan2(deck(t+.1)-deck(t-.1),.2);B.add(box(F.w,.07,.27),ADM.wood,0,deck(t)-.04,t,-sl,0,0);}
+  for(const s of [-1,1]){
+    for(let t=F.t0;t<F.t1-.4;t+=.4)B.stick(P(s*(hw-.08),t,-.12),P(s*(hw-.08),t+.4,-.12),.07,ADM.dark,6);
+    for(let t=F.t0+.3;t<F.t1;t+=1.6){B.stick(P(s*(hw-.06),t,-.05),P(s*(hw-.06),t,1.02),.05,ADM.wood,8);
+      B.stick(P(s*(hw-.06),t,1.02),P(s*(hw-.06),Math.min(F.t1-.3,t+1.6),1.02),.045,ADM.wood,8);
+      B.stick(P(s*(hw-.06),t,.55),P(s*(hw-.06),Math.min(F.t1-.3,t+1.6),.55),.025,ADM.rope,5);}
+    const arch=[];for(let i=0;i<=24;i++){const t=F.t0+3+(F.t1-F.t0-6)*i/24;arch.push(P(s*(hw-.2),t,-.18-(.6*Math.sin(Math.PI*i/24))));}
+    for(let i=0;i<24;i++)B.stick(arch[i],arch[i+1],.11,ADM.dark,7);}
+  for(const t of [F.t0+3.4,F.t1-3.4])B.add(new THREE.CylinderGeometry(.55,.75,2.4,10),ADM.stone,0,-.9,t,0,0,0,2.4,1,1);
+  B.done(g);
+  MAP_DRAW.push((x,w2s,k)=>{const a=w2s(F.ux*F.t0,F.uz*F.t0),b=w2s(F.ux*F.t1,F.uz*F.t1);x.strokeStyle='#9a6a43';x.lineWidth=Math.max(2.5,F.w*k);x.lineCap='butt';x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke();});}
 // ---- src/26z-big-world.js ----
 /* ================= 🗺️ THE BIG WORLD: land all the way out past the canal, blocked off until we build there =================
    - The island is in the middle, the 🌊 canal goes round it, and past the canal's far bank (BANK in 26f-ocean.js) the land keeps going a
