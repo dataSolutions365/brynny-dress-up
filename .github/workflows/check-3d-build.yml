@@ -73,5 +73,7 @@ jobs:
         run: node 3d/tests/helicopter.mjs
       - name: Wiffle ball (bat, pitch, field, Derby)
         run: node 3d/tests/wiffle.mjs
+      - name: 3-on-3 basketball - pick a team, pass, call for it, dunk, steal, and the Bears play back
+        run: node 3d/tests/basketball-3v3.mjs
       - name: What's new shows once after an update, and the map's NEW tags clear when you visit
         run: node 3d/tests/whats-new.mjs

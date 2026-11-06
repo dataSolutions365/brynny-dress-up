@@ -255,6 +255,9 @@ const ALL_LIST = [
   { id: 'wp_bounce', tab: 'water', e: '🤸', t: 'Bounce off the yellow bouncer into the water', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'bounce' } },
   { id: 'wp_jump', tab: 'water', e: '💦', t: 'Jump off the top of the step tower', r: 1, go: 'water', ev: { k: 'wpplay', a: a => a === 'jump' } },
   // ⚽ the Soccer Field on the far bank (3d/src/26h-soccer.js)
+  { id: 'bb3_play', tab: 'sports', e: '👥', t: 'Play a 3-on-3 basketball game with your team', r: 1, go: 'court', ev: { k: 'play', a: a => a === 'v3' } },
+  { id: 'bb3_assist', tab: 'sports', e: '🙌', t: 'Get an assist: pass to a teammate who scores in 3-on-3', r: 2, go: 'court', ev: { k: 'sport', a: a => a === 'assist' } },
+  { id: 'bb3_win', tab: 'sports', e: '🏆', t: 'Win a 3-on-3 basketball game against the Bears', r: 3, go: 'court', ev: { k: 'sport', a: a => a === 'v3win' } },
   { id: 'soc_pk', tab: 'sports', e: '⚽', t: 'Score a penalty past Leo the goalie', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'pk' } },
   { id: 'soc_save', tab: 'sports', e: '🧤', t: 'Dive and save one of Kai\'s penalties', r: 1, go: 'soccer', ev: { k: 'soccer', a: a => a === 'save' } },
   { id: 'soc_pkwin', tab: 'sports', e: '🥅', t: 'Win a penalty shootout', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'pkwin' } },

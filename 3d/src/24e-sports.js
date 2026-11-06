@@ -58,7 +58,7 @@ function spBtn(text,cls){const b=$('#spMain');if(b.dataset.t!==text){b.dataset.t
 const spLocal=(z,w)=>{const [x,zz]=z.toLocal(w.x,w.z);return new THREE.Vector3(x,w.y,zz);};
 const spSetWorld=(z,lx,lz)=>{const [x,w]=z.toWorld(lx,lz);player.pos.x=x;player.pos.z=w;};
 const spFace=(z,lx,lz,tx,tz)=>Math.atan2(tx-lx,tz-lz)+z.rot;// world facing for looking from (lx,lz) to (tx,tz)
-function spLock(){if(spX())return true;return !!SP.mode&&(SP.mode==='ft'||SP.mode==='bat'||!!SP.hold||!!SP.dunk);}
+function spLock(){if(spX())return spX().lock?spX().lock():true;return !!SP.mode&&(SP.mode==='ft'||SP.mode==='bat'||!!SP.hold||!!SP.dunk);}
 function spSay(t,ms=1300){banner(t);}
 function spCheer(){try{sndCheer.currentTime=0;sndCheer.play().catch(()=>{});}catch(e){}}
 // arm poses drawn on top of the normal walking animation
@@ -141,9 +141,10 @@ function spMade(b){const C=SPC,z=Z.court;b.made=true;z.hoop.swish=1;tone(880,.12
   else if(SP.mode==='v1'){if(b.by==='me')SP.score+=b.pts;else SP.opp+=b.pts;
     spSay(b.by==='me'?(b.dunked?'💥 SLAM DUNK!':b.pts===3?'🔥 Three pointer!':'🏀 Bucket!'):(b.dunked?'😮 Kai dunks!':'Kai scores'));
     SP.poss=null;SP.next=1.3;SP.nextFor=b.by==='me'?'cpu':'me';}
+  else if(spX()&&spX().made)spX().made(b);// e.g. 🏀 3-on-3 (24e4-basketball-3v3.js)
   if(b.by==='me'){spCheer();did('sport','basket');}
   spBoard();}
-function spBoard(){const zb=Z.court.board;if(SP.mode==='ft')zb.draw(SP.score,10-SP.shots,'🎯 MADE · LEFT');else if(SP.mode==='shoot')zb.draw(SP.score,Math.ceil(SP.left),'🔥 POINTS · TIME');else if(SP.mode==='v1')zb.draw(SP.score,SP.opp,'YOU · KAI');else zb.draw('0','0');}
+function spBoard(){const zb=Z.court.board;if(SP.mode==='ft')zb.draw(SP.score,10-SP.shots,'🎯 MADE · LEFT');else if(SP.mode==='shoot')zb.draw(SP.score,Math.ceil(SP.left),'🔥 POINTS · TIME');else if(SP.mode==='v1')zb.draw(SP.score,SP.opp,'YOU · KAI');else if(spX()&&spX().board)spX().board(zb);else zb.draw('0','0');}
 
 /* ---------- the computer player for 1-on-1 ---------- */
 function spCpu(){if(SP.cpu)return SP.cpu;const L=Object.assign(defaultGuyLook(),{skin:'#b97a4f',eyes:'#3d2a1a',hair:{id:'crop',c:'#2b1d16'},dress:null,
@@ -158,12 +159,14 @@ function spOpenMenu(zid){if(SP.mode||SP.menu)return;SP.menu=true;const S=SAVE.sp
    <button class="spPick" data-m="ft"><b>🎯</b><span><strong>Free throws</strong><small>10 shots from the line${S.ft!=null?` · Best: ${S.ft} of 10`:''}</small></span></button>
    <button class="spPick" data-m="shoot"><b>🔥</b><span><strong>Shootout</strong><small>60 seconds. Shoot from anywhere, dunk up close${S.shoot!=null?` · Best: ${S.shoot} pts`:''}</small></span></button>
    <button class="spPick" data-m="v1"><b>🆚</b><span><strong>1-on-1 vs Kai</strong><small>First to 11 wins${S.v1w?` · Wins: ${S.v1w}`:''}</small></span></button>
+   <button class="spPick" id="spV3"><b>👥</b><span><strong>3-on-3 game</strong><small>You and 2 teammates vs the Bears. First to 11${S.v3w?` · Wins: ${S.v3w}`:''}</small></span></button>
    <button class="btn ghost" id="spNo">Not now</button>`;
   // the real game is at the ⚾ Baseball Field over the bridge (26j-wiffle.js); the cage is for batting practice
   else c.innerHTML=`<h2>⚾ Batting Cage</h2><p>Want a real game? The Baseball Field is just over the bridge: pitch, hit and run the bases with a whole team!</p>
    <button class="spPick" id="spToField"><b>⚾</b><span><strong>Play a real baseball game</strong><small>Go over to the Baseball Field</small></span></button>
    <button class="spPick" data-m="bat"><b>🏏</b><span><strong>Batting practice</strong><small>The machine throws 10 pitches${S.hr?` · Most home runs: ${S.hr}`:''}</small></span></button>
    <button class="btn ghost" id="spNo">Not now</button>`;
+  if($('#spV3'))$('#spV3').onclick=()=>{spCloseMenu();bb3Pick();};// 🏀 3-on-3 (24e4-basketball-3v3.js)
   if($('#spToField'))$('#spToField').onclick=()=>{spCloseMenu();if(fastTravel(Z.wiffle))setTimeout(()=>{if(!SP.mode&&!SP.menu)wfMenu();},700);};
   spSuitBtn(c,zid);if(SP.onMenu)try{SP.onMenu(c,zid);}catch(e){}
   c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{spCloseMenu();spStart(b.dataset.m);});
