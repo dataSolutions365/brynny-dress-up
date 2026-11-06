@@ -8428,7 +8428,7 @@ for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rh
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
   let best=null,bd=1e9;for(const a of ZA){if(a.esc)continue;const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
-  if(best!==zooNear){zooNear=best;const b=$('#zooBtn');if(best){b.textContent=`${best.F.e} Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`;b.style.display='block';}else b.style.display='none';}}
+  if(best!==zooNear){zooNear=best;const b=$('#zooBtn');if(best){aniIco(b,best.F.e,'Meet',`Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`);b.style.display='block';}else b.style.display='none';}}
 $('#zooBtn').onclick=()=>{if(zooNear)openZoo(zooNear);};
 function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpen=true;zooSel=a;$('#zooBtn').style.display='none';zooNear=null;
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';player.speed=0;
@@ -10656,7 +10656,7 @@ function iceAnimalsStep(dt){const p=player.pos,near=Math.hypot(p.x-IZ.x,p.z-IZ.z
     stepFarm(a,dt);}
   // the "Meet" button
   let best=null,bd=1e9;if(!closetOpen&&started&&!barnRide&&!FLY.on)for(const a of IA){if(a.esc||!a.g.visible)continue;const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
-  if(best!==iceNear){iceNear=best;const b=$('#iceMeet');if(best){b.textContent=`${best.F.e} Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`;b.style.display='block';}else b.style.display='none';}
+  if(best!==iceNear){iceNear=best;const b=$('#iceMeet');if(best){aniIco(b,best.F.e,'Meet',`Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`);b.style.display='block';}else b.style.display='none';}
   if(zooOpen&&zooSel&&IA.includes(zooSel)&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>8)closeZoo();}
 $('#iceMeet').onclick=()=>{if(iceNear){const a=iceNear;iceNear=null;$('#iceMeet').style.display='none';openZoo(a);}};
 
@@ -12269,7 +12269,7 @@ function seaButtons(){const P=player.pos;let best=null,bd=1e9;
   seaNear=best;const rideC=best&&!SW.ride?SEA_RIDES.find(r=>r.kind===best.kind&&r.nm===best.nm):null;
   const key=(best?best.nm:'')+'|'+(SW.ride?SW.ride.nm:'')+'|'+(rideC?(seaOwns(rideC)?1:0):'');if(key===seaBtnKey)return;seaBtnKey=key;
   const f=$('#seaFeed'),r=$('#seaRide');
-  if(best&&!SW.ride){f.textContent=`${best.K.food[0][0]} Feed ${best.nm}`;f.style.display='block';}else f.style.display='none';
+  if(best&&!SW.ride){aniIco(f,best.K.food[0][0],'Feed',`Feed ${best.nm}`);f.style.display='block';}else f.style.display='none';
   if(SW.ride){r.textContent=`${SW.ride.K.e} Hop off`;r.classList.remove('lock');r.style.display='block';}
   else if(rideC){const own=seaOwns(rideC);r.textContent=own?`${best.K.e} Ride ${best.nm}`:`🔒 Ride ${best.nm}`;r.classList.toggle('lock',!own);r.style.display='block';}
   else r.style.display='none';}
@@ -12636,7 +12636,7 @@ const ropeMat=std('#c8a46a',{roughness:.9}),ROPES=ROAM.map(()=>{const m=M(cyl(.0
 /* ---------- buttons and the Round-up bar ---------- */
 {const st=document.createElement('style');st.textContent=`
 #roamBtn,#roamCatch{position:fixed;left:50%;transform:translateX(-50%);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5}
-#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 310px);background:linear-gradient(90deg,#f6b93b,#e58e26);box-shadow:0 6px 18px rgba(229,142,38,.45)}
+#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 300px);background:linear-gradient(90deg,#f6b93b,#e58e26);box-shadow:0 6px 18px rgba(229,142,38,.45)}
 #roamCatch{bottom:calc(env(safe-area-inset-bottom) + 370px);background:linear-gradient(90deg,#a1887f,#6d4c41);box-shadow:0 6px 18px rgba(109,76,65,.4)}
 #roamCatch.go{background:linear-gradient(90deg,#ff6a3d,#e8336d);box-shadow:0 6px 18px rgba(232,51,109,.45)}
 #roamBtn:active,#roamCatch:active{transform:translateX(-50%) scale(.94)}
@@ -12649,7 +12649,17 @@ body.dressing #ruBar,body.shopping #ruBar,body.sp-on #ruBar{display:none!importa
 #ruBar div{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
 #ruBar span{background:rgba(255,255,255,.92);color:#3b2357;border-radius:999px;padding:4px 10px;font-weight:700;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.18);white-space:nowrap}
 #ruBar span.home{opacity:.6}#ruBar span.rope{background:#ffe2b8}#ruBar span.me{background:#ffd23f}
-#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}#ruBar i{font-style:normal;opacity:.85;margin-left:2px}
+#ruBar small{font-weight:600;color:#7a5a8c;margin-left:3px}
+button.hud.aniIco{left:16px!important;right:auto!important;transform:none!important;bottom:calc(env(safe-area-inset-bottom) + 300px)!important;min-width:72px;height:72px;padding:5px 9px 0;border-radius:36px;white-space:nowrap;line-height:1;text-align:center;border:3px solid #fff}
+button.hud.aniIco:active{transform:scale(.94)!important}
+button.hud.aniIco .ie{display:block;font-size:30px;line-height:36px}button.hud.aniIco .il{display:block;font-size:12px;font-weight:800;margin-top:1px}
+@media (max-height:520px){button.hud.aniIco{bottom:calc(env(safe-area-inset-bottom) + 110px)!important}#roamPop{bottom:calc(env(safe-area-inset-bottom) + 190px)!important}}
+#roamPop{position:fixed;left:16px;bottom:calc(env(safe-area-inset-bottom) + 384px);z-index:9;display:none;background:rgba(255,255,255,.96);border-radius:20px;padding:10px 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,.22);width:max-content;max-width:calc(100vw - 32px)}
+#roamPop.show{display:block}#roamPop header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;color:#3b2357;font-size:16px}
+#roamPop header button{border:0;background:#f1e8f7;color:#3b2357;border-radius:50%;width:30px;height:30px;font-size:14px}
+#roamPop div{display:flex;gap:8px}#roamPop div button{border:0;background:#fff4e0;color:#3b2357;border-radius:14px;padding:8px 10px;font-weight:700;font-size:12px;min-width:66px}
+#roamPop div button i{display:block;font-style:normal;font-size:26px;margin-bottom:3px}#roamPop div button:active{transform:scale(.94)}
+body.dressing #roamPop,body.talking #roamPop,body.shopping #roamPop,body.sp-on #roamPop{display:none!important}#ruBar i{font-style:normal;opacity:.85;margin-left:2px}
 #ruBar.all span{font-size:11px;padding:3px 7px}#ruBar.all b{background:linear-gradient(90deg,#ff6a3d,#e8336d)}
 @media (max-height:520px){#roamBtn{bottom:calc(env(safe-area-inset-bottom) + 185px)}#roamCatch{bottom:calc(env(safe-area-inset-bottom) + 240px)}#ruBar{top:calc(env(safe-area-inset-top) + 52px)}}`;
   document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<button class="hud" id="roamBtn"></button><button class="hud" id="roamCatch"></button><div id="ruBar"></div>');}
@@ -12675,16 +12685,29 @@ function roamButton(){const P=player.pos;let best=null,bd=ROAM_REACH;
     atBarn=!RU.on&&!RU.endT&&!closetOpen&&!allOn()?(nearHome('barn',P,14)?'barn':nearHome('zoo',P,10)?'zoo':Math.hypot(P.x,P.z)<Z.studio.r+8?'all':''):'';
   const grab=RU.on&&canCatch(best)&&ruIn(best)&&ropes.length<ropeMax();
   const key=(best?best.nm+best.mode:'')+'|'+ropes.map(c=>c.nm).join()+'|'+(RU.on?1:0)+'|'+atBarn;if(key===roamBtnKey)return;roamBtnKey=key;const b=$('#roamBtn'),k=$('#roamCatch');
-  if(best&&best.mode!=='rope'&&!grab){b.textContent=`${best.food[0][0]} Feed ${best.nm}`;b.style.display='block';}else b.style.display='none';
+  if(best&&best.mode!=='rope'&&!grab){aniIco(b,best.e,best.nm,`Meet ${best.nm}`);b.style.display='block';}else{b.style.display='none';}
+  if(roamPopC&&roamPopC!==best)roamPopClose();
   k.classList.remove('go');
   if(grab){k.textContent=`🪢 Catch ${best.nm}`;k.style.display='block';}
   else if(rope){k.textContent=`🪢 Let go of ${rope.nm}`;k.style.display='block';}
   else if(atBarn){k.textContent=atBarn==='all'?'🌪️ Start the All-Animal Round-up!':atBarn==='zoo'?'🚨 Start a Safari Round-up!':'🚨 Start a Round-up!';k.dataset.g=atBarn;k.classList.add('go');k.style.display='block';}
   else k.style.display='none';}
-function roamFeed(c){if(!c)return;const fd=rnd(c.food),top=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0));
+function roamFeed(c,i){if(!c)return;const fd=c.food[i]||rnd(c.food),top=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0));
   floaties(top,fd[0],4);setTimeout(()=>floaties(top,'💖',5),350);sfx('munch');c.happy=1.6;c.a.happy=2;c.a.wig=1;c.a.speak(rnd(c.say));
   RS.fed[c.nm]=1;persist();toast(`${c.e} ${c.nm} loves the ${fd[1]}!`);did('roamfeed',c.nm);}
-$('#roamBtn').onclick=()=>roamFeed(roamNear);
+function roamPet(c){if(!c)return;const top=c.a.g.position.clone().add(new THREE.Vector3(0,c.a.h+.2,0));floaties(top,'💖',6);sfx('pop');c.happy=1.6;c.a.happy=2;c.a.wig=.6;c.a.speak(rnd(c.say));did('roampet',c.nm);}
+// 🐾 tap the animal's icon and a little card pops up with what you can do with it (feed it one of its foods, or pet it)
+let roamPopC=null;
+function roamPopOpen(c){if(!c)return;roamPopC=c;const el=$('#roamPop');sfx('pop');
+  el.innerHTML=`<header><b>${c.e} ${ruEsc(c.nm)}</b><button data-x="1" aria-label="Close">✕</button></header><div>${c.food.map(([e,n],i)=>`<button data-feed="${i}"><i>${e}</i>Feed ${ruEsc(n)}</button>`).join('')}<button data-pet="1"><i>🤚</i>Pet</button></div>`;
+  el.classList.add('show');}
+function roamPopClose(){roamPopC=null;$('#roamPop').classList.remove('show');}
+$('#roamBtn').onclick=()=>{if(roamPopC===roamNear)roamPopClose();else roamPopOpen(roamNear);};
+document.body.insertAdjacentHTML('beforeend','<div id="roamPop" class="hud"></div>');
+$('#roamPop').onclick=e=>{const b=e.target.closest('button'),c=roamPopC;if(!b||!c)return;if(b.dataset.x)return roamPopClose();
+  if(b.dataset.feed!=null)roamFeed(c,+b.dataset.feed);else if(b.dataset.pet)roamPet(c);};
+// the round animal icon used by every "meet / feed this animal" button (here, the zoo's, Polar Ice's and the sea animals'): the animal and a short word, not a sentence
+function aniIco(b,e,lbl,say){b.classList.add('aniIco');b.innerHTML=`<span class="ie">${e}</span><span class="il">${ruEsc(lbl)}</span>`;b.setAttribute('aria-label',say||lbl);}
 $('#roamCatch').onclick=()=>{const ropes=myRopes(),c=roamNear;if(RU.on&&canCatch(c)&&ruIn(c)&&ropes.length<ropeMax())ruCatch(c);else if(ropes.length)ruLetGo(ropes[ropes.length-1]);
   else if(!RU.on)ruBegin($('#roamCatch').dataset.g||'barn');};
 
@@ -12692,11 +12715,43 @@ $('#roamCatch').onclick=()=>{const ropes=myRopes(),c=roamNear;if(RU.on&&canCatch
 onTick.push(()=>{if(!started)return;const cv=$('#miniCv');if(!cv)return;const x=cv.getContext('2d'),S=cv.width,h=S/2,k=S/54,p=player.pos,
   fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=-fz,rz=fx;x.save();x.font=`${Math.round(S*.08)}px serif`;x.textAlign='center';x.textBaseline='middle';
   for(const c of ROAM){if(c.mode==='pen'||(RU.on&&!canCatch(c)))continue;const dx=c.pos.x-p.x,dz=c.pos.z-p.z,sx=h+(dx*rx+dz*rz)*k,sy=h-(dx*fx+dz*fz)*k;if(Math.hypot(sx-h,sy-h)<h-10)x.fillText(c.e,sx,sy);}
+  // 🏠 where to take them: each home that still waits for someone, kept on the rim when it's off the map so it points the way
+  if(RU.on){const ropes=myRopes(),hs=new Set(ruSet().filter(c=>!RU.home[c.nm]).map(c=>c.grp));
+    for(const g of hs){const z=RU_ZONE[g],dx=z.x-p.x,dz=z.z-p.z;let sx=(dx*rx+dz*rz)*k,sy=-(dx*fx+dz*fz)*k;const d=Math.hypot(sx,sy),lim=h-14;if(d>lim){sx*=lim/d;sy*=lim/d;}
+      const on=ropes.some(c=>c.grp===g);x.beginPath();x.arc(h+sx,h+sy,S*(on?.075:.06),0,Math.PI*2);x.fillStyle=on?'#2fa36b':'rgba(255,210,63,.9)';x.fill();x.lineWidth=2;x.strokeStyle='#fff';x.stroke();
+      x.font=`${Math.round(S*(on?.08:.065))}px serif`;x.fillText('🏠',h+sx,h+sy+1);}}
   x.restore();});
+
+/* ---------- 🏠 where to take them: a glowing beacon over each home, an arrow at the top pointing the way, and 🏠 on the minimap ---------- */
+const GUIDE={el:null,beacons:{},to:null};
+function ruBeacon(g){if(GUIDE.beacons[g])return GUIDE.beacons[g];const z=RU_ZONE[g],grp=new THREE.Group();grp.position.set(z.x,0,z.z);
+  const mat=new THREE.MeshBasicMaterial({color:'#ffd23f',transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});
+  const col=new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,26,20,1,true),mat);col.position.y=13;grp.add(col);
+  const tag=sprite(labelTex(`🏠 ${RU_NAME[g]}`,{size:60,fg:'#7a3b00',bg:'rgba(255,236,170,.95)',border:null}),5.2,1.1);tag.position.y=9;grp.add(tag);
+  grp.visible=false;scene.add(grp);return GUIDE.beacons[g]=grp;}
+// homes the runaways still out (or on your rope) belong to; the one to head for = the nearest home of an animal on your rope
+function ruGuide(){const P=player.pos,ropes=myRopes(),want=new Set();
+  if(RU.on)for(const c of ruSet())if(!RU.home[c.nm])want.add(c.grp);
+  for(const g of Object.keys(RU_ZONE))if(want.has(g)||GUIDE.beacons[g]){const b=ruBeacon(g);b.visible=want.has(g);if(b.visible){const on=ropes.some(c=>c.grp===g);b.children[0].material.opacity=on?.42+.12*Math.sin(roamT*4):.16;b.children[1].visible=on||!ropes.length;}}
+  let to=null,best=1e9;for(const c of ropes){const z=RU_ZONE[c.grp],d=Math.hypot(z.x-P.x,z.z-P.z);if(d<best){best=d;to=c;}}
+  GUIDE.to=to?c2home(to):null;const el=GUIDE.el||(GUIDE.el=$('#ruGuide'));
+  if(!to||closetOpen){el.classList.remove('show');return;}
+  const z=RU_ZONE[to.grp],dx=z.x-P.x,dz=z.z-P.z,fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),sx=dx*-fz+dz*fx,sy=dx*fx+dz*fz,ang=Math.atan2(sx,sy)*180/Math.PI;
+  const left=Math.max(0,Math.round(best-(z.fence||z.r)-RU_HOME)),who=ropes.filter(c=>c.grp===to.grp).map(c=>ruEsc(c.nm)).join(' & ');
+  el.innerHTML=`<i style="transform:rotate(${ang.toFixed(0)}deg)">⬆</i><span>Take ${who} to ${RU_NAME[to.grp]}<small>${left?left+' steps':'almost there!'}</small></span>`;el.classList.add('show');}
+const c2home=c=>({g:c.grp,x:RU_ZONE[c.grp].x,z:RU_ZONE[c.grp].z});
+onTick.push(()=>{if(started)ruGuide();});
+{const st=document.createElement('style');st.textContent=`
+#ruGuide{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 196px);z-index:8;display:none;align-items:center;gap:8px;background:#2fa36b;color:#fff;border-radius:999px;padding:5px 14px 5px 6px;font-weight:800;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);white-space:nowrap;pointer-events:none}
+#ruGuide.show{display:flex}#ruGuide i{font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#fff;color:#2fa36b;font-size:18px;transition:transform .15s}
+#ruGuide small{display:block;font-size:11px;font-weight:700;opacity:.9}
+body.dressing #ruGuide,body.shopping #ruGuide,body.sp-on #ruGuide{display:none!important}
+@media (max-height:520px){#ruGuide{top:calc(env(safe-area-inset-top) + 92px)}}`;
+  document.head.appendChild(st);document.body.insertAdjacentHTML('beforeend','<div id="ruGuide"></div>');}
 
 // for challenges.js and the tests
 function roamState(){return {fed:Object.keys(RS.fed).length,n:ROAM.length,on:RU.on,grp:RU.grp,home:Object.keys(RU.home).length,sc:{...RU.sc},
-  rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,ropes:myRopes().map(c=>c.nm),best:RS.allBest||0,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
+  rope:(ROAM.find(c=>c.mode==='rope')||{}).nm||null,guide:GUIDE.to?GUIDE.to.g:null,beacons:Object.keys(GUIDE.beacons).filter(g=>GUIDE.beacons[g].visible),ropes:myRopes().map(c=>c.nm),best:RS.allBest||0,modes:Object.fromEntries(ROAM.map(c=>[c.nm,c.mode]))};}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{ROAM,RU,ZA,roamState,roamFeed,roamEnd,roamT:()=>roamT,ruBegin,looseOk,POLAR_LIST,ruCatch,ruLetGo,ruFromNet,ruMe,BZ,ruNearHome:(x,z,m=0)=>Object.keys(RU_ZONE).some(g=>nearHome(g,{x,z},RU_HOME+m))});});
 // ---- src/26h-adventure.js ----
 /* ================= ⛰️ LOOKOUT MOUNTAIN and 🌲 TREETOP ADVENTURE, across the canal =================

@@ -635,7 +635,7 @@ for(const [k,sc] of [['zebra',1],['zebra',.8],['giraffe',1],['giraffe',.75],['rh
 const zooSeen=()=>SAVE.zoo||(SAVE.zoo={});
 function zooButton(p){if(closetOpen||!started||barnRide){if(zooNear){zooNear=null;$('#zooBtn').style.display='none';}return;}
   let best=null,bd=1e9;for(const a of ZA){if(a.esc)continue;const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
-  if(best!==zooNear){zooNear=best;const b=$('#zooBtn');if(best){b.textContent=`${best.F.e} Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`;b.style.display='block';}else b.style.display='none';}}
+  if(best!==zooNear){zooNear=best;const b=$('#zooBtn');if(best){aniIco(b,best.F.e,'Meet',`Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`);b.style.display='block';}else b.style.display='none';}}
 $('#zooBtn').onclick=()=>{if(zooNear)openZoo(zooNear);};
 function openZoo(a){if(closetOpen||!started)return;closeTalk();zooOpen=closetOpen=true;zooSel=a;$('#zooBtn').style.display='none';zooNear=null;
   document.body.classList.add('dressing');joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';player.speed=0;

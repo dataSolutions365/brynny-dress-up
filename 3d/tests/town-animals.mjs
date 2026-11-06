@@ -84,9 +84,15 @@ try {
     await goTo0(nm); };
   const goTo0 = nm => page.evaluate(nm => { const G = window.__game, c = G.ROAM.find(c => c.nm === nm); G.player.pos.set(c.pos.x + 1.2, 0, c.pos.z + .4); G.player.face = Math.atan2(c.pos.x - G.player.pos.x, c.pos.z - G.player.pos.z); G.cam.yaw = G.player.face + Math.PI + .7; G.cam.cy = G.cam.yaw; }, nm);
   for (const nm of ['Waddles', 'Billy', 'Truffle', 'Woolly']) { await goTo(nm); await gameWait(.3);
-    const b = await btn('#roamBtn'); if (!b.includes(nm)) fail(`Next to ${nm} there should be a Feed button (it says "${b}").`);
+    const b = await btn('#roamBtn'); if (!b.includes(nm)) fail(`Next to ${nm} there should be its round animal icon (it says "${b}").`);
     if ((await btn('#roamCatch')).includes('Catch')) fail('Without a Round-up there is nothing to catch.');
-    await page.evaluate(() => document.querySelector('#roamBtn').click()); await gameWait(.2); }
+    // tapping the icon opens a little card with what you can do: feed it one of its foods, or pet it
+    await page.evaluate(() => document.querySelector('#roamBtn').click()); await gameWait(.2);
+    const pop = await page.evaluate(() => { const p = document.querySelector('#roamPop'); return p.classList.contains('show') ? p.textContent : ''; });
+    if (!pop.includes(nm) || !/Feed/.test(pop) || !/Pet/.test(pop)) fail(`Tapping ${nm}'s icon should open a card with Feed and Pet (it says "${pop}").`);
+    await page.evaluate(() => document.querySelector('#roamPop [data-feed="1"]').click()); await gameWait(.2);
+    if (nm === 'Woolly') { await page.evaluate(() => document.querySelector('#roamPop [data-pet]').click()); if (SHOTS) await shot('animal-card'); await page.evaluate(() => document.querySelector('#roamPop [data-x]').click()); await gameWait(.2);
+      if (await page.evaluate(() => document.querySelector('#roamPop').classList.contains('show'))) fail('The ✕ should close the animal card.'); } }
   if (SHOTS) await shot('meadow');
 
   // 2. start a Round-up at the barn: they break out onto their streets and stay out
@@ -132,6 +138,11 @@ try {
   const tr = await page.evaluate(() => { const G = window.__game, c = G.ROAM.find(c => c.nm === 'Truffle'), p = G.player.pos; return Math.hypot(c.pos.x - p.x, c.pos.z - p.z); });
   console.log(`caught Truffle is ${tr.toFixed(1)} behind you`);
   if (tr > 3) fail(`A caught animal should walk along with you (Truffle is ${tr.toFixed(1)} away).`);
+  // it shows you where to take him: an arrow at the top, a beacon over the barn
+  const gd = await page.evaluate(() => { const g = document.querySelector('#ruGuide'); return { show: g.classList.contains('show'), t: g.textContent, st: window.__game.roamState() }; });
+  console.log(`guide: ${gd.show ? gd.t : 'hidden'} | beacons: ${gd.st.beacons.join(', ')}`);
+  if (!gd.show || !gd.t.includes('Truffle') || !gd.t.includes('Happy Barn') || gd.st.guide !== 'barn') fail(`With Truffle on the rope it should show where to take him (${JSON.stringify(gd)}).`);
+  if (!gd.st.beacons.includes('barn')) fail('There should be a beacon over the Happy Barn.');
   if (SHOTS) { await page.evaluate(() => { const G = window.__game; G.cam.yaw = G.player.face + Math.PI + 1.1; G.cam.cy = G.cam.yaw; }); await shot('caught-on-rope'); }
   // swim out into the canal: Truffle waits on the shore on his rope, he never walks on the water
   await page.evaluate(() => { const G = window.__game, p = G.player.pos, a = Math.atan2(p.x, p.z); p.set(Math.sin(a) * 77, 0, Math.cos(a) * 77); }); await gameWait(3);
