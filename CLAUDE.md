@@ -120,6 +120,9 @@
   which 25-game-loop.js asks first. `skyFloor()` is what's under you (never land on a roof, a tree or steep rock: it lifts you over them) and
   `skyLandable()` where you may come down (island, walkable bank, or the canal to swim). Write positions relative to `R`, `BANK` (and `WORLD`
   when it exists), never raw numbers. Friends see it through the 'sky' entry in `SHOW`. `3d/tests/sky.mjs` (run on every PR) does a glide and a jump.
+  `skyG()` is the real ground height in the air (groundAt plus the big world's hills, which groundAt doesn't know). A parachute low down for
+  15 s heads for `skySafeSpot()` and is set down there after 30 s, so it never floats round and round. 🛟 `groundNet()` (called every frame
+  from 25-game-loop.js) pops anyone who ends up inside the ground, a bridge or a hill back up onto a safe spot.
 - ⚽ Soccer Field (`3d/src/26h-soccer.js`, zone 'soccer'): part of the Sports Park on the canal's far bank (its own `BANK_LAND` sector 142 to 166
   and footbridge at 154), shared with 🏈 football (the goals are combo goals with football uprights up to `SOC.UH`). Everything is in the
   field's own space (`SOC`: x along the field, goals at ±`SOC.FL`, +z points back toward the island). The ⚽ pad opens the games:

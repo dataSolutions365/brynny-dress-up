@@ -160,6 +160,23 @@ try {
     } return { n, out }; });
   console.log(`parachutes round the mountain: ${stuck.n - stuck.out.length} of ${stuck.n} came down`);
   for (const o of stuck.out) fail(`A parachute should always come down and land, ${o}.`);
+  // a parachute coming down anywhere (town, the canal and its footbridges, the fenced-off hills of the big world) lands within 60 s,
+  // never stuck floating round and round, and never inside the ground, a bridge or a hill on the way down
+  const under = await page.evaluate(() => { const G = window.__game, p = G.player.pos, out = [], pts = []; let n = 0;
+    for (let a = 0; a < 6.28; a += .7) for (const r of [30, 82, 100, 150, 210]) pts.push([Math.sin(a) * r, Math.cos(a) * r]);
+    for (const [x, z] of pts) for (const hd of [0, 3.1]) {
+      G.skyGo.canopyAt(x, Math.max(G.groundAt(x, z), G.groundH(x, z)) + 30, z, hd); let t = 0, worst = 9; n++;
+      while (t < 60 && G.sky().mode) { G.skyGo.step(.05, 0, 0, 0); t += .05; if (G.sky().mode !== 'cnDown') worst = Math.min(worst, p.y - Math.max(G.groundAt(p.x, p.z), G.groundH(p.x, p.z))); }
+      if (G.sky().mode || worst < -.3) out.push(`from (${x.toFixed(0)}, ${z.toFixed(0)}) heading ${hd}: ${G.sky().mode || 'landed'} at (${p.x.toFixed(1)}, ${p.z.toFixed(1)}), lowest ${worst.toFixed(2)} from the ground`);
+    } return { n, out }; });
+  console.log(`parachutes all round the world: ${under.n - under.out.length} of ${under.n} came down safely`);
+  for (const o of under.out) fail(`A parachute should land and never go into the ground, ${o}.`);
+  // 🛟 the safety net: stuck inside the ground (here, inside a hill), you pop back up onto open ground
+  const net = await page.evaluate(async () => { const G = window.__game, p = G.player.pos;
+    p.set(0, -3, 150); const c0 = G.sky().clock, end = Date.now() + 60000; while (G.sky().clock - c0 < 1.5 && Date.now() < end) await new Promise(r => setTimeout(r, 200));
+    return { y: p.y, g: Math.max(G.groundAt(p.x, p.z), G.groundH(p.x, p.z)), land: G.skyLandable(p.x, p.z), r: Math.hypot(p.x, p.z) }; });
+  console.log(`safety net: popped back up at ${net.r.toFixed(1)} from the middle, height ${net.y.toFixed(2)} (ground ${net.g.toFixed(2)}), ${net.land}`);
+  if (net.y < net.g - .3 || !net.land) fail('Stuck inside the ground, the safety net should pop you back up onto open ground or into the canal.');
   if (errors.length) fail(`The game had errors:\n  ${errors.join('\n  ')}`);
   if (!process.exitCode) console.log('✅ Hang gliding and skydiving work.');
 } finally {
