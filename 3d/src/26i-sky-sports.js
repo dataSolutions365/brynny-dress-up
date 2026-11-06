@@ -586,7 +586,8 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     // (coming in to land, it only looks as far as the landing spot, so a fence just past it doesn't hold you up in the air)
     const vx=Math.sin(S.hd)*S.sp,vz=Math.cos(S.hd)*S.sp,look=S.land&&spotD<S.sp?spotD/Math.max(S.sp,.1):1,ahead=Math.max(skyFloor(p.x+vx*.45*look,p.z+vz*.45*look),skyFloor(p.x+vx*look,p.z+vz*look));
     const need=ahead+.55-p.y;if(need>0&&!flare)S.vy=Math.max(S.vy,Math.min(4.5,need*3));
-    p.x+=vx*dt;p.z+=vz*dt;p.y+=S.vy*dt;
+    // flaring, it only drifts on while the ground ahead is still open (never under a palm or a roof's edge)
+    const fx=p.x+vx*dt,fz=p.z+vz*dt;if(!flare||skyFloor(fx,fz)<=skyG(fx,fz)+.2){p.x=fx;p.z=fz;}p.y+=S.vy*dt;
     const fl=skyFloor(p.x,p.z),g=skyG(p.x,p.z);if(p.y<fl+.3&&fl>g+.2)p.y=fl+.3;
     // close to open ground: flare
     const hg=p.y-g,L=skyLandable(p.x,p.z);
@@ -606,7 +607,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     camFollow(S.hd,.3);skyWind(.03+S.sp*.006);skyFog(p.y-g);skyHud();return true;}
   if(S.mode==='hgDown'){// you run it out and set it down on its base bar
     const u=Math.min(1,S.t/.6);S.pr=0;S.pitch+=(.2-S.pitch)*Math.min(1,dt*4);S.bank*=.9;player.face=S.hd;player.speed=u<1?2.2:0;player.onGround=true;
-    if(u<1){p.x+=Math.sin(S.hd)*1.6*dt;p.z+=Math.cos(S.hd)*1.6*dt;collide(p);p.y=groundAt(p.x,p.z);}
+    if(u<1){const nx=p.x+Math.sin(S.hd)*1.6*dt,nz=p.z+Math.cos(S.hd)*1.6*dt;if(skyFloor(nx,nz)<=skyG(nx,nz)+.2){p.x=nx;p.z=nz;collide(p);}p.y=groundAt(p.x,p.z);}// (the run-out stops short of a palm or a roof)
     skyWind(0);skyFog(0);if(S.t>1.4){skyEnd(false);toast('🪂 Your glider goes back to the ramp on Lookout Mountain for next time');}skyHud();return true;}
   // --- ✈️ skydiving ---
   if(S.mode==='board'){// walk over to the door and climb in
