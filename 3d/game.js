@@ -13479,10 +13479,10 @@ const socBest=(k,v)=>{const S=SAVE.soccer;if(S[k]==null||v>S[k]){S[k]=v;persist(
     const back=new THREE.PlaneGeometry(S.GW*2,BH,14,5),bm=M(back,netMat(S.GW*2/.3,BH/.3),bx,BH/2,0,g,false,false);bm.rotation.y=Math.PI/2;
     const rl=Math.hypot(S.GD,S.GH-BH),roof=M(new THREE.PlaneGeometry(S.GW*2,rl),netMat(S.GW*2/.3,rl/.3),s*(S.FL+S.GD/2),(S.GH+BH)/2,0,g,false,false);
     {const X=new THREE.Vector3(0,0,1),Y=new THREE.Vector3(s*S.GD,BH-S.GH,0).normalize(),N=new THREE.Vector3().crossVectors(X,Y);roof.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X,Y,N));}
-    for(const t of [-1,1]){const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(S.GD,0);sh.lineTo(S.GD,BH);sh.lineTo(0,S.GH);sh.closePath();
+    const side=[];for(const t of [-1,1]){const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(S.GD,0);sh.lineTo(S.GD,BH);sh.lineTo(0,S.GH);sh.closePath();
       const geo=new THREE.ShapeGeometry(sh);const uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/.3,uv.getY(i)/.3);
-      const sm=M(geo,netMat(1,1),gx,0,t*S.GW,g,false,false);sm.rotation.y=s>0?0:Math.PI;}
-    z.nets.push({s,m:bm,base:back.attributes.position.array.slice(),amp:0,cz:0,cy:0});}
+      const sm=M(geo,netMat(1,1),gx,0,t*S.GW,g,false,false);sm.rotation.y=s>0?0:Math.PI;side.push(sm);}
+    z.nets.push({s,m:bm,all:[bm,roof,...side],base:back.attributes.position.array.slice(),amp:0,cz:0,cy:0});}
   /* 🚩 corner flags */
   const flagM=std('#ffd23f',{roughness:.6,side:THREE.DoubleSide});
   for(const s of [-1,1])for(const t of [-1,1]){B.stick(new THREE.Vector3(s*S.FL,0,t*S.FW),new THREE.Vector3(s*S.FL,1.25,t*S.FW),.018,std('#f2f2f2',{roughness:.5}),6);
@@ -13703,10 +13703,10 @@ function socStart(m){socCloseMenu();SC.mode=m;SC.t=0;SC.turn='shoot';SC.kaiShot=
   if(m==='pk'){socBody(true,'swipe');socPkSetup();}
   else if(m==='tgt'){socBody(true,'swipe');socTargets(true);socTgtSetup();}
   else if(m==='jug'){socBody(true,'jug');socJugStart();}
-  else if(m==='v1'){socBody(true,'free');kai.a.g.visible=true;socKickoff('me');toast('You attack the far goal ➡️  Dribble, SHOOT, and use ✨ tricks to beat Kai!');}
+  else if(m==='v1'){socBody(true,'free');if(!SC.camSave)SC.camSave={d:cam.dist,p:cam.pitch};cam.dist=Math.max(cam.dist,10.5);cam.pitch=Math.max(cam.pitch,.5);kai.a.g.visible=true;socKickoff('me');toast('You attack the far goal ➡️  Dribble, SHOOT, and use ✨ tricks to beat Kai!');}
   socBoard();}
 function socBoard(){const b=socZ().board;if(SC.mode==='pk'||SC.mode==='v1')b.draw(SC.me,SC.cpu,'YOU · KAI');else if(SC.mode==='tgt')b.draw(SC.me,10-SC.n,'🎯 TARGETS · BALLS');else if(SC.mode==='jug')b.draw(SC.n,SAVE.soccer.jug||0,'🤹 NOW · BEST');else b.draw(0,0,'HOME · AWAY');}
-function socEnd(show=true,quit=false){const m=SC.mode;if(!m)return;SC.mode=null;socBody(false);socHint('');socTrail(null);
+function socEnd(show=true,quit=false){const m=SC.mode;if(!m)return;SC.mode=null;socNetsShow(0);if(SC.camSave){cam.dist=SC.camSave.d;cam.pitch=SC.camSave.p;SC.camSave=null;}socBody(false);socHint('');socTrail(null);
   for(const o of [SC.kai,SC.leo])if(o){o.a.g.visible=false;socResetBody(o.a);}socResetBody(av);av.g.rotation.z=0;socHideBall();socTargets(false);
   if(SC.jug)SC.jug=null;socBoard();if(!show)return;
   let h='',coins=0,best=false;const S=SAVE.soccer;
@@ -13765,11 +13765,11 @@ function socPkSetup(){const S=SOC,kai=socKai(),leo=socLeo();socNewBall(S.PK,0);S
     socPut(S.PK-1.4,-.75,socFace(S.PK-1.4,-.75,S.PK,0));leo.a.g.visible=true;kai.a.g.visible=false;leo.p.set(S.FL-.35,0,0);leo.face=-Math.PI/2;leo.dive=null;
     leo.a.g.position.copy(leo.p);leo.a.g.rotation.y=leo.face;socPose(leo.a,'keeper');
     SC.phase='aim';socBody(true,'swipe');socHint('👆 Swipe from the ball toward the goal to shoot!');
-    SC.cam.P=new THREE.Vector3(S.PK-4,1.95,.45);SC.cam.T=new THREE.Vector3(S.FL,.75,0);}
+    SC.cam.P=new THREE.Vector3(S.PK-9.5,3.6,-.3);SC.cam.T=new THREE.Vector3(S.FL-1.5,.7,-.1);}
   else{// Kai shoots at you
     leo.a.g.visible=false;kai.a.g.visible=true;socPut(S.FL-.35,0,-Math.PI/2);kai.p.set(S.PK-2.6,0,(Math.random()<.5?-1:1)*1.1);kai.face=socFace(kai.p.x,kai.p.z,S.PK,0);
     socPose(av,'keeper');SC.phase='runup';SC.pt=0;SC.kaiShot=null;SC.dove=null;socBody(true,'swipe');socHint('🧤 Swipe or tap left, middle or right to dive!');
-    SC.cam.P=new THREE.Vector3(S.FL+1.25,1.62,0);SC.cam.T=new THREE.Vector3(S.PK-1,.7,0);}
+    SC.cam.P=new THREE.Vector3(S.FL+6.2,4.4,0);SC.cam.T=new THREE.Vector3(S.PK+1,0,0);}
   socPkHud();}
 function socPkHud(){const d=SC.kicks.map(k=>k.me==null?'·':k.me?'⚽':'❌').join(''),c=SC.kicks.map(k=>k.cpu==null?'·':k.cpu?'⚽':'🧤').join('');
   socHud('🥅 Penalties',`${SC.me} - ${SC.cpu}`,'',`${SC.turn==='shoot'?'your kick':'in goal 🧤'}${SC.round>=5?' · sudden death':''}`);$('#scDots').textContent=d+' | '+c;}
@@ -13869,7 +13869,7 @@ const SOC_TGT_SPOTS=[[0,0],[0,-2.2],[0,2.2],[-1.5,-4],[-1.5,4],[1,0],[-2,-1.2],[
 function socTgtSetup(){const S=SOC,sp=SOC_TGT_SPOTS[SC.n%SOC_TGT_SPOTS.length],bx=S.PK+sp[0],bz=sp[1];socNewBall(bx,bz);SC.shot=null;
   const f=socFace(bx,bz,S.FL,0),bk=1.4;socPut(bx-Math.sin(f)*bk+Math.cos(f)*.75,bz-Math.cos(f)*bk-Math.sin(f)*.75,f);SC.phase='aim';SC.pt=0;socBody(true,'swipe');
   socHint(SC.n?`🎯 Ball ${SC.n+1} of 10`:'👆 Swipe from the ball at a target!');
-  SC.cam.P=new THREE.Vector3(bx-Math.sin(f)*4-Math.cos(f)*.45,1.95,bz-Math.cos(f)*4+Math.sin(f)*.45);SC.cam.T=new THREE.Vector3(S.FL,.95,0);
+  SC.cam.P=new THREE.Vector3(bx-Math.sin(f)*9.5+Math.cos(f)*.3,3.6,bz-Math.cos(f)*9.5-Math.sin(f)*.3);SC.cam.T=new THREE.Vector3(S.FL-1,.7,0);
   if(SC.targets.every(t=>t.hit))socTargets(true);
   socHud('🎯 Targets',`${SC.me} 🎯`,'',`ball ${SC.n+1} of 10`);}
 function socTgtStep(dt,t){const S=SOC,b=SC.ball;SC.pt+=dt;
@@ -13888,7 +13888,7 @@ function socTgtStep(dt,t){const S=SOC,b=SC.ball;SC.pt+=dt;
 
 /* ---------- 🤹 keepy-uppies ---------- */
 function socJugStart(){const S=SOC;socPut(0,2,socFace(0,2,0,-1));const b=socNewBall(0,2);SC.n=0;
-  SC.jug={y:1.1,vy:2.4,x:0,vx:0,cool:0,dead:false,next:'foot',last:null};SC.cam.P=new THREE.Vector3(1.9,1.45,-1.4);SC.cam.T=new THREE.Vector3(0,.85,1.8);
+  SC.jug={y:1.1,vy:2.4,x:0,vx:0,cool:0,dead:false,next:'foot',last:null};SC.cam.P=new THREE.Vector3(3.3,2.2,-2.7);SC.cam.T=new THREE.Vector3(0,.85,1.8);
   socBtnSet('#scMain','⚽<br>TAP!','');socHud('🤹 Keepy-uppies','0','','don\'t let it drop!');socHint('Tap when the ball drops to your foot, knee or head!');}
 // which part of you the ball is next to (height above the grass)
 const socJugZone=y=>y>1.32&&y<1.78?'head':y>.48&&y<.82?'knee':y>.08&&y<.42?'foot':null;
@@ -14018,7 +14018,8 @@ function socPress(){if(!SC.mode||SC.menu)return;if(SC.mode==='jug'){socJugTap();
 {const was=ballBusy;ballBusy=()=>was()||!!SC.mode;}
 // the camera (25-game-loop.js calls sportsCam after the normal follow camera)
 {const was=sportsCam;sportsCam=dt=>{was(dt);socCam(dt);};}
-function socCam(dt){if(!SC.mode||SC.mode==='v1'||!SC.cam.P)return;const z=socZ(),c=SC.cam;let P=c.P,T=c.T;
+function socNetsShow(hideS){for(const n of socZ().nets)for(const m of n.all)m.visible=n.s!==hideS;}
+function socCam(dt){socNetsShow(SC.mode==='pk'&&SC.turn==='save'?1:0);if(!SC.mode||SC.mode==='v1'||!SC.cam.P)return;const z=socZ(),c=SC.cam;let P=c.P,T=c.T;
   // follow the ball a little once it's kicked
   if((SC.mode==='pk'||SC.mode==='tgt')&&SC.ball&&SC.phase==='fly'&&SC.turn!=='save'){T=_sB.copy(c.T).lerp(SC.ball.p,.35);}
   const wp=z.g.localToWorld(_sA.copy(P)),wt=z.g.localToWorld(new THREE.Vector3().copy(T));
