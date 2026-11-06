@@ -12005,8 +12005,10 @@ function seaManta(){const g=new THREE.Group();
 // 🦦 Ollie the sea otter: floats on his back with a shell on his tummy
 function seaOtter(){const g=new THREE.Group(),b=new THREE.Group();b.name='body';g.add(b);
   sM(sph(.25,16,10),SEA_M.otter,0,0,0,b).scale.set(1,.7,2);sM(sph(.22,14,8),SEA_M.otterL,0,.07,.18,b).scale.set(.85,.6,1.3);// tummy up, pale chest
-  // his head is lifted, looking up and forward, with a pale face, a dark nose, little round ears and whiskers
-  const head=new THREE.Group();head.position.set(0,.17,.55);head.rotation.x=-.5;b.add(head);sM(sph(.17,16,12),SEA_M.otterL,0,0,0,head).scale.set(1.05,.95,1);
+  // his head is lifted out of the water with his chin tucked, so his face looks up and down along his own tummy at the shell,
+  // the way a real sea otter floats (the back of his head is to the water, the top of his head leads the way he drifts).
+  // He has a pale face, a dark nose, little round ears and whiskers
+  const head=new THREE.Group();head.rotation.order='ZYX';head.position.set(0,.2,.56);head.rotation.set(-1.1,Math.PI,0);b.add(head);sM(sph(.17,16,12),SEA_M.otterL,0,0,0,head).scale.set(1.05,.95,1);
   sM(sph(.17,16,12),SEA_M.otter,0,-.03,-.04,head).scale.set(1.08,.95,.95);
   sM(sph(.085,12,8),SEA_M.otterL,0,-.02,.13,head).scale.set(1.25,.85,1);sM(sph(.032,8,6),SEA_M.nose,0,.02,.21,head).scale.set(1.3,.8,1);
   for(const sx of [-1,1]){sM(sph(.026,8,6),SEA_M.eye,sx*.075,.07,.13,head);sM(sph(.045,8,6),SEA_M.otter,sx*.13,.1,-.02,head).scale.set(1,1,.5);
@@ -12152,7 +12154,7 @@ function seaMoveAnim(c,dt,mv){const m=c.m;
   if(m.head&&c.kind==='turtle')m.head.rotation.y=Math.sin(c.t*.8)*.25;
   if(m.wing)m.wing.forEach(w=>{w.p.rotation.z=w.sx*(Math.sin(c.t*(1.6+mv*1.4))*.32+.05);});
   if(m.paw){// Ollie taps his shell, looks about and every now and then rolls right over in the water
-    m.paw.forEach((w,i)=>{w.p.rotation.x=-.4+Math.max(0,Math.sin(c.t*(c.happy>0?14:5)+i*.4))*.6;});m.head.rotation.y=Math.sin(c.t*.6)*.4;
+    m.paw.forEach((w,i)=>{w.p.rotation.x=-.4+Math.max(0,Math.sin(c.t*(c.happy>0?14:5)+i*.4))*.6;});m.head.rotation.z=Math.sin(c.t*.6)*.3;// he turns his head side to side round his neck, so it never looks crooked
     const r=(c.t%9)/9;m.body.rotation.z=r>.88?(r-.88)/.12*Math.PI*2:0;}}
 // you're swimming right next to a sea animal: it counts for the challenges, and it says hello the first time
 function seaWith(c){SW.withNow[c.kind]=1;
