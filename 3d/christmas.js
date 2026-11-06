@@ -52,7 +52,11 @@ const snowTex = canvasTex(256, 256, (x, w, h) => {
 }, [34, 34]);
 const snowGround = new THREE.MeshStandardMaterial({ color: '#ffffff', map: snowTex, roughness: .92, metalness: 0 });
 // the big grass circle the island is made of (02-island.js) gets a coat of snow
-scene.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'CircleGeometry' && o.geometry.parameters.radius >= 60 && o.parent === scene) o.material = snowGround; });
+let SNOW_R = 0; // how far out from the middle the snowy ground goes (the island's edge)
+scene.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'CircleGeometry' && o.geometry.parameters.radius >= 60 && o.parent === scene) { o.material = snowGround; SNOW_R = Math.max(SNOW_R, o.geometry.parameters.radius); } });
+// ❄️ is there snow where you're standing? On the snowy island and in ❄️ Polar Ice, yes. Over the canal on the far bank
+// (the Sports Park, the waterpark, the mountain...) and in the water, the ground is still green, so no snowballs or snowmen there.
+const inSnow = () => { const P = player.pos; return zoneId() === 'arctic' || Math.hypot(P.x, P.z) < SNOW_R - .5; };
 // Halloween Hollow's purple ground (its pumpkins and ghosts are put away by seasons.js)
 if (Z.halloween && Z.halloween.ground) { const m = snowGround.clone(); m.map = snowTex; m.color.set('#f4f7fb'); m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -2; Z.halloween.ground.material = m; }
 // snow on the treetops and bushes in the park: the leaves get a frosty, pale tint
@@ -375,7 +379,7 @@ ticks.push(dt => {
     setTimeout(() => FIGHT && throwBall(handPos(f, f.pos, f.face), new THREE.Vector3(P.x, P.y + 1.15, P.z), f.face, f, .7), 200); }
   if (Math.floor(now * 4) !== Math.floor((now - dt) * 4)) fightHUD();
 });
-G.TALK_EXTRA.push({ id: 'snowfight', btn: () => FIGHT ? null : ['❄️', 'Snowball fight!'], act: f => startFight(f) });
+G.TALK_EXTRA.push({ id: 'snowfight', btn: () => FIGHT || !inSnow() ? null : ['❄️', 'Snowball fight!'], act: f => startFight(f) });
 
 /* ================= ⛄ SNOWMEN ================= */
 const SM_SIZES = [.55, .4, .28];
@@ -444,6 +448,7 @@ function rollNudge() { rollHud.style.transform = 'translateX(-50%) scale(1.12)';
 const baseArrow = new THREE.Mesh(new THREE.ConeGeometry(.16, .32, 16), new THREE.MeshStandardMaterial({ color: '#4a90d9', roughness: .5, emissive: '#1d4f86', emissiveIntensity: .35 }));
 baseArrow.rotation.x = Math.PI; baseArrow.visible = false; scene.add(baseArrow);
 function snowmanAct() {
+  if (!inSnow()) { G.toast('⛄ Roll it back onto the snow first'); return; }
   if (G.busy && G.busy()) return;
   if (G.ride && G.ride()) { G.toast('Hop off your ride first to build a snowman ⛄'); return; }
   if (!ROLL.on) { // start rolling the next ball
@@ -489,10 +494,16 @@ ticks.push(dt => {
 
 /* ================= ACTION BUTTONS ================= */
 const snowLabel = () => !ROLL.on ? (ROLL.stage === 0 ? 'Snowman' : ROLL.stage === 1 ? 'Middle' : 'Head') : ROLL.full ? (ROLL.stage === 0 ? 'Put down' : 'Stack') : `Roll ${ROLL.pct * 10}%`;
-G.ACT_HOOKS.unshift({ acts: () => [['snowball', '❄️', 'Snowball'], ['snowman', '⛄', snowLabel()]], run: id => { if (id === 'snowball') { playerThrow(); return true; } if (id === 'snowman') { snowmanAct(); return true; } return false; } });
+// only where there's snow (a snowball fight or a snowball you're rolling keeps its button until it's done)
+const snowActs = () => { const snow = inSnow(), a = [];
+  if (snow || FIGHT) a.push(['snowball', '❄️', 'Snowball']);
+  if (snow || ROLL.on) a.push(['snowman', '⛄', snowLabel()]);
+  return a; };
+let wasSnow = inSnow(); ticks.push(() => { const s = inSnow(); if (s !== wasSnow) { wasSnow = s; G.renderActions(); } });
+G.ACT_HOOKS.unshift({ acts: snowActs, run: id => { if (id === 'snowball') { playerThrow(); return true; } if (id === 'snowman') { snowmanAct(); return true; } return false; } });
 G.renderActions();
 
 // for the test (3d/tests/christmas.mjs)
 window.__xmas = { tree: TREE, santa: window.__santa, snowmen: () => snowmen.map(s => ({ x: s.d.x, z: s.d.z, n: s.d.n })), roll: () => ({ on: ROLL.on, stage: ROLL.stage, full: ROLL.full, r: ROLL.r, hud: rollHud.style.display !== 'none' ? document.getElementById('xmasRollTxt').textContent : '', ball: ROLL.ball ? { x: ROLL.ball.position.x, z: ROLL.ball.position.z } : null }),
-  fight: () => FIGHT && { you: FIGHT.you, them: FIGHT.them, f: FIGHT.f.name }, startFight, throwAt: playerThrow, balls: () => balls.length, bulbs: () => allBulbs.reduce((a, b) => a + b.im.count, 0) };
+  inSnow, acts: () => snowActs().map(a => a[0]), fight: () => FIGHT && { you: FIGHT.you, them: FIGHT.them, f: FIGHT.f.name }, startFight, throwAt: playerThrow, balls: () => balls.length, bulbs: () => allBulbs.reduce((a, b) => a + b.im.count, 0) };
 }
