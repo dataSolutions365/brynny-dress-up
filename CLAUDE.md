@@ -180,22 +180,21 @@
   in `SHOW`, `3d/src/26i-arctic-see.js`), 🎣 ice fishing and 🧊 igloo building. `3d/src/24m2-arctic-escape.js` is the 🚨 Polar escape: four of the
   animals run off into town, you catch them and walk them home on a rope (online with friends too, `{t:'icerun'}` in online.js).
   `3d/tests/arctic.mjs` (run on every PR) checks all of it.
-- 🏟️ Sports Park and ⚾ the Wiffle Ball Field (`3d/src/26j-wiffle.js`, zone 'wiffle'): on the far bank across from the Batting Cage
-  (`BANK_LAND` 194 to 218, `ground:1`, footbridge at 202). The soccer and football fields are its neighbours along the bank.
-  Field positions are in the zone's own directions with home plate at `(0, WB.HP)`; `wfAt(angle, distance)` gives a spot measured from home.
-  It's a 2-on-2 backyard game (you and Leo vs Maya and Sam) with ghost runners and the chalk-line hit rules (caught = out, grounder stopped
-  inside `WB.INF` = out, past it single, past `WB.L2` double, past `WB.L3` triple, over `WB.FR` home run), plus a 💥 Home Run Derby.
-  Wiffle pitches curve (`WF_PITCH`): `wfPitch` works the break into the throw so the ball still ends where it was aimed.
+- 🏟️ Sports Park and ⚾ the Baseball Field (`3d/src/26j-wiffle.js`, zone 'wiffle'; it began as a wiffle ball field, so the ids still say
+  wiffle/wif, keep them for saves and challenges): on the far bank across from the Batting Cage (`BANK_LAND` 194 to 218, `ground:1`, footbridge at 202).
+  The soccer and football fields are its neighbours along the bank. Field positions are in the zone's own directions with home plate at `(0, WB.HP)`;
+  `wfAt(angle, distance)` gives a spot measured from home. It's real baseball, kept small: your 🦅 Eagles (you, Leo, Marcus, Nora) against the
+  🐻 Bears (Maya, Sam, Jake, Zara), all in baseball uniforms (`WF_TEAMS`). The team in the field has a pitcher, a crouching catcher (pitches go into her mitt),
+  an infielder and an outfielder (`WF_POS`). You bat every time (a teammate comes in as your pinch runner, `wfPutOn`); the Bears bat in order and stay on base
+  as real runners (`WF.ob`, moved by `wfAdvance`). No ghost runners and no chalk hit lines: hits still go by where the ball is fielded (caught = out,
+  grounder stopped inside `WB.INF` = out, past it single, past `WB.L2` double, past `WB.L3` triple, over `WB.FR` home run), plus a 💥 Home Run Derby.
+  Pitching is overhand (`WF_TK`, the throwing shoulder only turns one way so the arm goes back, up and over the top) with real pitches in `WF_PITCH`
+  (fastball, curveball, slider, changeup): `wfPitch` works the break into the throw so the ball still ends where it was aimed.
   It plugs into the sports HUD, big button and menu through `SP.ext` in `3d/src/24e-sports.js` (other sports can do the same:
-  `SP.ext[mode]={step,press,release,cam,end}`). Challenges are in the 🏟 Sports tab of `3d/challenges.js` (`did('wiffle', …)`).
-  `3d/tests/wiffle.mjs` (run on every PR) walks over the bridge, opens the menu, plays a quick game and a Derby.
-- 🆕 What's new (`3d/src/26k-whats-new.js`): after an update, the first time a player opens the 3D world they get a
-  "What's new" card (once per update; `SAVE.wnSeen` holds the newest one they saw), and places with something new get a red
-  NEW tag on the map, the minimap and the 🗺️ Map button until the player goes there (`SAVE.wnVisit`) or the update is `NEW_DAYS` old.
-  WHEN YOU SHIP SOMETHING A PLAYER WOULD NOTICE, add a note: a new entry at the top of `WHATS_NEW` with today's date as `v`,
-  each note `{e, t, go?, hol?}` in one short sentence a kid can read (`go` = the place id from ZONES, which adds a 🗺️ Show me
-  button and the NEW tag; `hol` = only during that holiday). It can be reopened from ⚙️ Settings. Under Playwright it only
-  pops up by itself with `?wn=1`, so the other tests aren't covered by it. `3d/tests/whats-new.mjs` (run on every PR) checks it.
+  `SP.ext[mode]={step,press,release,cam,end}`). The Batting Cage's menu sends you over for a real game (its machine is just batting practice now).
+  Challenges are in the 🏟 Sports tab of `3d/challenges.js` (`did('wiffle', …)`). Your skateboard isn't carried in your hand at the ball fields
+  (`boardStowed()` in `3d/src/17c-skateboard.js`). `3d/tests/wiffle.mjs` (run on every PR) walks over the bridge, opens the menu, plays a quick game
+  (checking the overhand throw, the catcher and the runners) and a Derby.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
