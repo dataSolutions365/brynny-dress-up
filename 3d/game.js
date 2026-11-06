@@ -12783,9 +12783,9 @@ const TRAIL=[];
   let k=pts.findIndex(p=>mtBase(p.x,p.y)[0]<MT.top+.07);if(k<1)k=pts.length-1;
   pts.forEach((p,i)=>TRAIL.push({lx:p.x,lz:p.y,h:MT.H*Math.min(1,len[i]/len[k])}));}
 // the closest spot on the trail: [distance, height there, how far along (0..1)]
-function trailNear(lx,lz){let bd=1e9,bh=0,bu=0;for(let i=0;i<TRAIL.length-1;i++){const a=TRAIL[i],b=TRAIL[i+1],dx=b.lx-a.lx,dz=b.lz-a.lz,L2=dx*dx+dz*dz||1;
-    const u=Math.max(0,Math.min(1,((lx-a.lx)*dx+(lz-a.lz)*dz)/L2)),px=a.lx+dx*u,pz=a.lz+dz*u,d=Math.hypot(lx-px,lz-pz);if(d<bd){bd=d;bh=a.h+(b.h-a.h)*u;bu=(i+u)/(TRAIL.length-1);}}
-  return [bd,bh,bu];}
+function trailNear(lx,lz){let bd=1e9,bh=0,bu=0,bx=0,bz=0;for(let i=0;i<TRAIL.length-1;i++){const a=TRAIL[i],b=TRAIL[i+1],dx=b.lx-a.lx,dz=b.lz-a.lz,L2=dx*dx+dz*dz||1;
+    const u=Math.max(0,Math.min(1,((lx-a.lx)*dx+(lz-a.lz)*dz)/L2)),px=a.lx+dx*u,pz=a.lz+dz*u,d=Math.hypot(lx-px,lz-pz);if(d<bd){bd=d;bh=a.h+(b.h-a.h)*u;bu=(i+u)/(TRAIL.length-1);bx=px;bz=pz;}}
+  return [bd,bh,bu,bx,bz];}// bx,bz: that spot on the trail
 const TRAIL_W=.8;// walkable this far from the middle of the trail
 // how high the mountain is at a local spot (the rock you see and the ground you walk on are the same): [height, walkable, re]
 function mtH(lx,lz){if(lx<-MT.axL-1.4||lx>MT.axR+1.4||Math.abs(lz)>MT.az+1.4)return [0,true,2];
@@ -12799,9 +12799,15 @@ function mtH(lx,lz){if(lx<-MT.axL-1.4||lx>MT.axR+1.4||Math.abs(lz)>MT.az+1.4)ret
     if(d<TRAIL_W+.45){const k=(d-TRAIL_W)/.45;h=th+(h-th)*k*k*(3-2*k);}}
   return [Math.max(0,h),re>=1,re];}
 // on the minimap the mountain is a grey-brown circle like any place (MAPC in 26-map.js)
-{const W=2*(MT.axL+.6),D=2*(MT.az+.6),geo=new THREE.PlaneGeometry(W,D,Math.round(W*4),Math.round(D*4));geo.rotateX(-Math.PI/2);geo.translate((MT.axR-MT.axL)/2,0,0);
+// The ground you stand on is read off the very same triangles that are drawn (MTG, mtGround), so where the trail is a tall ledge
+// you can't stand on air past its edge or sink into the rock.
+const MTG={W:2*(MT.axL+.6),D:2*(MT.az+.6)};MTG.nx=Math.round(MTG.W*4);MTG.nz=Math.round(MTG.D*4);MTG.x0=-MTG.W/2+(MT.axR-MT.axL)/2;MTG.z0=-MT.az-.6;MTG.dx=MTG.W/MTG.nx;MTG.dz=MTG.D/MTG.nz;MTG.h=new Float32Array((MTG.nx+1)*(MTG.nz+1));
+function mtGround(lx,lz){const G=MTG,fx=(lx-G.x0)/G.dx,fz=(lz-G.z0)/G.dz;if(fx<0||fz<0||fx>=G.nx||fz>=G.nz)return mtH(lx,lz)[0];
+  const ix=Math.floor(fx),iz=Math.floor(fz),u=fx-ix,v=fz-iz,n=G.nx+1,H=G.h,a=H[iz*n+ix],b=H[(iz+1)*n+ix],c=H[(iz+1)*n+ix+1],d=H[iz*n+ix+1];
+  return Math.max(0,u+v<=1?a+(d-a)*u+(b-a)*v:c+(b-c)*(1-u)+(d-c)*(1-v));}// the plane's two triangles in each square: (a,b,d) and (b,c,d)
+{const W=MTG.W,D=MTG.D,geo=new THREE.PlaneGeometry(W,D,MTG.nx,MTG.nz);geo.rotateX(-Math.PI/2);geo.translate((MT.axR-MT.axL)/2,0,0);
   const p=geo.attributes.position,col=new Float32Array(p.count*3),c=new THREE.Color();
-  for(let i=0;i<p.count;i++){const lx=p.getX(i),lz=p.getZ(i),[h,walk,re]=mtH(lx,lz);p.setY(i,h>.005?h:-.06);
+  for(let i=0;i<p.count;i++){const lx=p.getX(i),lz=p.getZ(i),[h,walk,re]=mtH(lx,lz);p.setY(i,h>.005?h:-.06);MTG.h[i]=h>.005?h:-.06;
     const n=Math.sin(lx*5.3+lz*2.1)*.5+Math.sin(lx*1.3-lz*4.7)*.5,n2=Math.sin(lx*11.7-lz*7.3)*Math.sin(lz*9.1+lx*3.3),onTrail=re<1&&re>MT.top+.03&&trailNear(lx,lz)[0]<TRAIL_W-.1;
     const band=Math.sin(h*2.3+n*.8)*.5+.5;// layers in the rock
     if(onTrail)c.setRGB(.56+n*.04,.44+n*.03,.31,THREE.SRGBColorSpace);// packed dirt
@@ -12974,7 +12980,7 @@ function advLanyard(h,A,cableY){const ly=h.userData.lanyard;if(cableY==null){ly.
 /* ---------- ground, walls and the harness ---------- */
 // groundAt (13-park-and-stars.js) asks: how high is the ground at (x,z), given h from everything else
 function advGround(x,z,h){if(!ADV)return h;
-  if(Math.abs(x-MZ.x)<11&&Math.abs(z-MZ.z)<11){const [lx,lz]=MZ.toLocal(x,z),m=mtH(lx,lz)[0];if(m>h)h=m;}
+  if(Math.hypot(x-MZ.x,z-MZ.z)<13){const [lx,lz]=MZ.toLocal(x,z),m=mtGround(lx,lz);if(m>h)h=m;}
   const s=upSurf(x,z);if(s>-1&&(HIGH.on||s<.5)&&s>h)h=s;
   return h;}
 // the game loop asks before each step from old to p: true stops the step
@@ -12982,8 +12988,19 @@ function advBlock(old,p){if(!ADV||ADS.mode)return false;
   // up on the course or the footbridge your harness (or the railing) keeps you from stepping off the edge
   if(HIGH.on){const so=upSurf(old.x,old.z);if(so>1&&old.y>so-.7&&upSurf(p.x,p.z)<0)return true;}
   // the mountain's rock is too steep to walk up; only the trail and the climbing wall go up
-  if(Math.abs(p.x-MZ.x)<11&&Math.abs(p.z-MZ.z)<11){const [lx,lz]=MZ.toLocal(p.x,p.z),n=mtH(lx,lz);if(!n[1]){const [ox,oz]=MZ.toLocal(old.x,old.z);if(n[0]>mtH(ox,oz)[0]+.01)return true;}}
+  // It goes by the smooth shape (mtBase), not the little rocky bumps, so a dip between bumps can never trap you, and stepping back
+  // onto the trail from just beside it is always fine (you'd get stuck by the log steps after falling off the edge).
+  if(Math.hypot(p.x-MZ.x,p.z-MZ.z)<13){const [lx,lz]=MZ.toLocal(p.x,p.z),n=mtH(lx,lz);if(!n[1]){const [ox,oz]=MZ.toLocal(old.x,old.z);
+    if(n[0]>mtH(ox,oz)[0]+.01&&mtSteepUp(ox,oz,lx,lz))return true;}}
   return false;}
+// walking from local (ox,oz) to (lx,lz) off the trail: is it up the steep rock?
+function mtSteepUp(ox,oz,lx,lz){const [t0,th0]=trailNear(ox,oz),t1=trailNear(lx,lz)[0];
+  if(t1<t0&&t0<TRAIL_W+1.6&&mtGround(ox,oz)>th0-1)return false;// heading back onto the trail from just below its edge
+  return mtBase(lx,lz)[1]>mtBase(ox,oz)[1]+.005;}
+// 🥾 off the trail on the rock: a button pops you back onto the nearest bit of trail
+function mtOffTrail(){const P=player.pos;if(Math.hypot(P.x-MZ.x,P.z-MZ.z)>13||P.y<.5)return false;const [lx,lz]=MZ.toLocal(P.x,P.z),n=mtH(lx,lz);return !n[1]&&n[2]<1&&n[2]>MT.top+.03;}
+function backToTrail(){const P=player.pos,[lx,lz]=MZ.toLocal(P.x,P.z),[,th,,bx,bz]=trailNear(lx,lz),[x,z]=MZ.toWorld(bx,bz);
+  P.set(x,th+.05,z);player.vy=0;player.speed=0;sfx('pop');toast('🥾 Back on the trail!');}
 
 /* ---------- climbing (the ladder and the rock wall) and zip lining ---------- */
 const advBusy=()=>!!(barnRide||BIKE.on||SK.on||FLY.on||closetOpen||!started);
@@ -13070,6 +13087,7 @@ function advButton(){const P=player.pos;let t='',f=null;
     if(!HIGH.on&&P.y<.6&&near(lfx,lfz,1.1)){t='🪜 Climb the ladder';f=ladderUp;}
     else if(HIGH.on&&ADV.plat===RLAD.p&&near(ltx,ltz,1)){t='🪜 Climb back down';f=ladderDown;}
     else if(P.y<.6&&near(wpx,wpz,1.1)){t='🧗 Climb the rock wall';f=wallClimb;}
+    else if(mtOffTrail()){t='🥾 Back to the trail';f=backToTrail;}
     else for(const L of ZIPS)if(near(L.launch[0],L.launch[1],L.id==='mountain'?1:.85)&&Math.abs(P.y-L.launchH)<.5){t=L.id==='mountain'?'🪂 Zip line down the mountain!':'🪂 Zip line!';f=()=>zipGo(L);break;}
     if(f&&(barnRide||BIKE.on||SK.on)){t='Hop off first to go up 🙂';f=()=>toast('Hop off your ride first 🙂');}}
   advAct=f;if(t===advKey)return;advKey=t;const b=$('#advBtn');b.textContent=t;b.style.display=t?'block':'none';}
@@ -13082,7 +13100,7 @@ onTick.push(dt=>{if(!ADV)return;const P=player.pos;
         if(b){did('ropesBridge',b.name);toast(`🌉 You crossed the ${b.name}!`);tone(660,.1,'triangle',.08);tone(880,.15,'triangle',.08,.08);}}ADV.plat=r.p;}}
   else if(!ADS.mode&&!HIGH.on)ADV.plat=null;
   // walked up the trail? (it counts when you start at the bottom)
-  if(!ADS.mode&&Math.abs(P.x-MZ.x)<11&&Math.abs(P.z-MZ.z)<11){const [lx,lz]=MZ.toLocal(P.x,P.z),[d,,u]=trailNear(lx,lz);
+  if(!ADS.mode&&Math.hypot(P.x-MZ.x,P.z-MZ.z)<13){const [lx,lz]=MZ.toLocal(P.x,P.z),[d,,u]=trailNear(lx,lz);
     if(d<TRAIL_W&&u<.08&&P.y<1.2)ADV.trailGo=true;
     const top=mtBase(lx,lz)[0]<MT.top+.03&&P.y>MT.H-.3;if(top&&!ADV.onTop){if(ADV.trailGo){ADV.trailGo=false;advSummit('trail');}}ADV.onTop=top;}
   // first time over here: how it works
@@ -13105,7 +13123,7 @@ SHOW.push({k:'adv',
 ADV={plat:null,trailGo:false,onTop:false};
 // for the test (3d/tests/adventure.mjs)
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{adv:()=>({mode:ADS.mode,up:HIGH.on,plat:ADV.plat,s:ADS.s,btn:advKey,t:clock.elapsedTime,harness:!!(advH&&advH.parent)}),
-  ADV_PARTS:{RC,RB,RLAD,ZIPS,WALL,MT,TRAIL,FB,MZ,TZ},advGo:{ladderUp,ladderDown,wallClimb,zipGo},upSurf,mtH,fbDeck});});
+  ADV_PARTS:{RC,RB,RLAD,ZIPS,WALL,MT,TRAIL,FB,MZ,TZ},advGo:{ladderUp,ladderDown,wallClimb,zipGo,backToTrail},advBlock,trailNear,upSurf,mtH,mtGround,fbDeck});});
 // ---- src/26h-helicopter.js ----
 /* ================= 🚁 THE HELICOPTER: buy it or win it, fly it, and take your friends along =================
    - It lives at the 🚁 Helipad (12h-place-helipad.js), between the Basketball Court and the Jump Park.

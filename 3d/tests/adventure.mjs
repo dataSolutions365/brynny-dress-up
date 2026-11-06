@@ -146,6 +146,35 @@ try {
   console.log(`walking straight at the rock: got to height ${s.y.toFixed(2)}`);
   if (s.y > 2) fail(`She walked straight up the steep rock to ${s.y.toFixed(2)}; only the trail and the wall go up.`);
 
+  // 9b. the ground you stand on is the rock you see (no standing on air past the trail's edge), nowhere on the slope traps you,
+  // you can step back up onto the trail from just below it, and off the trail a button pops you back on
+  { const r = await page.evaluate(() => { const G = window.__game, T = G.THREE, MZ = G.ADV_PARTS.MZ; MZ.g.updateMatrixWorld(true);
+      const meshes = []; MZ.g.traverse(o => { if (o.isMesh && o.geometry.type === 'PlaneGeometry' && o.geometry.attributes.color) meshes.push(o); });
+      const rc = new T.Raycaster(); let air = 0, worst = 0, trapped = 0, back = 0, backN = 0;
+      for (let lx = -9.6; lx <= 6.2; lx += .25) for (let lz = -6.8; lz <= 6.8; lz += .25) { const [x, z] = MZ.toWorld(lx, lz), g = G.groundAt(x, z);
+        rc.set(new T.Vector3(x, 40, z), new T.Vector3(0, -1, 0)); const hit = rc.intersectObjects(meshes)[0];
+        if (hit && hit.point.y > 0 && Math.abs(g - hit.point.y) > .05) { air++; worst = Math.max(worst, Math.abs(g - hit.point.y)); }
+        const m = G.mtH(lx, lz); if (m[1] || g < .3) continue; const old = { x, y: g, z };
+        let free = 0; for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, p = { x: x + Math.sin(a) * .08, y: g, z: z + Math.cos(a) * .08 };
+          if (!(G.groundAt(p.x, p.z) - g > .45 || G.advBlock(old, p))) free++; }
+        if (!free) trapped++;
+        const t = G.trailNear(lx, lz); if (t[0] > .85 && t[0] < 1.6 && g < t[1] - .05 && g > t[1] - .4) { backN++;
+          const [tx, tz] = MZ.toWorld(t[3], t[4]), d = Math.hypot(tx - x, tz - z), p = { x: x + (tx - x) / d * .08, y: g, z: z + (tz - z) / d * .08 };
+          if (!(G.groundAt(p.x, p.z) - g > .45 || G.advBlock(old, p))) back++; } }
+      return { air, worst, trapped, back, backN }; });
+    console.log(`mountain ground: ${r.air} spots off the drawn rock (worst ${r.worst.toFixed(2)}), ${r.trapped} spots that trap you, ${r.back}/${r.backN} spots step back onto the trail`);
+    if (r.air) fail(`The ground you stand on doesn't match the rock you see in ${r.air} spots (up to ${r.worst.toFixed(2)} off): you'd stand on air.`);
+    if (r.trapped) fail(`${r.trapped} spots on the mountain's slope trap you so you can't walk any way.`);
+    if (r.back < r.backN) fail(`From just below the trail you couldn't step back onto it in ${r.backN - r.back} of ${r.backN} spots.`);
+    // off the trail on the slope the 🥾 button pops you back on
+    const off = await page.evaluate(() => { const G = window.__game, A = G.ADV_PARTS, MZ = A.MZ;
+      for (let lx = -6; lx < 4; lx += .3) for (let lz = -5; lz < 5; lz += .3) { const m = G.mtH(lx, lz); if (!m[1] && m[0] > 2 && m[0] < 8 && G.trailNear(lx, lz)[0] > 1.5) return MZ.toWorld(lx, lz); } });
+    await put(...off); await waitGame(.3); s = await state();
+    if (!/Back to the trail/.test(s.btn)) fail(`Off the trail on the slope the "Back to the trail" button should show (it says "${s.btn}").`);
+    await page.evaluate(() => document.querySelector('#advBtn').click()); await waitGame(.5);
+    const on = await page.evaluate(() => { const G = window.__game, MZ = G.ADV_PARTS.MZ, p = G.player.pos, [lx, lz] = MZ.toLocal(p.x, p.z); return G.mtH(lx, lz)[1] && G.trailNear(lx, lz)[0] < .8; });
+    if (!on) fail('The "Back to the trail" button should put you on the trail.'); }
+
   // 10. hike the trail to the top
   await put(...P.trail[0]); await walk(P.trail.slice(1)); s = await waitGame(60, s => !s.walking); await stop(); await waitGame(.5); s = await state();
   console.log(`after the trail: height ${s.y.toFixed(2)}`);
