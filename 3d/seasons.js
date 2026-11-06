@@ -305,7 +305,7 @@ const TOWN_SONGS = ['city-park', 'town-brand-new-day', 'town-bumblebee'];
 // 🎄 at Christmas, walking around town (the park between the places) plays real Christmas songs one after another.
 // The files are in audio/ (where each one comes from and its license: audio/CREDITS.md).
 // Put the file names (without .mp3) in XMAS_TOWN_SONGS. While it's empty the park keeps its usual song.
-const XMAS_TOWN_SONGS = ['xmas-we-wish', 'xmas-joy-to-the-world', 'xmas-good-king-wenceslas', 'xmas-wassailing'];
+const XMAS_TOWN_SONGS = ['xmas-we-wish', 'xmas-joy-to-the-world', 'xmas-good-king-wenceslas', 'xmas-wassailing', 'xmas-deck-the-halls'];
 if (HOL && HOL.id === 'christmas' && G.PARK && G.PLAYLISTS && XMAS_TOWN_SONGS.length) { G.PLAYLISTS['xmas-town'] = XMAS_TOWN_SONGS; G.PARK.music = 'xmas-town'; }
 else if (G.PARK && G.PLAYLISTS && G.PARK.music === 'city-park') { G.PLAYLISTS['town'] = TOWN_SONGS; G.PARK.music = 'town'; }
 window.__season = { now: () => HOL, on: id => !!HOL && HOL.id === id, list: HOLIDAYS, holidayFor, night: () => nightK };

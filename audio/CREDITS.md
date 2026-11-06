@@ -13,6 +13,7 @@ public domain, so they are free to use, change and share. Each file was shortene
 | `xmas-wassailing.mp3` | Here We Come A-wassailing | US Army Band "Pershing's Own" chorus | Public domain (US government work) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:U.S._Army_Band_-_Here_We_Come_A-wassailing.ogg) |
 | `town-brand-new-day.mp3` | It's a Brand New Day (big-band jazz, by Steve Erickson) | US Air Force Band, Airmen of Note | Public domain (US government work) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:It%27s_a_Brand_New_Day_-_Airmen_of_Note_-_United_States_Air_Force_Band.mp3), from [music.af.mil Public Domain Music](https://www.music.af.mil/Multimedia/Music/Public-Domain-Music/) |
 | `town-bumblebee.mp3` | Flight of the Bumblebee (Rimsky-Korsakov) | US Air Force Band of the Rockies, Concert Band | Public domain (US government work) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Flight_of_the_Bumblebee_-_Concert_Band_-_United_States_Air_Force_Band_of_the_Rockies.mp3) |
+| `xmas-deck-the-halls.mp3` | Deck the Halls | US Air Force Band and Singing Sergeants, Concert Band | Public domain (US government work) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Deck_the_Halls_(USAFB_Concert_Band).ogg) |
 
 Only add songs here that are free to use. Newer songs like "Grandma Got Run Over by a Reindeer" or
 "Driving Home for Christmas" are still under copyright and can't go in the game.
