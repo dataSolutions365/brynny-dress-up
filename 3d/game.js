@@ -15883,6 +15883,8 @@ function wfBatPose(a,piv,s){const A=a.arms;if(!A)return;let u=s<0?0:Math.min(1,s
   piv.quaternion.setFromUnitVectors(_wfY,_wfV.set(Math.sin(phi)*Math.cos(elev),Math.sin(elev),Math.cos(phi)*Math.cos(elev)));
   const ax=-.9-Math.sin(ease*Math.PI)*.5;A[0].sh.rotation.x=ax;A[1].sh.rotation.x=ax;A[0].sh.rotation.z=.35-ease*.5;A[1].sh.rotation.z=-.1+ease*.2-.4;A[0].el.rotation.x=-1.2+ease*.9;A[1].el.rotation.x=-1.4+ease*1;
   a.hips.rotation.y=-.35+ease*1.1;
+  // the stance: feet a bit wider than the shoulders, knees bent, weight back (then a little stride into the swing)
+  const L=a.legs;if(L){const st=s<0?0:Math.min(1,s/.12);for(const [i,sg] of [[0,1],[1,-1]]){L[i].hp.rotation.z=sg*.2;L[i].hp.rotation.x=-.28;L[i].kn.rotation.x=.5;}L[1].hp.rotation.x=-.28-st*.25;a.g.position.y-=.045;}
   a.g.updateMatrixWorld(true);piv.position.copy(a.g.worldToLocal(A[0].hand.getWorldPosition(_wfV))).add(_wfV.set(0,-.04,0));piv.translateY(-.06);}
 // pitching: a real overhand windup. Leg kick, the arm goes down and back, up behind the head, then over the top and down across the body.
 // u: 0..1 through the motion (the ball leaves at WF_REL). The throwing shoulder only ever turns one way (back, up, over), so the arm circles like a real throw.
@@ -15907,7 +15909,7 @@ const wfHand=(a,out,glove)=>{a.g.updateMatrixWorld(true);a.arms[glove?1:0].hand.
 
 /* ---------- who is where ---------- */
 const wfMe=()=>WF.meC||(WF.meC={me:1,a:av,n:'you',get piv(){return WF.myPiv;},get p(){return WF.myP;}});
-function wfSpot(c,x,zz,face){c.p.set(x,0,zz);c.face=face;c.run=null;c.go=null;c.sit=false;if(c.a&&!c.me&&c.a.emote&&c.a.emote.id==='chair')c.a.emote=null;}
+function wfSpot(c,x,zz,face){c.p.set(x,0,zz);c.face=face;c.run=null;c.go=null;c.sit=false;c.spd=0;if(c.a&&!c.me&&c.a.emote&&c.a.emote.id==='chair')c.a.emote=null;}
 const wfBaseAt=i=>{const [x,zz]=WB.base[i],[nx,nz]=WB.base[(i+1)%4],d=Math.hypot(nx-x,nz-zz),l=i?.55:0;return [x+(nx-x)/d*l,zz+(nz-zz)/d*l];};// a runner takes a little lead off the bag
 // set everybody up for the next pitch
 // full: a new half-inning (everybody to their spot); otherwise just the next pitch or the next batter (fielders walk back by themselves)
@@ -16188,7 +16190,7 @@ function wfStep(dt,t){if(!WF.on)return;const W=WB,b=WF.ball,z=Z.wiffle;WF.t+=dt;
   // move and pose everybody
   const C=WF.cpu;wfRunnersStep(dt);for(const c of Object.values(C))if(c.go)wfGoStep(c,dt);
   WB.zoneBox.visible=WF.kind!=='derby'&&b.st!=='fly'&&(ph==='set'||ph==='wind'||ph==='pitch'||ph==='pick');
-  for(const c of Object.values(C)){const a=c.a;a.g.position.copy(c.p);a.g.rotation.y=c.face;a.update(dt,c.spd||0,false);if(a.tag)a.tag.visible=!(c.crouch&&bat);
+  for(const c of Object.values(C)){const a=c.a;if(c===Bt&&!c.run||c.crouch)c.spd=0;a.g.position.copy(c.p);a.g.rotation.y=c.face;a.update(dt,c.spd||0,false);if(a.tag)a.tag.visible=!(c.crouch&&bat);
     if(c===Bt){if(c.swing>=0){c.swing+=dt;if(c.swing>.6)c.swing=-1;}if(c.piv.visible)wfBatPose(a,c.piv,c.swing);}
     else if(c===P&&(throwing||WF.phase==='set'||WF.phase==='pick')){wfThrowPose(a,ph==='wind'?WF.t/WF_THROW:ph==='pitch'?Math.min(1,(WF_THROW*WF_REL+b.t)/WF_THROW):0);}
     else if(c.crouch){wfCrouch(a);if(b.cross&&(ph==='pitch'||ph==='wind')){a.arms[1].sh.rotation.x=-1.2-(b.cross.y-.8)*1.6;a.arms[1].sh.rotation.z=-.15+b.cross.x*1.4;}}
