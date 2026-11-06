@@ -1,5 +1,6 @@
-// ⚾ Wiffle ball test: walks over the footbridge to the Wiffle Ball Field, checks the pad opens the menu, then plays a quick game
-// (bat, then pitch) and a Home Run Derby with a batter who swings on time, and checks hits, outs, runs, ghost runners and the end card.
+// ⚾ Baseball test: walks over the footbridge to the Baseball Field (it began as the wiffle ball field), checks the pad opens the menu, then plays a quick game
+// (bat, then pitch) and a Home Run Derby with a batter who swings on time, and checks hits, outs, runs, the overhand pitching, the catcher,
+// real runners on the bases and the end card.
 // The game is stepped by hand (window.__game.wfStep) so a whole game runs in a few seconds even on a slow test computer.
 //
 // Run it with:  node 3d/tests/wiffle.mjs   (needs Playwright: npm i --no-save playwright && npx playwright install chromium)
@@ -59,13 +60,13 @@ try {
   await page.evaluate(() => { const G = window.__game, z = G.Z.wiffle, [x, w] = z.toWorld(G.WB.pad.lx, G.WB.pad.lz); G.player.pos.set(x, 0, w); });
   await play(1);
   s = await page.evaluate(() => ({ menu: document.querySelector('#spMenu').classList.contains('show'), txt: document.querySelector('#spCard').textContent }));
-  if (!s.menu || !/Wiffle Ball Field/.test(s.txt)) fail('Stepping on the pad did not open the wiffle ball menu.');
+  if (!s.menu || !/Baseball Field/.test(s.txt)) fail('Stepping on the pad did not open the baseball menu.');
   await shot('wiffle-menu');
   await page.evaluate(() => { document.querySelector('#spNo').click(); });
 
   // play a whole game by stepping it: a batter who swings about on time, a pitcher who throws as soon as it can
   const sim = (kind, jitter) => page.evaluate(([kind, jitter]) => { const G = window.__game, WF = G.WF, WB = G.WB;
-    G.wfStart(kind);const seen = { pitches: 0, swings: 0, outs: 0, ghosts: 0, halves: new Set(), opBat: 0, kinds: new Set(), maxBases: 0, calls: 0 };let lastPh = null, prevOuts = 0;
+    G.wfStart(kind);const seen = { pitches: 0, swings: 0, outs: 0, ghosts: 0, halves: new Set(), opBat: 0, kinds: new Set(), maxBases: 0, calls: 0, arm: 0, mitt: 0, noRunner: 0 };let lastPh = null, prevOuts = 0;
     for (let i = 0; i < 40000 && WF.on; i++) { const b = WF.ball;
       if (WF.half === 'top' && b.st === 'pitch' && WF.mySwing == null && !WF.myHitDone && b.v0) { const left = (WB.HP - b.p.z) / b.v0.z;
         if (left <= .14 + (WF._j ?? (WF._j = (Math.random() - .5) * jitter))) { G.wfPress(); seen.swings++; WF._j = null; } }
@@ -73,6 +74,9 @@ try {
       if (WF.phase !== lastPh) { if (WF.phase === 'pitch') { seen.pitches++; seen.kinds.add(b.kind); if (WF.half === 'bot') seen.opBat++; } lastPh = WF.phase; }
       if (WF.res && WF.res !== seen._r) { seen._r = WF.res; (seen.log = seen.log || []).push(WF.half + ':' + WF.res.t); }
       if (WF.outs > prevOuts) seen.outs += WF.outs - prevOuts; prevOuts = WF.outs;
+      if (WF.phase === 'wind' && !WF.pitcher.me) seen.arm = Math.max(seen.arm, WF.pitcher.a.arms[0].sh.rotation.x);
+      if (b.st === 'held' && b.held === WF.catcher) seen.mitt++;
+      for (let k = 1; k < 4; k++) if (WF.bases[k] && !(WF.ob && WF.ob[k] && WF.ob[k].base === k)) seen.noRunner++;
       seen.halves.add(WF.half + WF.inn); seen.ghosts = Math.max(seen.ghosts, WF.bases.reduce((a, v) => a + v, 0));
       G.wfStep(1 / 30, i / 30); }
     return { on: WF.on, me: WF.me, op: WF.op, hits: WF.hits, hr: WF.hr, swings: WF.swings, ks: WF.ks, inn: WF.inn, ...seen, halves: [...seen.halves], kinds: [...seen.kinds],
@@ -84,15 +88,18 @@ try {
   // 3. a quick game: you bat, then you pitch
   let g = await sim('quick', .16);
   if (await page.evaluate(() => !!document.querySelector('#spUnsuit'))) fail('After a game it offered to put back an old outfit you had already changed out of (that is how roller skates came back).');
-  console.log(`quick game: ${g.me}-${g.op}, ${g.pitches} pitches (${g.kinds.join(' ')}), ${g.swings} swings, ${g.hits} hits, ${g.outs} outs, ${g.ks} Ks, most ghost runners ${g.ghosts}, halves ${g.halves.join(',')}`);
+  console.log(`quick game: ${g.me}-${g.op}, ${g.pitches} pitches (${g.kinds.join(' ')}), ${g.swings} swings, ${g.hits} hits, ${g.outs} outs, ${g.ks} Ks, most runners on base ${g.ghosts}, halves ${g.halves.join(',')}`);
   if (process.env.DEBUG) console.log(g.log);
   if (g.on || g.mode) fail('The quick game never finished.');
   if (!g.menu || !/You win|win this time|tie/.test(g.card)) fail('The end card did not show who won.');
   if (g.hits < 1) fail('Swinging on time never got a hit.');
   if (g.outs < 3) fail('Nobody got out.');
-  if (!g.halves.includes('bot1')) fail('Maya and Sam never got to bat.');
-  if (g.opBat < 3) fail('You hardly pitched to Maya and Sam.');
+  if (!g.halves.includes('bot1')) fail('The Bears never got to bat.');
+  if (g.opBat < 3) fail('You hardly pitched to the Bears.');
   if (g.kinds.length < 3) fail('The pitches were all the same kind.');
+  if (g.arm < 3.5) fail(`Maya does not throw overhand (her arm never came up over the top: ${g.arm.toFixed(2)}).`);
+  if (!g.mitt) fail('No pitch ever went into the catcher\'s mitt.');
+  if (g.ghosts && g.noRunner) fail('A base was taken but nobody was standing on it.');
   await page.evaluate(() => { document.querySelector('#spDone').click(); });
 
   // suit up in the baseball uniform, play, then "Back to my outfit" gives you your own clothes (and shoes) back
@@ -127,7 +134,7 @@ try {
   }
 
   if (errors.length) fail(`The game had errors:\n  ${errors.join('\n  ')}`);
-  if (!process.exitCode) console.log('✅ Wiffle ball: the field, batting, pitching, fielding, ghost runners and the Derby all work.');
+  if (!process.exitCode) console.log('✅ Baseball: the field, batting, overhand pitching, the catcher, fielding, runners on base and the Derby all work.');
 } finally {
   await browser.close();
   server.close();

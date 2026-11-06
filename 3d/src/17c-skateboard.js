@@ -10,6 +10,8 @@ const hasBoard=()=>!!(SAVE.look&&SAVE.look.extras&&SAVE.look.extras.skateboard);
 const handsBusy=()=>!!SP.mode||garageOpen||sandOpen||bakeryOpen||parlorOpen||barnOpen||glamOpen||barberOpen||ck.on||pc.on||ct.on;
 // also put away while riding a horse or a bike (17d-bicycle.js)
 const boardBusy=()=>handsBusy()||!!barnRide||BIKE.on;
+// at the ball fields you're there to play: the board is put away (no carrying it round in your uniform), and you can still ride it from the button
+const BOARD_STOW=new Set(['court','batting','wiffle','soccer']);const boardStowed=()=>!!(curZone&&BOARD_STOW.has(curZone.id));
 const skateBoost=()=>SK.on?1.55:1;
 const skateActs=()=>hasBoard()?[['skate','🛹',SK.on?'Hop off':'Ride']]:[];
 function startSkate(){if(SK.on||!hasBoard()||closetOpen||!started||boardBusy())return;SK.on=true;SK.v=0;SK.dir=player.face;av.emote=null;
@@ -26,9 +28,9 @@ function skatePose(a,tgt,sp,air,t){const push=a.skating&&!air&&sp>.05&&a.skatePu
   if(push){const k=Math.max(0,Math.sin(t*5));tgt.l1=-.32+k*.6;tgt.k1=.62-k*.4;}
   if(air){tgt.k0=tgt.k1=1.1;tgt.l0=tgt.l1=-.7;tgt.bob=-.12;tgt.a0z=-1.4;tgt.a1z=1.4;}}
 anims.push((t,dt)=>{if(!started||!av)return;
-  // the board in the hand: hidden while riding it, during games that need your hands, and while wearing roller skates
+  // the board in the hand: hidden while riding it, during games that need your hands, while wearing roller skates and at the ball fields
   if(SK.on&&(!hasBoard()||closetOpen||boardBusy()))stopSkate(true);
-  if(av.board)av.board.visible=!SK.on&&!boardBusy()&&!av.rollers;
+  if(av.board)av.board.visible=!SK.on&&!boardBusy()&&!av.rollers&&!boardStowed();
   if(av.deck)av.deck.visible=SK.on;
   av.skating=SK.on;av.skatePush=SK.pushing;if(!SK.on){if(av.g.rotation.z)av.g.rotation.z=0;return;}
   // keep rolling after you let go of the joystick, slowing down little by little

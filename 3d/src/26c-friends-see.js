@@ -84,7 +84,7 @@ SHOW.push({k:'ride',
 // 🛹 the skateboard: in your hand while you walk, under your feet while you ride, put away while your hands are busy
 // (and while they wear roller skates, which their look already shows)
 SHOW.push({k:'skate',
-  mine(){return hasBoard()?{on:SK.on?1:0,away:!SK.on&&boardBusy()?1:0}:null;},
+  mine(){return hasBoard()?{on:SK.on?1:0,away:!SK.on&&(boardBusy()||boardStowed())?1:0}:null;},
   on(){return {lean:0,yaw:null,sp:0};},
   step(f,d,dt,h){const A=f.a,on=!!d.on;
     if(A.board)A.board.visible=!on&&!d.away&&!A.rollers;if(A.deck)A.deck.visible=on;A.skating=on;
@@ -129,7 +129,7 @@ SHOW.push({k:'park',
 
 // 🎂 what you're busy doing, shown on a little sign over your head, plus the bat or ball in your hands at the sports park
 function showDoing(){
-  if(SP.mode)return {bat:'⚾ Batting practice',ft:'🏀 Free throws',shoot:'🔥 Basketball shootout',v1:'🆚 1-on-1 with Kai',wif:'⚾ Wiffle ball game'}[SP.mode]||'🏀 Playing ball';
+  if(SP.mode)return {bat:'⚾ Batting practice',ft:'🏀 Free throws',shoot:'🔥 Basketball shootout',v1:'🆚 1-on-1 with Kai',wif:'⚾ Baseball game'}[SP.mode]||'🏀 Playing ball';
   if(ck.on)return '🏆 Cake contest';if(pc.on)return '🏆 Pet contest';if(ct.on)return '📸 Model contest';
   if(glamOpen)return '💄 Glam mirror';if(barberOpen)return '💈 At the barber';if(storeOpen)return '👕 Clothes shopping';
   if(bakeryOpen)return '🎂 Baking a cake';if(parlorOpen)return '🐾 Pet Parlor spa';if(barnOpen)return '🐴 At the barn';if(zooOpen)return '🦒 At the zoo';

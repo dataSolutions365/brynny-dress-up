@@ -159,9 +159,12 @@ function spOpenMenu(zid){if(SP.mode||SP.menu)return;SP.menu=true;const S=SAVE.sp
    <button class="spPick" data-m="shoot"><b>🔥</b><span><strong>Shootout</strong><small>60 seconds. Shoot from anywhere, dunk up close${S.shoot!=null?` · Best: ${S.shoot} pts`:''}</small></span></button>
    <button class="spPick" data-m="v1"><b>🆚</b><span><strong>1-on-1 vs Kai</strong><small>First to 11 wins${S.v1w?` · Wins: ${S.v1w}`:''}</small></span></button>
    <button class="btn ghost" id="spNo">Not now</button>`;
-  else c.innerHTML=`<h2>⚾ Batting Cage</h2><p>The machine throws 10 pitches. Tap SWING when the ball gets to the plate!</p>
-   <div class="spBig">⚾🏏</div><p>${S.hr?`Most home runs: ${S.hr} · `:''}${S.far?`Longest hit: ${S.far} ft`:'Hit it over the fence for a home run!'}</p>
-   <button class="btn" data-m="bat">▶ Play ball!</button> <button class="btn ghost" id="spNo">Not now</button>`;
+  // the real game is at the ⚾ Baseball Field over the bridge (26j-wiffle.js); the cage is for batting practice
+  else c.innerHTML=`<h2>⚾ Batting Cage</h2><p>Want a real game? The Baseball Field is just over the bridge: pitch, hit and run the bases with a whole team!</p>
+   <button class="spPick" id="spToField"><b>⚾</b><span><strong>Play a real baseball game</strong><small>Go over to the Baseball Field</small></span></button>
+   <button class="spPick" data-m="bat"><b>🏏</b><span><strong>Batting practice</strong><small>The machine throws 10 pitches${S.hr?` · Most home runs: ${S.hr}`:''}</small></span></button>
+   <button class="btn ghost" id="spNo">Not now</button>`;
+  if($('#spToField'))$('#spToField').onclick=()=>{spCloseMenu();if(fastTravel(Z.wiffle))setTimeout(()=>{if(!SP.mode&&!SP.menu)wfMenu();},700);};
   spSuitBtn(c,zid);if(SP.onMenu)try{SP.onMenu(c,zid);}catch(e){}
   c.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{spCloseMenu();spStart(b.dataset.m);});
   $('#spNo').onclick=spCloseMenu;$('#spMenu').classList.add('show');sfx('pop');}

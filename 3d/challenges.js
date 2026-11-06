@@ -277,13 +277,13 @@ const ALL_LIST = [
   { id: 'ftSack5', tab: 'sports', e: '🚩', t: 'Sack the quarterback 5 times', r: 2, goal: 5, go: 'soccer', ev: { k: 'football', a: a => a === 'sack' } },
   { id: 'ftWin', tab: 'sports', e: '🦅', t: 'Win a pick-up football game with your team', r: 3, go: 'soccer', ev: { k: 'football', a: a => a === 'win' } },
   { id: 'ftRetTd', tab: 'sports', e: '🏃', t: 'Run a punt back for a touchdown', r: 2, go: 'soccer', ev: { k: 'football', a: a => a === 'rettd' } },
-  // ⚾ the Wiffle Ball Field in the 🏟️ Sports Park (3d/src/26j-wiffle.js)
-  { id: 'wf_play', tab: 'sports', e: '⚾', t: 'Play a wiffle ball game at the Sports Park', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'game' } },
-  { id: 'wf_hit', tab: 'sports', e: '🏏', t: 'Get a hit in wiffle ball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => ['1B', '2B', '3B', 'HR'].includes(a) } },
-  { id: 'wf_xbh', tab: 'sports', e: '🏃', t: 'Hit a double or a triple in wiffle ball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === '2B' || a === '3B' } },
-  { id: 'wf_hr', tab: 'sports', e: '💥', t: 'Hit a wiffle ball over the fence', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'HR' } },
-  { id: 'wf_k', tab: 'sports', e: '🌀', t: 'Strike out 3 batters with your curving pitches', r: 2, goal: 3, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'k' } },
-  { id: 'wf_win', tab: 'sports', e: '🏆', t: 'Win a wiffle ball game against Maya and Sam', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'win' } },
+  // ⚾ the Baseball Field in the 🏟️ Sports Park (3d/src/26j-wiffle.js; it began as a wiffle ball field, so the ids still say wf/wiffle)
+  { id: 'wf_play', tab: 'sports', e: '⚾', t: 'Play a baseball game at the Sports Park', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'game' } },
+  { id: 'wf_hit', tab: 'sports', e: '🏏', t: 'Get a hit in a baseball game', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => ['1B', '2B', '3B', 'HR'].includes(a) } },
+  { id: 'wf_xbh', tab: 'sports', e: '🏃', t: 'Hit a double or a triple in baseball', r: 1, go: 'wiffle', ev: { k: 'wiffle', a: a => a === '2B' || a === '3B' } },
+  { id: 'wf_hr', tab: 'sports', e: '💥', t: 'Hit a home run over the fence at the Baseball Field', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'HR' } },
+  { id: 'wf_k', tab: 'sports', e: '🌀', t: 'Strike out 3 batters with your pitches', r: 2, goal: 3, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'k' } },
+  { id: 'wf_win', tab: 'sports', e: '🏆', t: 'Win a baseball game against Maya\'s Bears', r: 2, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'win' } },
   { id: 'wf_derby', tab: 'sports', e: '🎆', t: 'Hit 5 home runs in one Home Run Derby', r: 3, go: 'wiffle', ev: { k: 'wiffle', a: a => a === 'derby5' } },
 ];
 // daily challenges: 3 new ones every day, and a bonus for doing all 3
