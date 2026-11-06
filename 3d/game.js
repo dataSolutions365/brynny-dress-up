@@ -11849,7 +11849,7 @@ MAPC.bay='#7fd6ee';
    BANK_GROUND: things you can stand on there, f(x,z) gives how high. */
 // own: a place like the waterpark that does its own walking, wading and bridge (seaKeep, seaDepth and bankOK below), so bankLand leaves it out.
 // Its entries are here, not in its own file, because the bank below is built before that file runs.
-const BANK_LAND=[{id:'water',a0:220,a1:260,out:R+56,own:1}];// 💦 the waterpark (26w-waterpark.js)
+const BANK_LAND=[{id:'water',a0:220,a1:274,out:R+56,own:1}];// 💦 the waterpark (26w-waterpark.js)
 const BANK_BRIDGES=[{id:'water',a:240,w:2.6,own:1,on:()=>false}];
 const BANK_POOLS=[],BANK_GROUND=[],BRG={on:''};
 var bankReady=false;// groundAt is asked before this file has run; it stays 0 until then
@@ -16242,7 +16242,8 @@ const WPZ=Z.water,WP_TOP=-.22;// the water line in the pools
 var wpReady=false;
 // where everything is, in the waterpark's own directions
 const WPL={
-  wave:{x0:-28,x1:-6,z0:-3,z1:12,beach:7.5},// the wave pool: deep from z0, the beach slopes up from 'beach' to z1
+  wave:{x0:-50,x1:-6,z0:-3,z1:12,beach:7.5},// the wave pool: deep from z0, the beach slopes up from 'beach' to z1
+  shack:{x:-33,z:16.4},// the 🏄 Surf Shack on the sand at the shallow end, where you grab a board
   splash:{x0:8,x1:22,z0:2,z1:12},// the splash pool at the bottom of the slides
   river:{cx:0,cz:-13,a:19,b:5.5,w:1.5},// the lazy river: a loop at distance b round the line from (-a,cz) to (a,cz), w each side of its middle
   tower:{x:25.5,z:-2,h:9},// the slide tower; its platform is h up
@@ -16304,6 +16305,10 @@ const WPS_LAND=BANK_LAND.find(s=>s.id==='water');
   {const zb=W.z1-2.6,y0=WP_TOP-.12,g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([W.x0,y0,zb,W.x1,y0,zb,W.x1,.02,W.z1,W.x0,.02,W.z1],3));
     g.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,6,0,6,1,0,1],2));g.setIndex([0,2,1,0,3,2]);g.computeVertexNormals();wpM(g,WPM.sand,0,0,0,WPZ.g,false,true);}
   wpFlat(wpRect(W.x0-.6,W.z1,W.x1+.6,W.z1+2.4),[],WPM.sand,.016);
+  // more sand round the 🏄 Surf Shack, out to just short of the canal (the bank's edge curves toward the island here)
+  {const top=[],bot=[],x1=WPL.shack.x+8,edge=x=>WPZ.d-Math.sqrt(BANK.in*BANK.in-x*x)-.8;
+    for(let x=W.x0-.6;x<=x1+.01;x+=2){top.push([x,Math.min(WPL.shack.z+4,edge(x))]);bot.push([x,W.z1+2.3]);}
+    wpFlat(bot.concat(top.reverse()),[],WPM.sand,.015);}
   // pool walls
   wpWall([[W.x0,W.z1],[W.x0,W.z0],[W.x1,W.z0],[W.x1,W.z1]],WPM.tile,true);wpWall(wpRect(S.x0,S.z0,S.x1,S.z1),WPM.tile);
   wpWall(wpCapsule(WPL.river.b+WPL.river.w),WPM.tile);wpWall(wpCapsule(WPL.river.b-WPL.river.w),WPM.tile);wpWall(wpCapsule(WPL.lagR),WPM.tile);
@@ -16344,7 +16349,7 @@ const WPS_LAND=BANK_LAND.find(s=>s.id==='water');
   for(const [x,z] of UMB){wpM(cyl(.04,.04,2.3,6),WPM.steel,x,1.15,z,g);const c=wpM(new THREE.ConeGeometry(1.25,.5,10,1,true),(x+z)&1?WPM.uw:WPM.ub,x,2.35,z,g,true);
     WPZ.ob(x,z,.15);const l=wpM(box(.65,.12,1.7),WPM.white,x+.9,.32,z+.2,g,false,true);l.rotation.x=-.06;wpM(box(.65,.5,.1),WPM.white,x+.9,.55,z-.62,g).rotation.x=-.7;}
   // palm trees round the edge
-  const PALM=[[-31,10],[-31,-2],[31,14],[30,3],[-6,13.6],[6,13.6],[-30,-14],[30,-16],[-12,-21.5],[16,-21.3],[0,-21.8]];
+  const PALM=[[-53,10],[-53,-2],[-46,18.6],[31,14],[30,3],[-6,13.6],[6,13.6],[-30,-14],[30,-16],[-12,-21.5],[16,-21.3],[0,-21.8]];
   for(const [x,z] of PALM){const s=.85+((x*7+z*3)&3)*.08,lean=((x+z)&1?.12:-.12);const tr=wpM(cyl(.13,.2,4.2*s,7),WPM.palm,x,2.1*s,z,g,true);tr.rotation.z=lean;
     const tx=x-Math.sin(lean)*2.1*s,ty=4.2*s;for(let k=0;k<6;k++){const ka=k*Math.PI/3;const lf=wpM(new THREE.ConeGeometry(.5,2.6,4,1),WPM.leaf,tx+Math.sin(ka)*1.0,ty,z+Math.cos(ka)*1.0,g,true);lf.rotation.set(Math.PI/2+.55,ka,0,'YXZ');lf.scale.set(1.3*s,s,.15*s);}
     WPZ.ob(x,z,.3);}}
@@ -16400,26 +16405,41 @@ WPZ.g.updateMatrixWorld(true);for(const S of WPS)S.mesh=wpSlideMesh(S);
 // the ride pads at the foot of the conveyor and the stairs
 const WP_PADS={
   twister:{lx:T_.x-1.6,lz:T_.z+10.6,e:'🌀',t:'Twister'},racer:{lx:T_.x+3.8,lz:T_.z-.6,e:'💨',t:'Racer'},
-  surf:{lx:-4.6,lz:1.6,e:'🏄',t:'Surfboards'},tube:{lx:0,lz:-4.4,e:'🛟',t:'Lazy river'}};
+  surf:{lx:WPL.shack.x+2.6,lz:WPL.shack.z-1.4,e:'🏄',t:'Grab a board'},tube:{lx:0,lz:-4.4,e:'🛟',t:'Lazy river'}};
 for(const k in WP_PADS){const P=WP_PADS[k];P.r=.95;
   P.m=wpM(new THREE.CircleGeometry(.95,28),glow('#8fe3ff',1.2),P.lx,.03,P.lz);P.m.rotation.x=-Math.PI/2;P.m.material.transparent=true;P.m.material.opacity=.75;
   const s=sprite(labelTex(`${P.e} ${P.t}`,{size:52,fg:'#1e6fd9',border:'#8fd8ff'}),1.9,.48);s.position.set(P.lx,2.1,P.lz);WPZ.g.add(s);}
 // a rack of surfboards and a stack of tubes beside their pads
-{const g=WPZ.g,P=WP_PADS.surf,cols=[WPM.red,WPM.iy,WPM.ib,WPM.ig];
-  wpM(box(.1,1.5,2.6),WPM.woodD,P.lx+1.4,.75,P.lz,g,true);
-  cols.forEach((c,i)=>{const b=wpM(sph(.5,12,8),c,P.lx+1.2,.95,P.lz-1+i*.66,g,true);b.scale.set(.12,1.9,.55);b.rotation.z=.18;});WPZ.ob(P.lx+1.4,P.lz,.6);
+{const g=WPZ.g,cols=[WPM.red,WPM.iy,WPM.ib,WPM.ig,WPM.board,WPM.white];
+  // 🏄 the Surf Shack: a little wooden hut with a sloped tin roof and a counter, and a rack of boards standing up beside it
+  const S=WPL.shack,hx=S.x,hz=S.z+.6;
+  wpM(box(3.2,2.2,2),WPM.wood,hx,1.1,hz,g,true,true);wpM(box(3.3,.12,.5),WPM.woodD,hx,1.05,hz-1.2,g,true);
+  for(const sx of [-1,1])wpM(cyl(.06,.06,2.6,6),WPM.woodD,hx+sx*1.55,1.3,hz-1.35,g,true);
+  const roof=wpM(box(3.9,.08,3.3),WPM.steel,hx,2.75,hz-.35,g,true);roof.rotation.x=-.16;
+  // its sign on a board up on the roof, readable from both sides
+  {const sm=new THREE.MeshStandardMaterial({map:labelTex('🏄 Surf Shack',{size:56,fg:'#c0392b',border:'#ffd23f'}),roughness:.6});
+    wpM(box(3,.75,.06),WPM.woodD,hx,3.35,hz-.35,g,true);for(const f of [-1,1]){const pl=wpM(new THREE.PlaneGeometry(2.8,.62),sm,hx,3.35,hz-.35+f*.035,g);if(f<0)pl.rotation.y=Math.PI;}
+    for(const sx of [-1,1])wpM(box(.08,.6,.08),WPM.woodD,hx+sx*1.2,2.95,hz-.35,g);}
+  WPZ.ob(hx-.8,hz,1.1);WPZ.ob(hx+.8,hz,1.1);
+  // the rack: two wooden rails, boards standing on their tails, leaning back a little
+  const rx=hx+2.6,rz=hz+.2;for(const dz of [-.35,.35])wpM(box(2.9,.08,.08),WPM.woodD,rx,1.05,rz+dz,g,true);
+  for(const sx of [-1,1])for(const dz of [-.35,.35])wpM(box(.08,1.1,.08),WPM.woodD,rx+sx*1.4,.55,rz+dz,g,true);
+  cols.forEach((c,i)=>{const b=wpM(sph(.5,14,8),c,rx-1.25+i*.5,1.05,rz,g,true);b.scale.set(.2,1.9,.06);b.rotation.x=-.12;
+    wpM(box(.012,1.5,.065),WPM.white,rx-1.25+i*.5,1.05,rz-.005,g).rotation.x=-.12;});
+  WPZ.ob(rx-.7,rz,.6);WPZ.ob(rx+.7,rz,.6);
   const Q=WP_PADS.tube;for(let i=0;i<4;i++){const t=wpM(new THREE.TorusGeometry(.5,.2,8,16),[WPM.iy,WPM.ib,WPM.red,WPM.ig][i],Q.lx+1.8,.2+i*.36,Q.lz+.4,g,true);t.rotation.x=Math.PI/2;}WPZ.ob(Q.lx+1.8,Q.lz+.4,.7);}
 
 /* ---------- 🌊 the wave pool and its wave maker ---------- */
-const WAVE={every:14,n:3,gap:2.8,spd:3.1,t:9,list:[],geo:null};
-{const W=WPL.wave,w=W.x1-W.x0,d=W.z1-W.z0,geo=new THREE.PlaneGeometry(w,d,Math.round(w*2),Math.round(d*2));geo.rotateX(-Math.PI/2);
+const WAVE={every:12,n:3,gap:2.8,spd:3.1,t:8,list:[],geo:null};
+// the waves roll along z, so the water needs fine steps that way and only coarse ones across (fewer points to move each frame on phones)
+{const W=WPL.wave,w=W.x1-W.x0,d=W.z1-W.z0,geo=new THREE.PlaneGeometry(w,d,Math.round(w),Math.round(d*2));geo.rotateX(-Math.PI/2);
   const pos=geo.attributes.position,col=new Float32Array(pos.count*3),deep=new THREE.Color('#1d9fc8'),shal=new THREE.Color('#7fe3ea'),c=new THREE.Color();
   for(let i=0;i<pos.count;i++){const lz=pos.getZ(i)+(W.z0+W.z1)/2;c.copy(deep).lerp(shal,Math.max(0,Math.min(1,(lz-W.z0-4)/(W.z1-W.z0-4))));col.set([c.r,c.g,c.b],i*3);}
   geo.setAttribute('color',new THREE.BufferAttribute(col,3));
   WAVE.geo=geo;WAVE.base=Float32Array.from(pos.array);WAVE.mesh=wpM(geo,WPM.wave,(W.x0+W.x1)/2,WP_TOP,(W.z0+W.z1)/2,WPZ.g,false,true);
   // the wave maker house at the deep end, with its grilles just above the water
   const g=WPZ.g;wpM(box(w+1,2.4,2.4),WPM.white,(W.x0+W.x1)/2,1.2,W.z0-1.25,g,true,true);
-  for(let i=0;i<6;i++)wpM(box(2.4,.5,.06),WPM.belt,W.x0+2+i*(w-4)/5,.3,W.z0-.03,g);
+  {const n=Math.round(w/4);for(let i=0;i<n;i++)wpM(box(2.4,.5,.06),WPM.belt,W.x0+2+i*(w-4)/(n-1),.3,W.z0-.03,g);}
   wpM(new THREE.PlaneGeometry(6,1),new THREE.MeshStandardMaterial({map:labelTex('🌊 Wave Pool',{size:58,fg:'#1e6fd9',border:'#8fd8ff'}),roughness:.6}),(W.x0+W.x1)/2,1.75,W.z0-.02,g);
   for(let x=W.x0+1;x<W.x1;x+=3)WPZ.ob(x,W.z0-1.25,1.3);}
 const wpSmooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
@@ -16638,7 +16658,8 @@ function wpTick(dt){if(!wpReady)return;const p=player.pos,t=performance.now()/10
   for(const k in WP_PADS){const P=WP_PADS[k];P.m.material.opacity=.55+Math.sin(t*3)*.2;}
   // 🏄 with a board in the wave pool: paddle, and a wave coming under you stands you up
   const inWave=wpIn(WPL.wave,lx,lz);
-  if(WP.board&&!WP.ride){if(!inWave&&!wpIn(WPL.wave,lx,lz,4)){WP.board=false;wpBoardShow();toast('🏄 Board back on the rack');wpBtns();}
+  // the board goes back on the rack when you walk away from the pool and the shack
+  if(WP.board&&!WP.ride){if(!inWave&&!wpIn(WPL.wave,lx,lz,4)&&Math.hypot(lx-WPL.shack.x,lz-WPL.shack.z)>7){WP.board=false;wpBoardShow();toast('🏄 Board back on the rack');wpBtns();}
     else if(inWave&&SW.k>.6&&(WP.surfCool=(WP.surfCool||0)-dt)<0){const w=WAVE.list.find(v=>Math.abs(v.c-lz)<.9&&v.c<WPL.wave.beach-.5&&waveOne(v.c,lz)>.3);if(w)wpSurfStart(w);}}
   if(WP.boardM&&WP.board){const B=WP.boardM;
     if(WP.ride&&WP.ride.kind==='surf'){const y=WP_TOP+waveH(lz,lx)+.08;B.position.set(p.x,y,p.z);B.rotation.set(-.12,player.face,-(WP.ride.vx||0)*.08);}
@@ -16667,7 +16688,7 @@ function wpTick(dt){if(!wpReady)return;const p=player.pos,t=performance.now()/10
     if(pc.I.k==='steps'&&pc.h>1.1&&player.onGround)WP.playUp='jump';}
   if(WP.playUp&&SW.k>.5){did('wpplay',WP.playUp);WP.playUp=null;}
   if(WP.playUp&&player.onGround&&pc&&pc.I.k!=='bounce'&&pc.I.k!=='slide'&&pc.I.k!=='steps')WP.playUp=null;
-  if(WP.ride)wpBtns();}
+  wpBtns();}
 onTick.push(wpTick);
 
 /* ---------- the hop off button ---------- */
@@ -16678,9 +16699,12 @@ body.dressing #wpBtn,body.talking #wpBtn,body.shopping #wpBtn{display:none!impor
 @media (max-height:520px){#wpBtn{bottom:calc(env(safe-area-inset-bottom) + 130px)}}`;document.head.appendChild(st);
   document.body.insertAdjacentHTML('beforeend','<button class="hud" id="wpBtn"></button>');}
 let wpBtnKey='';
-function wpBtns(){const k=WP.ride&&WP.ride.kind==='tube'?'tube':WP.board&&!WP.ride?'board':'';if(k===wpBtnKey)return;wpBtnKey=k;const b=$('#wpBtn');
-  b.textContent=k==='tube'?'🛟 Hop out':k==='board'?'🏄 Put the board back':'';b.style.display=k?'block':'none';}
-$('#wpBtn').onclick=()=>{if(WP.ride&&WP.ride.kind==='tube')wpTubeEnd();else if(WP.board){WP.board=false;wpBoardShow();wpBtns();}};
+// swimming in the wave pool without a board, Maya the lifeguard can toss you one from the Surf Shack
+const wpInWaves=()=>started&&!closetOpen&&curZone===WPZ&&SW.k>.5&&wpIn(WPL.wave,...wpLocal());
+function wpBtns(){const k=WP.ride&&WP.ride.kind==='tube'?'tube':WP.board&&!WP.ride?'board':!WP.ride&&!WP.board&&wpInWaves()?'grab':'';if(k===wpBtnKey)return;wpBtnKey=k;const b=$('#wpBtn');
+  b.textContent=k==='tube'?'🛟 Hop out':k==='board'?'🏄 Put the board back':k==='grab'?'🏄 Get a surfboard':'';b.style.display=k?'block':'none';}
+$('#wpBtn').onclick=()=>{if(WP.ride&&WP.ride.kind==='tube')wpTubeEnd();else if(WP.board){WP.board=false;wpBoardShow();wpBtns();}
+  else if(wpInWaves()){WP.board=true;wpBoardShow();sfx('pop');wpSay(WPL.maya,'Here you go! 🏄');toast('🏄 Got a board! Wait for a wave to roll under you');wpBtns();}};
 
 /* ---------- 🗺️ on the map: the deck, the pools and the bridge ---------- */
 MAPC.water='rgba(143,216,255,.18)';

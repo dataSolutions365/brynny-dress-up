@@ -118,7 +118,7 @@ try {
   if ((await S()).ride) fail('Hop out should get you out of the tube.');
   w = await where();if (w.depth > 0) fail('Hopping out of the tube should put you on the side of the river.');
 
-  // 5. 🏄 surfing: take a board from the rack, paddle out, a wave stands you up and you ride it in
+  // 5. 🏄 surfing: take a board from the Surf Shack's rack, paddle out, a wave stands you up and you ride it in
   await goLocal(-2, 2);await page.waitForTimeout(300);
   const SP = await page.evaluate(() => window.__game.waterpark.WP_PADS.surf);
   await goLocal(SP.lx, SP.lz);
@@ -133,6 +133,16 @@ try {
   if (!((await where()).lz > z0 + 2)) fail('Riding a wave should carry you in toward the beach.');
   if (!(await done('wp_surf'))) fail('Catching a wave should count for the surfing challenge.');
   if (!(await done('wp_waves'))) fail('Swimming in the wave pool when the waves come should count.');
+  // the wave pool is the big one, and swimming in it without a board you can ask for one
+  const big = await page.evaluate(() => { const W = window.__game.waterpark.WPL.wave; return (W.x1 - W.x0) * (W.z1 - W.z0); });
+  if (big < 600) fail(`The wave pool should be big, it is only ${big.toFixed(0)} square steps.`);
+  await page.evaluate(() => document.querySelector('#wpBtn').click());// put the board back
+  await until('the board to go back', s => !s.board, 5000);
+  await goLocal(-30, 4);
+  await page.waitForTimeout(1500);
+  const btn = await page.evaluate(() => { const b = document.querySelector('#wpBtn'); return b.style.display !== 'none' ? b.textContent : ''; });
+  if (!/surfboard/i.test(btn)) fail(`Swimming in the wave pool without a board there should be a button to get one (it says "${btn}").`);
+  else { await page.evaluate(() => document.querySelector('#wpBtn').click()); await until('a board from the button', s => s.board, 5000); }
 
   // 6. 🎈 the floating playground: slide down the big slide, and the bouncer throws you up
   await page.evaluate(() => document.querySelector('#wpBtn').click());
