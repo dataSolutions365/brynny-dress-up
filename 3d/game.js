@@ -4260,16 +4260,18 @@ function adopt(pt){did('adopt');if(!SAVE.adoptPaid){SAVE.adoptPaid=1;setTimeout(
 function stepPet(pt,dt){if(pt.inParlor){parlorPet(pt,dt);return;}let spd=0;const P=player.pos;
   if(pt.owned){const side=new THREE.Vector3(Math.sin(player.face+2.3)*.9,0,Math.cos(player.face+2.3)*.9).add(P);const d=Math.hypot(side.x-pt.pos.x,side.z-pt.pos.z);
     if(d>20){pt.pos.set(side.x,0,side.z);}else if(d>.35){pt.tgt=side;spd=Math.min(7,.8+d*2.6);}else{pt.tgt=null;pt.face=angDamp(pt.face,Math.atan2(P.x-pt.pos.x,P.z-pt.pos.z),dt*4);}
-    if(!player.onGround&&pt.y<=0&&player.vy>3&&d<4)pt.vy=4.2;}
+    if(!player.onGround&&pt.y<=0&&player.vy>3&&d<4&&!(pt.swim&&pt.swim.k>.3))pt.vy=4.2;}
   else{pt.wait-=dt;if(!pt.tgt&&pt.wait<=0){const a=Math.random()*Math.PI*2,r=Math.random()*pt.home.r*.85;pt.tgt=new THREE.Vector3(pt.home.x+Math.sin(a)*r,0,pt.home.z+Math.cos(a)*r);}
     if(pt.tgt)spd=pt.kind==='bunny'||pt.kind==='squirrel'?1.6:1.1;
     const dP=Math.hypot(P.x-pt.pos.x,P.z-pt.pos.z);if(dP<2.2&&started){spd=0;pt.face=angDamp(pt.face,Math.atan2(P.x-pt.pos.x,P.z-pt.pos.z),dt*4);}}
   if(pt.tgt&&spd>0){const dx=pt.tgt.x-pt.pos.x,dz=pt.tgt.z-pt.pos.z,d=Math.hypot(dx,dz);if(d<.3&&!pt.owned){pt.tgt=null;pt.wait=2+Math.random()*5;spd=0;}
-    else{const st=Math.min(d,spd*dt);pt.pos.x+=dx/d*st;pt.pos.z+=dz/d*st;collide(pt.pos,.22);pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}}
+    else{const st=Math.min(d,spd*dt);pt.pos.x+=dx/d*st;pt.pos.z+=dz/d*st;
+      // 🏊 your pet may swim out into the canal with you (26f3-pet-swim.js), and swim back to the shore after you
+      PET_SEA.on=pt.owned&&(ownerWet(P,true)||inCanal(pt.pos.x,pt.pos.z));collide(pt.pos,.22);PET_SEA.on=false;pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}}
   pt.speed+=(spd-pt.speed)*Math.min(1,dt*8);
   pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0){pt.y=0;pt.vy=0;}
   const gy=groundAt(pt.pos.x,pt.pos.z);pt.pos.y+=(gy-pt.pos.y)*Math.min(1,dt*12);
-  pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);}
+  pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);if(pt.owned)petSwim(pt,dt,true);}
 // some pets need a few ⭐ stars (from star challenges and hidden stars) before you can adopt them; stars are not used up
 const myStars=()=>(SAVE.chal&&SAVE.chal.stars)||0;
 const starsShort=pt=>pt.owned?0:Math.max(0,((pt.o&&pt.o.stars)||0)-myStars());
@@ -11019,7 +11021,7 @@ function stepPushables(p,dt){
         const rel=(o.vx-b.vx)*ux+(o.vz-b.vz)*uz;if(rel<0){o.vx-=rel*ux*.9;o.vz-=rel*uz*.9;b.vx+=rel*ux*.9;b.vz+=rel*uz*.9;if(b.spin===0)b.spin=o.spin*.6;}}}}}
 // past the island's edge you may only be out swimming in the 🌊 canal (seaKeep in 26f-ocean.js), or on the far bank's land and footbridges (bankLand)
 function collide(p,rad=.32){for(const o of obs){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz),m=o.r+rad;if(d<m&&d>1e-4){p.x=o.x+dx/d*m;p.z=o.z+dz/d*m;}}
-  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!bankLand(p)&&!(p===player.pos?seaKeep(p,lim):bankOK(p))){p.x*=lim/d;p.z*=lim/d;}}// bankLand (26f-ocean.js): the bits of the far bank you can walk on, and the footbridges to them; bankOK: pets may follow you onto the waterpark and its bridge
+  const d=Math.hypot(p.x,p.z),lim=onDock(p.x,p.z)?Z.beach.d+14.5:R+.9;if(d>lim&&!bankLand(p)&&!(p===player.pos?seaKeep(p,lim):bankOK(p)||petSea(p))){p.x*=lim/d;p.z*=lim/d;}}// bankLand (26f-ocean.js): the bits of the far bank you can walk on, and the footbridges to them; bankOK: pets may follow you onto the waterpark and its bridge; petSea: your pet swims out into the canal with you (26f3-pet-swim.js)
 // "tried to walk but didn't move": a bug like this throws no error, so watch for it and report it once per visit
 const walkW={t0:0,d:0,sent:false};// t0: when this push on the joystick started (real time, so slow phones count the same)
 function walkWatch(mag,step){if(walkW.sent)return;if(mag<.5){walkW.t0=0;walkW.d=0;return;}const now=performance.now();if(!walkW.t0)walkW.t0=now;walkW.d+=step;
@@ -11381,13 +11383,13 @@ SHOW.push({k:'pet',
   step(f,d,dt,h){const pt=h&&h.pt;if(!pt)return;const P=f.pos,fc=f.cur??f.face,a=fc+2.3;
     const sx=P.x+Math.sin(a)*.9,sz=P.z+Math.cos(a)*.9,dx=sx-pt.pos.x,dz=sz-pt.pos.z,dd=Math.hypot(dx,dz);let spd=0;
     if(dd>20){pt.pos.x=sx;pt.pos.z=sz;}
-    else if(dd>.35){spd=Math.min(7,.8+dd*2.6);const st=Math.min(dd,spd*dt);pt.pos.x+=dx/dd*st;pt.pos.z+=dz/dd*st;collide(pt.pos,.22);pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}
+    else if(dd>.35){spd=Math.min(7,.8+dd*2.6);const st=Math.min(dd,spd*dt);pt.pos.x+=dx/dd*st;pt.pos.z+=dz/dd*st;PET_SEA.on=ownerWet(P,false)||inCanal(pt.pos.x,pt.pos.z);collide(pt.pos,.22);PET_SEA.on=false;pt.face=angDamp(pt.face,Math.atan2(dx,dz),Math.min(1,dt*8));}
     else pt.face=angDamp(pt.face,Math.atan2(P.x-pt.pos.x,P.z-pt.pos.z),dt*4);
     // hop when your friend jumps
-    if(f.air&&!h.air&&pt.y<=0&&dd<4)pt.vy=4.2;h.air=f.air;
+    if(f.air&&!h.air&&pt.y<=0&&dd<4&&!(pt.swim&&pt.swim.k>.3))pt.vy=4.2;h.air=f.air;
     pt.speed+=(spd-pt.speed)*Math.min(1,dt*8);pt.vy-=18*dt;pt.y+=pt.vy*dt;if(pt.y<0){pt.y=0;pt.vy=0;}
     const gy=groundAt(pt.pos.x,pt.pos.z);pt.pos.y+=(gy-pt.pos.y)*Math.min(1,dt*12);
-    pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);},
+    pt.g.position.set(pt.pos.x,pt.pos.y+pt.y,pt.pos.z);pt.g.rotation.y=pt.face;pt.update(dt);petSwim(pt,dt,false);},
   off(f,h){if(!h)return;if(h.pt)scene.remove(h.pt.g);const s=h.hid;if(s&&--s._netHide<=0){s._netHide=0;s.g.visible=true;}}});
 
 // barn animals made just for a friend: they never bump into you and never join your own barn
@@ -12340,6 +12342,44 @@ function hippoStep(dt){if(!started||!seaSwimming())return;const h=ZA.find(a=>a.k
     if((hipWithT+=dt)>5){hipWithT=0;persist();}if(!h.sayHi){h.sayHi=1;h.speak('*blub blub* 💦');toast('🦛 You\'re swimming with the hippo!');}}}
 onTick.push(hippoStep);
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{waterAt,hipWith:()=>SAVE.hipWith||0,HIPPO_WATER,ZOO_SHORE});});
+// ---- src/26f3-pet-swim.js ----
+/* ===== 🐶🏊 Pets swim with you =====
+   Your pet follows you into the water (the 🌊 canal and the 💦 waterpark's pools) and swims next to you like a real dog would:
+   its body sinks so only its back, neck and head stick out, nose up, legs doggy-paddling under the water, ripples round it.
+   - petWater(): how deep the water is where a pet stands (0 dry .. 1 deep) and where the top of it is.
+   - petSwim(): run after the pet's update (stepPet in 16-animals-pets.js, and friends' pets in the 'pet' entry of 26c-friends-see.js).
+   - PET_SEA.on: set while a pet moves, so collide() (25-game-loop.js) lets it out into the canal (petSea) instead of keeping it on the sand. */
+const PET_SEA={on:false};
+// a pet may swim out into the canal while its owner is in the water (or while it's still swimming back to the shore)
+function petSea(p){if(!PET_SEA.on||!bankReady)return false;const d=Math.hypot(p.x,p.z),lim=CANAL.outR-.5;if(d>lim){p.x*=lim/d;p.z*=lim/d;}return true;}
+const PW={k:0,top:0};
+// the waterpark's pools sit a little higher than the canal (WP_TOP in 26w-waterpark.js)
+function petWater(x,z,y){PW.k=bankReady?seaDepth(x,z,y):0;PW.top=Math.hypot(x,z)<BANK.in?WATER_Y:WP_TOP;return PW;}
+// is the owner at P out in the water? (in a tube on the lazy river counts too)
+const ownerWet=(P,me)=>me?SW.k>.25||!!(WP.ride&&WP.ride.kind==='tube'):bankReady&&seaDepth(P.x+.003,P.z,P.y)>.25;
+function petSwim(pt,dt,mine){const s=pt.swim||(pt.swim={k:0,ph:0,splT:0,rip:null,inT:0}),w=petWater(pt.pos.x,pt.pos.z,pt.pos.y+pt.y);
+  s.k+=(w.k-s.k)*Math.min(1,dt*3);if(s.k<.003)s.k=0;
+  const D=pt.D,sc=pt.body.scale.y,k=s.k;
+  if(!k){if(s.was){s.was=0;pt.body.rotation.x=0;pt.head.rotation.x=pt.headX0;if(pt.tail)pt.tail.rotation.x=0;}if(s.rip)s.rip.visible=false;return 0;}
+  s.was=1;const sp=Math.min(1,pt.speed/3);s.ph+=dt*(5+sp*7);
+  // sink: the water comes up over the back, so the neck and head ride just above it
+  const want=w.top-(D.leg+D.r*1.25)*sc+Math.sin(pt.t*2.4)*.01;pt.g.position.y+=(want-pt.g.position.y)*k;
+  // nose up, chin up, the body lies flatter the faster it swims
+  pt.body.rotation.x=-k*(.3-.1*sp);pt.body.position.y*=1-k;pt.head.rotation.x=pt.headX0-.18*k;
+  // doggy paddle: front paws reach forward and pull down, back legs kick, in turn; slow and calm while just treading water
+  const amp=.45+.35*sp;pt.legs.forEach(l=>{const o=s.ph+(l.sx>0?Math.PI:0)+(l.sz>0?0:Math.PI*.5),
+    tgt=l.sz>0?-.75+Math.sin(o)*amp:.55+Math.sin(o)*amp*.8;l.lg.rotation.x+=(tgt-l.lg.rotation.x)*k;});
+  if(pt.tail&&pt.kind==='dog')pt.tail.rotation.x=.5*k;// the tail floats out behind like a rudder
+  // ripples round it on top of the water
+  if(k>.25){if(!s.rip){s.rip=M(new THREE.RingGeometry(.8,1,32),HIPM().rip,0,0,0,pt.g,false,false);s.rip.rotation.x=-Math.PI/2;}
+    const q=(performance.now()/1200)%1,sz=(D.len*.5+D.r)*sc*1.25;s.rip.visible=true;s.rip.position.y=w.top+.015-pt.g.position.y;s.rip.scale.setScalar(sz*(1+q*.5));}
+  else if(s.rip)s.rip.visible=false;
+  // a splash going in, and little splashes from the paws as it swims along
+  if(mine&&k>.5&&!s.inT){s.inT=1;burst(new THREE.Vector3(pt.pos.x,w.top+.08,pt.pos.z),'#ffffff',12,1.6,.16);if(!SAVE.petSwam){SAVE.petSwam=1;persist();toast(`🐾 ${pt.name} is swimming with you! 💦`);}}
+  if(k<.1)s.inT=0;
+  if(mine&&k>.6&&pt.speed>.6&&(s.splT-=dt)<0){s.splT=.5;burst(new THREE.Vector3(pt.pos.x+Math.sin(pt.face)*.25,w.top+.04,pt.pos.z+Math.cos(pt.face)*.25),'#ffffff',5,.9,.1);}
+  return k;}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{petWater,petSea,PET_SEA});});
 // ---- src/26g-town-animals.js ----
 /* ================= 🐾 THE BARN ANIMALS AND THE 🚨 ROUND-UP =================
    - Four barn animals (🦆 Waddles, 🐐 Billy, 🐷 Truffle, 🐑 Woolly) live in the big meadow all round the 🐴 Happy Barn. Most of the

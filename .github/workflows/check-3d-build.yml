@@ -51,6 +51,8 @@ jobs:
         run: node 3d/tests/sky.mjs
       - name: The waterpark's bridge, slides, lazy river, surfing and floating playground work
         run: node 3d/tests/waterpark.mjs
+      - name: Your pet swims next to you in the canal and the waterpark instead of walking on the water
+        run: node 3d/tests/pet-swim.mjs
       - name: The soccer field - penalty shootout (swipe shots and goalie dives), targets, keepy-uppies and 1-on-1 with tricks
         run: node 3d/tests/soccer.mjs
       - name: Football on the soccer field - field goals, picking a team, a pick-up game with sacks, and kick returns

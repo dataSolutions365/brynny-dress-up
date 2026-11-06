@@ -55,6 +55,10 @@
   (grp 'ghost': escape 10 times, 5 in a row, ride all 4 other sea rides, swim 5000 steps); once he's yours he stops chasing you.
   He looks like a real great white on purpose, not a cartoon; keep it that way.
   `3d/tests/ocean.mjs` (run on every PR) checks you swim all round, the animals keep their own way instead of following you, feeding counts, the rides stay locked until earned and you sit on their back.
+- 🐶🏊 Pets swim (`3d/src/26f3-pet-swim.js`): your adopted pet follows you into the canal and the waterpark's pools and swims
+  (body sunk to the water line, head up, doggy paddle, ripples) through `petSwim()`, called after `pt.update` in `stepPet` and for friends'
+  pets in the 'pet' entry of `SHOW`. `PET_SEA.on` (set round the pet's `collide`) lets it out into the canal through `petSea()` while
+  its owner is in the water. Pets never walk on top of water. `3d/tests/pet-swim.mjs` (run on every PR) checks it.
 - 💦 Splash Waterpark (`3d/src/26w-waterpark.js`): on the far bank of the canal behind the Runway and the Clothing Store, over a wooden
   footbridge at 240°. The far-bank land, the bridge and the pools hook into `3d/src/26f-ocean.js`: `BANK_LAND` (where you may walk),
   `BANK_BRIDGES`, `BANK_POOLS` (how deep the water is there, so swimming just works) and `BANK_GROUND` (what you can stand on, like the
