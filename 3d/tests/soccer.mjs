@@ -1,6 +1,7 @@
 // ⚽ The Soccer Field (3d/src/26h-soccer.js): the field over its footbridge, the ⚽ pad menu, and every game:
 // a penalty shootout (a real swipe shot past Leo, then saves as the goalie), target practice, keepy-uppies,
-// and 1-on-1 against Kai (a goal, a trick that fools him, a tackle). Also checks the posts keep a ball out.
+// and 1-on-1 against Kai (a goal, a trick that fools him, a tackle), and a 3-on-3 match with goalies (picking teams, a pass,
+// asking for it back, a shot the goalie has to deal with, and a whole match to the end). Also checks the posts keep a ball out.
 //
 // Run it with:  node 3d/tests/soccer.mjs   (needs Playwright: npm i --no-save playwright && npx playwright install chromium)
 // SHOTS=/some/folder also saves pictures of each step there.
@@ -50,6 +51,8 @@ try {
     return { mode: s.mode, phase: s.phase, turn: s.turn, me: s.me, cpu: s.cpu, n: s.n, clock: s.clock, menu: s.menu, own: s.own, judged: s.judged, res: s.lineRes,
       ball: b ? { x: b.p.x, y: b.p.y, z: b.p.z, st: b.st, in: b.in } : null, kai: k ? { x: k.p.x, z: k.p.z, stun: k.stun, vis: k.a.g.visible } : null,
       kaiShot: s.kaiShot, kicks: s.kicks.length, jug: s.jug ? { y: s.jug.y, vy: s.jug.vy, dead: s.jug.dead } : null }; });
+  const waitGameT = async (sec, until) => { const t0 = (await S()).clock, end = Date.now() + 300_000; let t;
+    while (Date.now() < end) { await page.waitForTimeout(150); t = await TM(); if ((await S()).clock - t0 >= sec || until(t)) return t; } return TM(); };
   const waitGame = async (sec, until = () => false) => { const t0 = (await S()).clock, end = Date.now() + 240_000;
     while (Date.now() < end) { await page.waitForTimeout(150); const s = await S(); if (s.clock - t0 >= sec || until(s)) return s; } return S(); };
 
@@ -194,6 +197,49 @@ try {
   await page.evaluate(() => document.querySelector('#scLeave').click());
   s = await waitGame(.3);
   if (s.mode) fail('✕ Leave should end the game.'); else ok('✕ Leave ends the game');
+
+  // ---------- 👟 3-on-3 with goalies ----------
+  await page.evaluate(() => document.querySelector('#scDone')?.click());
+  await page.evaluate(() => { const z = window.__game.Z.soccer, [x, w] = z.toWorld(z.pad.lx, z.pad.lz); window.__soccer.SC.onPad = false; window.__game.player.pos.set(x, 0, w); });
+  await waitGame(1.5, s => s.menu);
+  if (!await page.evaluate(() => !!document.querySelector('[data-m="team"]'))) fail('The soccer menu should have the 3-on-3 match.');
+  await page.evaluate(() => document.querySelector('[data-m="team"]').click());
+  await page.waitForFunction(() => document.querySelector('#tpQuick'), null, { timeout: 20_000 });
+  await page.evaluate(() => document.querySelector('#tpQuick').click());
+  await waitGame(3, s => s.mode === 'team');
+  const TM = () => page.evaluate(() => { const s = window.__soccer.SC, tm = s.tm, S = window.__soccer.SOC, b = s.ball;
+    const who = e => !e ? null : e.me ? 'me' : e.team + ':' + e.r.n + (e.key ? ':K' : '');
+    return { mode: s.mode, us: s.me, them: s.cpu, own: who(tm.own), passTo: who(tm.passTo), toMe: tm.toMe || 0, phase: tm.phase, clock: tm.clock, FL: S.FL,
+      pl: tm.pl.map(e => ({ team: e.team, key: e.key, me: e.me, x: e.p.x, vis: e.me || e.a.g.visible })), ball: { st: b.st, x: b.p.x } }; });
+  let t = await TM();
+  { const us = t.pl.filter(p => p.team === 'us'), them = t.pl.filter(p => p.team === 'them'), keys = t.pl.filter(p => p.key);
+    if (t.mode !== 'team' || us.length !== 4 || them.length !== 4 || keys.length !== 2 || !t.pl.every(p => p.vis)) fail(`3-on-3 should start with 4 a side, a goalie each: ${JSON.stringify(t)}`);
+    else if (!keys.every(k => Math.abs(k.x) > t.FL - 1.5)) fail(`Both goalies should stand in their goals: ${JSON.stringify(keys)}`);
+    else ok('3-on-3: picked teams, 4 a side with a goalie in each goal'); }
+  if (t.own !== 'me') fail(`The Eagles kick off with you on the ball (${t.own}).`); else ok('3-on-3 kicks off with your ball');
+  await shot('11-team-kickoff');
+  // 👟 pass to a teammate, then 🙋 ask for it back
+  await page.evaluate(() => window.__soccer.teamPass());
+  t = await waitGameT(4, t => /^us:/.test(t.own || ''));
+  if (!/^us:/.test(t.own || '')) fail(`PASS should get the ball to a teammate (${t.own}).`); else ok(`PASS: ${t.own.split(':')[1]} has it`);
+  await page.evaluate(() => window.__soccer.teamPass());
+  // (the Bears can still cut a pass out, so this checks the pass comes to you)
+  t = await waitGameT(5, t => t.own === 'me' || t.toMe > 0);
+  if (t.own !== 'me' && !(t.toMe > 0)) fail(`PASS ME! should make your teammate pass it to you (${t.own}, ${t.passTo}, ${t.ball.st}).`); else ok('PASS ME!: your teammate passes it to you');
+  // ⚽ a shot from close in: a goal or the Bears' goalie stops it
+  await page.evaluate(() => { const S = window.__soccer.SOC; window.__soccer.teamPlace(S.FL - 6, 0, Math.PI / 2); window.__soccer.teamPress(); });
+  t = await waitGameT(4, t => t.us > 0 || /^them:.*:K$/.test(t.own || ''));
+  if (!(t.us > 0 || /^them:.*:K$/.test(t.own || ''))) fail(`A shot from close in should score or be stopped by the goalie (${JSON.stringify(t.own)}, ${t.us}).`);
+  else ok(t.us > 0 ? 'Your shot: GOAL!' : `Your shot: saved by ${t.own.split(':')[1]}`);
+  // the rest of the match, with you on autopilot (same brain as the bots) and a short clock
+  await page.evaluate(() => { const tm = window.__soccer.team(); tm.auto = true; tm.clock = Math.min(tm.clock, 45); });
+  t = await waitGameT(150, t => !t.mode);
+  const tcard = await page.evaluate(() => document.querySelector('#spCard').textContent);
+  if (t.mode || !/Eagles win|tie|Bears win/.test(tcard)) fail(`The 3-on-3 match should finish (${t.mode}, ${tcard.slice(0, 80)}).`); else ok(`3-on-3 finished: ${t.us} - ${t.them}`);
+  if (!(t.us + t.them >= 1)) fail('Somebody should score in a 3-on-3 match.');
+  const left = await page.evaluate(() => window.__soccer.team().pl.filter(e => !e.me && e.a.g.visible).length);
+  if (left) fail(`After the match the other players should go away (${left} still out).`);
+  await page.evaluate(() => document.querySelector('#scDone')?.click());
 
   if (errors.length) fail('Page errors: ' + errors.join(' | '));
 } finally { await browser.close(); server.close(); }

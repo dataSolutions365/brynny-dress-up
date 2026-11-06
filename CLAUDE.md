@@ -133,6 +133,8 @@
   🥅 penalty shootout (swipe from the ball to shoot: where it points is where it goes, a quick swipe is hard, a bent swipe curls it;
   then dive by swiping or tapping left/middle/right), 🎯 target practice, 🤹 keepy-uppies and 🆚 1-on-1 vs Kai with ✨ tricks.
   Poses go through `av.socPose`/`av.socK` (14-avatar.js calls `socPoseRun`), the camera wraps `sportsCam`, `spLock` holds you still.
+  🆚 3-on-3 with goalies is `3d/src/26h2-soccer-team.js`: you draft your 🦅 Eagles with `teamPick` (sport 'soccer'), the best catcher on each side
+  keeps goal, and `socTeamStep` runs the clock, passing (PASS / PASS ME!), tackles, the bots and the keepers; `window.__soccer.team` is for tests.
   Challenges are in the 🏟 Sports tab of `3d/challenges.js`. `3d/tests/soccer.mjs` (run on every PR) plays every game, with a real swipe.
 - Townspeople (Ava, Zoe, Mia… in `3d/src/15-player-friends-townspeople.js`, moved by `stepFriend` in `3d/src/25-game-loop.js`) never
   follow you or copy your moves: only the pet you adopted follows you. When you dance or wave, at most the one closest to you claps

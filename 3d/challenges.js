@@ -272,6 +272,9 @@ const ALL_LIST = [
   { id: 'soc_tricks5', tab: 'sports', e: '🌈', t: 'Fool Kai with 5 tricks', r: 2, goal: 5, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick' } },
   { id: 'soc_nutmeg', tab: 'sports', e: '🥜', t: 'Nutmeg Kai: put the ball through his legs', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'trick_nutmeg' } },
   { id: 'soc_v1win', tab: 'sports', e: '🏆', t: 'Beat Kai 1-on-1', r: 3, go: 'soccer', ev: { k: 'soccer', a: a => a === 'v1win' } },
+  { id: 'soc_teamgoal', tab: 'sports', e: '👟', t: 'Score a goal in a 3-on-3 soccer match', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'teamgoal' } },
+  { id: 'soc_assist', tab: 'sports', e: '🤝', t: 'Pass to a teammate who scores (an assist) in 3-on-3 soccer', r: 2, go: 'soccer', ev: { k: 'soccer', a: a => a === 'assist' } },
+  { id: 'soc_teamwin', tab: 'sports', e: '🏆', t: 'Win a 3-on-3 soccer match with your team', r: 3, go: 'soccer', ev: { k: 'soccer', a: a => a === 'teamwin' } },
   // 🏈 flag football on the ⚽ Soccer Field (3d/src/26i2-football-games.js)
   { id: 'ftFg', tab: 'sports', e: '🏈', t: 'Kick a field goal through the uprights', r: 1, go: 'soccer', ev: { k: 'football', a: a => a === 'fg' } },
   { id: 'ftFg50', tab: 'sports', e: '🦵', t: 'Kick a 50-yard field goal', r: 3, go: 'soccer', ev: { k: 'football', a: a => a === 'fg50' } },
