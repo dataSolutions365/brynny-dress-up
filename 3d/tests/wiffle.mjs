@@ -66,7 +66,7 @@ try {
 
   // play a whole game by stepping it: a batter who swings about on time, a pitcher who throws as soon as it can
   const sim = (kind, jitter) => page.evaluate(([kind, jitter]) => { const G = window.__game, WF = G.WF, WB = G.WB;
-    G.wfStart(kind);const seen = { pitches: 0, swings: 0, outs: 0, ghosts: 0, halves: new Set(), opBat: 0, kinds: new Set(), maxBases: 0, calls: 0, arm: 0, mitt: 0, noRunner: 0 };let lastPh = null, prevOuts = 0;
+    G.wfStart(kind);const seen = { pitches: 0, swings: 0, outs: 0, ghosts: 0, halves: new Set(), opBat: 0, kinds: new Set(), maxBases: 0, calls: 0, arm: 0, mitt: 0, noRunner: 0, walkBat: 0 };let lastPh = null, prevOuts = 0;
     for (let i = 0; i < 40000 && WF.on; i++) { const b = WF.ball;
       if (WF.half === 'top' && b.st === 'pitch' && WF.mySwing == null && !WF.myHitDone && b.v0) { const left = (WB.HP - b.p.z) / b.v0.z;
         if (left <= .14 + (WF._j ?? (WF._j = (Math.random() - .5) * jitter))) { G.wfPress(); seen.swings++; WF._j = null; } }
@@ -77,6 +77,7 @@ try {
       if (WF.phase === 'wind' && !WF.pitcher.me) seen.arm = Math.max(seen.arm, WF.pitcher.a.arms[0].sh.rotation.x);
       if (b.st === 'held' && b.held === WF.catcher) seen.mitt++;
       for (let k = 1; k < 4; k++) if (WF.bases[k] && !(WF.ob && WF.ob[k] && WF.ob[k].base === k)) seen.noRunner++;
+      if (WF.half === 'bot' && (WF.phase === 'pick' || WF.phase === 'pitch') && WF.batter && WF.batter.spd > 0 && i > 0 && WF.t > .3) seen.walkBat++;
       seen.halves.add(WF.half + WF.inn); seen.ghosts = Math.max(seen.ghosts, WF.bases.reduce((a, v) => a + v, 0));
       G.wfStep(1 / 30, i / 30); }
     return { on: WF.on, me: WF.me, op: WF.op, hits: WF.hits, hr: WF.hr, swings: WF.swings, ks: WF.ks, inn: WF.inn, ...seen, halves: [...seen.halves], kinds: [...seen.kinds],
@@ -100,6 +101,7 @@ try {
   if (g.arm < 3.5) fail(`Maya does not throw overhand (her arm never came up over the top: ${g.arm.toFixed(2)}).`);
   if (!g.mitt) fail('No pitch ever went into the catcher\'s mitt.');
   if (g.ghosts && g.noRunner) fail('A base was taken but nobody was standing on it.');
+  if (g.walkBat) fail('The batter was walking in place at the plate instead of standing in the batting stance.');
   await page.evaluate(() => { document.querySelector('#spDone').click(); });
 
   // suit up in the baseball uniform, play, then "Back to my outfit" gives you your own clothes (and shoes) back
