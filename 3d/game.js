@@ -11062,6 +11062,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   if(p.y<=gy&&!jpLand(p,gy)){if(!player.onGround&&player.vy<-3)burst(new THREE.Vector3(p.x,gy+.05,p.z),'#ffffff',10,1);p.y=gy;player.vy=0;player.onGround=true;}else if(p.y>gy+.05)player.onGround=false;
   if(p.y<gy+.3&&player.vy<=0&&!player.onGround){p.y=Math.max(p.y,gy);}
   }
+  if(started&&!closetOpen)groundNet(p,dt);// 🛟 inside the ground, a bridge or a hill by mistake: pop back up (26i-sky-sports.js)
   if(ct.on)contestStep(dt);
   if(glamOpen)AG.chair.rotation.y=player.face-AG.rot+Math.PI;
   av.g.position.copy(p);av.tag.visible=!closetOpen;av.update(dt,player.speed,!player.onGround);av.g.rotation.y=player.face+(av.spinY||0);
@@ -14290,9 +14291,24 @@ function skyFloor(x,z){let f=flyFloor(x,z,1);const d=Math.hypot(x,z);
   if(d>R+1){
     if(Math.hypot(x-TZ.x,z-TZ.z)<TZ.r+3)f=Math.max(f,15);// the tall trees of the ropes course
     else{const a=bankAng(x,z);if(a>ADV_LAND.a0&&a<ADV_LAND.a1&&d>BANK.in+2&&d<ADV_LAND.out+1){const [lx,lz]=MZ.toLocal(x,z);if(mtBase(lx,lz)[0]>1.1)f=Math.max(f,groundAt(x,z)+7);}}// the pines round the mountain
-    if(!skyLandable(x,z))f=Math.max(f,groundAt(x,z)+2.5);}
+    if(!skyLandable(x,z))f=Math.max(f,skyG(x,z)+2.5);}
   if(AIRF.near(x,z))f=Math.max(f,AIRF.floor(x,z));// the hangar and the parked plane
   return f;}
+
+// how high the ground really is: groundAt, or the big world's hills past the canal (26z-big-world.js draws them, groundAt doesn't know them)
+function skyG(x,z){const g=groundAt(x,z);return typeof groundH==='function'?Math.max(g,groundH(x,z)):g;}
+// a safe place to come down: right here if it's open ground or the canal, else the closest open patch,
+// else straight in toward town until there's open ground or the canal to splash into
+function skySafeSpot(x,z){const L=skyLandable(x,z);if(L==='water'||(L===true&&cnOpen(x,z,false)))return [x,z];
+  const s=cnSpotFind(x,z,Math.atan2(-x,-z),999,null);if(s)return s;
+  const d=Math.hypot(x,z)||1;for(let r=d;r>0;r-=1){const sx=x*r/d,sz=z*r/d;if(cnOpen(sx,sz,true))return [sx,sz];}
+  return [0,0];}
+// 🛟 the safety net: you somehow ended up inside the ground, a bridge or a hill: pop back up onto a safe spot
+function groundRescue(p){if(SKY.mode)skyEnd(false);const [x,z]=skySafeSpot(p.x,p.z);p.x=x;p.z=z;p.y=groundAt(x,z);
+  player.vy=0;player.onGround=true;player.speed=0;burst(new THREE.Vector3(x,p.y+.3,z),'#ffffff',16,1.2);toast('✨ Whoops! Back up you come');}
+const RESCUE={t:0};
+function groundNet(p,dt){if(SKY.mode==='plane'||SKY.mode==='board'){RESCUE.t=0;return;}// (riding in the jump plane: it does its own flying)
+  const g=skyG(p.x,p.z);if(p.y<g-.6){RESCUE.t+=dt;if(RESCUE.t>.4){RESCUE.t=0;groundRescue(p);}}else RESCUE.t=0;}
 
 // 💨 the wind in your ears (a soft rushing noise that gets louder the faster you go)
 const SKYW={g:null,f:null,v:0};
@@ -14766,7 +14782,7 @@ function cnSpotFind(x,z,hd,y,bad){const ax=Math.sin(hd)*3,az=Math.cos(hd)*3,ok=(
   for(const [wet,clear] of [[false,true],[false,false],[true,true],[true,false]]){if(ok(x+ax,z+az,wet,clear))return [x+ax,z+az];
     for(let r=1.5;r<=40;r+=1.5)for(let i=0;i<16;i++){const a=hd+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/8,sx=x+ax+Math.sin(a)*r,sz=z+az+Math.cos(a)*r;if(ok(sx,sz,wet,clear))return [sx,sz];}}
   return null;}
-function sdPull(auto){if(SKY.mode!=='ff')return;Object.assign(SKY,{mode:'open',t:0,k:0,cnSpot:null,cnBad:[],cnLift:0,cnLow:0});skyCan.visible=true;
+function sdPull(auto){if(SKY.mode!=='ff')return;Object.assign(SKY,{mode:'open',t:0,k:0,cnSpot:null,cnBad:[],cnLift:0,cnLow:0,safe:null});skyCan.visible=true;
   tone(180,.15,'sawtooth',.06);tone(110,.3,'sine',.12,.25);if(auto)toast('🪂 Your parachute opened by itself at the safe height!');
   setTimeout(()=>{if(SKY.mode==='cn'||SKY.mode==='open')toast('🎯 Steer to the round target by the hangar!');},2600);}
 function skyLandBtn(){if(SKY.mode==='hg'){SKY.land=true;SKY.spot=null;sfx('pop');}}
@@ -14792,7 +14808,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     skyHud();return true;}
   if(S.mode==='hg'||S.mode==='hgFlare'){S.flight+=dt;const flare=S.mode==='hgFlare';
     let want=S.hd,steer=false;if(mag>.08&&!flare){want=joyWant();steer=true;}
-    const r0=Math.hypot(p.x,p.z),g0=groundAt(p.x,p.z),below=skyFloor(p.x,p.z),landable=skyLandable(p.x,p.z);
+    const r0=Math.hypot(p.x,p.z),g0=skyG(p.x,p.z),below=skyFloor(p.x,p.z),landable=skyLandable(p.x,p.z);
     // 🛬 Land: pick an open patch a little ahead and glide down to it
     let spotD=99;
     if(S.land&&!flare){if(steer)S.spot=null;else{if(!S.spot)S.spot=flyLandSpot(p.x+Math.sin(S.hd)*7,p.z+Math.cos(S.hd)*7);spotD=Math.hypot(S.spot[0]-p.x,S.spot[1]-p.z);if(spotD>.6)want=Math.atan2(S.spot[0]-p.x,S.spot[1]-p.z);steer=true;}}
@@ -14816,7 +14832,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     const vx=Math.sin(S.hd)*S.sp,vz=Math.cos(S.hd)*S.sp,look=S.land&&spotD<S.sp?spotD/Math.max(S.sp,.1):1,ahead=Math.max(skyFloor(p.x+vx*.45*look,p.z+vz*.45*look),skyFloor(p.x+vx*look,p.z+vz*look));
     const need=ahead+.55-p.y;if(need>0&&!flare)S.vy=Math.max(S.vy,Math.min(4.5,need*3));
     p.x+=vx*dt;p.z+=vz*dt;p.y+=S.vy*dt;
-    const fl=skyFloor(p.x,p.z),g=groundAt(p.x,p.z);if(p.y<fl+.3&&fl>g+.2)p.y=fl+.3;
+    const fl=skyFloor(p.x,p.z),g=skyG(p.x,p.z);if(p.y<fl+.3&&fl>g+.2)p.y=fl+.3;
     // close to open ground: flare
     const hg=p.y-g,L=skyLandable(p.x,p.z);
     if(!flare&&hg<1.35&&fl<=g+.2&&L){S.mode='hgFlare';S.t=0;}
@@ -14848,7 +14864,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     const seat=planeSeat(P,av);p.copy(seat);player.face=P.hd;player.speed=0;player.onGround=true;
     camFollow(P.hd-.55,.28,.8);skyWind(P.mode==='run'?.05:.012);skyFog(P.pos.y);skyHud();return true;}
   if(S.mode==='ff'){// free fall: belly down, steer with the joystick, fall through the clouds
-    const g=groundAt(p.x,p.z),want=mag>.08?joyWant():S.hd,trk=mag>.08?4.6*mag:0;
+    const g=skyG(p.x,p.z),want=mag>.08?joyWant():S.hd,trk=mag>.08?4.6*mag:0;
     if(mag>.08)S.hd=angDamp(S.hd,want,Math.min(1,dt*2.2));
     const tx=Math.sin(S.hd)*trk,tz=Math.cos(S.hd)*trk;S.vx+=(tx-S.vx)*Math.min(1,dt*.9);S.vz+=(tz-S.vz)*Math.min(1,dt*.9);
     S.vy+=(-9.8-.098*S.vy*Math.abs(S.vy))*dt;
@@ -14858,7 +14874,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     S.bank=Math.sin(S.t*1.3)*.06;S.turn=0;player.face=S.hd;player.onGround=false;
     camFollow(S.hd,.85,1.4);skyWind(Math.min(.16,.03+Math.abs(S.vy)*.013));skyFog(p.y-g);skyStreaks(true,S.vy);skyHud();return true;}
   if(S.mode==='open'||S.mode==='cn'||S.mode==='cnFlare'){
-    const g=groundAt(p.x,p.z),open=S.mode==='open',flare=S.mode==='cnFlare';
+    const g=skyG(p.x,p.z),open=S.mode==='open',flare=S.mode==='cnFlare';
     if(open){S.k=Math.min(1,S.t/1.25);S.pr=Math.max(0,1-S.t*1.5);if(S.k>=1){S.mode='cn';S.t=0;}}
     let want=S.hd,steer=false;if(mag>.08&&!flare){want=joyWant();steer=true;}
     const below=skyFloor(p.x,p.z),landable=skyLandable(p.x,p.z),r0=Math.hypot(p.x,p.z);
@@ -14875,10 +14891,11 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
       if(dT<dIn+70||r0<=R+.3){want=Math.atan2(AIRF.tgt.x-p.x,AIRF.tgt.z-p.z);if(!S.said.back){S.said.back=1;toast('🌬️ The breeze carries you back toward the airfield');}}
       else{want=Math.atan2(-p.x,-p.z);if(!S.said.home){S.said.home=1;toast('🌬️ The breeze carries you back toward town');}}}
     if(r0>skyMaxR()-10){want=Math.atan2(-p.x,-p.z);steer=true;}
-    // stuck low for 20 s out past the canal (hemmed in by trees and rock): head straight in toward the canal and town
-    if(!flare&&!open&&(S.cnLow||0)>20&&r0>R+1){want=Math.atan2(-p.x,-p.z);steer=true;S.cnSpot=null;spotD=99;}
+    // stuck low for 15 s (hemmed in by trees, rock or a bridge): head straight for a safe spot (open ground, or the canal) and come down there
+    if(!flare&&!open&&(S.cnLow||0)>15){if(!S.safe)S.safe=skySafeSpot(p.x,p.z);S.cnSpot=S.safe;spotD=Math.hypot(S.safe[0]-p.x,S.safe[1]-p.z);
+      if(spotD>.5)want=Math.atan2(S.safe[0]-p.x,S.safe[1]-p.z);steer=true;drift=false;}
     // something taller than you coming up (a building, a tree, the big Christmas tree): turn round it instead of floating up over it
-    let dodge=false;if(!flare&&!open){const hx=Math.sin(S.hd),hz=Math.cos(S.hd),tall=d=>{const f=skyFloor(p.x+hx*d,p.z+hz*d);return f>p.y-1.2&&f>below+.5;};
+    let dodge=false;if(!flare&&!open&&!S.safe){const hx=Math.sin(S.hd),hz=Math.cos(S.hd),tall=d=>{const f=skyFloor(p.x+hx*d,p.z+hz*d);return f>p.y-1.2&&f>below+.5;};
       if(tall(2.5)||tall(6)){const side=a=>skyFloor(p.x+Math.sin(S.hd+a)*5,p.z+Math.cos(S.hd+a)*5);
         S.dodge=S.dodge||(side(-.9)<side(.9)?-1:1);want=S.hd+S.dodge*1.4;steer=dodge=true;}else S.dodge=0;}
     const dTurn=angDamp(0,want-S.hd,1),rate=(open?.4:dodge?2:.95)*dt,st=steer?Math.max(-rate,Math.min(rate,dTurn)):0;S.hd+=st;S.turn+=(st/dt-S.turn)*Math.min(1,dt*3);
@@ -14888,12 +14905,14 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     const sv=Math.hypot(S.vx,S.vz),look=S.cnSpot&&spotD<sv*1.1?spotD/Math.max(sv*1.1,.1):1;// only look as far as the landing spot
     const ahead=Math.max(skyFloor(p.x+S.vx*.5*look,p.z+S.vz*.5*look),skyFloor(p.x+S.vx*1.1*look,p.z+S.vz*1.1*look)),need=ahead+.5-p.y;
     // stuck low for a long time (hemmed in by trees and rock): stop lifting over things and just come down
-    if(!open&&p.y<g+10)S.cnLow=(S.cnLow||0)+dt;const force=S.cnLow>20;
+    if(!open&&(p.y<g+10||S.t>40))S.cnLow=(S.cnLow||0)+dt;const force=S.cnLow>20;// (or up there a long time, drifting home from far away)
     if(need>0&&!flare&&!force)S.vy=Math.max(S.vy,Math.min(dodge?1.2:3,need*2.5));// (the last resort: lift over it)
     // something keeps lifting you on the way to the landing spot: forget that spot and pick another
     if(S.cnSpot&&need>0&&!flare){S.cnLift=(S.cnLift||0)+dt;if(S.cnLift>1.2){(S.cnBad||=[]).push(S.cnSpot);S.cnSpot=null;S.cnLift=0;}}else S.cnLift=Math.max(0,(S.cnLift||0)-dt*.5);
     p.x+=S.vx*dt;p.z+=S.vz*dt;p.y+=S.vy*dt;
-    const fl=skyFloor(p.x,p.z),gg=groundAt(p.x,p.z);if(p.y<fl+.25&&fl>gg+.2)p.y=force?Math.max(p.y,gg+.6):fl+.25;// (stuck: skim low through the treetops instead)
+    // still up after 30 s low down: the breeze sets you down gently on the safe spot (it never keeps you floating round and round)
+    if(!open&&!flare&&S.cnLow>30){const [x,z]=S.safe||skySafeSpot(p.x,p.z);p.x=x;p.z=z;p.y=groundAt(x,z)+.005;S.vx=S.vz=0;if(!S.said.set){S.said.set=1;toast('🌬️ The breeze sets you down gently');}}
+    const fl=skyFloor(p.x,p.z),gg=skyG(p.x,p.z);if(p.y<fl+.25&&fl>gg+.2&&!(S.cnLow>30))p.y=fl+.25;// never inside a roof, a tree, a bridge or a hill
     const L=skyLandable(p.x,p.z);
     // flaring but drifted over something you can't land on (a tree, rock, the fenced-off land): back to flying, to pick a spot
     if(flare&&(fl>gg+.2||!L)){S.mode='cn';S.t=0;S.cnSpot=null;}
@@ -15010,7 +15029,7 @@ SHOW.push({k:'sky',
 
 // for the test (3d/tests/sky.mjs)
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{sky:()=>({mode:SKY.mode,t:SKY.t,hd:SKY.hd,sp:SKY.sp,vy:SKY.vy,pr:SKY.pr,flight:SKY.flight,land:SKY.land,btn:skyKey,plane:PL.mode,planeY:PL.pos.y,planeX:PL.pos.x,planeZ:PL.pos.z,door:PL.doorK,clock:clock.elapsedTime}),
-  SKY_PARTS:{RAMP,AIRF,THERM,PL_ALT},skyGo:{hgGo,sdGo,sdJump,sdPull,skyLandBtn,canopyAt:(x,y,z,hd)=>{flyGrid();skyCamKeep();Object.assign(SKY,{mode:'ff',t:0,hd,vx:0,vz:0,vy:-6,said:{}});player.pos.set(x,y,z);sdPull(false);},step:skyStep},skyFloor,skyLandable,skyLift});});
+  SKY_PARTS:{RAMP,AIRF,THERM,PL_ALT},skyGo:{hgGo,sdGo,sdJump,sdPull,skyLandBtn,canopyAt:(x,y,z,hd)=>{flyGrid();skyCamKeep();Object.assign(SKY,{mode:'ff',t:0,hd,vx:0,vz:0,vy:-6,said:{}});player.pos.set(x,y,z);sdPull(false);},step:skyStep},skyFloor,skyLandable,skyLift,groundH:(x,z)=>typeof groundH==="function"?groundH(x,z):0,WORLD_INFO:()=>({out:typeof WORLD!=="undefined"&&WORLD?WORLD.out:0,R,bin:BANK.in,bout:BANK.out,cin:CANAL.inR,cout:CANAL.outR})});});
 // ---- src/26i2-football-games.js ----
 /* ================= 🏈 FOOTBALL GAMES on the field from 26i-football.js =================
    Step on the 🏈 pad by the near end zone and pick a game:

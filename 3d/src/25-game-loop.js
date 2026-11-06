@@ -63,6 +63,7 @@ function tick(){const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt),t=clock.elap
   if(p.y<=gy&&!jpLand(p,gy)){if(!player.onGround&&player.vy<-3)burst(new THREE.Vector3(p.x,gy+.05,p.z),'#ffffff',10,1);p.y=gy;player.vy=0;player.onGround=true;}else if(p.y>gy+.05)player.onGround=false;
   if(p.y<gy+.3&&player.vy<=0&&!player.onGround){p.y=Math.max(p.y,gy);}
   }
+  if(started&&!closetOpen)groundNet(p,dt);// 🛟 inside the ground, a bridge or a hill by mistake: pop back up (26i-sky-sports.js)
   if(ct.on)contestStep(dt);
   if(glamOpen)AG.chair.rotation.y=player.face-AG.rot+Math.PI;
   av.g.position.copy(p);av.tag.visible=!closetOpen;av.update(dt,player.speed,!player.onGround);av.g.rotation.y=player.face+(av.spinY||0);
