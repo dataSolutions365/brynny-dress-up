@@ -36,6 +36,7 @@ function drawMini(){const S=miniCv.width,h=S/2,k=S/54;// ~54 world units across
   for(const s of STARS){if(s.got)continue;const [sx,sy]=w2s(s.x,s.z);if(Math.hypot(sx-h,sy-h)>h)continue;x.beginPath();x.arc(sx,sy,4,0,Math.PI*2);x.fillStyle='#ffd23f';x.fill();x.lineWidth=1.5;x.strokeStyle='#fff';x.stroke();}
   x.font=`${Math.round(S*.12)}px serif`;x.textAlign='center';x.textBaseline='middle';
   for(const z of ZONES){const [zx,zy]=w2s(z.x,z.z);if(Math.hypot(zx-h,zy-h)<h+10)x.fillText(zEmoji(z),zx,zy);}
+  for(const z of ZONES){if(!isNewZone(z.id))continue;const [zx,zy]=w2s(z.x,z.z);if(Math.hypot(zx-h,zy-h)<h-8)drawNewTag(x,zx,zy-S*.085,S*.065);}// 🆕 (26k-whats-new.js)
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=w2s(o.pos.x,o.pos.z);if(Math.hypot(ox-h,oy-h)>h-6)continue;x.beginPath();x.arc(ox,oy,7,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=2.5;x.strokeStyle='#fff';x.stroke();}
   // via: a place across a bridge (the 💦 waterpark) points you at the bridge first
   if(mapDest){const md=(mapDest.via&&mapDest.via())||mapDest;let [dx,dy]=w2s(md.x,md.z);const ddx=dx-h,ddy=dy-h,dd=Math.hypot(ddx,ddy),edge=h-16;
@@ -98,6 +99,7 @@ function drawMap(){const S=mapCv.width,k=mapK(),x=mapX,ts=mapTS();drawWorld(x,ma
     x.fillStyle=mapDest===z?'#ff4d8d':'rgba(59,35,87,.86)';x.beginPath();x.roundRect?x.roundRect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0,h/2):x.rect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0);x.fill();
     x.fillStyle='#fff';b.lines.forEach((t,i)=>x.fillText(t,cx,cy+1+(i-(b.lines.length-1)/2)*h*.72));
     if(window.__chal&&window.__chal.left(z.id)){x.font=`${Math.round(S*.04*ts)}px serif`;x.fillText('⭐',it.px+it.e*.6,it.py-it.e*.6);}}
+  for(const it of lay)if(isNewZone(it.z.id))drawNewTag(x,it.px-it.e*.6,it.py-it.e*.7,S*.03*ts);// 🆕 NEW tag until you go there (26k-whats-new.js)
   worldMapTags(x,S,ts);// 🔒 the blocked-off regions (26z-big-world.js)
   x.restore();x.textAlign='center';x.textBaseline='middle';
   if(mapOthers)for(const o of mapOthers.values()){const [ox,oy]=mapW2s(o.pos.x,o.pos.z);x.beginPath();x.arc(ox,oy,S*.016,0,Math.PI*2);x.fillStyle='#2fb8a5';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
