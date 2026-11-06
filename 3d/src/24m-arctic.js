@@ -53,7 +53,7 @@ function iceAnimalsStep(dt){const p=player.pos,near=Math.hypot(p.x-IZ.x,p.z-IZ.z
     stepFarm(a,dt);}
   // the "Meet" button
   let best=null,bd=1e9;if(!closetOpen&&started&&!barnRide&&!FLY.on)for(const a of IA){if(a.esc||!a.g.visible)continue;const d=Math.hypot(p.x-a.pos.x,p.z-a.pos.z)-a.rad;if(d<1.3&&d<bd){bd=d;best=a;}}
-  if(best!==iceNear){iceNear=best;const b=$('#iceMeet');if(best){b.textContent=`${best.F.e} Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`;b.style.display='block';}else b.style.display='none';}
+  if(best!==iceNear){iceNear=best;const b=$('#iceMeet');if(best){aniIco(b,best.F.e,'Meet',`Meet the ${best.baby?'baby ':''}${best.F.n.toLowerCase()}`);b.style.display='block';}else b.style.display='none';}
   if(zooOpen&&zooSel&&IA.includes(zooSel)&&Math.hypot(p.x-zooSel.pos.x,p.z-zooSel.pos.z)>8)closeZoo();}
 $('#iceMeet').onclick=()=>{if(iceNear){const a=iceNear;iceNear=null;$('#iceMeet').style.display='none';openZoo(a);}};
 

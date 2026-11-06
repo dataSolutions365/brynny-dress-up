@@ -437,7 +437,7 @@ function seaButtons(){const P=player.pos;let best=null,bd=1e9;
   seaNear=best;const rideC=best&&!SW.ride?SEA_RIDES.find(r=>r.kind===best.kind&&r.nm===best.nm):null;
   const key=(best?best.nm:'')+'|'+(SW.ride?SW.ride.nm:'')+'|'+(rideC?(seaOwns(rideC)?1:0):'');if(key===seaBtnKey)return;seaBtnKey=key;
   const f=$('#seaFeed'),r=$('#seaRide');
-  if(best&&!SW.ride){f.textContent=`${best.K.food[0][0]} Feed ${best.nm}`;f.style.display='block';}else f.style.display='none';
+  if(best&&!SW.ride){aniIco(f,best.K.food[0][0],'Feed',`Feed ${best.nm}`);f.style.display='block';}else f.style.display='none';
   if(SW.ride){r.textContent=`${SW.ride.K.e} Hop off`;r.classList.remove('lock');r.style.display='block';}
   else if(rideC){const own=seaOwns(rideC);r.textContent=own?`${best.K.e} Ride ${best.nm}`:`🔒 Ride ${best.nm}`;r.classList.toggle('lock',!own);r.style.display='block';}
   else r.style.display='none';}

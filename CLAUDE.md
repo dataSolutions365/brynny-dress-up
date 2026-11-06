@@ -173,6 +173,9 @@
   🌪️ The All-Animal Round-up (`RU.grp` 'all') starts by the Sparkle Studio: EVERY animal (the barn four, all of the zoo's `ZA`, and
   all of Polar Ice's `IA`, `POLAR_LIST`) bursts out in front of you, runs anywhere you could walk (mode 'loose', `looseSpot`/`looseOk`), bolts when you get
   close and then stops for a breather; you can hold 3 on ropes (`ropeMax`) and each goes to its own home.
+  🏠 While you hold one on a rope, `ruGuide()` shows where to take it: a green arrow chip at the top (`#ruGuide`), a glowing beacon over
+  each home (`ruBeacon`) and 🏠 on the minimap (kept on the rim when it's off the map). Every "meet/feed this animal" button (barn and runaways,
+  zoo, Polar Ice, sea animals) is a round animal icon made by `aniIco()`; the barn/runaway one opens a little card (`#roamPop`) with Feed and Pet.
   Keep it to a few animals so town doesn't get crowded. `3d/tests/town-animals.mjs` (run on every PR) checks it.
 - ❄️ Polar Ice (`arctic` zone): the place is `3d/src/12h-place-arctic.js` (`ICE` has where the rink, lake and its fishing holes, and the igloo spot are,
   and `onRink()`), the animals are `3d/src/24c9g-arctic-animals.js` (polar bear, walrus, penguin and chick, arctic fox and wolf, snowy owl, all built
