@@ -29,7 +29,7 @@ MAPC.bay='#7fd6ee';
    BANK_GROUND: things you can stand on there, f(x,z) gives how high. */
 // own: a place like the waterpark that does its own walking, wading and bridge (seaKeep, seaDepth and bankOK below), so bankLand leaves it out.
 // Its entries are here, not in its own file, because the bank below is built before that file runs.
-const BANK_LAND=[{id:'water',a0:220,a1:260,out:R+56,own:1}];// 💦 the waterpark (26w-waterpark.js)
+const BANK_LAND=[{id:'water',a0:220,a1:274,out:R+56,own:1}];// 💦 the waterpark (26w-waterpark.js)
 const BANK_BRIDGES=[{id:'water',a:240,w:2.6,own:1,on:()=>false}];
 const BANK_POOLS=[],BANK_GROUND=[],BRG={on:''};
 var bankReady=false;// groundAt is asked before this file has run; it stays 0 until then
