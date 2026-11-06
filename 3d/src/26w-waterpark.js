@@ -286,7 +286,7 @@ function wpDepth(x,z){if(!wpReady)return 0;const [lx,lz]=WPZ.toLocal(x,z);
   if(Math.abs(s-R_.b)<R_.w)return 1;
   if(s<WPL.lagR)return wpPieceAt(lx,lz)?0:1;
   return 0;}
-BANK_POOLS.push(wpDepth);
+wpDepth.top=WP_TOP;BANK_POOLS.push(wpDepth);// its water line, so swimmers float at the right height (waterLine in 26f-ocean.js)
 BANK_GROUND.push((x,z)=>{if(!wpReady)return 0;const [lx,lz]=WPZ.toLocal(x,z);if(lz>-8||lz<-18)return 0;const p=wpPieceAt(lx,lz);return p?p.h:0;});
 const wpLocal=()=>WPZ.toLocal(player.pos.x,player.pos.z);
 const wpWorld=(lx,lz)=>WPZ.toWorld(lx,lz);

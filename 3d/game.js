@@ -11878,6 +11878,8 @@ function seaDepth(x,z,y){if(y>1.05)return 0;const d=Math.hypot(x,z);
   if(d>CANAL.outR-1.5&&bankReady&&bankSector(x,z)){// wading out onto the far-bank land, and its pools
     if(d<BANK.in)return Math.max(0,Math.min(1,(BANK.in-.2-d)/1.6));let m=0;for(const f of BANK_POOLS){const k=f(x,z);if(k>m)m=k;}return m;}
   return d>CANAL.outR?0:Math.max(0,Math.min(1,(d-(R+1.3))/2.6));}
+// how high the water comes up here: the canal's WATER_Y, or a far-bank pool's own water line (a BANK_POOLS function with .top)
+function waterLine(x,z){if(Math.hypot(x,z)>CANAL.outR-1.5&&bankReady&&bankSector(x,z))for(const f of BANK_POOLS)if(f.top!=null&&f(x,z)>0)return f.top;return WATER_Y;}
 function inCanal(x,z){const d=Math.hypot(x,z);return d>CANAL.inR&&d<CANAL.outR;}
 // a spot in the canal at angle ang (like ZONES: x=sin, z=cos), t 0 at the island's shore .. 1 at the far bank
 function canalSpot(ang,t){const r=CANAL.inR+(CANAL.outR-CANAL.inR)*t;return [Math.sin(ang)*r,Math.cos(ang)*r];}
@@ -11941,16 +11943,24 @@ function canalBank(x,cx,cy,k){x.beginPath();x.arc(cx,cy,BANK.out*k,0,Math.PI*2);
   x.beginPath();x.arc(cx,cy,(CANAL.outR+.2)*k,0,Math.PI*2);x.fillStyle='#2ab0d4';x.fill();}
 
 /* ---------- the swimming pose (for you and for friends online) ---------- */
-// k: 0 standing .. 1 swimming, mv: 0 still .. 1 full speed, ph: stroke time. Run it after Avatar.update. Returns how far to sink the body.
-function swimPose(A,k,mv,ph){if(!A||!A.legs||k<.01)return 0;
-  const stroke=k>.6&&mv>.2,pitch=k*(.22+.85*(stroke?mv:0));
+// k: 0 standing .. 1 swimming, mv: 0 still .. 1 full speed, ph: stroke time, wy: the water line there (waterLine()).
+// Run it after Avatar.update. Returns how far to sink the body (from ground height 0).
+// Like a real swimmer the body floats: the shoulders stay at the water line, so treading water your head, neck and the tops of
+// your shoulders are out, and swimming you lie almost flat with your back at the surface and your head up, face out of the water.
+function swimPose(A,k,mv,ph,wy=WATER_Y){if(!A||!A.legs||k<.01)return 0;
+  const stroke=k>.6&&mv>.2,pitch=k*(.22+1.13*(stroke?mv:0));
   A.hips.rotation.x=pitch;A.head.rotation.x=-pitch*.8;
+  // the body rolls from side to side with the stroke: the shoulder of the arm coming over lifts, the pulling one dips
+  if(stroke)A.hips.rotation.y=-.38*k*mv*Math.sin(ph);
   A.arms.forEach((a,i)=>{const o=ph+i*Math.PI;
-    if(stroke){a.sh.rotation.x=-(((o%(Math.PI*2))+Math.PI*2)%(Math.PI*2));a.sh.rotation.z=a.sx*.18;a.el.rotation.x=-.3;}
+    // front crawl: the arm comes out of the water at the hip, swings forward over the back to reach out past the head (angle pi),
+    // then pulls down and back under the chest to the hip again. The angle has to grow; counting it down swims backwards.
+    // The elbow bends halfway through the pull (the 'catch'), and more on the way over (a high elbow, the hand trailing near the water).
+    if(stroke){const s=((o%(Math.PI*2))+Math.PI*2)%(Math.PI*2),sn=Math.sin(s);a.sh.rotation.x=s;a.sh.rotation.z=a.sx*.18;a.el.rotation.x=-(.2+(sn>0?.85*sn:.6*-sn));}
     else{a.sh.rotation.x+=(-.35+Math.sin(o*.8)*.3-a.sh.rotation.x)*k;a.sh.rotation.z+=(a.sx*(1+Math.sin(ph*1.6)*.2)-a.sh.rotation.z)*k;a.el.rotation.x+=(-.55-a.el.rotation.x)*k;}});
   A.legs.forEach((l,i)=>{const o=ph*(stroke?2.4:1.3)+i*Math.PI;l.hp.rotation.x+=(Math.sin(o)*(stroke?.32:.5)-(stroke?0:.25)-l.hp.rotation.x)*k;l.kn.rotation.x+=(.2+Math.max(0,Math.sin(o+1))*(stroke?.35:.6)-l.kn.rotation.x)*k;});
-  // sink until the head is just above the water
-  return k*(A.hip+.62*Math.cos(pitch)+.12);}
+  // sink until the shoulders are at the water line (the hips hang lower when you're upright treading water)
+  return k*(A.hip+.42*Math.cos(pitch)-.03-wy);}
 
 /* ---------- the sea animals ---------- */
 const SEA_M={dol:std('#5f7f9c',{roughness:.35}),belly:std('#eef3f6',{roughness:.45}),eye:std('#1d2228',{roughness:.2}),
@@ -12105,11 +12115,12 @@ function seaStep(dt){const p=player.pos,t=performance.now()/1000;
   if(seaSwimming()&&player.speed>.3){SEA.swum+=player.speed*dt;}
   const mv=Math.min(1,player.speed/5);SW.ph+=dt*(2.2+mv*4.2);
   // splashes when you land in the water, and little ones from your arms while you swim
-  if(SW.k>.5&&SW.wasAir&&player.onGround){burst(new THREE.Vector3(p.x,WATER_Y+.1,p.z),'#ffffff',22,2.4,.3);sfx('splash');}SW.wasAir=!player.onGround;
-  if(SW.k>.6&&!SW.ride&&mv>.25&&(SW.splashT-=dt)<0){SW.splashT=.55;burst(new THREE.Vector3(p.x+Math.sin(player.face)*.6,WATER_Y+.05,p.z+Math.cos(player.face)*.6),'#ffffff',6,1.2,.16);}
+  const wl=waterLine(p.x,p.z);
+  if(SW.k>.5&&SW.wasAir&&player.onGround){burst(new THREE.Vector3(p.x,wl+.1,p.z),'#ffffff',22,2.4,.3);sfx('splash');}SW.wasAir=!player.onGround;
+  if(SW.k>.6&&!SW.ride&&mv>.25&&(SW.splashT-=dt)<0){SW.splashT=.55;burst(new THREE.Vector3(p.x+Math.sin(player.face)*.6,wl+.05,p.z+Math.cos(player.face)*.6),'#ffffff',6,1.2,.16);}
   // your body: on a sea ride you sit on its back, otherwise you swim
   if(SW.ride){const c=SW.ride,A=av;A.g.position.y=c.g.position.y+c.m.seat*c.g.scale.y-(.46+A.legX)+(c.kind==='dolphin'?0:Math.max(0,p.y));}// the dolphin leaps with you, on the others you hop
-  else if(SW.k>0&&!barnRide){SW.sink=swimPose(av,SW.k,mv,SW.ph);av.g.position.y=p.y-SW.sink+Math.sin(t*2.2)*.03*SW.k;}
+  else if(SW.k>0&&!barnRide){SW.sink=swimPose(av,SW.k,mv,SW.ph,wl);av.g.position.y=p.y-SW.sink+Math.sin(t*2.2)*.03*SW.k;}
   // the animals
   SW.withNow={};for(const c of SEAS)seaAnimal(c,dt,t);
   for(const k in SW.withNow)SEA.with[k]=(SEA.with[k]||0)+dt;// once per kind, even with 3 dolphins
@@ -12311,7 +12322,7 @@ SHOW.push({k:'sea',
       if(m.tail){if(k==='shark')m.tail.rotation.y=Math.sin(h.ph*1.2)*.3;else m.tail.rotation.x=Math.sin(h.ph*(k==='whale'?.4:1.4))*(k==='whale'?.12:.3);}
       if(m.flip)m.flip.forEach(fl=>{const o=h.ph+(fl.front?0:Math.PI);fl.p.rotation.z=fl.sx*Math.sin(o)*(fl.front?.5:.25);});
       A.rideW=SEA_KIND[k].rideW;A.g.position.y=y+m.seat-(.46+A.legX)+(k==='dolphin'?0:Math.max(0,P.y));}
-    else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph);}},
+    else if(h.k>.01){A.g.position.y=P.y-swimPose(A,h.k,h.mv,h.ph,waterLine(P.x,P.z));}},
   off(f,h){if(h&&h.m){scene.remove(h.m.g);freeObj(h.m.g);}if(f.a){f.a.rideW=0;}}});
 bankReady=true;
 // ---- src/26f2-hippo-swim.js ----
@@ -16160,6 +16171,7 @@ Object.assign(window.__game,{WF,WB,wfStart,wfMenu,wfAt,wfPol,wfHit,wfPress,wfSte
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
   {v:'2026-11-06',notes:[
+    {e:'🏊',t:'Swimming looks real now! Your arms reach forward and pull back like a real swimmer, and you float with your head up.'},
     {e:'⚽',t:'Play soccer at the new Soccer Field! Take penalty kicks, hit targets, do keepy-uppies or play 1-on-1 with Kai.',go:'soccer'},
     {e:'🏈',t:'Play flag football on the Soccer Field, and suit up in a real football uniform!',go:'soccer'},
     {e:'⚾',t:'Wiffle Ball has a new camera, so you can see the ball better when you bat and catch.',go:'wiffle'},
@@ -16505,7 +16517,7 @@ function wpDepth(x,z){if(!wpReady)return 0;const [lx,lz]=WPZ.toLocal(x,z);
   if(Math.abs(s-R_.b)<R_.w)return 1;
   if(s<WPL.lagR)return wpPieceAt(lx,lz)?0:1;
   return 0;}
-BANK_POOLS.push(wpDepth);
+wpDepth.top=WP_TOP;BANK_POOLS.push(wpDepth);// its water line, so swimmers float at the right height (waterLine in 26f-ocean.js)
 BANK_GROUND.push((x,z)=>{if(!wpReady)return 0;const [lx,lz]=WPZ.toLocal(x,z);if(lz>-8||lz<-18)return 0;const p=wpPieceAt(lx,lz);return p?p.h:0;});
 const wpLocal=()=>WPZ.toLocal(player.pos.x,player.pos.z);
 const wpWorld=(lx,lz)=>WPZ.toWorld(lx,lz);
