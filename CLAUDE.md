@@ -203,6 +203,17 @@
   Challenges are in the 🏟 Sports tab of `3d/challenges.js` (`did('wiffle', …)`). Your skateboard isn't carried in your hand at the ball fields
   (`boardStowed()` in `3d/src/17c-skateboard.js`). `3d/tests/wiffle.mjs` (run on every PR) walks over the bridge, opens the menu, plays a quick game
   (checking the overhand throw, the catcher and the runners) and a Derby.
+- 🆕 What's new (`3d/src/26k-whats-new.js`): after an update, the first time a player opens the 3D world they get a
+  "What's new" card with the notes they haven't seen yet. Each note is remembered on its own by its words (`SAVE.wnSeenK`), so a
+  note added later the same day still shows. Places named by a note's `go` get a red NEW tag on the map, the minimap and the
+  🗺️ Map button until the player goes there (`SAVE.wnGone`) or the note is `NEW_DAYS` old.
+  EVERY PR THAT CHANGES SOMETHING A PLAYER WOULD NOTICE ADDS A NOTE: one short sentence a kid can read, `{e, t, go?, hol?}`, in
+  today's entry at the top of `WHATS_NEW` (start a new `{v:'YYYY-MM-DD',notes:[...]}` entry if today's isn't there).
+  `go` = the place id from ZONES (adds a 🗺️ Show me button and the NEW tag), `hol` = only during that holiday. Rewording a note
+  makes it show again, so don't touch old notes' words. The "What's new note" check (`3d/tests/whats-new-note.mjs`) fails a PR
+  that changes 3d/ without adding a note; put `[no-whats-new]` in the PR title or description when players won't notice anything.
+  It can be reopened from ⚙️ Settings. Under Playwright it only pops up by itself with `?wn=1`, so other tests aren't covered by it.
+  `3d/tests/whats-new.mjs` (run on every PR) checks it.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the
