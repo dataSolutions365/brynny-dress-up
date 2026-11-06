@@ -19,6 +19,10 @@
 - Basketball and batting matches against friends online are in `3d/src/24e2-sports-friends.js` (it hooks into
   `3d/src/24e-sports.js` through `SP.onMenu`, `SP.onEnd` and `SP.lx`). `3d/tests/sports-friends.mjs` plays a match with two phones
   (same setup as `online-see.mjs`).
+- 🏀 3-on-3 basketball (`3d/src/24e4-basketball-3v3.js`): you and two teammates from the 🧢 team picker (sport 'basketball') against
+  the 🐻 Bears on the half court, first to 11. It's `SP.ext.v3` in `3d/src/24e-sports.js`, but unlike the other `SP.ext` games you run
+  freely (`SP.ext.v3.lock`), and baskets come back through `SP.ext.v3.made`. `BB3.us[0]` is you; each computer player guards the one with
+  the same number on the other team. 🤾 PASS / 🙋 CALL FOR IT / 🖐️ STEAL. `3d/tests/basketball-3v3.mjs` (run on every PR) plays it.
 - Rides with `fly:1` in FARM (`3d/src/24d-barn.js`) can fly: `3d/src/24h-flying.js` does the take-off, flying and landing,
   and friends see it through the `ride` entry. `3d/tests/fly.mjs` (run on every PR) checks one takes off, clears the trees and lands.
 - Riding the 🚲 bike (`3d/src/17d-bicycle.js`): `bikeStep()` turns the wheels, cranks and handlebars and works out the lean,
