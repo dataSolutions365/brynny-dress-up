@@ -12,6 +12,7 @@
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
   {v:'2026-11-06',notes:[
+    {e:'🏊',t:'Swimming looks real now! Your arms reach forward and pull back like a real swimmer, and you float with your head up.'},
     {e:'⚽',t:'Play soccer at the new Soccer Field! Take penalty kicks, hit targets, do keepy-uppies or play 1-on-1 with Kai.',go:'soccer'},
     {e:'🏈',t:'Play flag football on the Soccer Field, and suit up in a real football uniform!',go:'soccer'},
     {e:'⚾',t:'Wiffle Ball has a new camera, so you can see the ball better when you bat and catch.',go:'wiffle'},
