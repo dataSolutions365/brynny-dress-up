@@ -79,3 +79,5 @@ jobs:
         run: node 3d/tests/whats-new.mjs
       - name: Dino Valley - the bridge, real-looking dinosaurs in their paddocks, Meet cards, your own dinosaurs live there (not the barn), riding
         run: node 3d/tests/dino-valley.mjs
+      - name: Big dinosaurs - locked until you finish their Dino challenges, the Fossil Dig, sitting on each saddle, the T. rex walks and the pteranodon flies
+        run: node 3d/tests/dino-rides.mjs

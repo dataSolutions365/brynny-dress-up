@@ -51,7 +51,7 @@ try {
   const place = await page.evaluate(() => { const G = window.__game, z = G.ZONES.find(z => z.id === 'dino'); return z && { name: z.name, d: Math.hypot(z.x, z.z), kinds: [...new Set(G.DVA.map(a => a.k))] }; });
   if (!place) fail('There should be a 🦖 Dino Valley place.');
   else { console.log(`${place.name}: ${place.d.toFixed(0)} m from the middle, dinosaurs: ${place.kinds.join(', ')}`);
-    for (const k of ['trexR', 'raptorR', 'trikeR', 'longneckR', 'stegoR']) if (!place.kinds.includes(k)) fail(`Dino Valley should have a ${k}.`); }
+    for (const k of ['trexR', 'raptorR', 'trikeR', 'longneckR', 'stegoR', 'parasaurR', 'pteroR']) if (!place.kinds.includes(k)) fail(`Dino Valley should have a ${k}.`); }
 
   // 🌉 walk from the island over the footbridge and in through the gate
   await page.evaluate(() => { const G = window.__game, a = 312 * Math.PI / 180, d = 64; G.player.pos.set(Math.sin(a) * d, .05, Math.cos(a) * d);

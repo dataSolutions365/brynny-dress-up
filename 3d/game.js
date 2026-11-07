@@ -1958,7 +1958,9 @@ const DV={fence:16.8,gateA:.2,
   // tall trees and big rocks the dinosaurs walk round: [x, z, radius]
   trees:[[-13.2,-1.5],[-12.5,4.5],[-3.5,-13.5],[1.2,-9.5],[12.8,4.2],[9.5,9.8],[-1.5,-4.2],[14.8,-4.5],[-14.2,-6.8]],
   rocks:[[3.6,1.3,.9],[-3.2,4.5,.7],[11.5,1.2,.8],[-10.8,-2.6,.6],[0,-14.6,1.1]]};
-DV.avoid=[[DV.pond.x,DV.pond.z,DV.pond.r+.3],[DV.nest.x,DV.nest.z,DV.nest.r],[DV.hut.x,DV.hut.z,2.1],...DV.trees.map(([x,z])=>[x,z,.7]),...DV.rocks];
+// 🦴 the fossil dig: a sandy pit with a string grid; spots = where a fossil pokes out of the sand (24n2-dino-rides.js digs them up)
+DV.dig={x:9.4,z:5.6,r:1.9,spots:[[-.95,-.7],[.25,-.95],[1.05,-.1],[-.55,.65],[.55,.85]]};
+DV.avoid=[[DV.dig.x,DV.dig.z,DV.dig.r+.2],[DV.pond.x,DV.pond.z,DV.pond.r+.3],[DV.nest.x,DV.nest.z,DV.nest.r],[DV.hut.x,DV.hut.z,2.1],...DV.trees.map(([x,z])=>[x,z,.7]),...DV.rocks];
 // the meadow: inside the big fence, outside the paddocks, round the pond, the nest, the hut, the trees and rocks
 function dvOk(lx,lz,r){if(Math.hypot(lx,lz)>DV.fence-.7-r)return false;
   for(const Q of [DV.T,DV.P])if(Math.hypot(lx-Q.x,lz-Q.z)<Q.r+.6+r)return false;
@@ -2029,6 +2031,21 @@ const dvV=(x,y,z)=>new THREE.Vector3(x,y,z);
   M(box(.9,1.6,.06),std('#3b2a1c',{roughness:.9}),-.6,.8,H.d/2+.13,hg);M(box(.7,.55,.06),phys('#bfe3ff',{roughness:.1,clearcoat:1}),.75,1.35,H.d/2+.13,hg,false,false);
   const lt=M(new THREE.PlaneGeometry(2.2,.5),new THREE.MeshBasicMaterial({map:labelTex('🥚 Dino Keeper',{size:52,fg:'#2f5a2a',bg:'#f4ead2',border:'#7a5a3c'})}),0,2.25,H.d/2+.2,hg,false,false);
   for(const [x,w] of [[-1,0],[1,0],[0,-.7],[0,.7]])z.ob(H.x+Math.cos(H.ry)*x*1.2+Math.sin(H.ry)*w,H.z-Math.sin(H.ry)*x*1.2+Math.cos(H.ry)*w,1.1);}
+ // 🦴 the fossil dig: a sunken sandy pit with a low dirt rim, stakes and a string grid, a sieve, a bucket and a sign
+ {const D=DV.dig,sandT=canvasTex(128,128,(x,w,h)=>{x.fillStyle='#d8bf8a';x.fillRect(0,0,w,h);for(let i=0;i<1400;i++){const c=Math.random();x.fillStyle=c<.5?'rgba(160,130,85,.35)':'rgba(240,225,190,.4)';x.fillRect(Math.random()*w,Math.random()*h,1.5+Math.random()*2.5,1.5);}},2);
+  const sand=std('#ffffff',{map:sandT,roughness:1});sand.polygonOffset=true;sand.polygonOffsetFactor=-4;sand.polygonOffsetUnits=-4;
+  const pit=M(new THREE.CircleGeometry(D.r,40),sand,D.x,.035,D.z,g,false,true);pit.rotation.x=-Math.PI/2;
+  B.add(new THREE.TorusGeometry(D.r+.05,.13,8,40),std('#7a5e40',{roughness:1}),D.x,.02,D.z,Math.PI/2,0,0,1,1,.45);
+  const stake=std('#8a6a44',{roughness:.9}),str=std('#f2ead8',{roughness:.8}),S=D.r*.78;
+  for(const sx of [-1,1])for(const sz of [-1,1])B.add(cyl(.035,.04,.55,6),stake,D.x+sx*S,.27,D.z+sz*S);
+  for(const t of [-1,-1/3,1/3,1]){B.add(box(S*2,.012,.012),str,D.x,.42,D.z+t*S);B.add(box(.012,.012,S*2),str,D.x+t*S,.42,D.z);}
+  B.add(cyl(.22,.18,.3,14),std('#3f7fbf',{roughness:.5}),D.x+D.r+.55,.15,D.z-.6);// a bucket
+  B.add(cyl(.32,.32,.08,16),std('#9a7a50',{roughness:.8}),D.x+D.r+.5,.3,D.z+.5);// a sieve on its stand
+  B.add(cyl(.03,.03,.3,5),stake,D.x+D.r+.5,.13,D.z+.5);
+  B.add(cyl(.05,.05,1.2,6),stake,D.x-D.r-.45,.6,D.z+.9);
+  const sg=M(new THREE.PlaneGeometry(1.5,.45),new THREE.MeshBasicMaterial({map:labelTex('🦴 Fossil Dig',{size:52,fg:'#5a3a1c',bg:'#f4ead2',border:'#7a5a3c'})}),D.x-D.r-.45,1.25,D.z+.9,g,false,false);
+  sg.rotation.y=Math.atan2(-(D.x-D.r-.45),-(D.z+.9));// facing the middle of the valley
+  z.ob(D.x+D.r+.55,D.z-.6,.25);z.ob(D.x+D.r+.5,D.z+.5,.35);}
  // the glowing footprint pad: step on it to take care of your dinosaurs (24d-barn.js opens the sheet)
  {const P=DV.bpad;z.bpad=P;const padMat=glow('#9be36b',1.4);padMat.transparent=true;
   const rg=M(new THREE.RingGeometry(.5,.68,40),padMat,P.lx,.05,P.lz,g,false,false);rg.rotation.x=-Math.PI/2;
@@ -2058,7 +2075,7 @@ const dvV=(x,y,z)=>new THREE.Vector3(x,y,z);
   const fern=plant(7,1.1,.25,-.35),cyc=plant(9,1.3,.1,-.6);
   const spots=[];for(let i=0;i<260&&spots.length<120;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*(F+3.5),lx=Math.sin(a)*d,lw=Math.cos(a)*d;
     if(Math.abs(lx)<1.6&&lw>3)continue;// keep the path from the gate clear
-    if(Math.hypot(lx-DV.bpad.lx,lw-DV.bpad.lz)<2||Math.hypot(lx-DV.hut.x,lw-DV.hut.z)<2.4||Math.hypot(lx-DV.pond.x,lw-DV.pond.z)<DV.pond.r+.2||Math.hypot(lx-DV.nest.x,lw-DV.nest.z)<1.2)continue;
+    if(Math.hypot(lx-DV.bpad.lx,lw-DV.bpad.lz)<2||Math.hypot(lx-DV.hut.x,lw-DV.hut.z)<2.4||Math.hypot(lx-DV.pond.x,lw-DV.pond.z)<DV.pond.r+.2||Math.hypot(lx-DV.nest.x,lw-DV.nest.z)<1.2||Math.hypot(lx-DV.dig.x,lw-DV.dig.z)<DV.dig.r+.4)continue;
     if(Math.abs(Math.hypot(lx,lw)-F)<.5)continue;spots.push([lx,lw,.6+Math.random()*.7,Math.random()*6]);}
   const put=(geo,list,par)=>{const im=new THREE.InstancedMesh(geo,fm2,list.length),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3();
     list.forEach(([x,w,k,ry],i)=>{m4.compose(new THREE.Vector3(x,0,w),q.setFromAxisAngle(new THREE.Vector3(0,1,0),ry),s.set(k,k,k));im.setMatrixAt(i,m4);});im.castShadow=false;im.receiveShadow=true;par.add(im);return im;};
@@ -7801,7 +7818,7 @@ ZOO_BUILD.snowyowl=function(g,body,o){const r=.17,ride=this.k==='ukpik',by=ride?
      darker on the back and pale underneath, scaly skin (feathers on the raptor, like the real ones), no cartoon eyes or smiles.
    - Kid-safe: the T. rex has lips over its teeth (like scientists now think), and its roar is just a big rumbly head-up roar.
    - The same builders make the dinosaurs that live at Dino Valley (DINOA, 24n-dino-valley.js) and the ones you adopt or buy
-     (FARM in 24d-barn.js uses them through model:, with scale: for the young ones). Rides get a saddle (dnSaddle) that keeps its
+     (FARM in 24d-barn.js uses them through model:, with scale: for the young ones and the 🏆 big ones you earn, 24c9i-dinos-more.js). Rides get a saddle (dnSaddle) that keeps its
      real size however small the dinosaur is, so F.ride (where you sit) is worked out from the body: see the note on each builder.
    - Each body part is one smooth tube along a "spine" (dnTube), with its colours painted on its corners (dnPaint) so one shared
      material per kind of dinosaur is enough (dnM keeps one of each), which keeps phones light. */
@@ -7859,7 +7876,7 @@ function dnSaddle(a,body,y,z,r,sx,sy,col){if(!a.F.ride)return;const inv=1/(a.F.s
   const arc=2.2,len=.5*inv,bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
   const cg=new THREE.CylinderGeometry(r*1.035,r*1.035,len,36,1,true,Math.PI-arc/2,arc);cg.rotateX(Math.PI/2);M(cg,cm,0,0,0,bg);
   for(const s of [-1,1]){const e=M(new THREE.TorusGeometry(r*1.035,.014*inv,6,36,arc),tm,0,0,s*len/2,bg,false,false);e.rotation.z=Math.PI/2-arc/2;}
-  const sg=new THREE.Group();sg.position.set(0,y+r*sy*1.03,z);sg.scale.setScalar(inv);body.add(sg);
+  const sg=new THREE.Group();sg.position.set(0,y+r*sy*1.03,z);sg.scale.setScalar(inv);body.add(sg);a.saddle=sg;
   M(sph(.17,20,12),leather,0,.02,0,sg).scale.set(.95,.22,1.25);M(sph(.06,12,8),leather,0,.065,.17,sg).scale.set(1.2,1.1,.8);
   M(sph(.1,14,10),leather,0,.06,-.17,sg).scale.set(1.3,.6,.45);
   for(const s of [-1,1]){const f=M(sph(.12,14,10),dkL,s*.13,-.05,0,sg);f.scale.set(.25,.7,1.1);f.rotation.z=s*.5;}}
@@ -7918,7 +7935,8 @@ ZOO_BUILD.raptorR=function(g,body,o){const by=.92,m=dnSkin('rap',true),C=['#5c3f
   body.position.y=by;
   const T=dnTube([[0,.24,.55],[0,.12,.32],[0,.02,0],[0,.06,-.3],[0,.1,-.45]],[.12,.2,.25,.22,.17],m,body,C,{sx:.72,seg:18,rad:12});
   // soft feathers along the back
-  for(let i=0;i<9;i++){const p=T.top(.1+i*.1),f=M(new THREE.PlaneGeometry(.07,.13),fe,0,p.y+.02,p.z-.03,body,false,false);f.rotation.x=-1.15;}
+  for(let i=0;i<9;i++){if(this.F.ride&&i>1&&i<7)continue;// (not under the saddle on the big raptor you ride)
+    const p=T.top(.1+i*.1),f=M(new THREE.PlaneGeometry(.07,.13),fe,0,p.y+.02,p.z-.03,body,false,false);f.rotation.x=-1.15;}
   const tail=new THREE.Group();tail.position.set(0,.1,-.42);body.add(tail);
   dnTube([[0,0,.08],[0,.02,-.4],[0,.03,-1.0],[0,0,-1.5]],[.16,.1,.05,.02],m,tail,C,{sx:.8,seg:16,rad:10});
   // a fan of long feathers on both sides of the end of the tail
@@ -7943,6 +7961,7 @@ ZOO_BUILD.raptorR=function(g,body,o){const by=.92,m=dnSkin('rap',true),C=['#5c3f
   for(const s of [-1,1]){dnEye(this,head,s*.058,.045,.05,.022,'#d8a030',s*1.25);M(sph(.012,6,4),dnDark(),s*.022,.0,.33,head,false,false);}
   // quick, bird-like looks around
   let lk=0,want=0;this.tick=(t,dt,run)=>{lk-=dt;if(lk<0){lk=.5+Math.random()*1.4;want=(Math.random()*2-1)*.5;}head.rotation.y+=(want-head.rotation.y)*Math.min(1,dt*14);};
+  dnSaddle(this,body,.02,0,.25,.72,1,'#2f4a6a');// Dash (big raptor): scale 1.6 => F.ride 1.96
   Object.assign(o,{neck,head,tail,nTilt:0,gz:.45,size:.8,h:1.75,rad:.45,biped:true,dustR:[.2,.2,.3]});};
 
 /* ---------- 🦕 Triceratops: a big four-legged plant-eater with a huge head, a bony frill with a scalloped edge, two long horns over
@@ -8011,7 +8030,7 @@ ZOO_BUILD.stegoR=function(g,body,o){const by=1.55,m=dnSkin('stego'),C=['#6c6a3e'
   const pg=dnM('plateG',()=>{const s=new THREE.Shape();s.moveTo(-.5,0);s.quadraticCurveTo(-.62,.62,0,1);s.quadraticCurveTo(.62,.62,.5,0);s.lineTo(-.5,0);
     const g=new THREE.ExtrudeGeometry(s,{depth:.08,bevelEnabled:true,bevelThickness:.03,bevelSize:.03,bevelSegments:2});g.translate(0,0,-.04);g.rotateY(Math.PI/2);return g;});
   const put=(par,p,h,s)=>{const pl=M(pg,plate,s*.07,p.y-.08,p.z,par,true,false);pl.scale.set(1,h,h*.85);pl.rotation.z=-s*.12;};
-  for(let i=0;i<10;i++){const q=.12+i*.088,h=.28+.5*Math.sin(Math.min(1,q*1.15)*Math.PI*.9);put(body,T.top(q),h,i%2?1:-1);}
+  for(let i=0;i<10;i++){const q=.12+i*.088,h=.28+.5*Math.sin(Math.min(1,q*1.15)*Math.PI*.9),p=T.top(q);if(this.F.ride&&p.z>.3)continue;put(body,p,h,i%2?1:-1);}// (the saddle sits in front of the plates)
   for(let i=0;i<5;i++){const q=.05+i*.11;put(tail,TL.top(q),.5-i*.08,i%2?-1:1);}
   for(const s of [-1,1])for(const q of [.78,.9]){const p=TL.at(q);const sp=dnHorn(tail,horn,s*.06,p.y+.03,p.z,.045,.5,-1.2,-s*.9);}
   for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.6:by+.05,
@@ -8025,6 +8044,7 @@ ZOO_BUILD.stegoR=function(g,body,o){const by=1.55,m=dnSkin('stego'),C=['#6c6a3e'
   M(new THREE.ConeGeometry(.05,.12,8),dnDark(),0,-.13,.5,head).rotation.x=Math.PI/2+.6;
   for(const s of [-1,1])dnEye(this,head,s*.11,.06,.1,.026,'#5a3a1a',s*1.3);
   this.tick=(t)=>{body.scale.y=1+Math.sin(t*1.1)*.01;};
+  dnSaddle(this,body,-.1,.8,.62,.82,1,'#6a3a5a');// Spike (big stegosaurus): on the shoulders, with seat .8 so you sit there; scale .95 => F.ride 2.03
   Object.assign(o,{neck,head,tail,nTilt:0,gz:.35,size:1.6,h:by+1.65,rad:.95,dustR:[.6,.6,.9]});};
 
 // the dinosaurs that live at 🦕 Dino Valley (24n-dino-valley.js): you can't adopt these, but you can meet them, feed them and learn about them.
@@ -8056,6 +8076,108 @@ const DINOA=[
       ['📏','Size','About 9 m (30 ft) long, as heavy as an elephant, with a head tiny for its body.'],
       ['✨','Fun fact','The spikes on its tail are called a "thagomizer". The plates on its back may have helped it warm up, cool down and show off.']]},
 ];
+// ---- src/24c9i-dinos-more.js ----
+/* ===== 🦕 More real-looking dinosaurs (built with the helpers in 24c9h-dinos.js), and the 🏆 big dinosaurs you earn and ride =====
+   - ZOO_BUILD.parasaurR (Parasaurolophus, the crested duck-bill that honks through its crest) and pteroR (Pteranodon, the flying
+     reptile: not a dinosaur, a cousin). They live at 🦖 Dino Valley (DINOA, 24n-dino-valley.js), and the young ones you can buy
+     (Honker and Sunny in FARM, 24d-barn.js) are the same models, smaller.
+   - dinoRideList(): a big grown-up of every young dinosaur you can have (T. rex, raptor, triceratops, brachiosaurus, stegosaurus,
+     Parasaurolophus, Pteranodon), earned from the 🦖 Dino tab of 3d/challenges.js (ids start with dino_) like the 🦁 safari rides
+     (24i-earned-rides.js). They use the very same models through model: with a bigger scale:, live at Dino Valley (dino:1) and get
+     their saddle from dnSaddle. You sit at F.ride = scale * (body height + saddle y + r*sy) + .06 (see the note on each builder).
+   - Kid-safe: nobody bites or chases. The Parasaurolophus honks now and then, that's all. */
+
+/* ---------- 🦕 Parasaurolophus: a big plant-eater with a duck-like bill and a long hollow crest sweeping back off its head (it
+   honked through it like a trombone). Long back legs, shorter front legs with little hoof-like hands, a deep tail.
+   Olive brown with darker bands across the back, pale underneath, and a rusty crest.
+   Ride: scale s => F.ride = s*2.7+.06 (Honker .4 => 1.14, Tuba .9 => 2.49) ---------- */
+ZOO_BUILD.parasaurR=function(g,body,o){const by=1.7,m=dnSkin('para'),C=['#5d5a3c','#d2c49c',(x,y,z,ny)=>ny>.2?(Math.sin(z*7)>.55?.2*ny:0):0],
+  bill=['#3f3a30','#6a604e'],crestC=['#7a4630','#b98a60',(x,y,z,ny)=>Math.sin(z*14)>.6?.12:0],nail=dnClaw();
+  body.position.y=by;
+  dnTube([[0,-.15,1.25],[0,.05,.7],[0,.2,0],[0,.25,-.55],[0,.15,-1.0]],[.45,.7,.8,.75,.55],m,body,C,{sx:.8,seg:22,rad:16});
+  // a deep tail, flat at the sides, held out straight behind
+  const tail=new THREE.Group();tail.position.set(0,.15,-.95);body.add(tail);
+  dnTube([[0,0,.1],[0,0,-.8],[0,-.1,-1.8],[0,-.25,-2.8],[0,-.35,-3.4]],[.52,.4,.24,.1,.03],m,tail,C,{sx:.55,sy:1.1,seg:22,rad:12});
+  // long strong back legs with a big thigh, shorter front legs; blunt hoof-like toes
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.25:by+.05,
+    lg=dnLeg(this,g,sx*(fr?.38:.45),H,fr?.95:-.45,ph,fr?[[0,0,0],[0,-.55,.08],[0,-1.0,-.02],[0,-H+.15,.04]]:[[0,0,0],[0,-.7,.25],[0,-1.25,-.15],[0,-H+.2,.05]],fr?[.22,.14,.11,.1]:[.42,.27,.17,.16],m,C);
+    if(!fr)M(dnPaint(sph(.42,14,10),C[0],C[1]),m,-sx*.06,-.35,.08,lg).scale.set(.72,1.35,1.05);
+    dnPad(lg,-H,fr?.12:.2,m,C,nail,3);}
+  // the neck curving up, the head with its duck bill, and the long crest
+  const neck=new THREE.Group();neck.position.set(0,by,1.3);g.add(neck);
+  dnTube([[0,-.25,-.25],[0,.1,.15],[0,.55,.4],[0,.9,.52]],[.45,.33,.25,.21],m,neck,C,{sx:.8,seg:14,rad:12});
+  const head=new THREE.Group();head.position.set(0,.95,.58);neck.add(head);
+  dnTube([[0,.02,-.16],[0,.03,.12],[0,-.06,.4],[0,-.13,.6]],[.2,.2,.15,.12],m,head,C,{sx:.72,seg:12,rad:12});
+  dnTube([[0,-.12,.48],[0,-.17,.76],[0,-.19,.86]],[.13,.12,.07],m,head,bill,{sx:1.15,sy:.42,seg:8,rad:10});
+  dnTube([[0,.1,.18],[0,.27,0],[0,.42,-.4],[0,.5,-.85],[0,.47,-1.18]],[.1,.095,.085,.075,.05],m,head,crestC,{sx:.62,seg:18,rad:10});
+  for(const s of [-1,1]){dnEye(this,head,s*.135,.07,.12,.032,'#7a5222',s*1.3);M(sph(.022,6,4),dnDark(),s*.06,-.1,.74,head,false,false).scale.set(1,.6,1.6);}
+  // breathing, and a big honk now and then (head up, a deep trombone-like call when you're close by)
+  let hT=6+Math.random()*12,honk=0;
+  this.tick=(t,dt,run)=>{body.scale.y=1+Math.sin(t*1.1)*.01;hT-=dt;
+    if(hT<0&&run<.1&&!this.ridden){hT=14+Math.random()*16;honk=1.8;
+      if(this.g.parent&&this.g.visible&&Math.hypot(player.pos.x-this.pos.x,player.pos.z-this.pos.z)<14){this.speak('*HOOONK!* 🎺');tone(150,.7,'sawtooth',.035,0,120);tone(225,.7,'triangle',.03,0,180);}}
+    if(honk>0){honk-=dt;head.rotation.x=-Math.sin(Math.min(1,(1.8-honk)/1.8)*Math.PI)*.45;}else head.rotation.x*=.9;};
+  dnSaddle(this,body,.2,0,.8,.8,1,'#8a5a2a');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.45,size:1.7,h:by+1.6,rad:1,dustR:[.7,.7,1]});};
+
+/* ---------- 🦕 Pteranodon: a flying reptile with a long toothless beak, a crest sweeping back off its head, a small furry body
+   and huge leathery wings stretched from one very long finger. On the ground the wings fold up along its sides.
+   Grey brown on the back, pale underneath, a red-brown crest. It flies (fly:1, 24h-flying.js opens the wings: a.wingOpen).
+   Ride: scale s => F.ride = s*.95+.06 (Sunny 1.1 => 1.1, Zephyr 2.5 => 2.44) ---------- */
+ZOO_BUILD.pteroR=function(g,body,o){const by=.72,m=dnSkin('ptero',true),C=['#4b4740','#e9e4d8'],beak=['#c9b183','#e8d8b0'],crestC=['#8a3a26','#b0583a'],claw=dnClaw(),
+  mem=dnM('pteroMem',()=>phys('#5e4c40',{roughness:.75,side:THREE.DoubleSide,sheen:.3,sheenColor:new THREE.Color('#d8b89a')}));
+  body.position.y=by;
+  dnTube([[0,.12,.4],[0,.04,.15],[0,0,-.12],[0,-.05,-.34],[0,-.07,-.48]],[.13,.21,.19,.1,.02],m,body,C,{sx:.85,seg:14,rad:12});
+  for(const s of [-1,1]){const lg=dnLeg(this,g,s*.11,by-.04,-.18,s<0?0:Math.PI,[[0,0,0],[0,-.3,.09],[0,-.6,-.02]],[.085,.05,.035],m,C);
+    dnToes(lg,[0,-(by-.04)+.03,0],.1,.025,m,C,claw,.3,3);}
+  // the wings: the arm out to the wrist, then the long wing finger to the tip, with the skin stretched behind back to the body.
+  // inner tips the skin down along the flank when the wing folds (FarmAnimal.update swings w back by fold when wingOpen is 0)
+  this.wings=[];const inners=[];
+  const shape=dnM('pteroWingG',()=>{const sh=new THREE.Shape();sh.moveTo(0,-.02);sh.lineTo(.7,-.02);sh.quadraticCurveTo(1.3,.02,1.9,.3);
+    sh.quadraticCurveTo(1.45,.42,1.1,.47);sh.quadraticCurveTo(.6,.56,.2,.6);sh.lineTo(0,.62);sh.lineTo(0,-.02);const g=new THREE.ShapeGeometry(sh,10);g.rotateX(-Math.PI/2);return g;});
+  for(const s of [-1,1]){const w=new THREE.Group();w.position.set(s*.16,.1,.22);body.add(w);const I=new THREE.Group();w.add(I);inners.push(I);
+    const mm=M(shape,mem,0,0,0,I,true,false);mm.scale.x=s;
+    dnTube([[0,0,0],[s*.35,.02,-.02],[s*.7,.03,.02]],[.06,.045,.04],m,I,C,{seg:8,rad:8});
+    dnTube([[s*.7,.03,.02],[s*1.3,.02,-.05],[s*1.9,0,-.3]],[.035,.022,.006],m,I,C,{seg:12,rad:8});
+    for(let c=0;c<3;c++)M(new THREE.ConeGeometry(.012,.06,6),claw,s*.7,.0,.06+c*.025,I,false,false).rotation.x=Math.PI/2+.3;
+    this.wings.push({w,sx:s,fly:0,fold:1.3});}
+  // a slim neck, a small head, the long pointed beak and the crest sweeping back
+  const neck=new THREE.Group();neck.position.set(0,by+.13,.42);g.add(neck);
+  dnTube([[0,-.05,-.08],[0,.18,.05],[0,.36,.12]],[.09,.07,.06],m,neck,C,{sx:.9,seg:10,rad:10});
+  const head=new THREE.Group();head.position.set(0,.38,.14);neck.add(head);
+  dnTube([[0,0,-.07],[0,.01,.07]],[.08,.07],m,head,C,{sx:.8,seg:6,rad:10});
+  dnTube([[0,-.01,.05],[0,-.03,.4],[0,-.06,.72]],[.06,.033,.006],m,head,beak,{sx:.7,seg:12,rad:10});
+  dnTube([[0,.04,-.02],[0,.11,-.26],[0,.15,-.52]],[.05,.034,.008],m,head,crestC,{sx:.32,seg:10,rad:8});
+  for(const s of [-1,1])dnEye(this,head,s*.05,.025,.04,.016,'#2a1a10',s*1.35);
+  // the skin hangs down along the flank when the wings are folded
+  this.tick=(t)=>{const op=this.wingOpen||0;for(const I of inners){I.rotation.x=-(1-op)*1.3;I.scale.z=1-.35*(1-op);}};
+  dnSaddle(this,body,.03,.02,.2,.85,1,'#5a3a7a');
+  Object.assign(o,{neck,head,nTilt:.15,gz:.4,size:1,h:by+.8,rad:.6,biped:true,dustR:[.2,.2,.3]});};
+
+// their facts for the meet card (DINOA, 24c9h-dinos.js)
+DINOA.push(
+  {k:'parasaurR',e:'🦕',n:'Parasaurolophus',dino:1,food:[['🌿','Ferns'],['🍃','Leaves']],say:['*HOOONK!* 🎺','*munch munch* 🌿','*friendly head bob*'],
+    facts:[['🌿','Diet','Herbivore. Leaves, twigs and pine needles, ground up by hundreds of teeth in the back of its bill.'],
+      ['🌍','When and where','Western North America (Alberta, Utah and New Mexico), about 77 to 73 million years ago.'],
+      ['📏','Size','About 9.5 m (31 ft) long and as heavy as a big elephant. Its crest was up to 1.8 m (6 ft) long!'],
+      ['✨','Fun fact','Its crest was hollow inside, with tubes from its nose. Blowing air through it made a deep honk, like a trombone, to call its friends.']]},
+  {k:'pteroR',e:'🦕',n:'Pteranodon',dino:1,food:[['🐟','Fish'],['🦐','Shrimp']],say:['*SKRAAAW!*','*big wing stretch*','*beak clack clack*'],
+    facts:[['🐟','Diet','Fish! It flew low over the sea and scooped them up with its long beak, a bit like a pelican.'],
+      ['🌍','When and where','Over the shallow sea that covered the middle of North America (Kansas!), about 86 to 84 million years ago.'],
+      ['📏','Size','Its wings were up to 7 m (23 ft) from tip to tip, wider than a car is long, but it weighed less than a grown-up.'],
+      ['✨','Fun fact','It wasn\'t a dinosaur, it was a pterosaur, a flying cousin! Its wings were skin stretched from one super long finger, and its body was covered in fuzz.']]});
+
+// 🏆 the big dinosaurs: earn each one by finishing all of its 🦖 Dino challenges (challenges.js, ids in earn.ids). They live at Dino Valley.
+// Same fields as the safari rides (24i-earned-rides.js): wide = legs spread round a broad back, boost = speed, seat = slide the animal back.
+function dinoRideList(){return [
+  {k:'dtrike',e:'🦕',n:'Big triceratops',nm:'Tank',model:'trikeR',scale:1,dino:1,safari:1,earn:{by:'chal',ids:['dino_meet3','dino_feedT','dino_dig3'],goal:3},ride:2.64,wide:.55,boost:1.7,about:'A full-grown triceratops as big as an elephant, with three long horns and a huge frill! Only for explorers who finish all 3 of his 🦖 Dino challenges.',food:[['🌿','Ferns'],['🌴','Palm leaves'],['🍉','Melon']],say:['*low friendly snort*','*stomp stomp*','Hold on to the frill!']},
+  {k:'dstego',e:'🦕',n:'Big stegosaurus',nm:'Spike',model:'stegoR',scale:.95,seat:.8,dino:1,safari:1,earn:{by:'chal',ids:['dino_feedS','dino_dig10','dino_days3'],goal:3},ride:2.03,wide:.45,boost:1.6,about:'A full-grown stegosaurus with tall plates down her back. You sit up in front of the plates! Only for explorers who finish all 3 of her 🦖 Dino challenges.',food:[['🌿','Ferns'],['🥬','Leaves'],['🍓','Berries']],say:['*soft huff*','*plates wiggle*','*munch munch* 🌿']},
+  {k:'dcrest',e:'🦕',n:'Parasaurolophus',nm:'Tuba',model:'parasaurR',scale:.9,dino:1,safari:1,earn:{by:'chal',ids:['dino_meetAll','dino_feed20','dino_kinds4'],goal:3},ride:2.49,wide:.5,boost:1.9,about:'A big crested duck-bill dinosaur who honks through her long crest like a trombone! Only for explorers who finish all 3 of her 🦖 Dino challenges.',food:[['🌿','Ferns'],['🍃','Leaves'],['🍐','Pear']],say:['*HOOONK!* 🎺','*happy head bob*','Honk means hello!']},
+  {k:'draptor',e:'🦖',n:'Big raptor (Utahraptor)',nm:'Dash',model:'raptorR',scale:1.6,dino:1,safari:1,earn:{by:'chal',ids:['dino_feedR','dino_kinds8','dino_ride300'],goal:3},ride:1.96,wide:.32,boost:2.4,about:'A huge feathered raptor, the biggest kind there was, and the fastest dinosaur ride! Only for speedy explorers who finish all 3 of his 🦖 Dino challenges.',food:[['🍗','Chicken'],['🐟','Fish'],['🥚','Egg']],say:['*chirp chirp*','*fluffs his feathers*','Ready, set, ZOOM! 💨']},
+  {k:'dtrex',e:'🦖',n:'Big T. rex',nm:'Rex',model:'trexR',scale:.8,dino:1,safari:1,earn:{by:'chal',ids:['dino_feedX','dino_dig25','dino_days5'],goal:3},ride:2.75,wide:.5,boost:2,about:'A giant, gentle T. rex who lets you ride way up on his back! Only for champions who finish all 3 of his 🦖 Dino challenges.',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['*big rumbly ROAR* 🦖','*tiny arm wave*','*stomp... stomp...*']},
+  {k:'dlong',e:'🦕',n:'Big brachiosaurus',nm:'Atlas',model:'longneckR',scale:.85,dino:1,safari:1,earn:{by:'chal',ids:['dino_big3','dino_feed60','dino_ride2k'],goal:3},ride:3.31,wide:.6,boost:1.6,about:'The tallest ride in town! A full-grown brachiosaurus as tall as a house. Only for legends who finish all 3 of his 🦖 Dino challenges.',food:[['🌲','Tree tops'],['🍃','Leaves'],['🍐','Pear']],say:['*deep gentle hum*','I can see the whole island!','*slow happy blink*']},
+  {k:'dptero',e:'🦕',n:'Big pteranodon',nm:'Zephyr',model:'pteroR',scale:2.5,dino:1,safari:1,fly:1,earn:{by:'chal',ids:['dino_big6','dino_dig50','dino_days10'],goal:3},ride:2.44,wide:.35,boost:1.9,about:'A giant pteranodon with wings wider than a bus! Tap 🪽 Fly to soar over the whole island. Only for true legends who finish all 3 of her 🦖 Dino challenges.',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['*SKRAAAW!*','*big wing stretch*','Up, up and away! ☁️']}];}
+const DINO_BIG=['dtrike','dstego','dcrest','draptor','dtrex','dlong','dptero'];
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -8214,9 +8336,9 @@ const FARM=[
   // rides from the shop: bought with ⭐ in the shop's 🦖 Rides tab (mount = price), or won as a prize (prize = ⭐ stars you need to earn).
   // They live at the barn like the others, and you call them from anywhere with the ride button (24g-mounts.js).
   {k:'kitty',e:'🐱',n:'Big fluffy cat',nm:'Marshmallow',mount:10,ride:1.08,about:'A giant, super fluffy cat you can ride! She purrs when you hug her.',food:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],say:['Purrrrr 💕','Mrrrow! 🐱','*big fluffy stretch*']},
-  {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,dino:1,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
+  {k:'crest',e:'🦕',n:'Young Parasaurolophus',nm:'Honker',mount:12,dino:1,model:'parasaurR',scale:.4,ride:1.14,about:'A young crested duck-bill dinosaur (a Parasaurolophus) who honks through her long crest like a trombone!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
   {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,fly:1,ride:1.2,about:'A lavender unicorn with feathery wings. Ride her and tap 🪽 Fly to soar over the treetops!',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
-  {k:'ptero',e:'🦕',n:'Pterodactyl',nm:'Sunny',mount:14,dino:1,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
+  {k:'ptero',e:'🦕',n:'Young pteranodon',nm:'Sunny',mount:14,dino:1,model:'pteroR',scale:1.1,fly:1,ride:1.1,about:'A young pteranodon, a flying reptile with a long beak, a crest and big leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
   {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
   {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
@@ -8247,7 +8369,7 @@ const ZOOA=[
   {k:'gator',e:'🐊',n:'Alligator',swim:.36,food:[['🐟','Fish'],['🍗','Chicken']],say:['*low rumbly bellow*','*snap snap!* 🐊','*lazy sunbathing*'],
     facts:[['🥗','Diet','Carnivore. Fish, turtles, snakes, birds and small animals. It can go months without eating in the winter!'],['🌍','Habitat','Rivers, lakes and swamps of the southeastern United States, like Florida and Louisiana. A cousin lives in China.'],['⏳','Lifespan','About 35 to 50 years in the wild, and up to 70 in zoos.'],['✨','Fun fact','You can tell an alligator from a crocodile by its wide, rounded U-shaped snout. When its mouth is shut you can only see its top teeth! It has about 80 teeth and grows new ones all its life.']]}
 ];
-ZOOA.push(...arcticZooList(),...DINOA);FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
+ZOOA.push(...arcticZooList(),...DINOA);FARM.push(...arcticRideList(),...dinoRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js), and the 🏆 big dinosaurs (24c9i-dinos-more.js)
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
 const BS=SAVE.barn;BS.own||={};
@@ -8437,23 +8559,6 @@ class FarmAnimal{
       const tp=[fV(0,0,0),fV(0,.28,-.2),fV(0,.62,-.16),fV(0,.86,.06)];taperTube(tp,q=>.12-.02*q,fur,tail,20,12);
       const tc=new THREE.CatmullRomCurve3(tp);for(let i=0;i<9;i++){const p=tc.getPoint(i/8);M(sph(.13-i*.004,10,8),i>6?peach:fur,p.x,p.y,p.z,tail,true,false);}
       Object.assign(o,{neck,head,tail,nTilt:.5,size:1,h:by+.8,rad:.6,dustR:[r,r,len*.8]});}
-    // 🦕 a duck-billed dino with a long tube crest on her head
-    if(k==='crest'){const r=.4,len=.7,leg=.4,by=leg+r*.6,skin=fm('#ff9a76',{roughness:.7}),belly=fm('#fff1c9'),spot=fm('#ffcf4a'),crestM=fShiny('#4fc9bd',{roughness:.4});
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.72,1.3);
-      for(let i=0;i<8;i++)M(sph(r*.13,10,8),spot,Math.sin(i*2.3)*r*.62,r*.78,(i/7-.5)*len*1.1,body,false,false).scale.set(1,.4,1);
-      for(let i=0;i<7;i++)M(sph(r*.1,10,8),crestM,0,r*.97,(i/6-.5)*len*1.2,body,false,false).scale.set(.6,.7,1.3);// little bumps down her spine
-      fLegs(this,g,r*.6,len*.42,leg+.06,leg+.06,.12,skin,fShiny('#ffe2c4'));
-      const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.45);neck.rotation.x=.55;g.add(neck);
-      taperTube([fV(0,0,0),fV(0,.2,.02),fV(0,.42,0)],q=>.18-.05*q,skin,neck,16,12);
-      const head=new THREE.Group();head.position.set(0,.44,0);head.rotation.x=-.55+.15;neck.add(head);const H=.24;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.9,.9,1.2);
-      M(sph(H*.72,16,12),belly,0,-H*.28,H*1.02,head).scale.set(1.2,.45,1.1);// the wide duck bill
-      for(const sx of [-1,1])M(sph(H*.07,8,6),std('#a0503a'),sx*H*.22,-H*.12,H*1.55,head,false,false);
-      taperTube([fV(0,H*.55,-H*.05),fV(0,H*1.1,-H*.65),fV(0,H*1.3,-H*1.45),fV(0,H*1.05,-H*2.2)],q=>H*(.27-.15*q),crestM,head,24,12);
-      M(sph(H*.14,10,8),crestM,0,H*1.05,-H*2.2,head,false,false);
-      fEyes(this,head,H,.5,.25,.6,.55,.22,'#5a3a12');fBlush(head,H,.62,-.1,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.35),fV(0,-.15,-.7),fV(0,-.3,-1)],q=>.22*(1-q*.85),skin,tail,20,12);
-      Object.assign(o,{neck,head,tail,nTilt:.55,size:1.15,h:by+1,rad:.75,dustR:[r,r,len*.8]});}
     // 🦄 a lavender unicorn with feathery wings (they flap when you gallop)
     if(k==='pegacorn'){const sc=1.05,h=horseLike(sc,'#ece6ff',['#8fd8ff','#c6a6ff','#ffb3e0'],{light:'#faf7ff',hoof:'#c6a6ff'}),r=.3*sc,len=.62*sc;
       const horn=M(new THREE.ConeGeometry(h.H*.16,h.H*.95,18),phys('#cfe8ff',{map:TEX.glitter,metalness:.6,roughness:.2,clearcoat:1,iridescence:.8}),0,h.H*1.15,h.H*.65,h.head);horn.rotation.x=.5;
@@ -8490,36 +8595,6 @@ class FarmAnimal{
       const tip=M(new THREE.OctahedronGeometry(.11),star,.32,-.36,-1.4,tail,false,false);tip.scale.set(.6,1,1.2);
       this.sparkle=true;
       Object.assign(o,{neck,head,tail,nTilt:.6,size:1.3,h:by+1.05,rad:.85,dustR:[r,r,len*.8]});}
-    // 🦅 a pterodactyl: long beak, a big orange crest and huge leathery wings that fold up along her sides on the ground
-    if(k==='ptero'){const r=.3,len=.5,leg=.5,by=leg+r*.55,skin=phys('#5fb8a8',{roughness:.55,sheen:.5,sheenColor:new THREE.Color('#d8fff4')}),belly=fm('#fff1d6'),
-        crestM=fShiny('#ff7a45',{roughness:.35}),beakM=fShiny('#ffcf6b',{roughness:.35}),
-        memM=phys('#ffa070',{roughness:.6,side:THREE.DoubleSide,transparent:true,opacity:.93,sheen:.4,sheenColor:new THREE.Color('#ffe0c8')}),boneM=fm('#4a9e90');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(1,.92,1);
-      M(sph(r*.85,14,10),belly,0,-r*.28,len*.12,body).scale.set(.92,.72,1.25);
-      // a little fuzz along her back (real pterosaurs were fuzzy!)
-      for(let i=0;i<9;i++)M(sph(r*.13,8,6),boneM,0,r*.9,len*.5-i*len*.14,body,false,false).scale.set(1,.5,1.4);
-      fLegs(this,g,r*.62,len*.4,leg+.05,leg+.05,.06,skin,crestM);
-      // the wings: a leathery skin stretched from the long wing finger back to the body, with a front-edge bone and little claws
-      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.72,r*.5,len*.28);body.add(w);
-        const sh=new THREE.Shape();sh.moveTo(0,-.12);sh.lineTo(.75,-.1);sh.lineTo(1.65,.02);sh.quadraticCurveTo(1.3,.2,1.05,.3);sh.quadraticCurveTo(.75,.36,.6,.52);
-        sh.quadraticCurveTo(.3,.6,0,.62);sh.lineTo(0,-.12);
-        const m=M(new THREE.ShapeGeometry(sh,8),memM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.x=sx;
-        taperTube([fV(0,0,.1),fV(sx*.75,.01,.1),fV(sx*1.65,0,-.02)],q=>.05-.032*q,boneM,w,16,8);
-        for(const v of [.3,.8])taperTube([fV(sx*v*1.2,0,.08),fV(sx*v*1.05,0,-.5*v-.1)],q=>.014,boneM,w,6,5);// stiff fibers in the skin
-        for(let c=0;c<3;c++)M(new THREE.ConeGeometry(.018,.08,6),beakM,sx*.72,-.02,.15+c*.03,w).rotation.x=Math.PI/2+.4;
-        this.wings.push({w,sx,fly:0,fold:1.25});}
-      const neck=new THREE.Group();neck.position.set(0,by+r*.35,len/2+r*.45);neck.rotation.x=.45;g.add(neck);
-      taperTube([fV(0,0,0),fV(0,.28,.04),fV(0,.55,0)],q=>.13-.05*q,skin,neck,16,12);
-      const head=new THREE.Group();head.position.set(0,.58,0);head.rotation.x=-.45+.3;neck.add(head);const H=.2;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.85,.9,1.15);
-      const beak=M(new THREE.ConeGeometry(H*.42,H*3.4,18),beakM,0,-H*.18,H*2.4,head);beak.rotation.x=Math.PI/2;beak.scale.set(.75,1,1);
-      M(new THREE.ConeGeometry(H*.36,H*2.4,16),beakM,0,-H*.36,H*1.9,head).rotation.x=Math.PI/2+.06;// the lower jaw
-      const crest=new THREE.Shape();crest.moveTo(0,0);crest.quadraticCurveTo(H*1.4,H*.9,H*2.6,H*1.25);crest.quadraticCurveTo(H*1.6,H*.15,H*.4,-H*.25);crest.lineTo(0,0);
-      const cm=M(new THREE.ExtrudeGeometry(crest,{depth:H*.08,bevelEnabled:true,bevelSize:H*.05,bevelThickness:H*.04,bevelSegments:2,curveSegments:10}),crestM,H*.04,H*.45,-H*.1,head);cm.rotation.y=Math.PI/2;// sweeps back off the top of her head
-      fEyes(this,head,H,.5,.2,.62,.55,.26,'#7a3a12');fBlush(head,H,.62,-.15,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.02,-(len/2+r*.75));g.add(tail);taperTube([fV(0,0,0),fV(0,-.04,-.18),fV(0,-.04,-.34)],q=>.07*(1-q*.8),skin,tail,12,8);
-      this.sparkle=false;
-      Object.assign(o,{neck,head,tail,nTilt:.45,size:1.15,h:by+1.05,rad:.7,dustR:[r,r,len*.8]});}
     // 🦅 a giant bald eagle: brown feathers, white head and tail, a hooked yellow beak and big fingered wings
     if(k==='eagle'){const r=.34,len=.42,leg=.42,by=leg+r*.8,brown=fm('#5a3a22',{roughness:.9}),light=fm('#7a5232',{roughness:.9}),dark=fm('#3b2414',{roughness:.9}),
         white=fm('#fbf8f2',{roughness:.95}),yel=fShiny('#ffc22e',{roughness:.35}),talon=fShiny('#2b211a');
@@ -8799,7 +8874,7 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
-    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':r.dino?'🦖 Dino':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
     ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`💖 ${esc(BS.own[r.k].n)} is yours! Step on the 🦖 footprint by the Dino Keeper's hut to take care of ${esc(BS.own[r.k].n)}.`:`🥚 Want one of your own? Step on the 🦖 footprint by the Dino Keeper's hut to adopt ${r.e} ${r.nm} with ⭐ stars!`}</p>`:'')(a.F.dino&&FARM.find(f=>f.dino&&f.model===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));
@@ -10743,7 +10818,10 @@ const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:f.earn.by==='chal'?f.earn.ids.filter(id=>SAVE.chal&&SAVE.chal.done&&SAVE.chal.done[id]).length:0;
 // the ❄️ Polar rides (24c9g-arctic-animals.js) are earned the same way, from the ❄️ Polar tab (their challenge ids start with ice_)
 const erPolar=e=>!!(e&&e.ids&&e.ids.some(id=>id.startsWith('ice_')));
-const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} ${erPolar(f.earn)?'❄️ Polar':'🦁 Safari'} challenges`:`Play ${f.earn.goal} days in a row`;
+// and the 🏆 big dinosaurs (24c9i-dinos-more.js) from the 🦖 Dino tab (ids start with dino_)
+const erDino=e=>!!(e&&e.ids&&e.ids.some(id=>id.startsWith('dino_')));
+const erTab=e=>erPolar(e)?'❄️ Polar':erDino(e)?'🦖 Dino':'🦁 Safari';
+const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} ${erTab(f.earn)} challenges`:`Play ${f.earn.goal} days in a row`;
 // a new day you played: one more day in the streak if you also played yesterday, otherwise start again at 1
 function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.last===k)return;
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
@@ -10769,7 +10847,7 @@ function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const go
 function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
-function earnTag(e){return e.by==='chal'?(erPolar(e)?'❄️ Polar':'🦁 Safari'):`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+function earnTag(e){return e.by==='chal'?erTab(e):`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0,kn:{...ER.kn}})});});
 // ---- src/24k-skate-park.js ----
 /* ================= 🛹 SKATE PARK: ramps, grinds and tricks =================
@@ -11619,14 +11697,14 @@ addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{PE,PE
 // ---- src/24n-dino-valley.js ----
 /* ===== 🦖 Dino Valley: the dinosaurs that live there (the valley is 12i-place-dino-valley.js, the models 24c9h-dinos.js) =====
    - DVA are the valley's own dinosaurs: a T. rex in its paddock, three raptors in their pen, and a triceratops, a brachiosaurus and a
-     stegosaurus (and their young) out in the meadow. They're not yours: like the zoo's animals they wander about, never follow you,
+     stegosaurus, a Parasaurolophus and a pteranodon (24c9i-dinos-more.js), and some of their young, out in the meadow. They're not yours: like the zoo's animals they wander about, never follow you,
      and you walk up and tap 🦖 Meet to see their facts card (openZoo in 24d-barn.js), feed them and pet them (through the fence too).
    - Kid-safe: nobody chases, bites or attacks. The T. rex just lifts its head and roars now and then (24c9h-dinos.js).
    - The dinosaurs you adopt or buy (dino:1 in FARM) live here too, in the meadow, and the 🦖 footprint pad by the Dino Keeper's hut
      opens their care sheet (openBarn('dino') in 24d-barn.js). */
 const DZ=Z.dino,DVA=[];
 // [kind, size (1 = grown up), where it lives: m = meadow, t = T. rex paddock, r = raptor pen]
-for(const [k,sc,at] of [['trexR',.82,'t'],['raptorR',1,'r'],['raptorR',.92,'r'],['raptorR',.85,'r'],['trikeR',1,'m'],['trikeR',.5,'m'],['longneckR',1,'m'],['longneckR',.5,'m'],['stegoR',1,'m']]){
+for(const [k,sc,at] of [['trexR',.82,'t'],['raptorR',1,'r'],['raptorR',.92,'r'],['raptorR',.85,'r'],['trikeR',1,'m'],['trikeR',.5,'m'],['longneckR',1,'m'],['longneckR',.5,'m'],['stegoR',1,'m'],['parasaurR',1,'m'],['parasaurR',.55,'m'],['pteroR',1,'m']]){
   const a=new FarmAnimal(k);a.Z=DZ;a.mates=DVA;a.dust.forEach(d=>d.visible=false);
   if(at==='t'){a.ok=dvTOk;a.spot=dvTSpot;}else if(at==='r'){a.ok=dvROk;a.spot=dvRSpot;}else{a.ok=dvOk;a.spot=dvSpot;}
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;if(sc<.7)a.baby=true;}
@@ -11648,6 +11726,62 @@ function dinoStep(dt){const p=player.pos,near=Math.hypot(p.x-DZ.x,p.z-DZ.z)<55;
 $('#dinoMeet').onclick=()=>{if(dinoNear){const a=dinoNear;dinoNear=null;$('#dinoMeet').style.display='none';openZoo(a);}};
 anims.push((t,dt)=>{if(started)dinoStep(dt);});
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{DVA,DV,DZ,dinoNear:()=>dinoNear});});
+// ---- src/24n2-dino-rides.js ----
+/* ===== 🦴 The fossil dig at 🦖 Dino Valley, and what the 🦖 Dino challenges count (challenges.js reads G.dinoState()) =====
+   - The dig is a sandy pit in the meadow (DV.dig, built in 12i-place-dino-valley.js). Wherever a fossil pokes out of the sand you
+     can tap 🦴 Dig and dig it up: a T. rex tooth, a raptor feather, an ammonite... (FOSSILS), and now and then rare golden amber.
+     A dug spot fills up again after DIG_REFILL seconds. did('fossil', kind).
+   - It also counts the days you visit Dino Valley, how far you ride your dinosaurs (any FARM ride with dino:1) and which of the
+     🏆 big dinosaurs (DINO_BIG, 24c9i-dinos-more.js) you've ridden. Saved in SAVE.dino. */
+const DS=SAVE.dino||(SAVE.dino={});DS.dig||=0;DS.kinds||={};DS.days||={};DS.ride||=0;DS.big||={};
+const FOSSILS=[['tooth','🦷','T. rex tooth'],['bone','🦴','dinosaur leg bone'],['ammonite','🐚','ammonite shell'],['egg','🥚','fossil dinosaur egg'],
+  ['print','🐾','dinosaur footprint'],['feather','🪶','raptor feather'],['fern','🌿','fern fossil'],['horn','🦕','triceratops horn']];
+const AMBER=['amber','🟠','piece of golden amber'],DIG_REFILL=40;
+FLYK.dptero={hz:1,amp:.5,base:.04,glide:.85,spd:14,tuckF:1.15,tuckB:1.3};// 🪽 Zephyr flies like Sunny, with slower, bigger wing beats
+// a fossil poking out of the sand at each spot (a bit of old bone), and a little heap of sand
+const DIG={busy:0,spot:null,spots:DV.dig.spots.map(([x,z],i)=>{const g=new THREE.Group(),D=DV.dig;g.position.set(D.x+x,0,D.z+z);g.rotation.y=i*1.7;DZ.g.add(g);
+  const bone=dnM('fossilBone',()=>std('#e9dcc0',{roughness:.85})),heap=dnM('fossilHeap',()=>std('#c9ab74',{roughness:1}));
+  M(sph(.28,12,8),heap,0,0,0,g,false,true).scale.set(1,.28,1);
+  const b=new THREE.Group();g.add(b);const s=M(new THREE.CapsuleGeometry(.05,.34,4,8),bone,0,.07,0,b);s.rotation.z=Math.PI/2-.25;
+  for(const e of [-1,1])M(sph(.075,10,8),bone,e*.2,.07+e*.05,0,b,false,false).scale.set(.8,1,1.2);
+  return {g,b,ready:true,t:0};})};
+{document.body.insertAdjacentHTML('beforeend','<button class="hud" id="dinoDig">🦴 Dig for fossils</button>');
+ const st=document.createElement('style');st.textContent=`
+#dinoDig{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 310px);color:#fff;font-weight:700;font-size:18px;padding:12px 22px;border-radius:999px;display:none;white-space:nowrap;pointer-events:auto;border:0;z-index:5;background:linear-gradient(90deg,#c9a066,#8a6232);box-shadow:0 6px 18px rgba(138,98,50,.4)}
+#dinoDig:active{transform:translateX(-50%) scale(.94)}
+body.dressing #dinoDig,body.talking #dinoDig,body.shopping #dinoDig{display:none!important}
+@media (max-height:520px){#dinoDig{bottom:calc(env(safe-area-inset-bottom) + 190px)}}`;
+ document.head.appendChild(st);}
+// the closest spot you can dig at (standing in or right next to the pit, on your own feet)
+function digSpot(){if(!started||closetOpen||barnRide||FLY.on||DIG.busy)return null;const p=player.pos,[lx,lz]=DZ.toLocal(p.x,p.z),D=DV.dig;
+  if(Math.hypot(lx-D.x,lz-D.z)>D.r+.7)return null;let best=null,bd=1e9;
+  for(const s of DIG.spots){if(!s.ready)continue;const d=Math.hypot(lx-s.g.position.x,lz-s.g.position.z);if(d<bd){bd=d;best=s;}}return best;}
+function dinoDig(){const s=digSpot();if(!s)return false;DIG.busy=1.4;DIG.spot=s;const [x,z]=DZ.toWorld(s.g.position.x,s.g.position.z);
+  player.face=Math.atan2(x-player.pos.x,z-player.pos.z);player.speed=0;$('#dinoDig').style.display='none';sfx('pop');return true;}
+$('#dinoDig').onclick=()=>dinoDig();
+// what you find: the first one is always a tooth; after that any kind, and now and then rare golden amber
+function digFind(){if(!DS.dig)return FOSSILS[0];if(Math.random()<.1)return AMBER;
+  const left=FOSSILS.filter(f=>!DS.kinds[f[0]]);return left.length&&Math.random()<.5?rnd(left):rnd(FOSSILS);}
+let dsSave=0,dsLast=null;
+function dinoRideStep(dt){const p=player.pos;
+  // digging: sand flies up, then the fossil comes out
+  if(DIG.busy>0){DIG.busy-=dt;const s=DIG.spot,[x,z]=DZ.toWorld(s.g.position.x,s.g.position.z);player.speed=0;
+    if(Math.random()<dt*7)burst(new THREE.Vector3(x,.15,z),'#d8bf8a',8,1.4,.08);
+    if(DIG.busy<=0){DIG.busy=0;s.ready=false;s.t=DIG_REFILL;s.b.visible=false;const [k,e,n]=digFind();DS.dig++;DS.kinds[k]=1;persist();
+      floaties(new THREE.Vector3(x,.6,z),e,5);banner(`${e} You dug up a ${n}!`);sfx('star');av.play('cheer');did('fossil',k);
+      if(k==='amber')toast('✨ Super rare! Golden amber is tree sap that turned to stone millions of years ago.');}}
+  for(const s of DIG.spots)if(!s.ready){s.t-=dt;if(s.t<=0){s.ready=true;s.b.visible=true;}}
+  const sp=digSpot();$('#dinoDig').style.display=sp?'block':'none';
+  // a visit today (inside the valley's fence)
+  const [lx,lz]=DZ.toLocal(p.x,p.z);if(started&&Math.hypot(lx,lz)<DV.fence){const d=new Date(),k=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;if(!DS.days[k]){DS.days[k]=1;persist();}}
+  // how far you ride your dinosaurs (steps = how far you go)
+  if(barnRide&&barnRide.F.dino){if(dsLast){const d=Math.hypot(p.x-dsLast.x,p.z-dsLast.z);if(d<3){DS.ride+=d;dsSave+=d;if(dsSave>15){dsSave=0;persist();}}}dsLast={x:p.x,z:p.z};}else dsLast=null;}
+anims.push((t,dt)=>{dinoRideStep(dt);});
+addEventListener('brynny:did',e=>{const {k,a}=e.detail||{};if(k==='ride'&&DINO_BIG.includes(a)&&!DS.big[a]){DS.big[a]=1;persist();}});
+function dinoState(){const big=Object.keys(DS.big).filter(k=>DINO_BIG.includes(k));
+  return {dig:DS.dig,kinds:FOSSILS.filter(f=>DS.kinds[f[0]]).length,amber:DS.kinds.amber?1:0,days:Object.keys(DS.days).length,ride:Math.floor(DS.ride),
+    big:big.length,bigNoPtero:big.filter(k=>k!=='dptero').length};}
+addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{dinoState,dinoDig,digSpot,DIG,DINO_BIG});});
 // ---- src/25-game-loop.js ----
 /* ================= LOOP ================= */
 const onTick=[];// extra per-frame hooks (online play)
@@ -17142,6 +17276,9 @@ const WHATS_NEW=[
     {e:'🦖',t:'Visit Dino Valley! Cross the bridge behind the Barber Shop to see a real-looking T. rex, raptors, a triceratops and more.',go:'dino'},
     {e:'🦕',t:'Your dinosaurs moved out of the barn and into Dino Valley. The Happy Barn is just for farm animals now.',go:'dino'},
     {e:'🥚',t:'Step on the glowing footprint by the Dino Keeper\'s hut to take care of your dinosaurs or adopt a new one.',go:'dino'},
+    {e:'🏆',t:'Earn a big grown-up dinosaur to ride: a T. rex, triceratops, brachiosaurus, stegosaurus, raptor, Parasaurolophus or pteranodon! See the new 🦖 Dino tab in ⭐ Star Challenges.',go:'dino'},
+    {e:'🦴',t:'Dig for fossils at the Fossil Dig in Dino Valley! Find a T. rex tooth, a raptor feather, and maybe rare golden amber.',go:'dino'},
+    {e:'🎺',t:'Meet a Parasaurolophus that honks through its crest, and a pteranodon. Your crested dino and pterodactyl look real now too!',go:'dino'},
   ]},
   {v:'2026-11-06',notes:[
     {e:'🏀',t:'Play a 3-on-3 basketball game! Pick two teammates, pass the ball and beat the Bears.',go:'court'},

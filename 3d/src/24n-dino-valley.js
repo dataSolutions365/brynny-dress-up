@@ -1,13 +1,13 @@
 /* ===== 🦖 Dino Valley: the dinosaurs that live there (the valley is 12i-place-dino-valley.js, the models 24c9h-dinos.js) =====
    - DVA are the valley's own dinosaurs: a T. rex in its paddock, three raptors in their pen, and a triceratops, a brachiosaurus and a
-     stegosaurus (and their young) out in the meadow. They're not yours: like the zoo's animals they wander about, never follow you,
+     stegosaurus, a Parasaurolophus and a pteranodon (24c9i-dinos-more.js), and some of their young, out in the meadow. They're not yours: like the zoo's animals they wander about, never follow you,
      and you walk up and tap 🦖 Meet to see their facts card (openZoo in 24d-barn.js), feed them and pet them (through the fence too).
    - Kid-safe: nobody chases, bites or attacks. The T. rex just lifts its head and roars now and then (24c9h-dinos.js).
    - The dinosaurs you adopt or buy (dino:1 in FARM) live here too, in the meadow, and the 🦖 footprint pad by the Dino Keeper's hut
      opens their care sheet (openBarn('dino') in 24d-barn.js). */
 const DZ=Z.dino,DVA=[];
 // [kind, size (1 = grown up), where it lives: m = meadow, t = T. rex paddock, r = raptor pen]
-for(const [k,sc,at] of [['trexR',.82,'t'],['raptorR',1,'r'],['raptorR',.92,'r'],['raptorR',.85,'r'],['trikeR',1,'m'],['trikeR',.5,'m'],['longneckR',1,'m'],['longneckR',.5,'m'],['stegoR',1,'m']]){
+for(const [k,sc,at] of [['trexR',.82,'t'],['raptorR',1,'r'],['raptorR',.92,'r'],['raptorR',.85,'r'],['trikeR',1,'m'],['trikeR',.5,'m'],['longneckR',1,'m'],['longneckR',.5,'m'],['stegoR',1,'m'],['parasaurR',1,'m'],['parasaurR',.55,'m'],['pteroR',1,'m']]){
   const a=new FarmAnimal(k);a.Z=DZ;a.mates=DVA;a.dust.forEach(d=>d.visible=false);
   if(at==='t'){a.ok=dvTOk;a.spot=dvTSpot;}else if(at==='r'){a.ok=dvROk;a.spot=dvRSpot;}else{a.ok=dvOk;a.spot=dvSpot;}
   if(sc!==1){a.g.scale.setScalar(sc);a.h*=sc;a.rad*=sc;a.size*=sc;if(sc<.7)a.baby=true;}

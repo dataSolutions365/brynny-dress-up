@@ -108,7 +108,10 @@ const erDayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 const erHave=f=>f.earn.by==='wins'?ER.wins:f.earn.by==='days'?ER.days.n:f.earn.by==='chal'?f.earn.ids.filter(id=>SAVE.chal&&SAVE.chal.done&&SAVE.chal.done[id]).length:0;
 // the ❄️ Polar rides (24c9g-arctic-animals.js) are earned the same way, from the ❄️ Polar tab (their challenge ids start with ice_)
 const erPolar=e=>!!(e&&e.ids&&e.ids.some(id=>id.startsWith('ice_')));
-const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} ${erPolar(f.earn)?'❄️ Polar':'🦁 Safari'} challenges`:`Play ${f.earn.goal} days in a row`;
+// and the 🏆 big dinosaurs (24c9i-dinos-more.js) from the 🦖 Dino tab (ids start with dino_)
+const erDino=e=>!!(e&&e.ids&&e.ids.some(id=>id.startsWith('dino_')));
+const erTab=e=>erPolar(e)?'❄️ Polar':erDino(e)?'🦖 Dino':'🦁 Safari';
+const erWhat=f=>f.earn.by==='wins'?`Win ${f.earn.goal} contests or games`:f.earn.by==='chal'?`Finish all ${f.earn.goal} ${erTab(f.earn)} challenges`:`Play ${f.earn.goal} days in a row`;
 // a new day you played: one more day in the streak if you also played yesterday, otherwise start again at 1
 function erPlayedToday(){const D=ER.days,now=new Date(),k=erDayKey(now);if(D.last===k)return;
   const y=new Date(now);y.setDate(y.getDate()-1);D.n=D.last===erDayKey(y)?D.n+1:1;D.last=k;D.best=Math.max(D.best||0,D.n);persist();
@@ -134,5 +137,5 @@ function earnedRides(){return MOUNTS.filter(f=>f.earn||f.prize).map(f=>{const go
 function earnedLooks(){const G=isGuy(SAVE.look);return EARN_LOOKS.filter(L=>L.who==='both'||(L.who==='guy')===G).map(L=>({k:L.id,e:L.e,n:L.n,by:L.earn.by,goal:L.earn.goal,
   have:Math.min(L.earn.goal,erHave(L)),own:owns('look:'+L.id),what:erWhat(L),where:TAB_NAME[L.tab]}));}
 // the short tag on a locked thing: "🏆 Win 3" or "🏆 5 days"
-function earnTag(e){return e.by==='chal'?(erPolar(e)?'❄️ Polar':'🦁 Safari'):`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
+function earnTag(e){return e.by==='chal'?erTab(e):`🏆 ${e.by==='wins'?`Win ${e.goal}`:`${e.goal} days`}`;}
 addEventListener('load',()=>{if(window.__game)Object.assign(window.__game,{earnedRides,earnedLooks,earnState:()=>({wins:ER.wins,streak:ER.days.n,best:ER.days.best||0,kinds:Object.values(ER.kinds).filter(Boolean).length,kai:(SAVE.sports&&SAVE.sports.v1w)||0,kn:{...ER.kn}})});});
