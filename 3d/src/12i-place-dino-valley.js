@@ -16,7 +16,9 @@ const DV={fence:16.8,gateA:.2,
   // tall trees and big rocks the dinosaurs walk round: [x, z, radius]
   trees:[[-13.2,-1.5],[-12.5,4.5],[-3.5,-13.5],[1.2,-9.5],[12.8,4.2],[9.5,9.8],[-1.5,-4.2],[14.8,-4.5],[-14.2,-6.8]],
   rocks:[[3.6,1.3,.9],[-3.2,4.5,.7],[11.5,1.2,.8],[-10.8,-2.6,.6],[0,-14.6,1.1]]};
-DV.avoid=[[DV.pond.x,DV.pond.z,DV.pond.r+.3],[DV.nest.x,DV.nest.z,DV.nest.r],[DV.hut.x,DV.hut.z,2.1],...DV.trees.map(([x,z])=>[x,z,.7]),...DV.rocks];
+// 🦴 the fossil dig: a sandy pit with a string grid; spots = where a fossil pokes out of the sand (24n2-dino-rides.js digs them up)
+DV.dig={x:9.4,z:5.6,r:1.9,spots:[[-.95,-.7],[.25,-.95],[1.05,-.1],[-.55,.65],[.55,.85]]};
+DV.avoid=[[DV.dig.x,DV.dig.z,DV.dig.r+.2],[DV.pond.x,DV.pond.z,DV.pond.r+.3],[DV.nest.x,DV.nest.z,DV.nest.r],[DV.hut.x,DV.hut.z,2.1],...DV.trees.map(([x,z])=>[x,z,.7]),...DV.rocks];
 // the meadow: inside the big fence, outside the paddocks, round the pond, the nest, the hut, the trees and rocks
 function dvOk(lx,lz,r){if(Math.hypot(lx,lz)>DV.fence-.7-r)return false;
   for(const Q of [DV.T,DV.P])if(Math.hypot(lx-Q.x,lz-Q.z)<Q.r+.6+r)return false;
@@ -87,6 +89,21 @@ const dvV=(x,y,z)=>new THREE.Vector3(x,y,z);
   M(box(.9,1.6,.06),std('#3b2a1c',{roughness:.9}),-.6,.8,H.d/2+.13,hg);M(box(.7,.55,.06),phys('#bfe3ff',{roughness:.1,clearcoat:1}),.75,1.35,H.d/2+.13,hg,false,false);
   const lt=M(new THREE.PlaneGeometry(2.2,.5),new THREE.MeshBasicMaterial({map:labelTex('🥚 Dino Keeper',{size:52,fg:'#2f5a2a',bg:'#f4ead2',border:'#7a5a3c'})}),0,2.25,H.d/2+.2,hg,false,false);
   for(const [x,w] of [[-1,0],[1,0],[0,-.7],[0,.7]])z.ob(H.x+Math.cos(H.ry)*x*1.2+Math.sin(H.ry)*w,H.z-Math.sin(H.ry)*x*1.2+Math.cos(H.ry)*w,1.1);}
+ // 🦴 the fossil dig: a sunken sandy pit with a low dirt rim, stakes and a string grid, a sieve, a bucket and a sign
+ {const D=DV.dig,sandT=canvasTex(128,128,(x,w,h)=>{x.fillStyle='#d8bf8a';x.fillRect(0,0,w,h);for(let i=0;i<1400;i++){const c=Math.random();x.fillStyle=c<.5?'rgba(160,130,85,.35)':'rgba(240,225,190,.4)';x.fillRect(Math.random()*w,Math.random()*h,1.5+Math.random()*2.5,1.5);}},2);
+  const sand=std('#ffffff',{map:sandT,roughness:1});sand.polygonOffset=true;sand.polygonOffsetFactor=-4;sand.polygonOffsetUnits=-4;
+  const pit=M(new THREE.CircleGeometry(D.r,40),sand,D.x,.035,D.z,g,false,true);pit.rotation.x=-Math.PI/2;
+  B.add(new THREE.TorusGeometry(D.r+.05,.13,8,40),std('#7a5e40',{roughness:1}),D.x,.02,D.z,Math.PI/2,0,0,1,1,.45);
+  const stake=std('#8a6a44',{roughness:.9}),str=std('#f2ead8',{roughness:.8}),S=D.r*.78;
+  for(const sx of [-1,1])for(const sz of [-1,1])B.add(cyl(.035,.04,.55,6),stake,D.x+sx*S,.27,D.z+sz*S);
+  for(const t of [-1,-1/3,1/3,1]){B.add(box(S*2,.012,.012),str,D.x,.42,D.z+t*S);B.add(box(.012,.012,S*2),str,D.x+t*S,.42,D.z);}
+  B.add(cyl(.22,.18,.3,14),std('#3f7fbf',{roughness:.5}),D.x+D.r+.55,.15,D.z-.6);// a bucket
+  B.add(cyl(.32,.32,.08,16),std('#9a7a50',{roughness:.8}),D.x+D.r+.5,.3,D.z+.5);// a sieve on its stand
+  B.add(cyl(.03,.03,.3,5),stake,D.x+D.r+.5,.13,D.z+.5);
+  B.add(cyl(.05,.05,1.2,6),stake,D.x-D.r-.45,.6,D.z+.9);
+  const sg=M(new THREE.PlaneGeometry(1.5,.45),new THREE.MeshBasicMaterial({map:labelTex('🦴 Fossil Dig',{size:52,fg:'#5a3a1c',bg:'#f4ead2',border:'#7a5a3c'})}),D.x-D.r-.45,1.25,D.z+.9,g,false,false);
+  sg.rotation.y=Math.atan2(-(D.x-D.r-.45),-(D.z+.9));// facing the middle of the valley
+  z.ob(D.x+D.r+.55,D.z-.6,.25);z.ob(D.x+D.r+.5,D.z+.5,.35);}
  // the glowing footprint pad: step on it to take care of your dinosaurs (24d-barn.js opens the sheet)
  {const P=DV.bpad;z.bpad=P;const padMat=glow('#9be36b',1.4);padMat.transparent=true;
   const rg=M(new THREE.RingGeometry(.5,.68,40),padMat,P.lx,.05,P.lz,g,false,false);rg.rotation.x=-Math.PI/2;
@@ -116,7 +133,7 @@ const dvV=(x,y,z)=>new THREE.Vector3(x,y,z);
   const fern=plant(7,1.1,.25,-.35),cyc=plant(9,1.3,.1,-.6);
   const spots=[];for(let i=0;i<260&&spots.length<120;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*(F+3.5),lx=Math.sin(a)*d,lw=Math.cos(a)*d;
     if(Math.abs(lx)<1.6&&lw>3)continue;// keep the path from the gate clear
-    if(Math.hypot(lx-DV.bpad.lx,lw-DV.bpad.lz)<2||Math.hypot(lx-DV.hut.x,lw-DV.hut.z)<2.4||Math.hypot(lx-DV.pond.x,lw-DV.pond.z)<DV.pond.r+.2||Math.hypot(lx-DV.nest.x,lw-DV.nest.z)<1.2)continue;
+    if(Math.hypot(lx-DV.bpad.lx,lw-DV.bpad.lz)<2||Math.hypot(lx-DV.hut.x,lw-DV.hut.z)<2.4||Math.hypot(lx-DV.pond.x,lw-DV.pond.z)<DV.pond.r+.2||Math.hypot(lx-DV.nest.x,lw-DV.nest.z)<1.2||Math.hypot(lx-DV.dig.x,lw-DV.dig.z)<DV.dig.r+.4)continue;
     if(Math.abs(Math.hypot(lx,lw)-F)<.5)continue;spots.push([lx,lw,.6+Math.random()*.7,Math.random()*6]);}
   const put=(geo,list,par)=>{const im=new THREE.InstancedMesh(geo,fm2,list.length),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3();
     list.forEach(([x,w,k,ry],i)=>{m4.compose(new THREE.Vector3(x,0,w),q.setFromAxisAngle(new THREE.Vector3(0,1,0),ry),s.set(k,k,k));im.setMatrixAt(i,m4);});im.castShadow=false;im.receiveShadow=true;par.add(im);return im;};

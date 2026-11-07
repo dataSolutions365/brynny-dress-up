@@ -25,6 +25,9 @@ const guy = () => !!SAVE.look && SAVE.look.body === 'guy';
 // how much you've swum, and with whom, from 3d/src/26f-ocean.js (for the 🌊 Ocean challenges)
 const sea = () => (G.seaState && G.seaState()) || { swum: 0, dolphin: 0, whale: 0, turtle: 0, spouts: 0 };
 // fish caught, igloos built, time skating and more, from 3d/src/24m-arctic.js (for the ❄️ Polar challenges)
+// fossils dug, days at Dino Valley, how far you've ridden your dinosaurs and which big ones, from 3d/src/24n2-dino-rides.js (for the 🦖 Dino challenges)
+const dino = () => (G.dinoState && G.dinoState()) || { dig: 0, kinds: 0, amber: 0, days: 0, ride: 0, big: 0, bigNoPtero: 0 };
+const DINO_KEYS = ['trike', 'trex', 'stego', 'raptor', 'longneck', 'crest', 'ptero', 'dtrike', 'dstego', 'dcrest', 'draptor', 'dtrex', 'dlong', 'dptero'];
 const ice = () => (G.iceState && G.iceState()) || { fish: 0, gold: 0, skate: 0, spins: 0, igloos: 0, seen: 0 };
 const es = () => (G.earnState && G.earnState()) || { wins: 0, streak: 0, best: 0, kinds: 0, kai: 0, kn: {} };
 // the foods on Rosie's menu (FOOD_MAIN and FOOD_SWEET in 3d/src/12g-place-restaurant.js)
@@ -227,6 +230,39 @@ const ALL_LIST = [
   { id: 'ice_igloo1', tab: 'polar', grp: 'fun', e: '🧱', t: 'Build an igloo', r: 2, go: 'arctic', ev: { k: 'igloo' } },
   { id: 'ice_start', tab: 'polar', grp: 'fun', e: '🚨', t: 'Start a Polar escape', r: 1, go: 'arctic', ev: { k: 'icestart' } },
   { id: 'ice_win', tab: 'polar', grp: 'fun', e: '🏆', t: 'Win a Polar escape against friends online (bring the most home)', r: 2, go: 'arctic', ev: { k: 'iceescape', a: p => p === 0 } },
+  // 🦖 Dino: Dino Valley across the canal behind the Barber Shop (3d/src/24n-dino-valley.js, the fossil dig in 24n2-dino-rides.js).
+  // Finish all of a big dinosaur's challenges (grp) and you can ride it (the rides are in dinoRideList, 3d/src/24c9i-dinos-more.js)
+  { id: 'dino_meet3', tab: 'dino', grp: 'dtrike', e: '🔎', t: 'Meet 3 different kinds of dinosaurs at Dino Valley', r: 2, goal: 3, u: true, go: 'dino', ev: { k: 'dinolearn' } },
+  { id: 'dino_feedT', tab: 'dino', grp: 'dtrike', e: '🌿', t: 'Feed the triceratops 5 times', r: 2, goal: 5, go: 'dino', ev: { k: 'dinofeed', a: a => a === 'trikeR' } },
+  { id: 'dino_dig3', tab: 'dino', grp: 'dtrike', e: '🦴', t: 'Dig up 3 fossils at the Fossil Dig', r: 2, goal: 3, go: 'dino', poll: () => dino().dig },
+  { id: 'dino_feedS', tab: 'dino', grp: 'dstego', e: '🥬', t: 'Feed the stegosaurus 8 times', r: 3, goal: 8, go: 'dino', ev: { k: 'dinofeed', a: a => a === 'stegoR' } },
+  { id: 'dino_dig10', tab: 'dino', grp: 'dstego', e: '🦴', t: 'Dig up 10 fossils', r: 3, goal: 10, go: 'dino', poll: () => dino().dig },
+  { id: 'dino_days3', tab: 'dino', grp: 'dstego', e: '📅', t: 'Visit Dino Valley on 3 different days', r: 3, goal: 3, go: 'dino', poll: () => dino().days },
+  { id: 'dino_meetAll', tab: 'dino', grp: 'dcrest', e: '📖', t: 'Meet all 7 kinds of dinosaurs at Dino Valley', r: 3, goal: 7, u: true, go: 'dino', ev: { k: 'dinolearn' } },
+  { id: 'dino_feed20', tab: 'dino', grp: 'dcrest', e: '🍃', t: 'Feed the dinosaurs at Dino Valley 20 times', r: 3, goal: 20, go: 'dino', ev: { k: 'dinofeed' } },
+  { id: 'dino_kinds4', tab: 'dino', grp: 'dcrest', e: '🐚', t: 'Find 4 different kinds of fossils', r: 3, goal: 4, go: 'dino', poll: () => dino().kinds },
+  { id: 'dino_feedR', tab: 'dino', grp: 'draptor', e: '🍗', t: 'Feed the raptors 10 times', r: 3, goal: 10, go: 'dino', ev: { k: 'dinofeed', a: a => a === 'raptorR' } },
+  { id: 'dino_kinds8', tab: 'dino', grp: 'draptor', e: '🦷', t: 'Find all 8 kinds of fossils', r: 3, goal: 8, go: 'dino', poll: () => dino().kinds },
+  { id: 'dino_ride300', tab: 'dino', grp: 'draptor', e: '🏇', t: 'Ride your dinosaurs 300 steps', r: 3, goal: 300, poll: () => dino().ride },
+  { id: 'dino_feedX', tab: 'dino', grp: 'dtrex', e: '🍖', t: 'Feed the T. rex 15 times (from outside its fence)', r: 3, goal: 15, go: 'dino', ev: { k: 'dinofeed', a: a => a === 'trexR' } },
+  { id: 'dino_dig25', tab: 'dino', grp: 'dtrex', e: '🦴', t: 'Dig up 25 fossils', r: 3, goal: 25, go: 'dino', poll: () => dino().dig },
+  { id: 'dino_days5', tab: 'dino', grp: 'dtrex', e: '📅', t: 'Visit Dino Valley on 5 different days', r: 3, goal: 5, go: 'dino', poll: () => dino().days },
+  { id: 'dino_big3', tab: 'dino', grp: 'dlong', e: '🦖', t: 'Ride 3 different big dinosaurs', r: 3, goal: 3, poll: () => dino().big },
+  { id: 'dino_feed60', tab: 'dino', grp: 'dlong', e: '🌲', t: 'Feed the dinosaurs at Dino Valley 60 times', r: 3, goal: 60, go: 'dino', ev: { k: 'dinofeed' } },
+  { id: 'dino_ride2k', tab: 'dino', grp: 'dlong', e: '🏇', t: 'Ride your dinosaurs 2000 steps', r: 3, goal: 2000, poll: () => dino().ride },
+  { id: 'dino_big6', tab: 'dino', grp: 'dptero', e: '🏆', t: 'Ride all 6 other big dinosaurs: Tank, Spike, Tuba, Dash, Rex and Atlas', r: 3, goal: 6, poll: () => dino().bigNoPtero },
+  { id: 'dino_dig50', tab: 'dino', grp: 'dptero', e: '🦴', t: 'Dig up 50 fossils', r: 3, goal: 50, go: 'dino', poll: () => dino().dig },
+  { id: 'dino_days10', tab: 'dino', grp: 'dptero', e: '📅', t: 'Visit Dino Valley on 10 different days', r: 3, goal: 10, go: 'dino', poll: () => dino().days },
+  // 🐉 Draco the great dragon: the hardest of all
+  { id: 'dino_big7', tab: 'dino', grp: 'draco', e: '🏆', t: 'Ride all 7 big dinosaurs, Zephyr too', r: 3, goal: 7, poll: () => dino().big },
+  { id: 'dino_dig100', tab: 'dino', grp: 'draco', e: '🦴', t: 'Dig up 100 fossils', r: 3, goal: 100, go: 'dino', poll: () => dino().dig },
+  { id: 'dino_days14', tab: 'dino', grp: 'draco', e: '📅', t: 'Visit Dino Valley on 14 different days', r: 3, goal: 14, go: 'dino', poll: () => dino().days },
+  // more to do at Dino Valley (no ride, just stars)
+  { id: 'dino_meet1', tab: 'dino', grp: 'fun', e: '🦕', t: 'Meet a dinosaur at Dino Valley', r: 1, go: 'dino', ev: { k: 'dinolearn' } },
+  { id: 'dino_feed1', tab: 'dino', grp: 'fun', e: '🌿', t: 'Feed a dinosaur', r: 1, go: 'dino', ev: { k: 'dinofeed' } },
+  { id: 'dino_dig1', tab: 'dino', grp: 'fun', e: '🦴', t: 'Dig up a fossil', r: 1, go: 'dino', ev: { k: 'fossil' } },
+  { id: 'dino_amber', tab: 'dino', grp: 'fun', e: '🟠', t: 'Dig up the rare golden amber', r: 2, go: 'dino', poll: () => dino().amber },
+  { id: 'dino_ride1', tab: 'dino', grp: 'fun', e: '🏇', t: 'Ride a dinosaur', r: 1, ev: { k: 'ride', a: a => DINO_KEYS.includes(a) } },
   // 🎄 Christmas (3d/christmas.js): snowball fights, snowmen and Santa, only while it's Christmas in town
   { id: 'xs_throw', tab: 'xmas', hol: 'christmas', e: '❄️', t: 'Throw a snowball', r: 1, ev: { k: 'snowball', a: a => a === 'throw' } },
   { id: 'xs_hit', tab: 'xmas', hol: 'christmas', e: '🎯', t: 'Hit someone with a snowball', r: 1, ev: { k: 'snowball', a: a => a === 'hit' } },
@@ -319,7 +355,7 @@ const DAILY = [
   { id: 'd_icehome', e: '🪢', t: 'Bring 2 runaways home in a Polar escape', goal: 2, go: 'arctic', ev: { k: 'icehome' } },
   { id: 'd_slide', e: '🌀', t: 'Go down a waterslide 2 times', goal: 2, go: 'water', ev: { k: 'wpslide' } },
 ].map(d => Object.assign({ r: 1, tab: 'today', daily: true }, d));
-const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['water', '💦', 'Waterpark'], ['sports', '🏟', 'Sports'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
+const TABS = [['today', '📅', 'Today'], ['xmas', '🎄', 'Christmas', 'christmas'], ['safari', '🦁', 'Safari'], ['ocean', '🌊', 'Ocean'], ['polar', '❄️', 'Polar'], ['dino', '🦖', 'Dino'], ['water', '💦', 'Waterpark'], ['sports', '🏟', 'Sports'], ['places', '📍', 'Places'], ['rides', '🏆', 'Rewards'], ['studio', '✨', 'Studio'], ['runway', '💃', 'Runway'], ['parlor', '🐾', 'Pets'], ['bakery', '🧁', 'Bakery'], ['food', '🍝', 'Food'], ['agency', '⭐', 'Agency'], ['town', '💬', 'Friends'], ['explore', '🗺️', 'Explore']];
 const RANKS = [[0, '🌱', 'New Star'], [10, '✨', 'Rising Star'], [25, '💫', 'Shining Star'], [45, '🌟', 'Superstar'], [70, '👑', 'Megastar'], [100, '🌈', 'Legend']];
 const DAY_BONUS = 2, COINS_PER_STAR = 5;
 
@@ -445,6 +481,7 @@ css.textContent = `
 .csaf{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#ffe9b8,#f6d79a);border-radius:16px;padding:8px 12px;margin-top:6px;color:#5a3a12}
 .csaf>b{font-size:30px;font-weight:400;line-height:1}.csaf>b img,.crides .cq>b img{width:60px;height:60px;object-fit:contain;display:block}.csaf div{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.csaf strong{font-size:16px}.csaf span{font-size:12px;font-weight:600;color:#7a5a2a}
 .csaf.sea{background:linear-gradient(90deg,#c9f0ff,#a3def5);color:#0f4a66}.csaf.sea span{color:#2b6680}
+.csaf.dino{background:linear-gradient(90deg,#dcefc0,#bfdc94);color:#2f4a1a}.csaf.dino span{color:#4a6a2a}.csaf.dino.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9)}
 .csaf .own{font-size:13px;font-weight:700;color:#2e9b5a;white-space:nowrap}.csaf .lock{font-size:18px}.csaf.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9)}
 .csaf.place{background:linear-gradient(90deg,#e8dcff,#ffe1f0);color:#3d2a78}.csaf.place span{color:#6a5a9a}.csaf.place.own{background:linear-gradient(90deg,#d9f5e2,#eefbe9);color:#1f6b3d}
 .csaf.place>b{font-size:32px}.csaf.place button{flex:0 0 auto;background:var(--purple);color:#fff;font-weight:700;font-size:14px;padding:9px 12px;border-radius:999px;box-shadow:0 3px 0 #6a4fd0;min-height:40px}
@@ -483,6 +520,7 @@ function render() {
   if (tab === 'safari') { $('#chalList').innerHTML = safariHTML(list, here); return; }
   if (tab === 'ocean') { $('#chalList').innerHTML = oceanHTML(list, here); return; }
   if (tab === 'polar') { $('#chalList').innerHTML = polarHTML(list, here); return; }
+  if (tab === 'dino') { $('#chalList').innerHTML = dinoHTML(list, here); return; }
   if (tab === 'places') { $('#chalList').innerHTML = placesHTML(here); return; }
   const sorted = list.slice().sort((a, b) => isDone(a) - isDone(b));
   h += sorted.map(ch => {
@@ -541,6 +579,21 @@ function polarHTML(list, here) {
   }
   const mine = list.filter(c => c.grp === 'fun'), n = mine.filter(isDone).length, fin = n === mine.length;
   h += `<div class="csaf sea${fin ? ' own' : ''}"><b>⛸️</b><div><strong>More fun on the ice</strong><span>${fin ? 'All done!' : 'Skating, fishing, igloos and Polar escapes'}</span></div>${fin ? '<span class="own">✅ Done</span>' : ''}</div>`;
+  h += mine.slice().sort((a, b) => isDone(a) - isDone(b)).map(ch => chRow(ch, here)).join('');
+  return h;
+}
+// 🦖 the Dino tab: each big dinosaur you can ride, with its challenges (finish them all to ride it), then more to do at Dino Valley
+function dinoHTML(list, here) {
+  const rides = G.earnedRides ? G.earnedRides() : [];
+  let h = '<div class="cnote">🦖 Dino Valley is across the bridge behind the Barber Shop! Meet the dinosaurs, feed them and dig for fossils. Finish every challenge for a big dinosaur and you can ride it.</div>';
+  for (const k of ['dtrike', 'dstego', 'dcrest', 'draptor', 'dtrex', 'dlong', 'dptero', 'draco']) {
+    const r = rides.find(x => x.k === k), mine = list.filter(c => c.grp === k); if (!mine.length) continue;
+    const n = mine.filter(isDone).length;
+    h += `<div class="csaf dino${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '🦖'}</b><div><strong>${r ? `${r.nm} the ${r.n.replace(/^(Big|Great) /, m => m.toLowerCase()).replace(/ \(.*\)/, '')}${r.fly ? ' 🪽' : ''}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += mine.map(ch => chRow(ch, here)).join('');
+  }
+  const mine = list.filter(c => c.grp === 'fun'), n = mine.filter(isDone).length, fin = n === mine.length;
+  h += `<div class="csaf dino${fin ? ' own' : ''}"><b>🦴</b><div><strong>More fun at Dino Valley</strong><span>${fin ? 'All done!' : 'Meeting, feeding, riding and fossils'}</span></div>${fin ? '<span class="own">✅ Done</span>' : ''}</div>`;
   h += mine.slice().sort((a, b) => isDone(a) - isDone(b)).map(ch => chRow(ch, here)).join('');
   return h;
 }

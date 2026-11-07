@@ -4,7 +4,7 @@
      darker on the back and pale underneath, scaly skin (feathers on the raptor, like the real ones), no cartoon eyes or smiles.
    - Kid-safe: the T. rex has lips over its teeth (like scientists now think), and its roar is just a big rumbly head-up roar.
    - The same builders make the dinosaurs that live at Dino Valley (DINOA, 24n-dino-valley.js) and the ones you adopt or buy
-     (FARM in 24d-barn.js uses them through model:, with scale: for the young ones). Rides get a saddle (dnSaddle) that keeps its
+     (FARM in 24d-barn.js uses them through model:, with scale: for the young ones and the 🏆 big ones you earn, 24c9i-dinos-more.js). Rides get a saddle (dnSaddle) that keeps its
      real size however small the dinosaur is, so F.ride (where you sit) is worked out from the body: see the note on each builder.
    - Each body part is one smooth tube along a "spine" (dnTube), with its colours painted on its corners (dnPaint) so one shared
      material per kind of dinosaur is enough (dnM keeps one of each), which keeps phones light. */
@@ -62,7 +62,7 @@ function dnSaddle(a,body,y,z,r,sx,sy,col){if(!a.F.ride)return;const inv=1/(a.F.s
   const arc=2.2,len=.5*inv,bg=new THREE.Group();bg.position.set(0,y,z);bg.scale.set(sx,sy,1);body.add(bg);
   const cg=new THREE.CylinderGeometry(r*1.035,r*1.035,len,36,1,true,Math.PI-arc/2,arc);cg.rotateX(Math.PI/2);M(cg,cm,0,0,0,bg);
   for(const s of [-1,1]){const e=M(new THREE.TorusGeometry(r*1.035,.014*inv,6,36,arc),tm,0,0,s*len/2,bg,false,false);e.rotation.z=Math.PI/2-arc/2;}
-  const sg=new THREE.Group();sg.position.set(0,y+r*sy*1.03,z);sg.scale.setScalar(inv);body.add(sg);
+  const sg=new THREE.Group();sg.position.set(0,y+r*sy*1.03,z);sg.scale.setScalar(inv);body.add(sg);a.saddle=sg;
   M(sph(.17,20,12),leather,0,.02,0,sg).scale.set(.95,.22,1.25);M(sph(.06,12,8),leather,0,.065,.17,sg).scale.set(1.2,1.1,.8);
   M(sph(.1,14,10),leather,0,.06,-.17,sg).scale.set(1.3,.6,.45);
   for(const s of [-1,1]){const f=M(sph(.12,14,10),dkL,s*.13,-.05,0,sg);f.scale.set(.25,.7,1.1);f.rotation.z=s*.5;}}
@@ -121,7 +121,8 @@ ZOO_BUILD.raptorR=function(g,body,o){const by=.92,m=dnSkin('rap',true),C=['#5c3f
   body.position.y=by;
   const T=dnTube([[0,.24,.55],[0,.12,.32],[0,.02,0],[0,.06,-.3],[0,.1,-.45]],[.12,.2,.25,.22,.17],m,body,C,{sx:.72,seg:18,rad:12});
   // soft feathers along the back
-  for(let i=0;i<9;i++){const p=T.top(.1+i*.1),f=M(new THREE.PlaneGeometry(.07,.13),fe,0,p.y+.02,p.z-.03,body,false,false);f.rotation.x=-1.15;}
+  for(let i=0;i<9;i++){if(this.F.ride&&i>1&&i<7)continue;// (not under the saddle on the big raptor you ride)
+    const p=T.top(.1+i*.1),f=M(new THREE.PlaneGeometry(.07,.13),fe,0,p.y+.02,p.z-.03,body,false,false);f.rotation.x=-1.15;}
   const tail=new THREE.Group();tail.position.set(0,.1,-.42);body.add(tail);
   dnTube([[0,0,.08],[0,.02,-.4],[0,.03,-1.0],[0,0,-1.5]],[.16,.1,.05,.02],m,tail,C,{sx:.8,seg:16,rad:10});
   // a fan of long feathers on both sides of the end of the tail
@@ -146,6 +147,7 @@ ZOO_BUILD.raptorR=function(g,body,o){const by=.92,m=dnSkin('rap',true),C=['#5c3f
   for(const s of [-1,1]){dnEye(this,head,s*.058,.045,.05,.022,'#d8a030',s*1.25);M(sph(.012,6,4),dnDark(),s*.022,.0,.33,head,false,false);}
   // quick, bird-like looks around
   let lk=0,want=0;this.tick=(t,dt,run)=>{lk-=dt;if(lk<0){lk=.5+Math.random()*1.4;want=(Math.random()*2-1)*.5;}head.rotation.y+=(want-head.rotation.y)*Math.min(1,dt*14);};
+  dnSaddle(this,body,.02,0,.25,.72,1,'#2f4a6a');// Dash (big raptor): scale 1.6 => F.ride 1.96
   Object.assign(o,{neck,head,tail,nTilt:0,gz:.45,size:.8,h:1.75,rad:.45,biped:true,dustR:[.2,.2,.3]});};
 
 /* ---------- 🦕 Triceratops: a big four-legged plant-eater with a huge head, a bony frill with a scalloped edge, two long horns over
@@ -214,7 +216,7 @@ ZOO_BUILD.stegoR=function(g,body,o){const by=1.55,m=dnSkin('stego'),C=['#6c6a3e'
   const pg=dnM('plateG',()=>{const s=new THREE.Shape();s.moveTo(-.5,0);s.quadraticCurveTo(-.62,.62,0,1);s.quadraticCurveTo(.62,.62,.5,0);s.lineTo(-.5,0);
     const g=new THREE.ExtrudeGeometry(s,{depth:.08,bevelEnabled:true,bevelThickness:.03,bevelSize:.03,bevelSegments:2});g.translate(0,0,-.04);g.rotateY(Math.PI/2);return g;});
   const put=(par,p,h,s)=>{const pl=M(pg,plate,s*.07,p.y-.08,p.z,par,true,false);pl.scale.set(1,h,h*.85);pl.rotation.z=-s*.12;};
-  for(let i=0;i<10;i++){const q=.12+i*.088,h=.28+.5*Math.sin(Math.min(1,q*1.15)*Math.PI*.9);put(body,T.top(q),h,i%2?1:-1);}
+  for(let i=0;i<10;i++){const q=.12+i*.088,h=.28+.5*Math.sin(Math.min(1,q*1.15)*Math.PI*.9),p=T.top(q);if(this.F.ride&&p.z>.3)continue;put(body,p,h,i%2?1:-1);}// (the saddle sits in front of the plates)
   for(let i=0;i<5;i++){const q=.05+i*.11;put(tail,TL.top(q),.5-i*.08,i%2?-1:1);}
   for(const s of [-1,1])for(const q of [.78,.9]){const p=TL.at(q);const sp=dnHorn(tail,horn,s*.06,p.y+.03,p.z,.045,.5,-1.2,-s*.9);}
   for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.6:by+.05,
@@ -228,6 +230,7 @@ ZOO_BUILD.stegoR=function(g,body,o){const by=1.55,m=dnSkin('stego'),C=['#6c6a3e'
   M(new THREE.ConeGeometry(.05,.12,8),dnDark(),0,-.13,.5,head).rotation.x=Math.PI/2+.6;
   for(const s of [-1,1])dnEye(this,head,s*.11,.06,.1,.026,'#5a3a1a',s*1.3);
   this.tick=(t)=>{body.scale.y=1+Math.sin(t*1.1)*.01;};
+  dnSaddle(this,body,-.1,.8,.62,.82,1,'#6a3a5a');// Spike (big stegosaurus): on the shoulders, with seat .8 so you sit there; scale .95 => F.ride 2.03
   Object.assign(o,{neck,head,tail,nTilt:0,gz:.35,size:1.6,h:by+1.65,rad:.95,dustR:[.6,.6,.9]});};
 
 // the dinosaurs that live at 🦕 Dino Valley (24n-dino-valley.js): you can't adopt these, but you can meet them, feed them and learn about them.

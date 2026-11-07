@@ -196,7 +196,11 @@ try {
   console.log(`safari round-up: ${pz.inPen} of the zoo's ${pz.zoo} animals still in the zoo, out: ${pz.out.join(', ')}`);
   if (pz.inPen !== pz.zoo - 4 || SAF.some(n => !pz.out.includes(n))) fail('The 4 safari runaways should be the zoo\'s own animals, gone from the zoo (no copy left behind).');
   if (SHOTS) { await goTo('Twiga'); await gameWait(.3); await shot('safari-round-up'); }
-  for (const nm of SAF) { await goTo(nm); await gameWait(.3); await page.evaluate(() => document.querySelector('#roamCatch').click()); await gameWait(.2);
+  // (on a slow computer the Catch button can take a moment to show, so wait for it, and try again if the runaway slipped away)
+  for (const nm of SAF) { for (let i = 0; i < 5; i++) { await goTo(nm); await gameWait(.3);
+      for (let j = 0; j < 8 && !(await btn('#roamCatch')).includes(nm); j++) await gameWait(.2);
+      await page.evaluate(() => { const b = document.querySelector('#roamCatch'); if (b.style.display === 'block') b.click(); }); await gameWait(.2);
+      if (await page.evaluate(nm => window.__game.ROAM.find(c => c.nm === nm).mode === 'rope', nm)) break; }
     await setMe(Zo.x * .85, Zo.z * .85); await gameWait(.6); }
   s = await page.evaluate(() => window.__game.roamState());
   const done3 = await page.evaluate(() => window.__game.SAVE.chal.done);

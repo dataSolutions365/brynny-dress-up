@@ -18,7 +18,7 @@ const FARM=[
   {k:'unicorn',e:'🦄',n:'Unicorn',nm:'Sparkle',s:10,ride:1.2,about:'Rare! A magic unicorn with a rainbow mane and a golden horn.',food:[['🍓','Strawberry'],['🍭','Lollipop'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*sparkle sparkle*','I love you! 🦄']},
   {k:'trike',e:'🦕',n:'Triceratops',nm:'Trixie',s:12,dino:1,model:'trikeR',scale:.4,ride:1.1,about:'Rare! A young triceratops with three horns and a big frill. Gentle and calm.',food:[['🌿','Ferns'],['🍉','Melon'],['🥬','Leaves']],say:['Rawr! 💚','*happy stomp*','Three horns, one heart!']},
   {k:'trex',e:'🦖',n:'Young T. rex',nm:'Chomper',s:15,dino:1,model:'trexR',scale:.32,ride:1.15,about:'Rare! A young T. rex with tiny arms and a big rumbly roar. Gentle with friends!',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['RAWR! 🦖','*tiny arm wave*','Rawr means I love you!']},
-  {k:'dragon',e:'🐉',n:'Baby dragon',nm:'Ember',s:8,ride:0,pal:'fly',scale:.42,about:'Rare! A tiny dragon who flies along behind you everywhere you go.',food:[['🌶️','Hot pepper'],['🍓','Strawberry'],['🍖','Meat']],say:['*tiny puff of smoke* 💨','Rawr! 🔥','Let\'s fly! 💜']},
+  {k:'dragon',e:'🐉',n:'Baby dragon',nm:'Ember',s:8,ride:0,pal:'fly',model:'dragonR',scale:.22,dcol:{top:'#6a2a22',belly:'#d8b080',mem:'#8a3a2a'},about:'Rare! A tiny real-looking dragon who flies along behind you everywhere you go.',food:[['🌶️','Hot pepper'],['🍓','Strawberry'],['🍖','Meat']],say:['*tiny puff of smoke* 💨','Rawr! 🔥','Let\'s fly! 💜']},
   {k:'stego',e:'🦕',n:'Mini stegosaurus',nm:'Pebble',s:5,ride:0,pal:'walk',dino:1,model:'stegoR',scale:.22,about:'Rare! A pocket-size dinosaur with plates on her back. She can follow you around town.',food:[['🌿','Ferns'],['🥬','Leaves'],['🍓','Berry']],say:['*tiny stomp*','Rawr! 💚','Wait for me!']},
   {k:'raptor',e:'🦖',n:'Mini raptor',nm:'Zippy',s:6,ride:0,pal:'walk',dino:1,model:'raptorR',scale:.45,about:'Rare! A speedy little feathered raptor who races along beside you.',food:[['🍗','Drumstick'],['🍖','Meat'],['🥚','Egg']],say:['Skreee! 💨','*zoom zoom*','Race you!']},
   {k:'monkey',e:'🐒',n:'Baby monkey',nm:'Coco',c:60,ride:0,pal:'walk',scale:.55,about:'A cheeky baby monkey with a curly tail. Takes walks with you around town.',food:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],say:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌']},
@@ -26,11 +26,11 @@ const FARM=[
   // rides from the shop: bought with ⭐ in the shop's 🦖 Rides tab (mount = price), or won as a prize (prize = ⭐ stars you need to earn).
   // They live at the barn like the others, and you call them from anywhere with the ride button (24g-mounts.js).
   {k:'kitty',e:'🐱',n:'Big fluffy cat',nm:'Marshmallow',mount:10,ride:1.08,about:'A giant, super fluffy cat you can ride! She purrs when you hug her.',food:[['🐟','Fish'],['🥛','Milk'],['🍗','Chicken']],say:['Purrrrr 💕','Mrrrow! 🐱','*big fluffy stretch*']},
-  {k:'crest',e:'🦕',n:'Crested dino',nm:'Honker',mount:12,dino:1,ride:1.06,about:'A friendly duck-billed dinosaur with a long crest that goes HONK!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
+  {k:'crest',e:'🦕',n:'Young Parasaurolophus',nm:'Honker',mount:12,dino:1,model:'parasaurR',scale:.4,ride:1.14,about:'A young crested duck-bill dinosaur (a Parasaurolophus) who honks through her long crest like a trombone!',food:[['🌿','Ferns'],['🍐','Pear'],['🥬','Leaves']],say:['HONK! 🦕','*happy toot toot*','Honk means hello! 💛']},
   {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,fly:1,ride:1.2,about:'A lavender unicorn with feathery wings. Ride her and tap 🪽 Fly to soar over the treetops!',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
-  {k:'ptero',e:'🦕',n:'Pterodactyl',nm:'Sunny',mount:14,dino:1,fly:1,ride:1.02,about:'A giant flying reptile with a big orange crest and huge leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
+  {k:'ptero',e:'🦕',n:'Young pteranodon',nm:'Sunny',mount:14,dino:1,model:'pteroR',scale:1.1,fly:1,ride:1.1,about:'A young pteranodon, a flying reptile with a long beak, a crest and big leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
   {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
-  {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
+  {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,fly:1,model:'dragonR',scale:.75,seat:.9,wide:.45,sparkle:1,dcol:{top:'#1f2e5a',belly:'#9fb0d8',mem:'#2a3a7a'},ride:1.65,about:'Super rare prize! A big midnight-blue dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
 FARM.push(...earnedRideList());// 🏆 rides you can only earn, not buy (24i-earned-rides.js)
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
@@ -59,7 +59,7 @@ const ZOOA=[
   {k:'gator',e:'🐊',n:'Alligator',swim:.36,food:[['🐟','Fish'],['🍗','Chicken']],say:['*low rumbly bellow*','*snap snap!* 🐊','*lazy sunbathing*'],
     facts:[['🥗','Diet','Carnivore. Fish, turtles, snakes, birds and small animals. It can go months without eating in the winter!'],['🌍','Habitat','Rivers, lakes and swamps of the southeastern United States, like Florida and Louisiana. A cousin lives in China.'],['⏳','Lifespan','About 35 to 50 years in the wild, and up to 70 in zoos.'],['✨','Fun fact','You can tell an alligator from a crocodile by its wide, rounded U-shaped snout. When its mouth is shut you can only see its top teeth! It has about 80 teeth and grows new ones all its life.']]}
 ];
-ZOOA.push(...arcticZooList(),...DINOA);FARM.push(...arcticRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js)
+ZOOA.push(...arcticZooList(),...DINOA);FARM.push(...arcticRideList(),...dinoRideList());// ❄️ the polar animals and the polar rides you earn (24c9g-arctic-animals.js), and the 🏆 big dinosaurs (24c9i-dinos-more.js)
 const FK=Object.fromEntries(FARM.concat(ZOOA).map(f=>[f.k,f]));
 if(!SAVE.barn)SAVE.barn={own:{},spent:0};
 const BS=SAVE.barn;BS.own||={};
@@ -206,20 +206,6 @@ class FarmAnimal{
       this.legs=[];for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.06,.2,0);g.add(lg);M(cyl(.012,.012,.2,6),yel,0,-.1,0,lg);
         for(const a of [-.5,0,.5]){const toe=M(cyl(.008,.008,.07,5),yel,Math.sin(a)*.03,-.2,Math.cos(a)*.03,lg);toe.rotation.x=Math.PI/2;toe.rotation.z=-a;}this.legs.push({g:lg,ph});}
       Object.assign(o,{neck,head,tail:null,nTilt:0,size:tk?.55:.45,h:tk?.75:.6,rad:tk?.3:.22,biped:true,dustR:[.15,.15,.18]});}
-    if(k==='dragon'){const by=.75,skin=fm('#b388ff',{roughness:.5}),belly=fm('#ffe0a8'),wingM=phys('#ff8fc8',{roughness:.5,side:THREE.DoubleSide,transparent:true,opacity:.9}),hornM=fShiny('#fff4dc');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(.24,.3,8,18),skin,0,0,0,body);t.rotation.x=Math.PI/2+.3;M(sph(.2,14,10),belly,0,-.07,.08,body).scale.set(.9,.9,1.3);
-      for(let i=0;i<4;i++)M(new THREE.ConeGeometry(.05,.12,6),fShiny('#ff6fae'),0,.24-i*.03,.1-i*.13,body);
-      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*.16,.15,0);body.add(w);const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(.6,.35);sh.lineTo(.55,.05);sh.lineTo(.45,-.05);sh.lineTo(.3,-.02);sh.lineTo(.15,-.1);sh.lineTo(0,-.05);
-        const m=M(new THREE.ShapeGeometry(sh),wingM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.x=sx;M(cyl(.02,.02,.6,6),skin,sx*.3,.17,0,w).rotation.z=-sx*1.03;this.wings.push({w,sx,fly:1});}
-      this.legs=[];for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.13,.55,-.05);g.add(lg);M(capTop(.06,.22),skin,0,0,0,lg);M(sph(.07,10,8),skin,0,-.33,.04,lg).scale.set(1,.5,1.4);this.legs.push({g:lg,ph});}
-      const neck=new THREE.Group();neck.position.set(0,by+.22,.22);neck.rotation.x=.25;g.add(neck);M(new THREE.CapsuleGeometry(.1,.1,6,12),skin,0,.06,0,neck);
-      const head=new THREE.Group();head.position.set(0,.22,.03);head.rotation.x=-.25;neck.add(head);const H=.22;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(1,.92,1.05);M(sph(H*.62,16,12),belly,0,-H*.35,H*.72,head).scale.set(1,.7,1.1);
-      for(const sx of [-1,1]){const hn=M(new THREE.ConeGeometry(H*.14,H*.55,10),hornM,sx*H*.45,H*.85,-H*.25,head);hn.rotation.set(-.5,0,-sx*.3);M(sph(H*.07,8,6),std('#7a4aa0'),sx*H*.2,-H*.25,H*1.2,head,false,false);}
-      fEyes(this,head,H,.45,.18,.68,.45,.26,'#d6453d');fBlush(head,H,.6,-.1,.72);
-      const tail=new THREE.Group();tail.position.set(0,by-.05,-.3);g.add(tail);taperTube([fV(0,0,0),fV(0,-.12,-.25),fV(.08,-.2,-.5)],q=>.11*(1-q*.75),skin,tail,16,10);
-      const tip=M(new THREE.ConeGeometry(.08,.14,4),fShiny('#ff6fae'),.09,-.21,-.56,tail);tip.rotation.x=-Math.PI/2;tip.scale.y=.4;
-      Object.assign(o,{neck,head,tail,nTilt:.25,size:1,h:1.35,rad:.45,biped:true,dustR:[.22,.22,.3]});}
     // 🐒 Coco: a real-looking little monkey, the same builder as the Pet Parlor's real pets (Pet.buildReal in 16-animals-pets.js), in brown
     if(k==='monkey'){const p=new Pet('monkey','#7b5b43','',null,{real:1,light:'#d8c4a6',face:'#2b211c',paw:'#2b211c'}),S=1.6;
       if(p.tag){p.g.remove(p.tag);p.tag.material.map.dispose();p.tag.material.dispose();p.tag=null;}
@@ -249,23 +235,6 @@ class FarmAnimal{
       const tp=[fV(0,0,0),fV(0,.28,-.2),fV(0,.62,-.16),fV(0,.86,.06)];taperTube(tp,q=>.12-.02*q,fur,tail,20,12);
       const tc=new THREE.CatmullRomCurve3(tp);for(let i=0;i<9;i++){const p=tc.getPoint(i/8);M(sph(.13-i*.004,10,8),i>6?peach:fur,p.x,p.y,p.z,tail,true,false);}
       Object.assign(o,{neck,head,tail,nTilt:.5,size:1,h:by+.8,rad:.6,dustR:[r,r,len*.8]});}
-    // 🦕 a duck-billed dino with a long tube crest on her head
-    if(k==='crest'){const r=.4,len=.7,leg=.4,by=leg+r*.6,skin=fm('#ff9a76',{roughness:.7}),belly=fm('#fff1c9'),spot=fm('#ffcf4a'),crestM=fShiny('#4fc9bd',{roughness:.4});
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.72,1.3);
-      for(let i=0;i<8;i++)M(sph(r*.13,10,8),spot,Math.sin(i*2.3)*r*.62,r*.78,(i/7-.5)*len*1.1,body,false,false).scale.set(1,.4,1);
-      for(let i=0;i<7;i++)M(sph(r*.1,10,8),crestM,0,r*.97,(i/6-.5)*len*1.2,body,false,false).scale.set(.6,.7,1.3);// little bumps down her spine
-      fLegs(this,g,r*.6,len*.42,leg+.06,leg+.06,.12,skin,fShiny('#ffe2c4'));
-      const neck=new THREE.Group();neck.position.set(0,by+r*.4,len/2+r*.45);neck.rotation.x=.55;g.add(neck);
-      taperTube([fV(0,0,0),fV(0,.2,.02),fV(0,.42,0)],q=>.18-.05*q,skin,neck,16,12);
-      const head=new THREE.Group();head.position.set(0,.44,0);head.rotation.x=-.55+.15;neck.add(head);const H=.24;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.9,.9,1.2);
-      M(sph(H*.72,16,12),belly,0,-H*.28,H*1.02,head).scale.set(1.2,.45,1.1);// the wide duck bill
-      for(const sx of [-1,1])M(sph(H*.07,8,6),std('#a0503a'),sx*H*.22,-H*.12,H*1.55,head,false,false);
-      taperTube([fV(0,H*.55,-H*.05),fV(0,H*1.1,-H*.65),fV(0,H*1.3,-H*1.45),fV(0,H*1.05,-H*2.2)],q=>H*(.27-.15*q),crestM,head,24,12);
-      M(sph(H*.14,10,8),crestM,0,H*1.05,-H*2.2,head,false,false);
-      fEyes(this,head,H,.5,.25,.6,.55,.22,'#5a3a12');fBlush(head,H,.62,-.1,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.05,-.35),fV(0,-.15,-.7),fV(0,-.3,-1)],q=>.22*(1-q*.85),skin,tail,20,12);
-      Object.assign(o,{neck,head,tail,nTilt:.55,size:1.15,h:by+1,rad:.75,dustR:[r,r,len*.8]});}
     // 🦄 a lavender unicorn with feathery wings (they flap when you gallop)
     if(k==='pegacorn'){const sc=1.05,h=horseLike(sc,'#ece6ff',['#8fd8ff','#c6a6ff','#ffb3e0'],{light:'#faf7ff',hoof:'#c6a6ff'}),r=.3*sc,len=.62*sc;
       const horn=M(new THREE.ConeGeometry(h.H*.16,h.H*.95,18),phys('#cfe8ff',{map:TEX.glitter,metalness:.6,roughness:.2,clearcoat:1,iridescence:.8}),0,h.H*1.15,h.H*.65,h.head);horn.rotation.x=.5;
@@ -275,63 +244,6 @@ class FarmAnimal{
           const f=M(new THREE.CapsuleGeometry(.065,L,4,10),i<2?fw:tips[i%3],sx*(L/2+.04),0,0,p,true,false);f.rotation.z=Math.PI/2;f.scale.set(.35,1,1);}
         M(sph(.08,10,8),fw,0,0,-.12,up,true,false).scale.set(1,.6,1.8);this.wings.push({w,sx,fly:1});}
       this.sparkle=true;}
-    // 🐉 the starlight dragon (a prize): midnight blue with glowing star spots, golden horns and big wings
-    if(k==='nova'){const r=.42,len=.75,leg=.45,by=leg+r*.6,skin=phys('#3b44a8',{roughness:.45,clearcoat:.5,sheen:.6,sheenColor:new THREE.Color('#8fb8ff')}),belly=fm('#ffe7a8'),
-        star=phys('#fff2b0',{emissive:'#ffd23f',emissiveIntensity:1.3,roughness:.3}),gold=fShiny('#ffd86b',{metalness:.5,roughness:.25}),
-        wingM=phys('#c6a6ff',{roughness:.5,side:THREE.DoubleSide,transparent:true,opacity:.88,emissive:'#7a4aff',emissiveIntensity:.15});
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.72,1.3);
-      for(let i=0;i<12;i++){const a=i*2.4,s=M(sph(r*.07,8,6),star,Math.sin(a)*r*.8,r*.45+Math.cos(a*1.7)*r*.3,(i/11-.5)*len*1.2,body,false,false);s.scale.set(1,.6,1);}
-      for(let i=0;i<6;i++)M(new THREE.ConeGeometry(.05,.13,6),gold,0,r*.98,len*.45-i*len*.22,body);
-      fLegs(this,g,r*.6,len*.42,leg+.06,leg+.06,.12,skin,gold);
-      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.6,r*.75,len*.3);body.add(w);
-        const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(.6,.35);sh.lineTo(.55,.05);sh.lineTo(.45,-.05);sh.lineTo(.3,-.02);sh.lineTo(.15,-.1);sh.lineTo(0,-.05);
-        const m=M(new THREE.ShapeGeometry(sh),wingM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.set(sx*1.9,1.9,1.9);
-        const bone=M(cyl(.028,.016,1.32,6),skin,sx*.57,0,-.33,w);bone.quaternion.setFromUnitVectors(fV(0,1,0),fV(sx*1.14,0,-.665).normalize());// the wing's front edge
-        this.wings.push({w,sx,fly:1});}
-      const neck=new THREE.Group();neck.position.set(0,by+r*.45,len/2+r*.4);neck.rotation.x=.6;g.add(neck);
-      taperTube([fV(0,0,0),fV(0,.25,.03),fV(0,.5,0)],q=>.18-.07*q,skin,neck,16,12);
-      for(let i=0;i<3;i++)M(new THREE.ConeGeometry(.035,.09,6),gold,0,.12+i*.15,-.14+i*.02,neck);
-      const head=new THREE.Group();head.position.set(0,.52,0);head.rotation.x=-.6+.15;neck.add(head);const H=.26;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.95,.88,1.15);M(sph(H*.65,16,12),skin,0,-H*.22,H*.85,head).scale.set(.9,.7,1.1);
-      M(sph(H*.55,14,10),belly,0,-H*.42,H*.7,head).scale.set(.9,.4,1.1);
-      for(const sx of [-1,1]){M(sph(H*.07,8,6),std('#1c1f5a'),sx*H*.2,-H*.12,H*1.5,head,false,false);
-        taperTube([fV(sx*H*.4,H*.6,-H*.2),fV(sx*H*.55,H*1.05,-H*.6),fV(sx*H*.6,H*1.25,-H*1.1)],q=>H*(.13-.1*q),gold,head,16,10);
-        const fin=M(new THREE.ConeGeometry(H*.2,H*.5,8),wingM,sx*H*.85,H*.25,-H*.25,head);fin.rotation.z=-sx*1.2;fin.scale.z=.3;}
-      fEyes(this,head,H,.48,.2,.66,.5,.24,'#ffb020');fBlush(head,H,.62,-.1,.72);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.08,-.45),fV(.12,-.25,-.9),fV(.3,-.35,-1.3)],q=>.22*(1-q*.85),skin,tail,24,12);
-      const tip=M(new THREE.OctahedronGeometry(.11),star,.32,-.36,-1.4,tail,false,false);tip.scale.set(.6,1,1.2);
-      this.sparkle=true;
-      Object.assign(o,{neck,head,tail,nTilt:.6,size:1.3,h:by+1.05,rad:.85,dustR:[r,r,len*.8]});}
-    // 🦅 a pterodactyl: long beak, a big orange crest and huge leathery wings that fold up along her sides on the ground
-    if(k==='ptero'){const r=.3,len=.5,leg=.5,by=leg+r*.55,skin=phys('#5fb8a8',{roughness:.55,sheen:.5,sheenColor:new THREE.Color('#d8fff4')}),belly=fm('#fff1d6'),
-        crestM=fShiny('#ff7a45',{roughness:.35}),beakM=fShiny('#ffcf6b',{roughness:.35}),
-        memM=phys('#ffa070',{roughness:.6,side:THREE.DoubleSide,transparent:true,opacity:.93,sheen:.4,sheenColor:new THREE.Color('#ffe0c8')}),boneM=fm('#4a9e90');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;t.scale.set(1,.92,1);
-      M(sph(r*.85,14,10),belly,0,-r*.28,len*.12,body).scale.set(.92,.72,1.25);
-      // a little fuzz along her back (real pterosaurs were fuzzy!)
-      for(let i=0;i<9;i++)M(sph(r*.13,8,6),boneM,0,r*.9,len*.5-i*len*.14,body,false,false).scale.set(1,.5,1.4);
-      fLegs(this,g,r*.62,len*.4,leg+.05,leg+.05,.06,skin,crestM);
-      // the wings: a leathery skin stretched from the long wing finger back to the body, with a front-edge bone and little claws
-      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.72,r*.5,len*.28);body.add(w);
-        const sh=new THREE.Shape();sh.moveTo(0,-.12);sh.lineTo(.75,-.1);sh.lineTo(1.65,.02);sh.quadraticCurveTo(1.3,.2,1.05,.3);sh.quadraticCurveTo(.75,.36,.6,.52);
-        sh.quadraticCurveTo(.3,.6,0,.62);sh.lineTo(0,-.12);
-        const m=M(new THREE.ShapeGeometry(sh,8),memM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.x=sx;
-        taperTube([fV(0,0,.1),fV(sx*.75,.01,.1),fV(sx*1.65,0,-.02)],q=>.05-.032*q,boneM,w,16,8);
-        for(const v of [.3,.8])taperTube([fV(sx*v*1.2,0,.08),fV(sx*v*1.05,0,-.5*v-.1)],q=>.014,boneM,w,6,5);// stiff fibers in the skin
-        for(let c=0;c<3;c++)M(new THREE.ConeGeometry(.018,.08,6),beakM,sx*.72,-.02,.15+c*.03,w).rotation.x=Math.PI/2+.4;
-        this.wings.push({w,sx,fly:0,fold:1.25});}
-      const neck=new THREE.Group();neck.position.set(0,by+r*.35,len/2+r*.45);neck.rotation.x=.45;g.add(neck);
-      taperTube([fV(0,0,0),fV(0,.28,.04),fV(0,.55,0)],q=>.13-.05*q,skin,neck,16,12);
-      const head=new THREE.Group();head.position.set(0,.58,0);head.rotation.x=-.45+.3;neck.add(head);const H=.2;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.85,.9,1.15);
-      const beak=M(new THREE.ConeGeometry(H*.42,H*3.4,18),beakM,0,-H*.18,H*2.4,head);beak.rotation.x=Math.PI/2;beak.scale.set(.75,1,1);
-      M(new THREE.ConeGeometry(H*.36,H*2.4,16),beakM,0,-H*.36,H*1.9,head).rotation.x=Math.PI/2+.06;// the lower jaw
-      const crest=new THREE.Shape();crest.moveTo(0,0);crest.quadraticCurveTo(H*1.4,H*.9,H*2.6,H*1.25);crest.quadraticCurveTo(H*1.6,H*.15,H*.4,-H*.25);crest.lineTo(0,0);
-      const cm=M(new THREE.ExtrudeGeometry(crest,{depth:H*.08,bevelEnabled:true,bevelSize:H*.05,bevelThickness:H*.04,bevelSegments:2,curveSegments:10}),crestM,H*.04,H*.45,-H*.1,head);cm.rotation.y=Math.PI/2;// sweeps back off the top of her head
-      fEyes(this,head,H,.5,.2,.62,.55,.26,'#7a3a12');fBlush(head,H,.62,-.15,.7);
-      const tail=new THREE.Group();tail.position.set(0,by+.02,-(len/2+r*.75));g.add(tail);taperTube([fV(0,0,0),fV(0,-.04,-.18),fV(0,-.04,-.34)],q=>.07*(1-q*.8),skin,tail,12,8);
-      this.sparkle=false;
-      Object.assign(o,{neck,head,tail,nTilt:.45,size:1.15,h:by+1.05,rad:.7,dustR:[r,r,len*.8]});}
     // 🦅 a giant bald eagle: brown feathers, white head and tail, a hooked yellow beak and big fingered wings
     if(k==='eagle'){const r=.34,len=.42,leg=.42,by=leg+r*.8,brown=fm('#5a3a22',{roughness:.9}),light=fm('#7a5232',{roughness:.9}),dark=fm('#3b2414',{roughness:.9}),
         white=fm('#fbf8f2',{roughness:.95}),yel=fShiny('#ffc22e',{roughness:.35}),talon=fShiny('#2b211a');
@@ -611,7 +523,7 @@ $('#zooDone').onclick=closeZoo;
 function renderZoo(){const a=zooSel;if(!a)return;const F=a.F;
   $('#zooTitle').textContent=`${F.e} ${a.baby?'Baby ':''}${F.n}`;
   $('#zooContent').innerHTML=`<div class="zfacts">${F.facts.map(([e,t,d])=>`<div><b>${e}</b><span><strong>${t}</strong>${d}</span></div>`).join('')}</div>
-    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
+    ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`🏇 You earned ${r.e} ${esc(BS.own[r.k].n)}! Tap 🏇 with your moves to ride.`:`🏆 Want to ride one? Finish the ${r.arctic?'❄️ Polar':r.dino?'🦖 Dino':'🦁 Safari'} challenges (⭐🏆 at the top) to earn ${r.e} ${r.nm}!`}</p>`:'')(FARM.find(f=>f.safari&&(f.zoo||f.model)===a.k))}
     ${(r=>r?`<p class="drawhint">${BS.own[r.k]?`💖 ${esc(BS.own[r.k].n)} is yours! Step on the 🦖 footprint by the Dino Keeper's hut to take care of ${esc(BS.own[r.k].n)}.`:`🥚 Want one of your own? Step on the 🦖 footprint by the Dino Keeper's hut to adopt ${r.e} ${r.nm} with ⭐ stars!`}</p>`:'')(a.F.dino&&FARM.find(f=>f.dino&&f.model===a.k))}
     <div class="ctbtns farmBtns">${F.food.map(([e,n],i)=>`<button class="btn ghost" data-zfeed="${i}">${e} Feed ${n.toLowerCase()}</button>`).join('')}<button class="btn ghost" data-zpet="1">🤚 Pet</button></div>`;}
 $('#zooContent').onclick=e=>{const b=e.target.closest('button');const a=zooSel;if(!b||!a)return;const top=a.g.position.clone().add(new THREE.Vector3(0,a.h*.8,0));

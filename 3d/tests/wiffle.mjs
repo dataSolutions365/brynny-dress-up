@@ -97,7 +97,10 @@ try {
   if (g.outs < 3) fail('Nobody got out.');
   if (!g.halves.includes('bot1')) fail('The Bears never got to bat.');
   if (g.opBat < 3) fail('You hardly pitched to the Bears.');
-  if (g.kinds.length < 3) fail('The pitches were all the same kind.');
+  // one short game can happen to see only two kinds by chance, so then ask the pitcher for 60 more pitches (as in the 1st and 2nd innings)
+  const more = g.kinds.length >= 3 ? [] : await page.evaluate(() => { const G = window.__game, k = new Set(), inn = G.WF.inn, kd = G.WF.kind;
+    G.WF.kind = 'quick'; for (const i of [1, 2]) { G.WF.inn = i; for (let n = 0; n < 30; n++) k.add(G.wfCpuPitch().kind); } G.WF.inn = inn; G.WF.kind = kd; return [...k]; });
+  if (new Set([...g.kinds, ...more]).size < 3) fail('The pitches were all the same kind.');
   if (g.arm < 3.5) fail(`Maya does not throw overhand (her arm never came up over the top: ${g.arm.toFixed(2)}).`);
   if (!g.mitt) fail('No pitch ever went into the catcher\'s mitt.');
   if (g.ghosts && g.noRunner) fail('A base was taken but nobody was standing on it.');
