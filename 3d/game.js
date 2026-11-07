@@ -15785,7 +15785,8 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     // (coming in to land, it only looks as far as the landing spot, so a fence just past it doesn't hold you up in the air)
     const vx=Math.sin(S.hd)*S.sp,vz=Math.cos(S.hd)*S.sp,look=S.land&&spotD<S.sp?spotD/Math.max(S.sp,.1):1,ahead=Math.max(skyFloor(p.x+vx*.45*look,p.z+vz*.45*look),skyFloor(p.x+vx*look,p.z+vz*look));
     const need=ahead+.55-p.y;if(need>0&&!flare)S.vy=Math.max(S.vy,Math.min(4.5,need*3));
-    p.x+=vx*dt;p.z+=vz*dt;p.y+=S.vy*dt;
+    // flaring, it only drifts on while the ground ahead is still open (never under a palm or a roof's edge)
+    const fx=p.x+vx*dt,fz=p.z+vz*dt;if(!flare||skyFloor(fx,fz)<=skyG(fx,fz)+.2){p.x=fx;p.z=fz;}p.y+=S.vy*dt;
     const fl=skyFloor(p.x,p.z),g=skyG(p.x,p.z);if(p.y<fl+.3&&fl>g+.2)p.y=fl+.3;
     // close to open ground: flare
     const hg=p.y-g,L=skyLandable(p.x,p.z);
@@ -15805,7 +15806,7 @@ function skyStep(dt,ix,iy,mag){planeStep(dt);if(!SKY.mode){skyHud();return false
     camFollow(S.hd,.3);skyWind(.03+S.sp*.006);skyFog(p.y-g);skyHud();return true;}
   if(S.mode==='hgDown'){// you run it out and set it down on its base bar
     const u=Math.min(1,S.t/.6);S.pr=0;S.pitch+=(.2-S.pitch)*Math.min(1,dt*4);S.bank*=.9;player.face=S.hd;player.speed=u<1?2.2:0;player.onGround=true;
-    if(u<1){p.x+=Math.sin(S.hd)*1.6*dt;p.z+=Math.cos(S.hd)*1.6*dt;collide(p);p.y=groundAt(p.x,p.z);}
+    if(u<1){const nx=p.x+Math.sin(S.hd)*1.6*dt,nz=p.z+Math.cos(S.hd)*1.6*dt;if(skyFloor(nx,nz)<=skyG(nx,nz)+.2){p.x=nx;p.z=nz;collide(p);}p.y=groundAt(p.x,p.z);}// (the run-out stops short of a palm or a roof)
     skyWind(0);skyFog(0);if(S.t>1.4){skyEnd(false);toast('🪂 Your glider goes back to the ramp on Lookout Mountain for next time');}skyHud();return true;}
   // --- ✈️ skydiving ---
   if(S.mode==='board'){// walk over to the door and climb in
@@ -17123,15 +17124,18 @@ Object.assign(window.__game,{WF,WB,wfStart,wfMenu,wfAt,wfPol,wfHit,wfPress,wfSte
 // ---- src/26k-whats-new.js ----
 /* ================= 🆕 WHAT'S NEW =================
    After an update, the first time someone opens the 3D world they get a little "What's new" card,
-   in short, kid-friendly words. It only shows once per update (SAVE.wnSeen keeps the newest update they saw).
+   in short, kid-friendly words, listing only the notes they haven't seen yet.
+   Every note is remembered on its own (SAVE.wnSeenK, by its words), so a note added later the same day still shows.
    Places that are new (or have something new) get a red NEW tag on the map and minimap until the player goes there
-   (SAVE.wnVisit), or until the update is NEW_DAYS old.
+   (SAVE.wnGone), or until the note's update is NEW_DAYS old.
 
-   TO ADD NOTES FOR AN UPDATE: put a new entry at the TOP of WHATS_NEW with today's date as `v` ('YYYY-MM-DD').
+   EVERY UPDATE A PLAYER WOULD NOTICE ADDS A NOTE (a GitHub check asks for one when 3d/ changes).
+   Put it in the entry for today's date at the TOP of WHATS_NEW (start a new entry {v:'YYYY-MM-DD',notes:[...]} if today's isn't there).
    Each note is {e: emoji, t: 'short sentence a kid can read'}. Optional:
      go:  a place id from ZONES (02-island.js): the note gets a "Show me" button and the place gets a NEW tag
      hol: a holiday id (seasons.js): the note only shows during that holiday
-   Keep it to about 3 to 6 notes, one short sentence each.
+   Changing a note's words makes it show again as new, so only reword one when there's really something new to say.
+   (old:1 marks the notes from the very first card, which players who saw that card have already seen.)
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
   {v:'2026-11-07',notes:[
@@ -17141,25 +17145,41 @@ const WHATS_NEW=[
   ]},
   {v:'2026-11-06',notes:[
     {e:'🏀',t:'Play a 3-on-3 basketball game! Pick two teammates, pass the ball and beat the Bears.',go:'court'},
+    {e:'⚾',t:'The Wiffle Ball Field is now a real Baseball Field! Play with real teams in uniforms, a catcher, and pitches like curveballs.',go:'wiffle'},
+    {e:'⚽',t:'Play a 3-on-3 soccer match with goalies at the Soccer Field!',go:'soccer'},
     {e:'🏊',t:'Swimming looks real now! Your arms reach forward and pull back like a real swimmer, and you float with your head up.'},
-    {e:'⚽',t:'Play soccer at the new Soccer Field! Take penalty kicks, hit targets, do keepy-uppies or play 1-on-1 with Kai.',go:'soccer'},
-    {e:'🏈',t:'Play flag football on the Soccer Field, and suit up in a real football uniform!',go:'soccer'},
-    {e:'⚾',t:'Wiffle Ball has a new camera, so you can see the ball better when you bat and catch.',go:'wiffle'},
-    {e:'⛄',t:'Tap ⛄ Snowman, then walk in the snow to roll big snowballs and stack them into a snowman!',hol:'christmas'},
-    {e:'🎶',t:'The town plays a playlist now: lots of songs, one after another.'},
-    {e:'🦦',t:'Ollie the otter got fixed! His head is straight now. Swim out from the Beach to say hi.',go:'beach'},
+    {e:'🐶',t:'Your pet swims right next to you in the water now, instead of walking on top of it.'},
+    {e:'🏄',t:'The wave pool is twice as big! Grab a surfboard at the new Surf Shack and ride the waves.',go:'water'},
+    {e:'🐷',t:'In a Round-up, a green arrow and a glowing light show you where to take each animal home.',go:'barn'},
+    {e:'⛰️',t:'No more getting stuck on Lookout Mountain! Tap 🥾 Back to the trail if you wander off.',go:'mountain'},
+    {e:'🪂',t:'Parachutes always land safely now, never under the ground or a bridge.',go:'airfield'},
+    {e:'❄️',t:'The Snowball and Snowman buttons only show up where there is snow.',hol:'christmas'},
+    {e:'⚽',t:'Play soccer at the new Soccer Field! Take penalty kicks, hit targets, do keepy-uppies or play 1-on-1 with Kai.',go:'soccer',old:1},
+    {e:'🏈',t:'Play flag football on the Soccer Field, and suit up in a real football uniform!',go:'soccer',old:1},
+    {e:'⛄',t:'Tap ⛄ Snowman, then walk in the snow to roll big snowballs and stack them into a snowman!',hol:'christmas',old:1},
+    {e:'🎶',t:'The town plays a playlist now: lots of songs, one after another.',old:1},
+    {e:'🦦',t:'Ollie the otter got fixed! His head is straight now. Swim out from the Beach to say hi.',go:'beach',old:1},
   ]},
 ];
 const NEW_DAYS=30;// how long a place keeps its NEW tag after an update
-if(!SAVE.wnVisit)SAVE.wnVisit={};
-const wnDays=v=>(Date.now()-new Date(v+'T12:00:00').getTime())/864e5;
+const WN_MAX=16;// at most this many notes on the card at once (newest first; the list scrolls)
+// a note's key is made from its words, so a new or reworded note counts as unseen
+const wnKey=n=>{let h=5381;const s=n.e+n.t;for(let i=0;i<s.length;i++)h=(h*33+s.charCodeAt(i))>>>0;return h.toString(36);};
+const wnAll=()=>{const a=[];for(const u of WHATS_NEW)for(const n of u.notes)a.push({n,v:u.v,k:wnKey(n)});return a;};
+// players from before notes were remembered one by one: the first card's notes (old:1) count as seen,
+// and the places they already went to (SAVE.wnVisit) as visited
+if(!SAVE.wnSeenK){SAVE.wnSeenK=[];SAVE.wnGone=SAVE.wnGone||[];
+  for(const {n,k} of wnAll()){if(!n.old)continue;if(SAVE.wnSeen)SAVE.wnSeenK.push(k);if(n.go&&SAVE.wnVisit&&SAVE.wnVisit[n.go])SAVE.wnGone.push(k);}
+  persist();}
+if(!SAVE.wnGone)SAVE.wnGone=[];
 const wnHol=n=>!n.hol||!!(window.__season&&window.__season.on&&window.__season.on(n.hol));
-// the updates this player hasn't seen yet (newest first)
-const wnUnseen=()=>WHATS_NEW.filter(u=>!SAVE.wnSeen||u.v>SAVE.wnSeen);
-// places that get a NEW tag: named by a recent note, and not visited since that update
+const wnDays=v=>(Date.now()-new Date(v+'T12:00:00').getTime())/864e5;
+// the notes this player hasn't seen yet (newest first)
+const wnUnseen=()=>wnAll().filter(o=>wnHol(o.n)&&!SAVE.wnSeenK.includes(o.k));
+// places that get a NEW tag: named by a recent note whose place they haven't been to since
 let wnTagCache=null,wnTagT=0;
 function wnTags(){const now=performance.now();if(wnTagCache&&now-wnTagT<1000)return wnTagCache;wnTagT=now;const s=new Set();
-  for(const u of WHATS_NEW){if(wnDays(u.v)>NEW_DAYS)continue;for(const n of u.notes)if(n.go&&wnHol(n)&&!(SAVE.wnVisit[n.go]>=u.v))s.add(n.go);}
+  for(const o of wnAll())if(o.n.go&&wnDays(o.v)<=NEW_DAYS&&wnHol(o.n)&&!SAVE.wnGone.includes(o.k))s.add(o.n.go);
   return wnTagCache=s;}
 const isNewZone=id=>wnTags().has(id);
 // the red NEW tag, drawn on the map (26-map.js calls this for each place)
@@ -17172,22 +17192,24 @@ let wnZone=null;
 // the 🗺️ Map button wears a NEW tag too while somewhere on the map has one
 let wnMini=null;
 onTick.push(()=>{const m=wnTags().size>0;if(m!==wnMini){wnMini=m;$('#mini').classList.toggle('hasNew',m);}
-  if(!started||curZone===wnZone)return;wnZone=curZone;if(!curZone||!WHATS_NEW.length)return;
-  const v=WHATS_NEW[0].v;if(isNewZone(curZone.id)&&!(SAVE.wnVisit[curZone.id]>=v)){SAVE.wnVisit[curZone.id]=v;wnTagCache=null;persist();}});
+  if(!started||curZone===wnZone)return;wnZone=curZone;if(!curZone||!isNewZone(curZone.id))return;
+  for(const o of wnAll())if(o.n.go===curZone.id&&!SAVE.wnGone.includes(o.k))SAVE.wnGone.push(o.k);wnTagCache=null;persist();});
 // the card
 const wnEl=document.createElement('div');wnEl.className='modal';wnEl.id='whatsNew';
 wnEl.innerHTML='<div class="card" id="wnCard"></div>';document.body.appendChild(wnEl);
 let wnShown=null;
-function openWhatsNew(all){let ups=all?WHATS_NEW.slice(0,2):wnUnseen().slice(0,3);if(!ups.length)ups=WHATS_NEW.slice(0,1);
-  const notes=[];for(const u of ups)for(const n of u.notes)if(wnHol(n))notes.push(n);if(!notes.length)return false;
-  wnShown=notes;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
+function openWhatsNew(all){let list=all?[]:wnUnseen();if(!list.length)list=wnAll().filter(o=>wnHol(o.n));list=list.slice(0,WN_MAX);
+  const notes=list.map(o=>o.n);if(!notes.length)return false;
+  wnShown=list;joy.id=null;joy.x=joy.y=0;joyEl.style.display='none';
   $('#wnCard').innerHTML=`<div class="wnTop">🆕</div><h2>What's new!</h2><p class="wnSub">Here's what we added since you last played:</p><ul id="wnList">`+
     notes.map((n,i)=>{const z=n.go&&Z[n.go];return `<li><b>${n.e}</b><span>${n.t}</span>${z?`<button class="wnGo" data-wn="${i}">🗺️ Show me</button>`:''}</li>`;}).join('')+
     `</ul><button class="btn" id="wnOk">Let's play! ✨</button>`;
   wnEl.classList.add('show');sfx('pop');return true;}
-function closeWhatsNew(){if(!wnEl.classList.contains('show'))return;wnEl.classList.remove('show');if(WHATS_NEW.length&&!(SAVE.wnSeen>=WHATS_NEW[0].v)){SAVE.wnSeen=WHATS_NEW[0].v;persist();}}
+// closing it marks every note as seen (so a long list after a long break doesn't keep coming back)
+function closeWhatsNew(){if(!wnEl.classList.contains('show'))return;wnEl.classList.remove('show');
+  for(const o of wnUnseen())SAVE.wnSeenK.push(o.k);if(WHATS_NEW.length)SAVE.wnSeen=WHATS_NEW[0].v;persist();}
 wnEl.onclick=e=>{if(e.target===wnEl||e.target.id==='wnOk'){closeWhatsNew();return;}
-  const b=e.target.closest('[data-wn]');if(!b)return;const n=wnShown[+b.dataset.wn],z=n&&Z[n.go];closeWhatsNew();if(!z)return;
+  const b=e.target.closest('[data-wn]');if(!b)return;const n=wnShown[+b.dataset.wn]&&wnShown[+b.dataset.wn].n,z=n&&Z[n.go];closeWhatsNew();if(!z)return;
   if(curZone===z){toast(`You're already at ${zLabel(z)}! ✨`);return;}
   if(fastPassAsk(z))return;// 🎟️ zip there or follow the arrow (26i-fast-pass.js)
   setDest(z);sfx('star');toast(`Follow the pink arrow on the map to ${zLabel(z)} 💗`);};
@@ -17197,7 +17219,7 @@ $('#play').addEventListener('click',()=>setTimeout(()=>{if(wnAuto()&&wnUnseen().
 // ⚙️ Settings has a button to see it again
 {const b=document.createElement('button');b.className='btn ghost';b.id='setNew';b.style.cssText='display:block;width:calc(100% - 8px);margin-top:10px';b.textContent="🆕 What's new";
   $('#setClose').before(b);b.onclick=()=>{$('#settings').classList.remove('show');openWhatsNew(true);};}
-window.__whatsNew={WHATS_NEW,open:openWhatsNew,close:closeWhatsNew,tags:()=>[...wnTags()],unseen:()=>wnUnseen().map(u=>u.v)};
+window.__whatsNew={WHATS_NEW,open:openWhatsNew,close:closeWhatsNew,tags:()=>[...wnTags()],unseen:()=>wnUnseen().map(o=>o.k),key:wnKey};
 // ---- src/26w-waterpark.js ----
 /* ================= 💦 SPLASH WATERPARK: tube slides, a wave pool you can surf, a lazy river and a floating playground =================
    Across the canal on the far bank, behind the Runway and the Clothing Store. Walk over the wooden footbridge (BANK_BRIDGES in

@@ -1,0 +1,17 @@
+name: What's new note
+# every update a player would notice adds a line to the What's new card (3d/src/26k-whats-new.js)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+jobs:
+  note:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: The PR adds a What's new note (or says [no-whats-new])
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_TEXT: ${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }}
+        run: node 3d/tests/whats-new-note.mjs
