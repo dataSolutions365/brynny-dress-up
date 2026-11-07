@@ -233,7 +233,9 @@
   the safari rides from the 🦖 Dino tab of `3d/challenges.js` (ids start `dino_`). They reuse the same models with a bigger `scale:`; you sit at
   `F.ride` = scale × (body height + saddle) + .06, worked out on each builder. 🦴 The Fossil Dig (`DV.dig`) and what the challenges count
   (`dinoState()`: fossils, days visited, riding steps, big ones ridden) are `3d/src/24n2-dino-rides.js`.
-  `3d/tests/dino-rides.mjs` (run on every PR) checks they stay locked until earned, the dig, the saddles, and that Zephyr flies.
+  🐉 Dragons: `ZOO_BUILD.dragonR` (`3d/src/24c9j-dragon.js`) is the one real-looking dragon; colours come from `F.dcol`, so Ember the baby dragon,
+  ⭐ Nova and 🐉 Draco (the hardest Dino challenges, grp 'draco') all use it. Its wings fold on the ground and open to fly; no fire, just a puff of smoke.
+  `3d/tests/dino-rides.mjs` (run on every PR) checks they stay locked until earned, the dig, the saddles, and that Zephyr and Draco fly.
 - `3d/tests/walk.mjs` checks on every PR that the character actually walks on an iPhone-size screen. Run it yourself with
   `npm i --no-save playwright && npx playwright install chromium && node 3d/tests/walk.mjs`.
 - The 3D world reports errors, lost graphics and "tried to walk but didn't move" to the same `dressup_errors` list as the

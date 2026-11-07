@@ -21,6 +21,7 @@ const WHATS_NEW=[
     {e:'🏆',t:'Earn a big grown-up dinosaur to ride: a T. rex, triceratops, brachiosaurus, stegosaurus, raptor, Parasaurolophus or pteranodon! See the new 🦖 Dino tab in ⭐ Star Challenges.',go:'dino'},
     {e:'🦴',t:'Dig for fossils at the Fossil Dig in Dino Valley! Find a T. rex tooth, a raptor feather, and maybe rare golden amber.',go:'dino'},
     {e:'🎺',t:'Meet a Parasaurolophus that honks through its crest, and a pteranodon. Your crested dino and pterodactyl look real now too!',go:'dino'},
+    {e:'🐉',t:'Dragons look real now! Earn Draco the great dragon with the hardest 🦖 Dino challenges and fly him over the island.',go:'dino'},
   ]},
   {v:'2026-11-06',notes:[
     {e:'🏀',t:'Play a 3-on-3 basketball game! Pick two teammates, pass the ball and beat the Bears.',go:'court'},

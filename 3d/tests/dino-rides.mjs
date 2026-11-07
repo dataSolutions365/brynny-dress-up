@@ -93,8 +93,13 @@ try {
   mine = await owns();
   if (mine.length !== 7) fail(`Finishing all the 🦖 Dino challenges should give you all 7 big dinosaurs (you have ${mine.join(', ')}).`);
 
+  // 🐉 Draco the great dragon is still locked: he needs his own 3 even bigger challenges
+  if (await page.evaluate(() => !!window.__game.barn().own.draco)) fail('Draco the great dragon should still be locked.');
+  await page.evaluate(() => { const C = window.__game.SAVE.chal; for (const id of ['dino_big7', 'dino_dig100', 'dino_days14']) C.done[id] = true; });
+  await page.waitForFunction(() => window.__game.barn().own.draco, null, { timeout: 15_000 }).catch(() => fail('Finishing Draco\'s 3 challenges should give you Draco.'));
+
   // 🏇 sit up on each one's saddle (in the open meadow)
-  for (const k of BIG) {
+  for (const k of [...BIG, 'draco']) {
     await go(-1, 9, Math.PI); await page.waitForTimeout(600);
     await page.evaluate(k => window.__game.callSteed(k), k); await page.waitForTimeout(900);
     const s = await page.evaluate(() => { const G = window.__game, a = G.ride(); if (!a) return null; a.g.updateMatrixWorld(true);
@@ -119,22 +124,24 @@ try {
   if (st.big !== 7) fail(`All 7 big dinosaurs should count as ridden (${st.big} do).`);
   await page.evaluate(() => window.__game.stopRide(true));
 
-  // 🪽 Zephyr the big pteranodon: wings folded on the ground, open in the air
-  await page.evaluate(() => { const G = window.__game; G.player.pos.set(6, 0, 12); }); await page.waitForTimeout(1500);
-  await page.evaluate(() => window.__game.callSteed('dptero')); await page.waitForTimeout(1200);
-  const w0 = await page.evaluate(() => window.__game.ride().wingOpen || 0);
-  if (w0 > .1) fail('On the ground Zephyr\'s wings should be folded.');
-  const jb = await page.locator('#jump').boundingBox();
-  await page.touchscreen.tap(jb.x + jb.width / 2, jb.y + jb.height / 2);
-  const t0 = await page.evaluate(() => window.__game.fly().t);
-  for (let i = 0; i < 400; i++) { await page.waitForTimeout(250); if ((await page.evaluate(() => window.__game.fly().t)) - t0 > 5) break; }
-  const air = await page.evaluate(() => { const G = window.__game; return { on: G.fly().on, y: G.player.pos.y, open: G.ride().wingOpen }; });
-  console.log(`Zephyr after take-off: ${air.y.toFixed(1)} m up, wings ${Math.round(air.open * 100)}% open`);
-  if (!air.on || air.y < 6) fail(`Zephyr should fly up above the trees (she is ${air.y.toFixed(1)} m up).`);
-  if (air.open < .8) fail('Zephyr\'s wings should open in the air.');
-  if (SHOTS) await shot('zephyr-flying');
-  await page.evaluate(() => window.__game.stopRide(true));
+  // 🪽 Zephyr the big pteranodon and 🐉 Draco the dragon: wings folded on the ground, open in the air
+  for (const k of ['dptero', 'draco']) {
+    await page.evaluate(() => { const G = window.__game; G.player.pos.set(6, 0, 12); G.player.vy = 0; }); await page.waitForTimeout(1500);
+    await page.evaluate(k => window.__game.callSteed(k), k); await page.waitForTimeout(1200);
+    const w0 = await page.evaluate(() => window.__game.ride().wingOpen || 0);
+    if (w0 > .1) fail(`On the ground ${k}'s wings should be folded.`);
+    const jb = await page.locator('#jump').boundingBox();
+    await page.touchscreen.tap(jb.x + jb.width / 2, jb.y + jb.height / 2);
+    const t0 = await page.evaluate(() => window.__game.fly().t);
+    for (let i = 0; i < 400; i++) { await page.waitForTimeout(250); if ((await page.evaluate(() => window.__game.fly().t)) - t0 > 5) break; }
+    const air = await page.evaluate(() => { const G = window.__game; return { on: G.fly().on, y: G.player.pos.y, open: G.ride().wingOpen }; });
+    console.log(`${k} after take-off: ${air.y.toFixed(1)} m up, wings ${Math.round(air.open * 100)}% open`);
+    if (!air.on || air.y < 6) fail(`${k} should fly up above the trees (${air.y.toFixed(1)} m up).`);
+    if (air.open < .8) fail(`${k}'s wings should open in the air.`);
+    if (SHOTS) await shot(k + '-flying');
+    await page.evaluate(() => window.__game.stopRide(true)); await page.waitForTimeout(500);
+  }
 
   if (errors.length) fail('Errors: ' + errors.join(' | '));
-  if (!process.exitCode) console.log('✅ The big dinosaurs: locked until earned, the Fossil Dig, sitting on each saddle, the T. rex walks and Zephyr flies.');
+  if (!process.exitCode) console.log('✅ The big dinosaurs: locked until earned, the Fossil Dig, sitting on each saddle, the T. rex walks and Zephyr and Draco fly.');
 } finally { await browser.close(); server.close(); }

@@ -253,6 +253,10 @@ const ALL_LIST = [
   { id: 'dino_big6', tab: 'dino', grp: 'dptero', e: '🏆', t: 'Ride all 6 other big dinosaurs: Tank, Spike, Tuba, Dash, Rex and Atlas', r: 3, goal: 6, poll: () => dino().bigNoPtero },
   { id: 'dino_dig50', tab: 'dino', grp: 'dptero', e: '🦴', t: 'Dig up 50 fossils', r: 3, goal: 50, go: 'dino', poll: () => dino().dig },
   { id: 'dino_days10', tab: 'dino', grp: 'dptero', e: '📅', t: 'Visit Dino Valley on 10 different days', r: 3, goal: 10, go: 'dino', poll: () => dino().days },
+  // 🐉 Draco the great dragon: the hardest of all
+  { id: 'dino_big7', tab: 'dino', grp: 'draco', e: '🏆', t: 'Ride all 7 big dinosaurs, Zephyr too', r: 3, goal: 7, poll: () => dino().big },
+  { id: 'dino_dig100', tab: 'dino', grp: 'draco', e: '🦴', t: 'Dig up 100 fossils', r: 3, goal: 100, go: 'dino', poll: () => dino().dig },
+  { id: 'dino_days14', tab: 'dino', grp: 'draco', e: '📅', t: 'Visit Dino Valley on 14 different days', r: 3, goal: 14, go: 'dino', poll: () => dino().days },
   // more to do at Dino Valley (no ride, just stars)
   { id: 'dino_meet1', tab: 'dino', grp: 'fun', e: '🦕', t: 'Meet a dinosaur at Dino Valley', r: 1, go: 'dino', ev: { k: 'dinolearn' } },
   { id: 'dino_feed1', tab: 'dino', grp: 'fun', e: '🌿', t: 'Feed a dinosaur', r: 1, go: 'dino', ev: { k: 'dinofeed' } },
@@ -582,10 +586,10 @@ function polarHTML(list, here) {
 function dinoHTML(list, here) {
   const rides = G.earnedRides ? G.earnedRides() : [];
   let h = '<div class="cnote">🦖 Dino Valley is across the bridge behind the Barber Shop! Meet the dinosaurs, feed them and dig for fossils. Finish every challenge for a big dinosaur and you can ride it.</div>';
-  for (const k of ['dtrike', 'dstego', 'dcrest', 'draptor', 'dtrex', 'dlong', 'dptero']) {
+  for (const k of ['dtrike', 'dstego', 'dcrest', 'draptor', 'dtrex', 'dlong', 'dptero', 'draco']) {
     const r = rides.find(x => x.k === k), mine = list.filter(c => c.grp === k); if (!mine.length) continue;
     const n = mine.filter(isDone).length;
-    h += `<div class="csaf dino${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '🦖'}</b><div><strong>${r ? `${r.nm} the ${r.n.replace(/^Big /, 'big ').replace(/ \(.*\)/, '')}${r.fly ? ' 🪽' : ''}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
+    h += `<div class="csaf dino${r && r.own ? ' own' : ''}"><b>${r && r.pic ? `<img src="${r.pic}" alt="">` : r ? r.e : '🦖'}</b><div><strong>${r ? `${r.nm} the ${r.n.replace(/^(Big|Great) /, m => m.toLowerCase()).replace(/ \(.*\)/, '')}${r.fly ? ' 🪽' : ''}` : k}</strong><span>${r && r.own ? 'Yours! Tap 🏇 with your moves to ride' : `${n} of ${mine.length} challenges done`}</span></div>${r && r.own ? '<span class="own">✅ Yours</span>' : '<span class="lock">🔒</span>'}</div>`;
     h += mine.map(ch => chRow(ch, here)).join('');
   }
   const mine = list.filter(c => c.grp === 'fun'), n = mine.filter(isDone).length, fin = n === mine.length;

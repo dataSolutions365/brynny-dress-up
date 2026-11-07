@@ -8176,8 +8176,74 @@ function dinoRideList(){return [
   {k:'draptor',e:'🦖',n:'Big raptor (Utahraptor)',nm:'Dash',model:'raptorR',scale:1.6,dino:1,safari:1,earn:{by:'chal',ids:['dino_feedR','dino_kinds8','dino_ride300'],goal:3},ride:1.96,wide:.32,boost:2.4,about:'A huge feathered raptor, the biggest kind there was, and the fastest dinosaur ride! Only for speedy explorers who finish all 3 of his 🦖 Dino challenges.',food:[['🍗','Chicken'],['🐟','Fish'],['🥚','Egg']],say:['*chirp chirp*','*fluffs his feathers*','Ready, set, ZOOM! 💨']},
   {k:'dtrex',e:'🦖',n:'Big T. rex',nm:'Rex',model:'trexR',scale:.8,dino:1,safari:1,earn:{by:'chal',ids:['dino_feedX','dino_dig25','dino_days5'],goal:3},ride:2.75,wide:.5,boost:2,about:'A giant, gentle T. rex who lets you ride way up on his back! Only for champions who finish all 3 of his 🦖 Dino challenges.',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['*big rumbly ROAR* 🦖','*tiny arm wave*','*stomp... stomp...*']},
   {k:'dlong',e:'🦕',n:'Big brachiosaurus',nm:'Atlas',model:'longneckR',scale:.85,dino:1,safari:1,earn:{by:'chal',ids:['dino_big3','dino_feed60','dino_ride2k'],goal:3},ride:3.31,wide:.6,boost:1.6,about:'The tallest ride in town! A full-grown brachiosaurus as tall as a house. Only for legends who finish all 3 of his 🦖 Dino challenges.',food:[['🌲','Tree tops'],['🍃','Leaves'],['🍐','Pear']],say:['*deep gentle hum*','I can see the whole island!','*slow happy blink*']},
-  {k:'dptero',e:'🦕',n:'Big pteranodon',nm:'Zephyr',model:'pteroR',scale:2.5,dino:1,safari:1,fly:1,earn:{by:'chal',ids:['dino_big6','dino_dig50','dino_days10'],goal:3},ride:2.44,wide:.35,boost:1.9,about:'A giant pteranodon with wings wider than a bus! Tap 🪽 Fly to soar over the whole island. Only for true legends who finish all 3 of her 🦖 Dino challenges.',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['*SKRAAAW!*','*big wing stretch*','Up, up and away! ☁️']}];}
+  {k:'dptero',e:'🦕',n:'Big pteranodon',nm:'Zephyr',model:'pteroR',scale:2.5,dino:1,safari:1,fly:1,earn:{by:'chal',ids:['dino_big6','dino_dig50','dino_days10'],goal:3},ride:2.44,wide:.35,boost:1.9,about:'A giant pteranodon with wings wider than a bus! Tap 🪽 Fly to soar over the whole island. Only for true legends who finish all 3 of her 🦖 Dino challenges.',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['*SKRAAAW!*','*big wing stretch*','Up, up and away! ☁️']},
+  // 🔥 the hardest of all: a real-looking great dragon (the model is 24c9j-dragon.js), for riding every big dinosaur
+  {k:'draco',e:'🐉',n:'Great dragon',nm:'Draco',model:'dragonR',scale:1.25,seat:.9,dino:1,safari:1,fly:1,dcol:{top:'#3e4a2a',belly:'#c9b98a',mem:'#4a3a24'},earn:{by:'chal',ids:['dino_big7','dino_dig100','dino_days14'],goal:3},ride:2.71,wide:.5,boost:2.2,about:'A real-looking great dragon with huge leathery wings! Tap 🪽 Fly to soar over the whole island. Only for the greatest legends who finish all 3 of his 🦖 Dino challenges.',food:[['🍖','Meat'],['🐟','Fish'],['🌶️','Hot pepper']],say:['*deep rumbly growl*','*puff of smoke*','Hold on tight! 🔥']}];}
 const DINO_BIG=['dtrike','dstego','dcrest','draptor','dtrex','dlong','dptero'];
+// ---- src/24c9j-dragon.js ----
+/* ===== 🐉 A real-looking dragon (built with the dinosaur helpers in 24c9h-dinos.js) =====
+   ZOO_BUILD.dragonR: a big scaly reptile on four clawed legs, with a long neck, a horned head with heavy brow ridges, a row of spines
+   from head to tail, and huge leathery bat-like wings (skin stretched between long finger bones) that fold along its sides on the ground
+   and open to fly (24h-flying.js sets a.wingOpen). Not a cartoon: earthy scale colours, darker on the back and pale underneath.
+   Kid-safe: no fire, it just puffs a little smoke from its nose now and then.
+   Colours come from F.dcol {top, belly, mem} so one model makes every dragon in the game:
+     🐉 Ember the baby dragon (a little buddy who flies along with you), ⭐ Nova the starlight dragon (the 50 ⭐ prize ride, midnight
+     blue with a sparkle) and 🔥 Draco the great dragon (the hardest 🦖 Dino challenges, 24c9i-dinos-more.js).
+   Ride: scale s => F.ride = s*2.12+.06 (you sit at the base of the neck, in front of the wings: seat .9) */
+ZOO_BUILD.dragonR=function(g,body,o){const by=1.5,D=this.F.dcol||{},top=D.top||'#5a2a1e',bel=D.belly||'#c8a070',memC=D.mem||'#6a3226',
+  m=dnSkin('dragon'),C=[top,bel,(x,y,z,ny)=>ny>.15?(Math.sin(z*9+x*6)*Math.sin(z*4)>.4?.18:0):0],claw=dnClaw(),horn=dnHornM(),
+  spine=dnM('drSpine'+top,()=>phys(new THREE.Color(top).multiplyScalar(.55),{roughness:.5,clearcoat:.3})),
+  mem=dnM('drMem'+memC,()=>phys(memC,{roughness:.7,side:THREE.DoubleSide,sheen:.4,sheenColor:new THREE.Color('#ffd0a0')}));
+  body.position.y=by;
+  const T=dnTube([[0,.1,1.3],[0,.05,.6],[0,0,0],[0,.05,-.6],[0,0,-1.1]],[.45,.6,.66,.6,.45],m,body,C,{sx:.82,seg:22,rad:16});
+  const tail=new THREE.Group();tail.position.set(0,0,-1.05);body.add(tail);
+  const TL=dnTube([[0,0,.1],[0,-.1,-1],[0,-.25,-2.2],[0,-.3,-3.3],[0,-.18,-4.2]],[.45,.32,.18,.08,.02],m,tail,C,{sx:.8,seg:24,rad:12});
+  // a row of spines down the back and the tail, getting smaller toward the tip
+  const sp=(par,p,h)=>dnHorn(par,spine,0,p.y-.04,p.z,h*.32,h,-.55,0);
+  for(let i=0;i<9;i++){const q=.08+i*.1;if(this.F.ride&&q<.3)continue;sp(body,T.top(q),.22);}// (not under the saddle)
+  for(let i=0;i<12;i++)sp(tail,TL.top(.03+i*.075),.2-i*.014);
+  // four strong legs with clawed feet
+  for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const fr=sz>0,H=fr?by-.05:by+.02,
+    lg=dnLeg(this,g,sx*(fr?.42:.45),H,fr?.95:-.72,ph,fr?[[0,0,0],[sx*.05,-.6,.12],[0,-1.1,-.05],[0,-H+.15,.05]]:[[0,0,0],[0,-.6,.25],[0,-1.15,-.15],[0,-H+.15,.03]],fr?[.24,.16,.12,.1]:[.36,.22,.13,.11],m,C);
+    if(!fr)M(dnPaint(sph(.36,14,10),C[0],C[1]),m,-sx*.05,-.3,.08,lg).scale.set(.72,1.3,1.05);
+    dnToes(lg,[0,-H+.1,.05],fr?.24:.3,.06,m,C,claw,.38,3);}
+  // the neck, curving up, and the head: long snout, heavy brows, swept-back horns, cheek spikes
+  const neck=new THREE.Group();neck.position.set(0,by+.2,1.4);g.add(neck);
+  const NK=dnTube([[0,-.2,-.3],[0,.2,.2],[0,.7,.55],[0,1.1,.75]],[.42,.32,.24,.2],m,neck,C,{sx:.82,seg:16,rad:12});
+  for(let i=0;i<5;i++){const p=NK.top(.15+i*.17);dnHorn(neck,spine,0,p.y-.03,p.z-.05,.05,.16,-1.1,0);}
+  const head=new THREE.Group();head.position.set(0,1.15,.82);neck.add(head);
+  dnTube([[0,.05,-.22],[0,.08,.15],[0,0,.5],[0,-.05,.78]],[.22,.23,.16,.09],m,head,C,{sx:.8,seg:14,rad:12});
+  const jaw=new THREE.Group();jaw.position.set(0,-.12,0);head.add(jaw);
+  dnTube([[0,0,-.15],[0,-.04,.35],[0,-.02,.7]],[.16,.11,.06],m,jaw,[top,bel],{sx:.85,sy:.6,seg:10,rad:10});
+  for(const s of [-1,1]){dnHorn(head,horn,s*.12,.2,-.12,.06,.62,-1.3,-s*.25);dnHorn(head,horn,s*.08,.18,0,.035,.25,-1.2,-s*.4);
+    for(const k of [0,1])dnHorn(head,spine,s*.17,-.08-k*.07,-.05-k*.06,.03,.18,-1.4,-s*1.1);
+    M(dnPaint(sph(.08,10,8),C[0],C[1]),m,s*.15,.2,.32,head).scale.set(1,.55,1.8);
+    dnEye(this,head,s*.17,.12,.3,.045,'#e0a020',s*1.1);M(sph(.025,6,4),dnDark(),s*.05,.03,.76,head,false,false).scale.set(1,.6,1.6);}
+  // the wings: arm out to the wrist, four long fingers fanning back, and the skin stretched between them back to the body.
+  // inner lets the skin hang down along the flank when the wing folds (FarmAnimal.update swings the wing back by fold)
+  this.wings=[];const inners=[];
+  const wingG=dnM('drWingG',()=>{const s=new THREE.Shape(),P=[[1.3,-.15],[3.0,.3],[2.7,1.0],[2.1,1.5],[1.4,1.7]];
+    s.moveTo(0,-.05);s.lineTo(.7,-.25);s.lineTo(P[0][0],P[0][1]);s.lineTo(P[1][0],P[1][1]);
+    for(let i=1;i<P.length-1;i++){const a=P[i],b=P[i+1];s.quadraticCurveTo((a[0]+b[0])/2-.25,(a[1]+b[1])/2-.12,b[0],b[1]);}
+    s.quadraticCurveTo(.7,1.3,0,1.25);s.lineTo(0,-.05);const g=new THREE.ShapeGeometry(s,8);g.rotateX(-Math.PI/2);return g;});
+  const fly=this.F.pal==='fly';
+  for(const s of [-1,1]){const w=new THREE.Group();w.position.set(s*.38,.45,.55);body.add(w);const I=new THREE.Group();w.add(I);inners.push(I);
+    M(wingG,mem,0,0,0,I,true,false).scale.x=s;
+    dnTube([[0,0,0],[s*.7,.22,.1],[s*1.3,.2,.15]],[.09,.07,.055],m,I,C,{seg:8,rad:8});
+    for(const [x,z] of [[3.0,-.3],[2.7,-1.0],[2.1,-1.5],[1.4,-1.7]])dnTube([[s*1.3,.2,.15],[s*(1.3+(x-1.3)*.5),.12,.15+(z-.15)*.5],[s*x,.02,z]],[.04,.028,.008],m,I,C,{seg:8,rad:6});
+    M(new THREE.ConeGeometry(.035,.16,8),claw,s*1.32,.24,.24,I,false,false).rotation.x=Math.PI/2;
+    this.wings.push({w,sx:s,fly:fly?1:0,fold:1.3});}
+  // breathing; the skin hangs down when the wings fold; now and then it lifts its head and puffs a little smoke from its nose
+  let pT=5+Math.random()*10,puff=0;const nose=new THREE.Vector3();
+  this.tick=(t,dt,run)=>{body.scale.y=1+Math.sin(t*1.1)*.01;if(fly)this.wingOpen=1;const op=this.wingOpen||0;
+    for(const I of inners){I.rotation.x=-(1-op)*1.3;I.scale.z=1-.4*(1-op);}
+    pT-=dt;if(pT<0&&run<.1&&!this.ridden){pT=12+Math.random()*14;puff=1.6;}
+    if(puff>0){puff-=dt;const k=Math.sin(Math.min(1,(1.6-puff)/1.6)*Math.PI);head.rotation.x=-k*.3;jaw.rotation.x=k*.25;
+      if(this.g.visible&&this.g.parent&&Math.random()<dt*10){head.localToWorld(nose.set(0,.03,.8));burst(nose,'#c8c2b8',3,.5,.06);}}
+    else{head.rotation.x*=.9;jaw.rotation.x*=.9;}};
+  if(this.F.sparkle)this.sparkle=true;
+  dnSaddle(this,body,.07,.9,.55,.82,1,'#3a2a5a');
+  Object.assign(o,{neck,head,tail,nTilt:0,gz:.45,size:2,h:by+1.6,rad:1.1,dustR:[.7,.7,1]});};
 // ---- src/24d-barber-and-store.js ----
 /* ================= 💈 BARBER SHOP and 👔 CLOTHING STORE ================= */
 // The barber chair (guys only): haircuts, facial hair and face shapes. The clothing store: try things on, buy them with coins.
@@ -8328,7 +8394,7 @@ const FARM=[
   {k:'unicorn',e:'🦄',n:'Unicorn',nm:'Sparkle',s:10,ride:1.2,about:'Rare! A magic unicorn with a rainbow mane and a golden horn.',food:[['🍓','Strawberry'],['🍭','Lollipop'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*sparkle sparkle*','I love you! 🦄']},
   {k:'trike',e:'🦕',n:'Triceratops',nm:'Trixie',s:12,dino:1,model:'trikeR',scale:.4,ride:1.1,about:'Rare! A young triceratops with three horns and a big frill. Gentle and calm.',food:[['🌿','Ferns'],['🍉','Melon'],['🥬','Leaves']],say:['Rawr! 💚','*happy stomp*','Three horns, one heart!']},
   {k:'trex',e:'🦖',n:'Young T. rex',nm:'Chomper',s:15,dino:1,model:'trexR',scale:.32,ride:1.15,about:'Rare! A young T. rex with tiny arms and a big rumbly roar. Gentle with friends!',food:[['🍖','Meat'],['🍗','Drumstick'],['🍉','Melon']],say:['RAWR! 🦖','*tiny arm wave*','Rawr means I love you!']},
-  {k:'dragon',e:'🐉',n:'Baby dragon',nm:'Ember',s:8,ride:0,pal:'fly',scale:.42,about:'Rare! A tiny dragon who flies along behind you everywhere you go.',food:[['🌶️','Hot pepper'],['🍓','Strawberry'],['🍖','Meat']],say:['*tiny puff of smoke* 💨','Rawr! 🔥','Let\'s fly! 💜']},
+  {k:'dragon',e:'🐉',n:'Baby dragon',nm:'Ember',s:8,ride:0,pal:'fly',model:'dragonR',scale:.22,dcol:{top:'#6a2a22',belly:'#d8b080',mem:'#8a3a2a'},about:'Rare! A tiny real-looking dragon who flies along behind you everywhere you go.',food:[['🌶️','Hot pepper'],['🍓','Strawberry'],['🍖','Meat']],say:['*tiny puff of smoke* 💨','Rawr! 🔥','Let\'s fly! 💜']},
   {k:'stego',e:'🦕',n:'Mini stegosaurus',nm:'Pebble',s:5,ride:0,pal:'walk',dino:1,model:'stegoR',scale:.22,about:'Rare! A pocket-size dinosaur with plates on her back. She can follow you around town.',food:[['🌿','Ferns'],['🥬','Leaves'],['🍓','Berry']],say:['*tiny stomp*','Rawr! 💚','Wait for me!']},
   {k:'raptor',e:'🦖',n:'Mini raptor',nm:'Zippy',s:6,ride:0,pal:'walk',dino:1,model:'raptorR',scale:.45,about:'Rare! A speedy little feathered raptor who races along beside you.',food:[['🍗','Drumstick'],['🍖','Meat'],['🥚','Egg']],say:['Skreee! 💨','*zoom zoom*','Race you!']},
   {k:'monkey',e:'🐒',n:'Baby monkey',nm:'Coco',c:60,ride:0,pal:'walk',scale:.55,about:'A cheeky baby monkey with a curly tail. Takes walks with you around town.',food:[['🍌','Banana'],['🥭','Mango'],['🍇','Grapes']],say:['Ooh ooh ah ah! 🐒','*happy chatter*','Got a banana? 🍌']},
@@ -8340,7 +8406,7 @@ const FARM=[
   {k:'pegacorn',e:'🦄',n:'Winged unicorn',nm:'Cloud',mount:15,wingsRun:1,fly:1,ride:1.2,about:'A lavender unicorn with feathery wings. Ride her and tap 🪽 Fly to soar over the treetops!',food:[['🍬','Cloud candy'],['🍓','Strawberry'],['🌈','Rainbow treat']],say:['✨ Neigh! ✨','*flap flap*','To the clouds! ☁️']},
   {k:'ptero',e:'🦕',n:'Young pteranodon',nm:'Sunny',mount:14,dino:1,model:'pteroR',scale:1.1,fly:1,ride:1.1,about:'A young pteranodon, a flying reptile with a long beak, a crest and big leathery wings. Ride her and soar over the treetops!',food:[['🐟','Fish'],['🦐','Shrimp'],['🍤','Fried shrimp']],say:['SKRAAAW! 🦅','*big wing stretch*','Up, up and away! ☁️']},
   {k:'eagle',e:'🦅',n:'Giant eagle',nm:'Skyler',mount:16,fly:1,ride:1.0,about:'A giant bald eagle with a snowy white head, golden eyes and huge feathered wings. Ride him and soar over the whole island!',food:[['🐟','Salmon'],['🍗','Chicken'],['🥩','Steak']],say:['SCREEEE! 🦅','*fluffs his feathers*','Hop on, let\'s soar! ☁️']},
-  {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,wingsRun:1,fly:1,ride:1.15,about:'Super rare prize! A big starry dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
+  {k:'nova',e:'🐉',n:'Starlight dragon',nm:'Nova',prize:50,fly:1,model:'dragonR',scale:.75,seat:.9,wide:.45,sparkle:1,dcol:{top:'#1f2e5a',belly:'#9fb0d8',mem:'#2a3a7a'},ride:1.65,about:'Super rare prize! A big midnight-blue dragon that only comes to players who earn 50 ⭐ stars. She can fly you over the whole island!',food:[['🌶️','Hot pepper'],['⭐','Star candy'],['🍖','Meat']],say:['*puff of sparkles* ✨','RAWR! 💫','Let\'s fly through town! 🌙']},
 ];
 FARM.push(...earnedRideList());// 🏆 rides you can only earn, not buy (24i-earned-rides.js)
 // zoo animals (12d-place-zoo.js): you can't adopt these, but you can pet and feed them and learn about them
@@ -8516,20 +8582,6 @@ class FarmAnimal{
       this.legs=[];for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.06,.2,0);g.add(lg);M(cyl(.012,.012,.2,6),yel,0,-.1,0,lg);
         for(const a of [-.5,0,.5]){const toe=M(cyl(.008,.008,.07,5),yel,Math.sin(a)*.03,-.2,Math.cos(a)*.03,lg);toe.rotation.x=Math.PI/2;toe.rotation.z=-a;}this.legs.push({g:lg,ph});}
       Object.assign(o,{neck,head,tail:null,nTilt:0,size:tk?.55:.45,h:tk?.75:.6,rad:tk?.3:.22,biped:true,dustR:[.15,.15,.18]});}
-    if(k==='dragon'){const by=.75,skin=fm('#b388ff',{roughness:.5}),belly=fm('#ffe0a8'),wingM=phys('#ff8fc8',{roughness:.5,side:THREE.DoubleSide,transparent:true,opacity:.9}),hornM=fShiny('#fff4dc');
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(.24,.3,8,18),skin,0,0,0,body);t.rotation.x=Math.PI/2+.3;M(sph(.2,14,10),belly,0,-.07,.08,body).scale.set(.9,.9,1.3);
-      for(let i=0;i<4;i++)M(new THREE.ConeGeometry(.05,.12,6),fShiny('#ff6fae'),0,.24-i*.03,.1-i*.13,body);
-      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*.16,.15,0);body.add(w);const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(.6,.35);sh.lineTo(.55,.05);sh.lineTo(.45,-.05);sh.lineTo(.3,-.02);sh.lineTo(.15,-.1);sh.lineTo(0,-.05);
-        const m=M(new THREE.ShapeGeometry(sh),wingM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.x=sx;M(cyl(.02,.02,.6,6),skin,sx*.3,.17,0,w).rotation.z=-sx*1.03;this.wings.push({w,sx,fly:1});}
-      this.legs=[];for(const [sx,ph] of [[-1,0],[1,Math.PI]]){const lg=new THREE.Group();lg.position.set(sx*.13,.55,-.05);g.add(lg);M(capTop(.06,.22),skin,0,0,0,lg);M(sph(.07,10,8),skin,0,-.33,.04,lg).scale.set(1,.5,1.4);this.legs.push({g:lg,ph});}
-      const neck=new THREE.Group();neck.position.set(0,by+.22,.22);neck.rotation.x=.25;g.add(neck);M(new THREE.CapsuleGeometry(.1,.1,6,12),skin,0,.06,0,neck);
-      const head=new THREE.Group();head.position.set(0,.22,.03);head.rotation.x=-.25;neck.add(head);const H=.22;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(1,.92,1.05);M(sph(H*.62,16,12),belly,0,-H*.35,H*.72,head).scale.set(1,.7,1.1);
-      for(const sx of [-1,1]){const hn=M(new THREE.ConeGeometry(H*.14,H*.55,10),hornM,sx*H*.45,H*.85,-H*.25,head);hn.rotation.set(-.5,0,-sx*.3);M(sph(H*.07,8,6),std('#7a4aa0'),sx*H*.2,-H*.25,H*1.2,head,false,false);}
-      fEyes(this,head,H,.45,.18,.68,.45,.26,'#d6453d');fBlush(head,H,.6,-.1,.72);
-      const tail=new THREE.Group();tail.position.set(0,by-.05,-.3);g.add(tail);taperTube([fV(0,0,0),fV(0,-.12,-.25),fV(.08,-.2,-.5)],q=>.11*(1-q*.75),skin,tail,16,10);
-      const tip=M(new THREE.ConeGeometry(.08,.14,4),fShiny('#ff6fae'),.09,-.21,-.56,tail);tip.rotation.x=-Math.PI/2;tip.scale.y=.4;
-      Object.assign(o,{neck,head,tail,nTilt:.25,size:1,h:1.35,rad:.45,biped:true,dustR:[.22,.22,.3]});}
     // 🐒 Coco: a real-looking little monkey, the same builder as the Pet Parlor's real pets (Pet.buildReal in 16-animals-pets.js), in brown
     if(k==='monkey'){const p=new Pet('monkey','#7b5b43','',null,{real:1,light:'#d8c4a6',face:'#2b211c',paw:'#2b211c'}),S=1.6;
       if(p.tag){p.g.remove(p.tag);p.tag.material.map.dispose();p.tag.material.dispose();p.tag=null;}
@@ -8568,33 +8620,6 @@ class FarmAnimal{
           const f=M(new THREE.CapsuleGeometry(.065,L,4,10),i<2?fw:tips[i%3],sx*(L/2+.04),0,0,p,true,false);f.rotation.z=Math.PI/2;f.scale.set(.35,1,1);}
         M(sph(.08,10,8),fw,0,0,-.12,up,true,false).scale.set(1,.6,1.8);this.wings.push({w,sx,fly:1});}
       this.sparkle=true;}
-    // 🐉 the starlight dragon (a prize): midnight blue with glowing star spots, golden horns and big wings
-    if(k==='nova'){const r=.42,len=.75,leg=.45,by=leg+r*.6,skin=phys('#3b44a8',{roughness:.45,clearcoat:.5,sheen:.6,sheenColor:new THREE.Color('#8fb8ff')}),belly=fm('#ffe7a8'),
-        star=phys('#fff2b0',{emissive:'#ffd23f',emissiveIntensity:1.3,roughness:.3}),gold=fShiny('#ffd86b',{metalness:.5,roughness:.25}),
-        wingM=phys('#c6a6ff',{roughness:.5,side:THREE.DoubleSide,transparent:true,opacity:.88,emissive:'#7a4aff',emissiveIntensity:.15});
-      body.position.y=by;const t=M(new THREE.CapsuleGeometry(r,len,8,22),skin,0,0,0,body);t.rotation.x=Math.PI/2;M(sph(r*.85,14,10),belly,0,-r*.3,len*.1,body).scale.set(.95,.72,1.3);
-      for(let i=0;i<12;i++){const a=i*2.4,s=M(sph(r*.07,8,6),star,Math.sin(a)*r*.8,r*.45+Math.cos(a*1.7)*r*.3,(i/11-.5)*len*1.2,body,false,false);s.scale.set(1,.6,1);}
-      for(let i=0;i<6;i++)M(new THREE.ConeGeometry(.05,.13,6),gold,0,r*.98,len*.45-i*len*.22,body);
-      fLegs(this,g,r*.6,len*.42,leg+.06,leg+.06,.12,skin,gold);
-      this.wings=[];for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*r*.6,r*.75,len*.3);body.add(w);
-        const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(.6,.35);sh.lineTo(.55,.05);sh.lineTo(.45,-.05);sh.lineTo(.3,-.02);sh.lineTo(.15,-.1);sh.lineTo(0,-.05);
-        const m=M(new THREE.ShapeGeometry(sh),wingM,0,0,0,w,true,false);m.rotation.x=-Math.PI/2;m.scale.set(sx*1.9,1.9,1.9);
-        const bone=M(cyl(.028,.016,1.32,6),skin,sx*.57,0,-.33,w);bone.quaternion.setFromUnitVectors(fV(0,1,0),fV(sx*1.14,0,-.665).normalize());// the wing's front edge
-        this.wings.push({w,sx,fly:1});}
-      const neck=new THREE.Group();neck.position.set(0,by+r*.45,len/2+r*.4);neck.rotation.x=.6;g.add(neck);
-      taperTube([fV(0,0,0),fV(0,.25,.03),fV(0,.5,0)],q=>.18-.07*q,skin,neck,16,12);
-      for(let i=0;i<3;i++)M(new THREE.ConeGeometry(.035,.09,6),gold,0,.12+i*.15,-.14+i*.02,neck);
-      const head=new THREE.Group();head.position.set(0,.52,0);head.rotation.x=-.6+.15;neck.add(head);const H=.26;
-      M(sph(H,22,16),skin,0,0,0,head).scale.set(.95,.88,1.15);M(sph(H*.65,16,12),skin,0,-H*.22,H*.85,head).scale.set(.9,.7,1.1);
-      M(sph(H*.55,14,10),belly,0,-H*.42,H*.7,head).scale.set(.9,.4,1.1);
-      for(const sx of [-1,1]){M(sph(H*.07,8,6),std('#1c1f5a'),sx*H*.2,-H*.12,H*1.5,head,false,false);
-        taperTube([fV(sx*H*.4,H*.6,-H*.2),fV(sx*H*.55,H*1.05,-H*.6),fV(sx*H*.6,H*1.25,-H*1.1)],q=>H*(.13-.1*q),gold,head,16,10);
-        const fin=M(new THREE.ConeGeometry(H*.2,H*.5,8),wingM,sx*H*.85,H*.25,-H*.25,head);fin.rotation.z=-sx*1.2;fin.scale.z=.3;}
-      fEyes(this,head,H,.48,.2,.66,.5,.24,'#ffb020');fBlush(head,H,.62,-.1,.72);
-      const tail=new THREE.Group();tail.position.set(0,by+.05,-(len/2+r*.8));g.add(tail);taperTube([fV(0,0,0),fV(0,-.08,-.45),fV(.12,-.25,-.9),fV(.3,-.35,-1.3)],q=>.22*(1-q*.85),skin,tail,24,12);
-      const tip=M(new THREE.OctahedronGeometry(.11),star,.32,-.36,-1.4,tail,false,false);tip.scale.set(.6,1,1.2);
-      this.sparkle=true;
-      Object.assign(o,{neck,head,tail,nTilt:.6,size:1.3,h:by+1.05,rad:.85,dustR:[r,r,len*.8]});}
     // 🦅 a giant bald eagle: brown feathers, white head and tail, a hooked yellow beak and big fingered wings
     if(k==='eagle'){const r=.34,len=.42,leg=.42,by=leg+r*.8,brown=fm('#5a3a22',{roughness:.9}),light=fm('#7a5232',{roughness:.9}),dark=fm('#3b2414',{roughness:.9}),
         white=fm('#fbf8f2',{roughness:.95}),yel=fShiny('#ffc22e',{roughness:.35}),talon=fShiny('#2b211a');
@@ -11737,6 +11762,7 @@ const DS=SAVE.dino||(SAVE.dino={});DS.dig||=0;DS.kinds||={};DS.days||={};DS.ride
 const FOSSILS=[['tooth','🦷','T. rex tooth'],['bone','🦴','dinosaur leg bone'],['ammonite','🐚','ammonite shell'],['egg','🥚','fossil dinosaur egg'],
   ['print','🐾','dinosaur footprint'],['feather','🪶','raptor feather'],['fern','🌿','fern fossil'],['horn','🦕','triceratops horn']];
 const AMBER=['amber','🟠','piece of golden amber'],DIG_REFILL=40;
+FLYK.draco={hz:1.1,amp:.6,base:.06,glide:.75,spd:15,tuckF:1.1,tuckB:1.2};// 🐉 Draco the great dragon: big slow wing beats
 FLYK.dptero={hz:1,amp:.5,base:.04,glide:.85,spd:14,tuckF:1.15,tuckB:1.3};// 🪽 Zephyr flies like Sunny, with slower, bigger wing beats
 // a fossil poking out of the sand at each spot (a bit of old bone), and a little heap of sand
 const DIG={busy:0,spot:null,spots:DV.dig.spots.map(([x,z],i)=>{const g=new THREE.Group(),D=DV.dig;g.position.set(D.x+x,0,D.z+z);g.rotation.y=i*1.7;DZ.g.add(g);
@@ -17279,6 +17305,7 @@ const WHATS_NEW=[
     {e:'🏆',t:'Earn a big grown-up dinosaur to ride: a T. rex, triceratops, brachiosaurus, stegosaurus, raptor, Parasaurolophus or pteranodon! See the new 🦖 Dino tab in ⭐ Star Challenges.',go:'dino'},
     {e:'🦴',t:'Dig for fossils at the Fossil Dig in Dino Valley! Find a T. rex tooth, a raptor feather, and maybe rare golden amber.',go:'dino'},
     {e:'🎺',t:'Meet a Parasaurolophus that honks through its crest, and a pteranodon. Your crested dino and pterodactyl look real now too!',go:'dino'},
+    {e:'🐉',t:'Dragons look real now! Earn Draco the great dragon with the hardest 🦖 Dino challenges and fly him over the island.',go:'dino'},
   ]},
   {v:'2026-11-06',notes:[
     {e:'🏀',t:'Play a 3-on-3 basketball game! Pick two teammates, pass the ball and beat the Bears.',go:'court'},

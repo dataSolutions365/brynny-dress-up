@@ -8,6 +8,7 @@ const DS=SAVE.dino||(SAVE.dino={});DS.dig||=0;DS.kinds||={};DS.days||={};DS.ride
 const FOSSILS=[['tooth','🦷','T. rex tooth'],['bone','🦴','dinosaur leg bone'],['ammonite','🐚','ammonite shell'],['egg','🥚','fossil dinosaur egg'],
   ['print','🐾','dinosaur footprint'],['feather','🪶','raptor feather'],['fern','🌿','fern fossil'],['horn','🦕','triceratops horn']];
 const AMBER=['amber','🟠','piece of golden amber'],DIG_REFILL=40;
+FLYK.draco={hz:1.1,amp:.6,base:.06,glide:.75,spd:15,tuckF:1.1,tuckB:1.2};// 🐉 Draco the great dragon: big slow wing beats
 FLYK.dptero={hz:1,amp:.5,base:.04,glide:.85,spd:14,tuckF:1.15,tuckB:1.3};// 🪽 Zephyr flies like Sunny, with slower, bigger wing beats
 // a fossil poking out of the sand at each spot (a bit of old bone), and a little heap of sand
 const DIG={busy:0,spot:null,spots:DV.dig.spots.map(([x,z],i)=>{const g=new THREE.Group(),D=DV.dig;g.position.set(D.x+x,0,D.z+z);g.rotation.y=i*1.7;DZ.g.add(g);
