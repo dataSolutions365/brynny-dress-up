@@ -557,4 +557,4 @@ anims.push((t,dt)=>{if(WF.on||!started)return;const z=Z.wiffle,p=player.pos,dz=M
     if(d<WB.pad.r&&player.onGround){if(!WF.onPad){WF.onPad=true;wfMenu();}}else if(d>1.3)WF.onPad=false;}
   if(curZone!==WF.lastZone){WF.lastZone=curZone;if(!SP.mode&&curZone&&curZone.id==='wiffle')setTimeout(()=>toast('Step on the green ⚾ pad to play baseball!'),1600);}});
 wfBoard();
-Object.assign(window.__game,{WF,WB,wfStart,wfMenu,wfAt,wfPol,wfHit,wfPress,wfStep,wfThrowPose,wfCrouch,SP});
+Object.assign(window.__game,{WF,WB,wfCpuPitch,wfStart,wfMenu,wfAt,wfPol,wfHit,wfPress,wfStep,wfThrowPose,wfCrouch,SP});
