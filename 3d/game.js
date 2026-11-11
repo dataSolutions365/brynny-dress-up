@@ -5471,7 +5471,7 @@ function buildText(){const C=SAVE.cake,T=bk.tiers[bk.tiers.length-1];if(bk.text)
   m.rotation.x=-Math.PI/2;m.position.y=T.h+.002;m.userData.own=true;T.g.add(m);bk.text=m;}
 /* number candles use a 3D font that loads the first time you need one */
 let candleFont=null,candleFontP=null;
-function loadCandleFont(){if(!candleFontP)candleFontP=Promise.all([import('three/addons/loaders/FontLoader.js'),import('three/addons/geometries/TextGeometry.js')]).then(([FL,TG])=>new Promise((ok,no)=>new FL.FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json',f=>{candleFont={f,TG:TG.TextGeometry};ok(candleFont);},undefined,no))).catch(e=>{candleFontP=null;throw e;});return candleFontP;}
+function loadCandleFont(){if(!candleFontP)candleFontP=Promise.all([import('three/addons/loaders/FontLoader.js'),import('three/addons/geometries/TextGeometry.js')]).then(([FL,TG])=>new Promise((ok,no)=>new FL.FontLoader().load('vendor/three/examples/fonts/helvetiker_bold.typeface.json',f=>{candleFont={f,TG:TG.TextGeometry};ok(candleFont);},undefined,no))).catch(e=>{candleFontP=null;throw e;});return candleFontP;}
 const MAX_STICKS=40,MAX_AGE=99;
 /* where little candles go: rings from the edge inward, as many as fit on each ring */
 function candleSpots(T,n){if(n===1)return [[0,0]];const out=[];
