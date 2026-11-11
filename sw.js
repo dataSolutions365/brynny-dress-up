@@ -7,7 +7,8 @@
 // - Game pages and game code: try the internet first (always checking for a newer copy) so updates show up right away,
 //   and use the saved copy when there is no internet.
 // - Music and sounds: use the saved copy (they never change), and save each song the first time it loads.
-// - The 3D engine and fonts (from cdn.jsdelivr.net and Google Fonts): saved copy first, they never change.
+// - The 3D engine (3d/vendor/three) is game code too, so it's checked like the rest (cheap: it never changes).
+// - Fonts (Google Fonts) and online play's PeerJS (cdn.jsdelivr.net): saved copy first, they never change.
 // - Everything else (sign-in, cloud saves, online play) goes straight to the internet as usual.
 //
 // When you add a new song, add it to MUSIC below so it is saved for offline play right away.
@@ -33,8 +34,7 @@ const MUSIC = [
   'audio/town-brand-new-day.mp3', 'audio/town-bumblebee.mp3',
 ];
 
-// The 3D engine. These load on the very first visit, before this file is running, so save them up front.
-const THREE = 'https://cdn.jsdelivr.net/npm/three@0.160.0/';
+// The 3D engine (three.js, kept on our own site in 3d/vendor/three). Saved up front with the game code.
 const ENGINE = [
   'build/three.module.min.js',
   'examples/jsm/geometries/RoundedBoxGeometry.js',
@@ -42,7 +42,8 @@ const ENGINE = [
   'examples/jsm/utils/BufferGeometryUtils.js',
   'examples/jsm/geometries/TextGeometry.js',
   'examples/jsm/loaders/FontLoader.js',
-].map(p => THREE + p);
+  'examples/fonts/helvetiker_bold.typeface.json',
+].map(p => '3d/vendor/three/' + p);
 
 const SAVE_FOREVER_HOSTS = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
