@@ -210,7 +210,7 @@ try {
   const TM = () => page.evaluate(() => { const s = window.__soccer.SC, tm = s.tm, S = window.__soccer.SOC, b = s.ball;
     const who = e => !e ? null : e.me ? 'me' : e.team + ':' + e.r.n + (e.key ? ':K' : '');
     return { mode: s.mode, us: s.me, them: s.cpu, own: who(tm.own), passTo: who(tm.passTo), toMe: tm.toMe || 0, phase: tm.phase, clock: tm.clock, FL: S.FL,
-      pl: tm.pl.map(e => ({ team: e.team, key: e.key, me: e.me, x: e.p.x, vis: e.me || e.a.g.visible })), ball: { st: b.st, x: b.p.x } }; });
+      pl: tm.pl.map(e => ({ team: e.team, key: e.key, me: e.me, x: e.p.x, vis: e.me || e.a.g.visible })), ball: { st: b.st, x: b.p.x }, kpSave: !!window.__kpSave }; });
   let t = await TM();
   { const us = t.pl.filter(p => p.team === 'us'), them = t.pl.filter(p => p.team === 'them'), keys = t.pl.filter(p => p.key);
     if (t.mode !== 'team' || us.length !== 4 || them.length !== 4 || keys.length !== 2 || !t.pl.every(p => p.vis)) fail(`3-on-3 should start with 4 a side, a goalie each: ${JSON.stringify(t)}`);
@@ -227,10 +227,13 @@ try {
   t = await waitGameT(5, t => t.own === 'me' || t.toMe > 0);
   if (t.own !== 'me' && !(t.toMe > 0)) fail(`PASS ME! should make your teammate pass it to you (${t.own}, ${t.passTo}, ${t.ball.st}).`); else ok('PASS ME!: your teammate passes it to you');
   // ⚽ a shot from close in: a goal or the Bears' goalie stops it
-  await page.evaluate(() => { const S = window.__soccer.SOC; window.__soccer.teamPlace(S.FL - 6, 0, Math.PI / 2); window.__soccer.teamPress(); });
-  t = await waitGameT(4, t => t.us > 0 || /^them:.*:K$/.test(t.own || ''));
-  if (!(t.us > 0 || /^them:.*:K$/.test(t.own || ''))) fail(`A shot from close in should score or be stopped by the goalie (${JSON.stringify(t.own)}, ${t.us}).`);
-  else ok(t.us > 0 ? 'Your shot: GOAL!' : `Your shot: saved by ${t.own.split(':')[1]}`);
+  // (a quick shot from this close is never caught: a save knocks it away, so the save is read off the shot itself)
+  await page.evaluate(() => { window.__kpSave = false; window.__game.onTick.push(() => { const sh = window.__soccer.SC.ball.shot; if (sh && sh.kp && sh.kp.save) window.__kpSave = true; });
+    const S = window.__soccer.SOC; window.__soccer.teamPlace(S.FL - 6, 0, Math.PI / 2); window.__soccer.teamPress(); });
+  const stopped = t => t.us > 0 || /^them:.*:K$/.test(t.own || '') || t.kpSave;
+  t = await waitGameT(4, stopped);
+  if (!stopped(t)) fail(`A shot from close in should score or be stopped by the goalie (${JSON.stringify(t.own)}, ${t.us}).`);
+  else ok(t.us > 0 ? 'Your shot: GOAL!' : `Your shot: saved by the Bears' goalie`);
   // the rest of the match, with you on autopilot (same brain as the bots) and a short clock
   await page.evaluate(() => { const tm = window.__soccer.team(); tm.auto = true; tm.clock = Math.min(tm.clock, 45); });
   t = await waitGameT(150, t => !t.mode);
