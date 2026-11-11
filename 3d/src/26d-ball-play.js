@@ -47,7 +47,9 @@ function ballKind(){return BP&&BP.borrowed?BP.borrowed.kind:ownKind();}
 const ballColor=k=>BP.borrowed?BP.borrowed.c:((SAVE.look.extras||{})[k==='soccer'?'ball':'bball']);
 function ballBusy(){return boardBusy()||SK.on;}
 // (the moves wheel is first drawn before this file runs, so these are hoisted functions)
-function ballActs(){const k=ballKind();return k&&!ballBusy()?[['kick',k==='soccer'?'⚽':'🏀',k==='soccer'?'Kick':'Pass']]:[];}
+// BP is still undefined then, and ballBusy() would reach SP (24e-sports.js) before it exists, which stopped the
+// whole 3D world from loading for anyone holding a ball. So no Kick button until this file has run; it shows on the next redraw.
+function ballActs(){if(!BP)return [];const k=ballKind();return k&&!ballBusy()?[['kick',k==='soccer'?'⚽':'🏀',k==='soccer'?'Kick':'Pass']]:[];}
 const ballNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
 function myBallMesh(kind){const m=BP.m[kind]||(BP.m[kind]=ballMesh(kind));const c=ballColor(kind);if(m.userData.c!==c){m.userData.c=c;m.material=ballMat(kind,c);}return m;}
 function ballHome(quiet){BP.st='hand';BP.to=null;BP.npc=null;BP.v.set(0,0,0);if(!quiet)sfx('pop');}

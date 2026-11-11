@@ -12398,7 +12398,9 @@ function ballKind(){return BP&&BP.borrowed?BP.borrowed.kind:ownKind();}
 const ballColor=k=>BP.borrowed?BP.borrowed.c:((SAVE.look.extras||{})[k==='soccer'?'ball':'bball']);
 function ballBusy(){return boardBusy()||SK.on;}
 // (the moves wheel is first drawn before this file runs, so these are hoisted functions)
-function ballActs(){const k=ballKind();return k&&!ballBusy()?[['kick',k==='soccer'?'⚽':'🏀',k==='soccer'?'Kick':'Pass']]:[];}
+// BP is still undefined then, and ballBusy() would reach SP (24e-sports.js) before it exists, which stopped the
+// whole 3D world from loading for anyone holding a ball. So no Kick button until this file has run; it shows on the next redraw.
+function ballActs(){if(!BP)return [];const k=ballKind();return k&&!ballBusy()?[['kick',k==='soccer'?'⚽':'🏀',k==='soccer'?'Kick':'Pass']]:[];}
 const ballNet=()=>{const n=window.__net;return n&&n.live()?n:null;};
 function myBallMesh(kind){const m=BP.m[kind]||(BP.m[kind]=ballMesh(kind));const c=ballColor(kind);if(m.userData.c!==c){m.userData.c=c;m.material=ballMat(kind,c);}return m;}
 function ballHome(quiet){BP.st='hand';BP.to=null;BP.npc=null;BP.v.set(0,0,0);if(!quiet)sfx('pop');}
@@ -17298,6 +17300,9 @@ Object.assign(window.__game,{WF,WB,wfCpuPitch,wfStart,wfMenu,wfAt,wfPol,wfHit,wf
    (old:1 marks the notes from the very first card, which players who saw that card have already seen.)
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
+  {v:'2026-11-11',notes:[
+    {e:'🏀',t:'Fixed: the 3D world opens again when you are holding a basketball or soccer ball.'},
+  ]},
   {v:'2026-11-07',notes:[
     {e:'🦖',t:'Visit Dino Valley! Cross the bridge behind the Barber Shop to see a real-looking T. rex, raptors, a triceratops and more.',go:'dino'},
     {e:'🦕',t:'Your dinosaurs moved out of the barn and into Dino Valley. The Happy Barn is just for farm animals now.',go:'dino'},

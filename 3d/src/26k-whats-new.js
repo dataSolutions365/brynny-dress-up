@@ -14,6 +14,9 @@
    (old:1 marks the notes from the very first card, which players who saw that card have already seen.)
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
+  {v:'2026-11-11',notes:[
+    {e:'🏀',t:'Fixed: the 3D world opens again when you are holding a basketball or soccer ball.'},
+  ]},
   {v:'2026-11-07',notes:[
     {e:'🦖',t:'Visit Dino Valley! Cross the bridge behind the Barber Shop to see a real-looking T. rex, raptors, a triceratops and more.',go:'dino'},
     {e:'🦕',t:'Your dinosaurs moved out of the barn and into Dino Valley. The Happy Barn is just for farm animals now.',go:'dino'},
