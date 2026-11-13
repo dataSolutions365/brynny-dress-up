@@ -253,6 +253,14 @@
   When you add a guy cut, give it a `thick`, `flow` and `uv` (and `locks` for texture), and keep it under 60,000 points:
   `3d/tests/guy-hair.mjs` (run on every PR) checks each cut looks like its name and hats sit on the hair.
 
+## 🌈 All colors (`colorpick.js`)
+- Every color row in the game (2D studio, pet page, 3D world) is a `<div class="swatches">` of round buttons that carry their color
+  in a `data-` attribute. `colorpick.js` (loaded by `index.html`, `pets.html` and `3d/index.html`) adds a 🌈 + button to the end of every
+  such row: 24 base colors, each with 21 shades (light to dark across, bright/soft/dusty down); skin rows open on skin tones.
+  Picking a shade copies one of the row's own buttons with that color and taps it, so new color rows get it for free as long as they
+  use `class="swatches"` and put a hex color in a `data-` attribute. Colors pasted in elsewhere must cope with any `#rrggbb`.
+  `3d/tests/color-picker.mjs` (run on every PR) checks it.
+
 ## Outfits go in both games
 - Everything you can wear in the 2D studio (`index.html`) must also be wearable in the 3D world, and the other way round,
   with the same id, for girls and for guys. Add a new outfit, costume, hair style or accessory to both in the same PR.
