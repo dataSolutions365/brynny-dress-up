@@ -25,6 +25,8 @@ jobs:
         run: npm i --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
       - name: The character walks
         run: node 3d/tests/walk.mjs
+      - name: The 🌈 all-colors picker opens every shade and really colors things (3D closet, 2D studio)
+        run: node 3d/tests/color-picker.mjs
       - name: The flying rides take off, fly over the trees and land
         run: node 3d/tests/fly.mjs
       - name: The bike rider sits on the saddle and pedals with the cranks

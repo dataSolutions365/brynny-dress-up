@@ -17300,6 +17300,8 @@ Object.assign(window.__game,{WF,WB,wfCpuPitch,wfStart,wfMenu,wfAt,wfPol,wfHit,wf
    (old:1 marks the notes from the very first card, which players who saw that card have already seen.)
    Reopen it any time from ⚙️ Settings. In tests (navigator.webdriver) it doesn't pop up by itself, unless the page has ?wn=1. */
 const WHATS_NEW=[
+  {v:'2026-11-13',notes:[
+    {e:'🌈',t:'Tap the 🌈 + at the end of any color row to pick from hundreds of colors, with every shade from light to dark.'}]},
   {v:'2026-11-11',notes:[
     {e:'🏀',t:'Fixed: the 3D world opens again when you are holding a basketball or soccer ball.'},
   ]},
